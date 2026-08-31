@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "types": ["vite/client"],
+
+    "isolatedModules": true,
+    "moduleDetection": "force",
+
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+
+    /* Strictness & Quality */
+    "strict": true,
+    "allowUnreachableCode": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Modern Interop */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "service-worker.ts"
+  ],
+  "exclude": ["node_modules", "dist", "build"]
+}

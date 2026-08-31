@@ -1,0 +1,98 @@
+package profile
+
+import (
+	"encoding/json"
+	"net/http"
+	"slices"
+	"time"
+
+	"scav/infra"
+	"scav/internal/beats/follows"
+	"scav/utils"
+)
+
+/* -------------------------------------------------------
+   Get Own Profile
+------------------------------------------------------- */
+
+func GetProfile(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		requestingUserID := utils.GetUserIDFromRequest(r)
+
+		user, err := findUser(ctx, map[string]any{"userid": requestingUserID}, app.DB)
+		if err != nil || user == nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		userFollow, err := follows.GetUserFollowData(ctx, user.UserID, app.DB)
+		if err == nil && userFollow.UserID != "" {
+			user.FollowersCount = len(userFollow.Followers)
+			user.FollowingCount = len(userFollow.Follows)
+		}
+
+		user.Online, _ = isOnline(ctx, user.UserID, app.Cache)
+
+		profileJSON, err := json.Marshal(user)
+		if err != nil {
+			http.Error(w, "Encoding failed", http.StatusInternalServerError)
+			return
+		}
+
+		// Best-effort cache write (5 min TTL)
+		_ = CacheProfile(ctx, app.Cache, user.Username, string(profileJSON), 5*time.Minute)
+
+		utils.RespondWithJSON(w, http.StatusOK, user)
+	}
+}
+
+/* -------------------------------------------------------
+   Get Another User's Profile
+------------------------------------------------------- */
+
+func GetUserProfile(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		claims, err := validateJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		username := utils.GetParam(r, "username")
+
+		user, err := findUser(ctx, map[string]any{"username": username}, app.DB)
+		if err != nil || user == nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		userFollow, _ := follows.GetUserFollowData(ctx, user.UserID, app.DB)
+
+		isFollowing := false
+		if userFollow.UserID != "" {
+			isFollowing = slices.Contains(userFollow.Followers, claims.UserID)
+		}
+
+		online, _ := isOnline(ctx, user.UserID, app.Cache)
+
+		response := UserProfileResponse{
+			UserID:         user.UserID,
+			Username:       user.Username,
+			Email:          user.Email,
+			Name:           user.Name,
+			Bio:            user.Bio,
+			Avatar:         user.Avatar,
+			Banner:         user.Banner,
+			FollowersCount: len(userFollow.Followers),
+			FollowingCount: len(userFollow.Follows),
+			IsFollowing:    isFollowing,
+			Online:         online,
+			LastLogin:      user.LastLogin,
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, response)
+	}
+}

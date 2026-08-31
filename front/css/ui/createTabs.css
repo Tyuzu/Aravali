@@ -1,0 +1,155 @@
+/* ==========================================================================
+   TABS CONTAINER & NAVIGATION
+   ========================================================================== */
+
+.tabs-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  color: var(--color-fg);
+}
+
+/* Tab Navigation Header Bar */
+.tab-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border-bottom: 2px solid var(--color-border-light);
+  background-color: var(--color-bg);
+  padding: 0 var(--space-xs);
+  
+  /* Horizontal scrolling for smaller screens */
+  overflow: auto hidden;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Hide scrollbar while retaining functionality */
+  scrollbar-width: none; /* Firefox */
+}
+
+.tab-buttons::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+/* Individual Tab Button */
+.tab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-normal);
+  color: var(--color-muted);
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px; /* Overlap header border */
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  user-select: none;
+  transition: 
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+/* Tab Hover & Focus States */
+.tab-button:hover {
+  color: var(--color-fg);
+  background-color: var(--color-bg-secondary);
+}
+
+.tab-button:focus-visible {
+  outline: 2px solid var(--color-input-focus);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Tab Active State */
+.tab-button.active,
+.tab-button[aria-selected="true"] {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+  border-bottom-color: var(--color-primary);
+  background-color: transparent;
+}
+
+
+/* ==========================================================================
+   TAB PANELS / CONTENTS
+   ========================================================================== */
+
+.tab-contents {
+  position: relative;
+  width: 100%;
+  padding-top: var(--space-md);
+}
+
+/* Panel visibility handling */
+.tab-content {
+  display: none;
+  background-color: var(--color-bg);
+  border-radius: var(--radius-md);
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn var(--transition-fast);
+}
+
+.tab-content:focus-visible {
+  outline: 2px solid var(--color-input-focus);
+  outline-offset: 4px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ==========================================================================
+   INTERNAL CONTENT STYLES (Gallery / Buttons / Headings)
+   ========================================================================== */
+
+.tab-content h2 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  color: var(--color-fg);
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.tab-content p {
+  font-size: var(--font-size-base);
+  color: var(--color-muted);
+  line-height: var(--line-height-base);
+  margin-bottom: var(--space-md);
+}
+
+/* Gallery Grid Layout */
+.media-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* Empty State Messaging */
+.media-list:empty + p {
+  display: block;
+  font-style: italic;
+  padding: var(--space-md) 0;
+}

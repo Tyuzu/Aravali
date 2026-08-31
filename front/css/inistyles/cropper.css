@@ -1,0 +1,17 @@
+.crop-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 80%);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  
+  
+  
+  
+  
+  
+  

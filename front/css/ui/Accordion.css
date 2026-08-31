@@ -1,0 +1,77 @@
+.accordion {
+  width: 100%;
+  max-width: 600px;
+  margin: 20px 0;
+  display: grid;
+  gap: 15px;
+}
+
+.accordion-section {
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease-in-out, transform 0.2s ease-in-out;
+  border: 1px solid;
+  border-bottom: 2px solid;
+}
+
+.accordion-section:hover {
+  box-shadow: 0 4px 10px rgb(0 0 0 / 20%);
+  transform: translateY(-2px);
+}
+
+.accordion-header {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: rgb(255 255 255 / 20%);
+
+  /* backdrop-filter: blur(5px); */
+  border: none;
+  outline: none;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s ease-in-out;
+}
+
+.accordion-header:hover {
+  background: rgb(255 255 255 / 30%);
+}
+
+.accordion-body {
+  padding: 16px 18px;
+
+  /* background: rgba(255, 255, 255, 0.1); */
+
+  /* backdrop-filter: blur(5px); */
+  line-height: 1.6;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  border-top: 1px solid;
+
+  /* color: #fff; */
+  transition: opacity 0.4s ease-in-out, max-height 0.4s ease-in-out;
+}
+
+/* Open state */
+details[open] .accordion-body {
+  opacity: 1;
+  max-height: 500px;
+}
+
+/* Open state of header */
+details[open] .accordion-header {
+  background: rgb(255 255 255 / 40%);
+}
+
+/* Icon animation */
+.accordion-header::after {
+  content: "▲";
+  transition: transform 0.3s ease-in-out;
+}
+
+details[open] .accordion-header::after {
+  transform: rotate(-180deg);
+}

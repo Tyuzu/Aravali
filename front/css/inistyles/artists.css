@@ -1,0 +1,6 @@
+
+
+/* Page-specific layout override */
+.artists-page {
+  padding: var(--space-sm);
+}

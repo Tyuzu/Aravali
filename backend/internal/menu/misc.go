@@ -1,0 +1,59 @@
+package menu
+
+import (
+	"encoding/json"
+	"scav/config/mqevent"
+	"scav/infra"
+	"scav/infra/mq"
+	"scav/utils"
+	log "scav/utils/logger"
+	"net/http"
+	"time"
+)
+
+// BuyMenu atomically decreases stock using FindOneAndUpdate
+func BuyMenu(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		placeID := utils.GetParam(r, "placeid")
+		menuID := utils.GetParam(r, "menuid")
+
+		var body struct {
+			Quantity int `json:"quantity"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Quantity <= 0 {
+			http.Error(w, "Invalid quantity", http.StatusBadRequest)
+			return
+		}
+
+		ctx := r.Context()
+
+		// Build atomic filter and update
+		filter := map[string]any{
+			"placeid": placeID,
+			"menuid":  menuID,
+			"stock":   map[string]any{"$gte": body.Quantity}, // ensure enough stock
+		}
+		update := map[string]any{
+			"$inc": map[string]int{"stock": -body.Quantity},
+			"$set": map[string]any{"updated_at": time.Now()},
+		}
+
+		var updatedMenu Menu
+		err := app.DB.FindOneAndUpdate(ctx, menuCollection, filter, update, &updatedMenu)
+		if err != nil {
+			http.Error(w, "Insufficient stock or menu not found", http.StatusConflict)
+			return
+		}
+
+		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.MenuBoughtEvent, mqevent.MenuBoughtPayload{}); err != nil {
+			log.Printf("failed to publish menu bought event: %v", err)
+		}
+
+		// Respond with remaining stock
+		resp := map[string]any{
+			"success":        true,
+			"remainingStock": updatedMenu.Stock,
+		}
+		utils.RespondWithJSON(w, http.StatusOK, resp)
+	}
+}

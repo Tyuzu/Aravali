@@ -1,0 +1,43 @@
+package comments
+
+import (
+	"context"
+
+	"scav/config"
+	db "scav/infra/db"
+
+	"go.mongodb.org/mongo-driver/bson"
+)
+
+var commentsCollection = config.Collections.CommentsCollection
+
+func insertComment(ctx context.Context, database db.Database, comment Comment) error {
+	return database.Insert(ctx, commentsCollection, comment)
+}
+
+func findCommentByID(ctx context.Context, database db.Database, commentID string, comment *Comment) error {
+	return database.FindOne(ctx, commentsCollection, bson.M{"commentid": commentID}, comment)
+}
+
+func updateCommentContent(ctx context.Context, database db.Database, commentID string, update bson.M) (any, error) {
+	return database.UpdateOne(ctx, commentsCollection, bson.M{"commentid": commentID}, update)
+}
+
+func deleteComment(ctx context.Context, database db.Database, commentID, userID string) (int64, error) {
+	return database.Delete(ctx, commentsCollection, bson.M{"commentid": commentID, "createdby": userID})
+}
+
+func findCommentsByEntity(
+	ctx context.Context,
+	database db.Database,
+	entityType string,
+	entityID string,
+	opts db.FindManyOptions,
+	comments *[]Comment,
+) error {
+	filter := bson.M{
+		"entity_type": entityType,
+		"entity_id":   entityID,
+	}
+	return database.FindManyWithOptions(ctx, commentsCollection, filter, opts, comments)
+}

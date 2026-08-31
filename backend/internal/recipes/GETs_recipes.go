@@ -1,0 +1,138 @@
+package recipes
+
+import (
+	"context"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
+	"scav/infra"
+	"scav/infra/db"
+	"scav/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
+)
+
+// --- Get single recipe ---
+
+func GetRecipe(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		id := utils.GetParam(r, "id")
+
+		var recipe Recipe
+		if err := app.DB.FindOne(ctx, recipeCollection, map[string]any{"recipeid": id}, &recipe); err != nil {
+			http.Error(w, "Recipe not found", http.StatusNotFound)
+			return
+		}
+
+		normalizeRecipeSlices(&recipe)
+
+		utils.RespondWithJSON(w, http.StatusOK, recipe)
+	}
+}
+
+// --- List Recipes ---
+
+func GetRecipes(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		filter := map[string]any{}
+
+		if search := r.URL.Query().Get("search"); search != "" {
+			filter["$or"] = []any{
+				utils.RegexFilter("title", search),
+				utils.RegexFilter("description", search),
+			}
+		}
+
+		if ing := r.URL.Query().Get("ingredient"); ing != "" {
+			filter["ingredients.name"] = map[string]any{
+				"$regex":   regexp.QuoteMeta(ing),
+				"$options": "i",
+			}
+		}
+
+		if tags := r.URL.Query().Get("tags"); tags != "" {
+			filter["tags"] = map[string]any{"$all": strings.Split(tags, ",")}
+		}
+
+		skip, limit := utils.ParsePagination(r, 10, 100)
+		sort := utils.ParseSort(
+			r.URL.Query().Get("sort"),
+			bson.D{{Key: "createdAt", Value: -1}},
+			map[string]bson.D{
+				"newest":   {{Key: "createdAt", Value: -1}},
+				"oldest":   {{Key: "createdAt", Value: 1}},
+				"views":    {{Key: "views", Value: -1}},
+				"prepTime": {{Key: "prepTime", Value: 1}},
+			},
+		)
+
+		opts := db.FindManyOptions{
+			Skip:  skip,
+			Limit: limit,
+			Sort:  sort,
+		}
+
+		var recipes []Recipe
+		if err := app.DB.FindManyWithOptions(ctx, recipeCollection, filter, opts, &recipes); err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch recipes")
+			return
+		}
+
+		for i := range recipes {
+			normalizeRecipeSlices(&recipes[i])
+		}
+
+		totalCount, err := app.DB.CountDocuments(ctx, recipeCollection, filter)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count recipes")
+			return
+		}
+
+		hasMore := (skip + limit) < int(totalCount)
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"recipes": recipes,
+			"hasMore": hasMore,
+		})
+	}
+}
+
+// --- Tags ---
+
+type recipeTagAgg struct {
+	Tags []string `bson:"tags"`
+}
+
+func GetRecipeTags(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		pipeline := []any{
+			map[string]any{"$unwind": "$tags"},
+			map[string]any{"$group": map[string]any{
+				"_id":  nil,
+				"tags": map[string]any{"$addToSet": "$tags"},
+			}},
+		}
+
+		var result []recipeTagAgg
+		if err := app.DB.Aggregate(ctx, recipeCollection, pipeline, &result); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tags := []string{}
+		if len(result) > 0 && result[0].Tags != nil {
+			tags = result[0].Tags
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, tags)
+	}
+}

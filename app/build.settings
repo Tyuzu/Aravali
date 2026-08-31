@@ -1,0 +1,46 @@
+settings =
+{
+    orientation =
+    {
+        default = "portrait",
+        supported = { "portrait" },
+    },
+
+    --
+    -- Android Section
+    --
+    android =
+    {
+        usesPermissions =
+        {
+            "android.permission.INTERNET",
+            "android.permission.ACCESS_NETWORK_STATE",
+        },
+    },
+
+    --
+    -- iOS Section
+    --
+    iphone =
+    {
+        xcassets = "Images.xcassets",
+        plist =
+        {
+            UIStatusBarHidden = true,
+            UILaunchStoryboardName = "LaunchScreen",
+        },
+    },
+
+    --
+    -- Exclude Files
+    --
+    excludeFiles =
+    {
+        all = { "Icon.png", "Icon-*dpi.png", "Images.xcassets" },
+        android = { "LaunchScreen.storyboardc" },
+    },
+    
+    splashScreen = {
+        enable = false
+    },
+}

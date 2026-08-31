@@ -1,0 +1,109 @@
+/* ==========================================================================
+   Posts Page Layout & Component Styles
+   Uses CSS Custom Properties defined in :root
+   ========================================================================== */
+
+/* Main Container & Page Layout */
+
+/* #content.content-main {
+  width: 100%;
+  max-width: var(--max-width-xl);
+  margin: 0 auto;
+  padding: var(--container-padding);
+  font-family: var(--font-body);
+  color: var(--color-fg);
+  background-color: var(--color-bg);
+} */
+
+.two-column.posts-page {
+  padding: var(--space-sm);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+
+@media (width >= 1024px) {
+  .two-column.posts-page {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+
+
+
+/* Posts List Grid */
+.posts-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.posts-list a {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+}
+
+/* Post Card Item */
+.post-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.post-card:hover {
+  background-color: var(--color-card-hover);
+  box-shadow: var(--shadow-elev-3);
+  transform: translateY(-2px);
+}
+
+.post-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0; /* Reset inline border-radius to align with card corners */
+  background-color: var(--color-bg-tertiary);
+}
+
+.post-info {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+  flex: 1;
+}
+
+.post-info h3 {
+  margin: 0 0 var(--space-xs) 0;
+  font-family: var(--font-heading);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg);
+  line-height: var(--line-height-heading);
+}
+
+.post-info p {
+  margin: var(--space-xxs) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  line-height: var(--line-height-normal);
+}
+
+.post-info p strong {
+  color: var(--color-fg);
+  font-weight: var(--font-weight-medium);
+}
+
+
+.aside-actions {
+  padding: var(--space-md);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+

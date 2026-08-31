@@ -1,0 +1,333 @@
+package newchat
+
+import (
+	"context"
+	"encoding/json"
+	"scav/config/mqevent"
+	"scav/infra"
+	"scav/infra/db"
+	"scav/infra/mq"
+	"scav/utils"
+	log "scav/utils/logger"
+	"net/http"
+	"sort"
+	"strings"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+)
+
+func GetChat(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		chatID := utils.GetParam(r, "chatid")
+		userID := utils.GetUserIDFromRequest(r)
+		if userID == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var chat Chat
+		err := app.DB.FindOne(ctx, chatsCollection, map[string]any{
+			"chatid": chatID,
+			"users":  map[string]any{"$in": []string{userID}},
+		}, &chat)
+		if err != nil {
+			http.Error(w, "Chat not found", http.StatusNotFound)
+			return
+		}
+
+		var messages []Message
+		opts := db.FindManyOptions{
+			Sort: bson.D{{Key: "createdAt", Value: 1}},
+		}
+		if err := app.DB.FindManyWithOptions(ctx, messagesCollection, map[string]any{
+			"chatid": chatID,
+		}, opts, &messages); err != nil {
+			http.Error(w, "Failed to fetch messages", http.StatusInternalServerError)
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"chatid":   chatID,
+			"messages": messages,
+		})
+	}
+}
+
+func CreateMessage(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		chatID := utils.GetParam(r, "chatid")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var chat Chat
+		if err := app.DB.FindOne(ctx, chatsCollection, map[string]any{"chatid": chatID}, &chat); err != nil {
+			http.Error(w, "Chat not found", http.StatusNotFound)
+			return
+		}
+
+		userID := utils.GetUserIDFromRequest(r)
+		isParticipant := false
+		for _, uid := range chat.Users {
+			if uid == userID {
+				isParticipant = true
+				break
+			}
+		}
+		if !isParticipant {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		http.MaxBytesReader(w, r.Body, 10<<20)
+		if err := r.ParseMultipartForm(10 << 20); err != nil { // #nosec G120
+			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			return
+		}
+
+		text := r.FormValue("text")
+		var replyRef *ReplyRef
+		if v := r.FormValue("replyTo"); v != "" {
+			var rr ReplyRef
+			if err := json.Unmarshal([]byte(v), &rr); err != nil {
+				http.Error(w, "Invalid replyTo payload", http.StatusBadRequest)
+				return
+			}
+			replyRef = &rr
+		}
+
+		var fileType string
+		if r.MultipartForm != nil && r.MultipartForm.File != nil {
+			files := r.MultipartForm.File["file"]
+			if len(files) > 0 {
+				ct := files[0].Header.Get("Content-Type")
+				switch {
+				case strings.HasPrefix(ct, "image/"):
+					fileType = "image"
+				case strings.HasPrefix(ct, "video/"):
+					fileType = "video"
+				case strings.HasPrefix(ct, "application/"):
+					fileType = "document"
+				default:
+					http.Error(w, "Unsupported file type", http.StatusBadRequest)
+					return
+				}
+			}
+		}
+
+		if text == "" && replyRef == nil && fileType == "" {
+			http.Error(w, "No content provided", http.StatusBadRequest)
+			return
+		}
+
+		now := time.Now()
+		msg := Message{
+			MessageID: utils.GenerateRandomDigitString(16),
+			ChatID:    chatID,
+			UserID:    userID,
+			Text:      text,
+			FileType:  fileType,
+			CreatedAt: now,
+			ReplyTo:   replyRef,
+		}
+
+		if err := app.DB.InsertOne(ctx, messagesCollection, msg); err != nil {
+			http.Error(w, "Insert failed", http.StatusInternalServerError)
+			return
+		}
+
+		previewText := buildLastMessagePreview(text, fileType, replyRef, 0)
+		update := map[string]any{
+			"$set": map[string]any{
+				"lastMessage": MessagePreview{
+					Text:      previewText,
+					UserID:    userID,
+					Timestamp: now,
+				},
+				"updatedAt": now,
+			},
+		}
+		_, _ = app.DB.UpdateOne(ctx, chatsCollection, map[string]any{"chatid": chatID}, update)
+
+		mqpayload, _ := json.Marshal(mqevent.ChatMessageCreatedPayload{})
+
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.ChatMessageCreatedEvent, mqpayload)
+
+		utils.RespondWithJSON(w, http.StatusOK, msg)
+	}
+}
+
+func buildLastMessagePreview(text, fileType string, replyRef *ReplyRef, fileCount int) string {
+	trimmed := strings.TrimSpace(text)
+	if trimmed != "" {
+		return trimmed
+	}
+
+	if replyRef != nil {
+		replyText := strings.TrimSpace(replyRef.Text)
+		if replyText != "" {
+			return replyText
+		}
+	}
+
+	if fileCount > 0 {
+		if fileCount == 1 {
+			return "Sent a file"
+		}
+		return "Sent multiple files"
+	}
+
+	switch fileType {
+	case "image":
+		return "Sent an image"
+	case "video":
+		return "Sent a video"
+	case "document":
+		return "Sent a document"
+	}
+
+	if replyRef != nil {
+		return "Replied to a message"
+	}
+
+	return ""
+}
+
+func UpdateMessage(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msgID := utils.GetParam(r, "msgid")
+		userID := utils.GetUserIDFromRequest(r)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var message Message
+		if err := app.DB.FindOne(ctx, messagesCollection, map[string]any{"messageid": msgID}, &message); err != nil {
+			http.Error(w, "Message not found", http.StatusNotFound)
+			return
+		}
+
+		if message.UserID != userID {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		var input struct {
+			Text string `json:"text"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil || input.Text == "" {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+
+		update := map[string]any{"$set": map[string]any{"text": input.Text}}
+		if _, err := app.DB.UpdateOne(ctx, messagesCollection, map[string]any{"messageid": msgID}, update); err != nil {
+			http.Error(w, "Update failed", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func DeletesMessage(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msgID := utils.GetParam(r, "msgid")
+		userID := utils.GetUserIDFromRequest(r)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var message Message
+		if err := app.DB.FindOne(ctx, messagesCollection, map[string]any{"messageid": msgID}, &message); err != nil {
+			http.Error(w, "Message not found", http.StatusNotFound)
+			return
+		}
+
+		if message.UserID != userID {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		if _, err := app.DB.DeleteOne(ctx, messagesCollection, map[string]any{"messageid": msgID}); err != nil {
+			http.Error(w, "Delete failed", http.StatusInternalServerError)
+			return
+		}
+
+		_, _ = app.DB.UpdateOne(ctx, chatsCollection, map[string]any{"chatid": message.ChatID},
+			map[string]any{"$set": map[string]any{"updatedAt": time.Now()}})
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func InitChat(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			UserA string `json:"userA"`
+			UserB string `json:"userB"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+
+		users := []string{body.UserA, body.UserB}
+		sort.Strings(users)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var existing Chat
+		if err := app.DB.FindOne(ctx, chatsCollection, map[string]any{"users": users}, &existing); err == nil {
+			if err := json.NewEncoder(w).Encode(map[string]any{"chatid": existing.ChatID}); err != nil { // #nosec G104
+				log.Printf("failed to encode response: %v", err)
+			}
+			return
+		}
+
+		chat := Chat{
+			ChatID: utils.GenerateRandomDigitString(16),
+			Users:  users,
+		}
+
+		if err := app.DB.InsertOne(ctx, chatsCollection, chat); err != nil {
+			http.Error(w, "Failed to create chat", http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(map[string]any{"chatid": chat.ChatID}); err != nil { // #nosec G104
+			log.Printf("failed to encode response: %v", err)
+		}
+	}
+}
+
+func GetUserChats(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := utils.GetUserIDFromRequest(r)
+		if userID == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var chats []Chat
+		opts := db.FindManyOptions{
+			Sort:  bson.D{{Key: "updatedAt", Value: -1}},
+			Limit: 15,
+		}
+		if err := app.DB.FindManyWithOptions(ctx, chatsCollection, map[string]any{"users": map[string]any{"$in": []string{userID}}}, opts, &chats); err != nil {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+
+		if chats == nil {
+			chats = []Chat{}
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, chats)
+	}
+}

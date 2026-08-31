@@ -1,0 +1,192 @@
+package crops
+
+import (
+	"context"
+	"errors"
+	"scav/config/mqevent"
+	"scav/infra"
+	"scav/infra/mq"
+	"scav/utils"
+	log "scav/utils/logger"
+	"net/http"
+	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+func CreateCropAboutHandler(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var crop CropAbout
+
+		if err := utils.ParseJSON(r, &crop); err != nil {
+			utils.RespondWithError(
+				w,
+				http.StatusBadRequest,
+				"Invalid request body",
+			)
+			return
+		}
+
+		if crop.ID == "" {
+			utils.RespondWithError(
+				w,
+				http.StatusBadRequest,
+				"Crop ID is required",
+			)
+			return
+		}
+
+		if err := CreateCropAbout(ctx, app, &crop); err != nil {
+			utils.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to create crop",
+			)
+			return
+		}
+
+		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.CropAboutCreatedEvent, mqevent.CropAboutCreatedPayload{}); err != nil {
+			log.Printf("failed to publish crop about created event: %v", err)
+		}
+
+		utils.RespondWithJSON(w, http.StatusCreated, map[string]any{
+			"success": true,
+		})
+	}
+}
+
+func GetCropAboutHandler(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		crop, err := GetCropAbout(
+			ctx,
+			app,
+			utils.GetParam(r, "cropID"),
+		)
+
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				utils.RespondWithError(
+					w,
+					http.StatusNotFound,
+					"Crop not found",
+				)
+				return
+			}
+
+			utils.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to load crop",
+			)
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"success": true,
+			"crop":    crop,
+		})
+	}
+}
+
+func GetAllCropAboutsHandler(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		crops, err := GetAllCropAbouts(ctx, app)
+		if err != nil {
+			utils.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to load crops",
+			)
+			return
+		}
+
+		if crops == nil {
+			crops = []CropAbout{}
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"success": true,
+			"crops":   crops,
+		})
+	}
+}
+
+func UpdateCropAboutHandler(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var crop CropAbout
+
+		if err := utils.ParseJSON(r, &crop); err != nil {
+			utils.RespondWithError(
+				w,
+				http.StatusBadRequest,
+				"Invalid request body",
+			)
+			return
+		}
+
+		_, err := UpdateCropAbout(
+			ctx,
+			app,
+			utils.GetParam(r, "cropID"),
+			&crop,
+		)
+
+		if err != nil {
+			utils.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to update crop",
+			)
+			return
+		}
+		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.CropAboutUpdatedEvent, mqevent.CropAboutUpdatedPayload{}); err != nil {
+			log.Printf("failed to publish crop about updated event: %v", err)
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"success": true,
+		})
+	}
+}
+
+func DeleteCropAboutHandler(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		err := DeleteCropAbout(
+			ctx,
+			app,
+			utils.GetParam(r, "cropID"),
+		)
+
+		if err != nil {
+			utils.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				"Failed to delete crop",
+			)
+			return
+		}
+
+		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.CropAboutDeletedEvent, mqevent.CropAboutDeletedPayload{}); err != nil {
+			log.Printf("failed to publish crop about deleted event: %v", err)
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"success": true,
+		})
+	}
+}

@@ -1,0 +1,10 @@
+
+
+.preview_image_wrap li img{
+    width: 100%;
+}
+
+@media (width <= 600px) {
+    
+  }
+  

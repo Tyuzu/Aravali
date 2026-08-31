@@ -1,0 +1,93 @@
+import "../../../css/layout/footer.css";
+import { setLanguage } from "../../i18n/i18n.js";
+import { navigate } from "../../routes/navigate.js";
+import { webSiteName } from "../../config/env.js";
+import { createElement } from "../createElement.js";
+
+interface NavPage {
+  href: string;
+  label: string;
+}
+
+const handleNavigation = (event: MouseEvent, href: string): void => {
+  event.preventDefault();
+  if (!href) {
+    console.error("handleNavigation received null href");
+    return;
+  }
+  navigate(href);
+};
+
+const Footer = (): HTMLElement => {
+  const pages: NavPage[] = [
+    { href: "/about", label: "About Us" },
+    { href: "/contact", label: "Contact Us" },
+    { href: "/faq", label: "FAQ" },
+    { href: "/terms", label: "Terms & Conditions" },
+    { href: "/privacy", label: "Privacy Policy" },
+    { href: "/refund", label: "Refund Policy" },
+    { href: "/shipping", label: "Shipping Policy" },
+    { href: "/returns", label: "Return Policy" },
+    { href: "/disclaimer", label: "Disclaimer" },
+    { href: "/blog", label: "Blog" }
+  ];
+
+  const navLinks = pages.map(({ href, label }) => {
+    return createElement(
+      "a",
+      {
+        href,
+        class: "footer-link",
+        events: {
+          click: ((e: MouseEvent) => handleNavigation(e, href)) as EventListener
+        }
+      },
+      [label]
+    );
+  });
+
+  const nav = createElement("nav", { class: "footer-nav" }, navLinks);
+
+  const langSelect = createElement(
+    "select",
+    {
+      name: "lang-select",
+      class: "lang-select",
+      "aria-label": "Select Page Language",
+      events: {
+        change: (async (e: Event) => {
+          const target = e.target as HTMLSelectElement | null;
+          const lang = target?.value;
+          if (lang) {
+            await setLanguage(lang);
+          }
+        }) as EventListener
+      }
+    },
+    [
+      createElement("option", { value: "en" }, ["English"]),
+      createElement("option", { value: "es" }, ["Español"]),
+      createElement("option", { value: "fr" }, ["Français"]),
+      createElement("option", { value: "hi" }, ["हिन्दी"]),
+      createElement("option", { value: "ar" }, ["العربية"]),
+      createElement("option", { value: "jp" }, ["日本語"])
+    ]
+  ) as HTMLSelectElement;
+
+  const savedLang = localStorage.getItem("lang") || "en";
+  langSelect.value = savedLang;
+
+  const footerBottom = createElement("div", { class: "footer-bottom" }, [
+    langSelect,
+    createElement("p", {}, [
+      `© ${new Date().getFullYear()} ${webSiteName}. All rights reserved.`
+    ])
+  ]);
+
+  return createElement("div", { class: "footer-container" }, [
+    nav,
+    footerBottom
+  ]);
+};
+
+export { Footer };
