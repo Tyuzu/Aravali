@@ -2,8 +2,7 @@ import { createElement } from "../../../components/createElement.js";
 import { apiFetch } from "../../../api/api.js";
 import { guessCategoryFromName } from "./displayCropshelpers.js";
 import { navigate } from "../../../routes/navigate.js";
-import { resolveImagePath, PictureType, EntityType } from "../../../utils/imagePaths.js";
-import Imagex from "../../../components/base/Imagex.js";
+import { renderCropCard } from "./components/cropCard.js";
 import { debounce } from "../../../utils/deutils.js";
 import Button from "../../../components/base/Button.js";
 import { createMainLayout } from "../../../components/layout/mainLayout.js";
@@ -167,59 +166,7 @@ function formatCropSlug(name: string): string {
 
 // --- Component Renderers ---
 
-export function renderCropCard(crop: Crop, mode: "catalogue" | "listing" = "catalogue"): HTMLElement {
-  const card = createElement("div", { class: "crop-card" });
-  const cropSlug = formatCropSlug(crop.name);
-
-  card.addEventListener("click", () => navigate(`/crop/${cropSlug}`));
-
-  const img = Imagex({
-    src: resolveImagePath(EntityType.CROP, PictureType.THUMB, crop.banner),
-    alt: crop.name,
-    class: "crop-card-image",
-    loading: "lazy"
-  });
-
-  const title = createElement("h4", {}, [crop.name]);
-
-  if (mode === "catalogue") {
-    const info = createElement("p", { class: "crop-info" }, [
-      `${formatPriceRange(crop.minPrice, crop.maxPrice)} per ${crop.unit} • ${crop.availableCount} listings`
-    ]);
-
-    const inSeason = isSeasonal(crop);
-    const seasonLabel = inSeason ? "🟢 In Season" : "🔴 Off Season";
-    const seasonClass = inSeason ? "in-season" : "off-season";
-
-    const season = createElement("p", { class: `season-indicator ${seasonClass}` }, [seasonLabel]);
-    
-    const tags = createElement(
-      "div",
-      { class: "tag-wrap" },
-      (crop.tags || []).map(tag => createElement("span", { class: "tag-pill" }, [tag]))
-    );
-
-    const btn = Button({
-      title: "View Farms",
-      type: "button",
-      events: { click: () => navigate(`/crop/${cropSlug}`) },
-      classes: "buttonx"
-    });
-
-    const contentWrapper = createElement("div", { class: "nimgcon" }) as HTMLElement;
-    contentWrapper.append(title, info, season, tags, btn);
-    card.append(img, contentWrapper);
-  } else if (mode === "listing") {
-    card.append(
-      title,
-      createElement("p", {}, [`💰 ${formatPrice(crop.price)} per ${crop.unit}`]),
-      createElement("p", {}, [`📦 In Stock: ${crop.quantity}`]),
-      createElement("p", {}, [`👨‍🌾 Farm: ${crop.farmName || "Unknown"}`])
-    );
-  }
-
-  return card;
-}
+// `renderCropCard` implementation moved to `components/cropCard.js`.
 
 // --- Interface State Management ---
 

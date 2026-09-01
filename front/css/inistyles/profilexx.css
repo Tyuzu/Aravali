@@ -27,7 +27,9 @@
 }
 
 /* ── Compact Banner ── */
-
+.user-banner {
+  position: relative;
+}
 
 .user-banner img {
   width: 100%;

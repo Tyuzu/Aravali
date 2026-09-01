@@ -3,9 +3,9 @@
 import Datex from "../../components/base/Datex";
 import Button from "../../components/base/Button.js";
 import { getState } from "../../state/state.js";
-import { createProfileDetails, createStatistics, UserProfile } from "./profileGenHelpers.js";
-import { createBanner } from "./bannerPicture.js";
-import { createAvatar } from "./avatarPicture.js";
+import { createProfileDetails, createStatistics, UserProfile, appendChildren } from "./profileGenHelpers.js";
+import { createBanner } from "./components/bannerView.js";
+import { createAvatar } from "./components/avatarView.js";
 import { othusrdata } from "../userdata/otheruserdata.js";
 import { createElement } from "../../components/createElement.js";
 
@@ -106,16 +106,7 @@ export function previewAvatar(event: Event, previewId: string = "profile-picture
     HELPERS
 ============================================================ */
 
-/** Helper function to append multiple child nodes safely */
-function appendChildren(parent: HTMLElement | null, ...children: unknown[]): void {
-  if (!parent) return;
-
-  const validChildren = children
-    .flat()
-    .filter((child): child is Node | string => child instanceof Node || typeof child === "string");
-
-  parent.append(...validChildren);
-}
+// use shared `appendChildren` from profileGenHelpers
 
 /* ============================================================
     PROFILE GENERATOR COMPONENT
@@ -126,9 +117,12 @@ function profilGen(
   isLoggedIn: boolean = false,
   onLoadUserData: LoadUserDataCallback | null = null
 ): HTMLElement {
-  const currentUser = getState("user") as UserProfile | undefined;
-  const currentUserId = currentUser?.userid;
-  
+  const currentUser = getState("user") as UserProfile | string | undefined;
+  const currentUserId = typeof currentUser === "string"
+    ? currentUser
+    : currentUser && typeof currentUser === "object"
+      ? (currentUser.userid || (currentUser.id as any) || undefined)
+      : undefined;
   const isCreator = Boolean(profile.userid && profile.userid === currentUserId);
 
   const profileContainer = createElement("div", {
@@ -147,7 +141,7 @@ function profilGen(
   appendChildren(
     section,
     createBanner(profile, isCreator),
-    createAvatar(profile),
+    createAvatar(profile, isCreator),
     createProfileDetails(profile, isLoggedIn),
     createStatistics(profile),
     suggs

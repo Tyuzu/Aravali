@@ -17,14 +17,18 @@ function isMobile(): boolean {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-function lockOrientation(orientation: OrientationLockType): void {
-  if (screen.orientation?.lock) {
-    screen.orientation.lock(orientation).catch(console.warn);
+function lockOrientation(orientation: string): void {
+  try {
+    (screen.orientation as any)?.lock?.(orientation).catch(console.warn);
+  } catch {
+    // ignore
   }
 }
 
 function unlockOrientation(): void {
-  if (screen.orientation?.unlock) {
-    screen.orientation.unlock();
+  try {
+    (screen.orientation as any)?.unlock?.();
+  } catch {
+    // ignore
   }
 }

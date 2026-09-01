@@ -75,6 +75,7 @@ async function apixFetch<T = any>(
     }
 
     const response = await fetch(endpoint, fetchOptions);
+    // request logged via network devtools
 
     if (response.status === 401 && !retry && options.auth !== false) {
       const refreshed = await refreshToken();

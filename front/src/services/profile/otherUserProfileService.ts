@@ -1,6 +1,6 @@
 import { fetchUserProfile } from "./fetchProfile.js";
 import profilGen from "./profilegen.js";
-import { attachProfileEventListeners } from "./displayMyProfile.js";
+import { attachProfileEventListeners } from "./events/profileEvents.js";
 import { displayUserProfileData } from "../userdata/displayProfileData.js";
 import { createElement } from "../../components/createElement.js";
 import Notify from "../../components/ui/Notify.js";

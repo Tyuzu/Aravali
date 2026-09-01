@@ -1,7 +1,8 @@
 import Modal from "../components/ui/Modal.js";
 import { createElement } from "../components/createElement.js";
 import Notify from "../components/ui/Notify.js";
-import { bannerFetch } from "../api/api.js";
+import { apixFetch } from "../api/api.js";
+import { FILEDROP_URL, API_URL } from "../state/state.js";
 import { resolveImagePath, PictureType } from "./imagePaths.js";
 import { SRC_URL } from "../state/state.js";
 import { showLoadingMessage, removeLoadingMessage, capitalize } from "../services/profile/profileHelpers.js";
@@ -366,7 +367,6 @@ export async function uploadImage({
     stateKey,
     payload
 }: UploadImageParams): Promise<any> {
-    const endpoint = "/api/v1/filedrop";
     const formData = new FormData();
 
     formData.append("entityType", entityType);
@@ -381,7 +381,27 @@ export async function uploadImage({
         throw new Error("Invalid payload provided for image upload.");
     }
 
-    return bannerFetch(endpoint, "POST", formData, {});
+    // Try configured FILEDROP_URL first; fall back to API_URL + '/filedrop' if needed.
+    const tried: string[] = [];
+    const candidates = [] as string[];
+    if (FILEDROP_URL) candidates.push(FILEDROP_URL);
+    if (API_URL) candidates.push(`${API_URL.replace(/\/+$/, "")}/filedrop`);
+    // Ensure there's at least a relative path fallback
+    candidates.push("/api/v1/filedrop");
+
+    for (const endpoint of candidates) {
+        if (!endpoint || tried.includes(endpoint)) continue;
+        tried.push(endpoint);
+        try {
+            return await apixFetch(endpoint, "POST", formData, { headers: {} });
+        } catch (err) {
+            // Try next candidate
+            console.warn(`[uploadImage] attempt to ${endpoint} failed:`, err);
+            continue;
+        }
+    }
+
+    throw new Error("All upload endpoints failed.");
 }
 
 /* ────────── Preview Update ────────── */

@@ -1,5 +1,6 @@
 import { createElement } from "../../components/createElement.js";
-import { createAvatar, updateAvatar } from "./avatarPicture.js";
+import { createAvatar } from "./components/avatarView.js";
+import { updateAvatar } from "./controllers/avatarController.js";
 
 export { createAvatar, updateAvatar };
 

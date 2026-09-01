@@ -1,8 +1,9 @@
 import { createElement } from "../../../components/createElement";
 import Button from "../../../components/base/Button";
 import { navigate } from "../../../routes/navigate";
-import { addToCart, isValidCartQuantity } from "../../cart/addToCart";
 import { getState } from "../../../state/state";
+import { createQuantityControl } from "./components/quantityControl";
+import { handleAddToCart as addToCartController } from "./controllers/cartController";
 
 // --- Types & Interfaces ---
 
@@ -22,69 +23,9 @@ const MAX_QUANTITY = 99;
  * Renders a listing card with reactive quantity control and cart action.
  */
 export function renderListingCard(listing: CropListingItem): HTMLElement {
-  let quantity = 1;
-  let isAddingToCart = false;
-
-  // 1. Quantity Displays & Controls
-  const quantityDisplay = createElement(
-    "span",
-    {
-      class: "quantity-value",
-      "aria-live": "polite",
-      "aria-label": "Selected quantity"
-    },
-    [String(quantity)]
-  ) as HTMLElement;
-
-  const updateQuantity = (): void => {
-    quantityDisplay.textContent = String(quantity);
-  };
-
-  const decrementBtn = createElement(
-    "button",
-    {
-      type: "button",
-      "aria-label": "Decrease quantity",
-      events: {
-        click: (): void => {
-          if (isAddingToCart) return;
-          if (quantity > 1) {
-            quantity -= 1;
-            updateQuantity();
-          }
-        }
-      }
-    },
-    ["−"]
-  ) as HTMLButtonElement;
-
-  const incrementBtn = createElement(
-    "button",
-    {
-      type: "button",
-      "aria-label": "Increase quantity",
-      events: {
-        click: (): void => {
-          if (isAddingToCart) return;
-          if (quantity < MAX_QUANTITY) {
-            quantity += 1;
-            updateQuantity();
-          }
-        }
-      }
-    },
-    ["+"]
-  ) as HTMLButtonElement;
-
-  const quantityWrapper = createElement(
-    "div",
-    {
-      class: "quantity-control",
-      role: "group",
-      "aria-label": "Quantity"
-    },
-    [decrementBtn, quantityDisplay, incrementBtn]
-  );
+  // quantity control component
+  const quantityCtrl = createQuantityControl(1, MAX_QUANTITY);
+  const quantityWrapper = quantityCtrl.element;
   // 2. Navigation Elements
   const farmUrl = `/farm/${listing.farmid}`;
   const farmLink = createElement(
@@ -101,39 +42,11 @@ export function renderListingCard(listing: CropListingItem): HTMLElement {
     [listing.farmName ?? "Unknown farm"]
   );
 
-  // 3. Cart Handler
+  // 3. Cart Handler (delegated to controller)
   const handleAddToCart = async (): Promise<void> => {
-    if (isAddingToCart) return;
-
-    if (!isValidCartQuantity(quantity)) {
-      console.error("Invalid cart quantity:", quantity);
-      return;
-    }
-
-    const isLoggedIn = Boolean(getState("token"));
-    isAddingToCart = true;
-
-    decrementBtn.disabled = true;
-    incrementBtn.disabled = true;
-
-    try {
-      const success = await addToCart({
-        itemId: listing.cropid,
-        quantity,
-        isLoggedIn,
-        onCartUpdated: (response: unknown): void => {
-          console.debug("Cart updated:", response);
-        }
-      });
-
-      if (!success) return;
-    } catch (error: unknown) {
-      console.error("Failed to add item to cart:", error);
-    } finally {
-      isAddingToCart = false;
-      decrementBtn.disabled = false;
-      incrementBtn.disabled = false;
-    }
+    await addToCartController(listing.cropid as string | number, quantityCtrl.getQuantity, quantityCtrl.setDisabled, (resp: unknown) => {
+      console.debug("Cart updated:", resp);
+    });
   };
 
   // 4. Integrated Button Component

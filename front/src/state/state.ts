@@ -67,6 +67,7 @@ export const {
 ========================================================= */
 const allowedKeys = new Set<string>([
     "token", "user", "username", "userProfile", "socket",
+    "favFarms",
     "roles", "permissions", "auth", "environment", "lang",
     "lastPath", "currentRoute", "routeCache", "routeState",
     "currentChatId", "isLoading", "userid", "unreadMessages",
@@ -75,6 +76,7 @@ const allowedKeys = new Set<string>([
 
 const PERSISTED_KEYS = new Set<string>([
     "userProfile", "user", "roles", "permissions",
+    "favFarms",
     "unreadMessages", "unreadNotifications"
 ]);
 
@@ -394,6 +396,7 @@ const initialRoles = normalizeRoles(readPersistentJSON("roles", []));
 const initialPermissions = normalizePermissions(readPersistentJSON("permissions", []));
 const initialUnreadMessages = readPersistentNumber("unreadMessages", 0);
 const initialUnreadNotifications = readPersistentNumber("unreadNotifications", 0);
+const initialFavFarms = readPersistentJSON<string[]>("favFarms", []);
 
 const initialAuth = normalizeAuth({
     accessToken: initialToken || null,
@@ -418,6 +421,7 @@ const rawState: AppState = {
     isLoading: false,
     unreadMessages: initialUnreadMessages,
     unreadNotifications: initialUnreadNotifications,
+    favFarms: Array.isArray(initialFavFarms) ? initialFavFarms : [],
     isLoggedIn: Boolean(initialToken || initialUser?.id || initialUser?.userid)
 };
 

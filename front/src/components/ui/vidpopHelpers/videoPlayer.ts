@@ -184,11 +184,11 @@ function isMobile(): boolean {
 /**
  * Locks the screen orientation (only works inside fullscreen).
  */
-function lockOrientation(orientation: OrientationLockType): void {
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation
-      .lock(orientation)
-      .catch((err) => console.warn("Orientation lock failed:", err));
+function lockOrientation(orientation: string): void {
+  try {
+    (screen.orientation as any)?.lock?.(orientation).catch((err: unknown) => console.warn("Orientation lock failed:", err));
+  } catch {
+    // ignore
   }
 }
 
@@ -196,8 +196,10 @@ function lockOrientation(orientation: OrientationLockType): void {
  * Unlocks screen orientation.
  */
 function unlockOrientation(): void {
-  if (screen.orientation && screen.orientation.unlock) {
-    screen.orientation.unlock();
+  try {
+    (screen.orientation as any)?.unlock?.();
+  } catch {
+    // ignore
   }
 }
 

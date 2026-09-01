@@ -29,6 +29,7 @@ import (
 	"scav/internal/faqs"
 	"scav/internal/farms"
 	"scav/internal/farms/crops"
+	"scav/internal/filemgr"
 	"scav/internal/itinerary"
 	"scav/internal/maps"
 	"scav/internal/media"
@@ -75,6 +76,7 @@ func RoutesWrapper(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	fanmade.AddFanmadeRoutes(router, app, rateLimiter)
 	faqs.AddFAQRoutes(router, app, rateLimiter)
 	farms.AddFarmRoutes(router, app, rateLimiter)
+	filemgr.AddFiledropRoutes(router, app, rateLimiter)
 	follows.AddFollowRoutes(router, app, rateLimiter)
 	hashtags.AddHashtagRoutes(router, app, rateLimiter)
 	itinerary.AddItineraryRoutes(router, app, rateLimiter)

@@ -24,13 +24,26 @@ function notifyError(message: string): void {
 }
 
 function getAccessToken(): string | null {
-  return (
-    (getState("token") as string) ||
-    (getState("auth") as AuthState)?.accessToken ||
-    localStorage.getItem("token") ||
-    null
-  );
+  const fromState = (getState("token") as string) || (getState("auth") as AuthState)?.accessToken || null;
+  if (fromState) return fromState;
+
+  // Fallback: read directly from storage in case state wasn't hydrated yet
+  try {
+    const fromSession = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("token") : null;
+    if (fromSession) {
+      return fromSession;
+    }
+    const fromLocal = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
+    if (fromLocal) {
+      return fromLocal;
+    }
+  } catch (e) {
+    // ignore storage access errors
+  }
+  return null;
 }
+
+// (no debug wrappers)
 
 /* ============================================================
     FETCH LOGGED-IN USER PROFILE

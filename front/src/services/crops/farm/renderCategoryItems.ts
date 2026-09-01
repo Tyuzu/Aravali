@@ -1,4 +1,4 @@
-import { displayCropCard } from "../crop/displayCropCard.js";
+import { displayCropCard } from "../crop/components/displayCropCard.js";
 import { fetchCategoryItems } from "../api.js";
 
 export interface CategoryFilters {

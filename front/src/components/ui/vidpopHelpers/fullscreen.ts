@@ -2,14 +2,22 @@ function isMobile(): boolean {
   return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
-function lockOrientation(orientation: OrientationLockType): void {
-  screen.orientation?.lock?.(orientation).catch((err: unknown) => {
-    console.warn("Orientation lock failed:", err);
-  });
+function lockOrientation(orientation: string): void {
+  try {
+    (screen.orientation as any)?.lock?.(orientation).catch((err: unknown) => {
+      console.warn("Orientation lock failed:", err);
+    });
+  } catch (err) {
+    console.warn("Orientation lock not supported:", err);
+  }
 }
 
 function unlockOrientation(): void {
-  screen.orientation?.unlock?.();
+  try {
+    (screen.orientation as any)?.unlock?.();
+  } catch {
+    // ignore
+  }
 }
 
 export function toggleFullScreen(container: HTMLElement): void {

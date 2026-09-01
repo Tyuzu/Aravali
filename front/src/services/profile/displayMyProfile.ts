@@ -3,8 +3,8 @@ import { navigate } from "../../routes/navigate.js";
 import { deleteProfileRequest } from "./api.js";
 import { logout } from "../auth/authService.js";
 import { fetchProfile } from "./fetchProfile.js";
-import profilGen from "./profilegen.js";
-import { editProfile } from "./editProfile.js";
+import { renderProfile } from "./views/displayProfileView.js";
+import { attachProfileEventListeners } from "./events/profileEvents.js";
 import Notify from "../../components/ui/Notify.js";
 
 /* ============================================================
@@ -31,7 +31,7 @@ async function displayProfile(
     const profile = await fetchProfile();
 
     if (profile) {
-      const profileElement = profilGen(profile, isLoggedIn);
+      const profileElement = renderProfile(profile, isLoggedIn);
       content.appendChild(profileElement);
       attachProfileEventListeners(content);
     } else {
@@ -47,30 +47,7 @@ async function displayProfile(
   }
 }
 
-/* ============================================================
-    EVENT LISTENERS
-============================================================ */
-
-/**
- * Attach event listeners localized to the profile container element
- */
-function attachProfileEventListeners(content: HTMLElement | null): void {
-  if (!content) return;
-
-  const editButton = content.querySelector<HTMLElement>('[data-action="edit-profile"]');
-  const deleteButton = content.querySelector<HTMLElement>('[data-action="delete-profile"]');
-
-  if (editButton) {
-    editButton.addEventListener("click", () => editProfile(content, deleteProfile));
-  }
-
-  if (deleteButton) {
-    deleteButton.addEventListener("click", deleteProfile);
-  }
-
-  // Fallback listener for decoupled event execution
-  content.addEventListener("edit-profile:delete", deleteProfile);
-}
+/* Event listeners are provided by ./events/profileEvents.ts */
 
 /* ============================================================
     DELETE PROFILE
@@ -112,4 +89,4 @@ async function deleteProfile(): Promise<void> {
   }
 }
 
-export { displayProfile, deleteProfile, attachProfileEventListeners };
+export { displayProfile, deleteProfile };

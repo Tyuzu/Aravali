@@ -16,6 +16,7 @@ import {
 } from "./farmFilters.js";
 import { createMainLayout } from "../../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../../components/layout/asideLayout.js";
+import { getState, setState } from "../../../state/state";
 
 // Config
 const PAGE_SIZE = 10;
@@ -41,7 +42,8 @@ interface FetchFarmsResponse {
 function createInitialState(): AppState {
   let favorites = new Set<string>();
   try {
-    favorites = new Set(JSON.parse(localStorage.getItem("favFarms") || "[]"));
+    const persisted = getState("favFarms") as string[] | null;
+    favorites = new Set(Array.isArray(persisted) ? persisted : []);
   } catch {
     favorites = new Set<string>();
   }
@@ -255,10 +257,8 @@ export async function displayFarms(content: HTMLElement | null, loggedIn: boolea
     }
 
     try {
-      localStorage.setItem(
-        "favFarms",
-        JSON.stringify(Array.from(state.favorites))
-      );
+      // persist via central state API
+      setState("favFarms", Array.from(state.favorites), true);
     } catch (e) {
       console.warn("Could not save favorites to localStorage", e);
     }

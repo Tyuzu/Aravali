@@ -11,6 +11,7 @@ export interface BannerxProps {
     bannerentitytype?: string;
     stateentitykey?: string;
     bannerentityid?: string | number;
+    previewElementId?: string;
 }
 
 export function Bannerx({
@@ -19,7 +20,8 @@ export function Bannerx({
     banneraltkey = "",
     bannerentitytype = "",
     stateentitykey = "",
-    bannerentityid = ""
+    bannerentityid = "",
+    previewElementId = ""
 }: BannerxProps = {}): HTMLElement {
     const bannerSection = createElement("div", {
         class: `${stateentitykey}-banner`
@@ -33,8 +35,9 @@ export function Bannerx({
 
     const altText = banneraltkey || `${bannerentitytype} banner`;
 
+    const previewId = previewElementId || `${stateentitykey}${bannerentityid}-banner-img`;
     const bannerImage = Imagex({
-        id: `${stateentitykey}${bannerentityid}-banner-img`,
+        id: previewId,
         src: bannerSrc,
         alt: altText,
         loading: "lazy",
@@ -60,14 +63,14 @@ export function Bannerx({
                 events: {
                     click() {
                         updateImageWithCrop({
-                            entityType: bannerentitytype,
-                            imageType: "banner",
-                            stateKey: "banner",
-                            stateEntityKey: stateentitykey,
-                            previewElementId: `${stateentitykey}${bannerentityid}-banner-img`,
-                            pictureType: PictureType.BANNER,
-                            entityId: bannerentityid
-                        });
+                                entityType: bannerentitytype,
+                                imageType: "banner",
+                                stateKey: "banner",
+                                stateEntityKey: stateentitykey,
+                                previewElementId: previewId,
+                                pictureType: PictureType.BANNER,
+                                entityId: bannerentityid
+                            });
                     }
                 }
             },
