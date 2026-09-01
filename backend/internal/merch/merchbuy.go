@@ -2,9 +2,9 @@ package merch
 
 import (
 	"encoding/json"
+	"net/http"
 	"scav/infra/mq"
 	log "scav/utils/logger"
-	"net/http"
 
 	"scav/config"
 	"scav/config/mqevent"
@@ -50,7 +50,7 @@ func CreateMerchPaymentSession(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MerchPaymentSessionCreatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchPaymentSessionCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchPaymentSessionCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, response)
 	}
@@ -153,7 +153,7 @@ func ConfirmMerchPurchase(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MerchPurchaseConfirmedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchPurchaseConfirmedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchPurchaseConfirmedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, resp)
 	}

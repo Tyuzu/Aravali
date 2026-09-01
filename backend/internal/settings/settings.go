@@ -466,7 +466,7 @@ func UpdateSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsUpdatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
@@ -497,7 +497,7 @@ func ResetSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsResetPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsResetEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsResetEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
@@ -540,7 +540,7 @@ func InitUserSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsInitiatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsInitiatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsInitiatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, true)
 	}

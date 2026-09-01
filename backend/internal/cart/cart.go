@@ -416,6 +416,7 @@ func prepareValidatedCartDocs(
 
 /* ───────────────────────── Stock Validation ───────────────────────── */
 
+//nolint:unused
 func validateStockAvailability(
 	ctx context.Context,
 	itemID string,

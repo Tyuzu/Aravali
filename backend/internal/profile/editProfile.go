@@ -90,7 +90,7 @@ func DeleteProfile(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ProfileDeletedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ProfileDeletedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ProfileDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
 			"message": "Profile deleted successfully",

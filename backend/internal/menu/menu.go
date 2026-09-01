@@ -3,12 +3,12 @@ package menu
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
 )
 
@@ -144,11 +144,11 @@ func DeleteMenu(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		app.Cache.Del(ctx, fmt.Sprintf("menu:%s:%s", placeID, menuID))
+		_ = app.Cache.Del(ctx, fmt.Sprintf("menu:%s:%s", placeID, menuID))
 
 		mqpayload, _ := json.Marshal(mqevent.MenuDeletedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MenuDeletedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MenuDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"success": true,

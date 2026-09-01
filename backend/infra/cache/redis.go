@@ -75,7 +75,7 @@ func (r *RedisCache) SetWithExpiry(
 	value []byte,
 	ttl time.Duration,
 ) error {
-	return r.client.SetEx(
+	return r.client.Set(
 		ctx,
 		key,
 		value,

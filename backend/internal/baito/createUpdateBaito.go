@@ -33,7 +33,7 @@ func ParseBaitoRequest(r *http.Request) (BaitoRequest, error) {
 	}
 
 	if r.MultipartForm != nil {
-		defer r.MultipartForm.RemoveAll()
+		defer func() { _ = r.MultipartForm.RemoveAll() }()
 	}
 
 	return BaitoRequest{

@@ -78,7 +78,7 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.PlaceUpdatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.PlaceUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.PlaceUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, updateFields)
 	}

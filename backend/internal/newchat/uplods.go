@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"scav/infra/mq"
 	log "scav/utils/logger"
-	"net/http"
 	"strings"
 	"time"
 
@@ -232,7 +232,7 @@ func UploadHandler(hub *Hub, app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.FileAddedToChatPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.FileAddedToChatEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.FileAddedToChatEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, data)
 	}

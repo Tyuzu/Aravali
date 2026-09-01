@@ -49,6 +49,7 @@ type CouponRequest struct {
 	EntityType string  `json:"entitytype"`
 }
 
+//nolint:unused
 type createSessionPayload struct {
 	Address       string                `json:"address"`
 	Items         map[string][]CartItem `json:"items"`

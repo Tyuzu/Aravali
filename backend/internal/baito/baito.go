@@ -47,7 +47,9 @@ func ApplyToBaito(app *infra.Deps) http.HandlerFunc {
 			utils.RespondWithError(w, http.StatusBadRequest, "Invalid form data")
 			return
 		}
-		defer r.MultipartForm.RemoveAll()
+		if r.MultipartForm != nil {
+			defer func() { _ = r.MultipartForm.RemoveAll() }()
+		}
 
 		pitch := strings.TrimSpace(r.FormValue("pitch"))
 		if pitch == "" {

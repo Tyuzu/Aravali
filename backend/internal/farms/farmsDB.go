@@ -13,9 +13,8 @@ import (
 var (
 	cropsCollection      = config.Collections.CropsCollection
 	farmsCollection      = config.Collections.FarmsCollection
-	usersCollection      = config.Collections.UserCollection
 	farmOrdersCollection = config.Collections.FarmOrdersCollection
-	productsCollection   = config.Collections.ProductCollection
+	// usersCollection and productsCollection removed because they were unused
 )
 
 func insertFarm(ctx context.Context, database db.Database, farm Farm) error {
@@ -29,7 +28,9 @@ func getFarmByID(ctx context.Context, database db.Database, farmID string) (Farm
 }
 
 func updateOwnedFarm(ctx context.Context, database db.Database, farmID, userID string, update any) (any, error) {
-	return database.UpdateOne(ctx, farmsCollection, bson.M{"farmid": farmID, "userid": userID}, update)
+	// The owner field on Farm is stored as "createdBy" (see farmModels.go).
+	// Use that field to ensure the update only affects farms owned by the user.
+	return database.UpdateOne(ctx, farmsCollection, bson.M{"farmid": farmID, "createdBy": userID}, update)
 }
 
 func deleteFarmByID(ctx context.Context, database db.Database, farmID string) (int64, error) {

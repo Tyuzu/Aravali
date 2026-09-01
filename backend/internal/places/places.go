@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/internal/userdata"
 	"scav/utils"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -165,7 +165,7 @@ func CreatePlace(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.PlaceCreatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.PlaceCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.PlaceCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusCreated, place)
 	}

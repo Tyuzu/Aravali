@@ -2,11 +2,11 @@ package places
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/infra/db"
 	"scav/internal/events"
 	"scav/utils"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -19,35 +19,35 @@ import (
 func GetEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusNotImplemented)
-		w.Write([]byte("GetEvent not implemented yet"))
+		_, _ = w.Write([]byte("GetEvent not implemented yet"))
 	}
 }
 
 func PostEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusNotImplemented)
-		w.Write([]byte("PostEvent not implemented yet"))
+		_, _ = w.Write([]byte("PostEvent not implemented yet"))
 	}
 }
 
 func PutEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusNotImplemented)
-		w.Write([]byte("PutEvent not implemented yet"))
+		_, _ = w.Write([]byte("PutEvent not implemented yet"))
 	}
 }
 
 func DeleteEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusNotImplemented)
-		w.Write([]byte("DeleteEvent not implemented yet"))
+		_, _ = w.Write([]byte("DeleteEvent not implemented yet"))
 	}
 }
 
 func PostViewEventDetails(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(http.StatusNotImplemented)
-		w.Write([]byte("PostViewEventDetails not implemented yet"))
+		_, _ = w.Write([]byte("PostViewEventDetails not implemented yet"))
 	}
 }
 

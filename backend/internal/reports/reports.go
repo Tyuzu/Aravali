@@ -111,7 +111,7 @@ func ReportContent(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.ReportCreatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ReportCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ReportCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusCreated, map[string]string{
 			"message":  "Report submitted",
@@ -233,7 +233,7 @@ func UpdateReport(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.ReportUpdatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ReportUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ReportUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "Report updated"})
 	}
@@ -298,7 +298,7 @@ func CreateAppeal(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.AppealCreatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.AppealCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.AppealCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusCreated, map[string]string{
 			"message":  "Appeal submitted",
@@ -363,7 +363,7 @@ func UpdateAppeal(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.AppealUpdatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.AppealUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.AppealUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "Appeal updated"})
 	}
@@ -470,7 +470,7 @@ func SoftDeleteEntity(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.ReportSoftDeletedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ReportSoftDeletedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ReportSoftDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "Entity soft-deleted"})
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"scav/infra/mq"
 	"net/http"
+	"scav/infra/mq"
 	"time"
 
 	"scav/config"
@@ -138,7 +138,7 @@ func CreateMerch(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MerchCreatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, 201, map[string]any{"success": true, "data": merch})
 	}
@@ -253,7 +253,7 @@ func EditMerch(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MerchUpdatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, 200, map[string]any{"success": true})
 	}
@@ -345,7 +345,7 @@ func DeleteMerch(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MerchDeletedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchDeletedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, 200, map[string]any{"success": true})
 	}
@@ -413,7 +413,7 @@ func BuyMerch(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MerchBoughtPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchBoughtEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MerchBoughtEvent, mqpayload)
 
 		utils.RespondWithJSON(w, 200, map[string]any{
 			"success": true,

@@ -7,10 +7,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"scav/infra"
 	"scav/middleware"
 	"scav/utils"
-	"net/http"
 	"time"
 
 	"github.com/phpdave11/gofpdf"
@@ -127,6 +127,6 @@ func PrintTicket(app *infra.Deps) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", "attachment; filename=ticket-"+ticket.UniqueCode+".pdf")
 		w.WriteHeader(http.StatusOK)
-		w.Write(buf.Bytes())
+		_, _ = w.Write(buf.Bytes())
 	}
 }

@@ -87,7 +87,7 @@ func ApproveModerator(app *infra.Deps) http.HandlerFunc {
 		mqpayload, _ := json.Marshal(mqevent.ApprovedModeratorRoleRequestPayload{
 			ApplicationID: id,
 			ApprovedAt:    time.Now().UTC()})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ApprovedModeratorRoleRequestEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ApprovedModeratorRoleRequestEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
 			"message": "Application approved successfully",
@@ -129,7 +129,7 @@ func RejectModerator(app *infra.Deps) http.HandlerFunc {
 		mqpayload, _ := json.Marshal(mqevent.RejectedModeratorRoleRequestPayload{
 			ApplicationID: id,
 			RejectedAt:    time.Now().UTC()})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.RejectedModeratorRoleRequestEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.RejectedModeratorRoleRequestEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
 			"message": "Application rejected successfully",

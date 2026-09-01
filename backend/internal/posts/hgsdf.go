@@ -3,12 +3,12 @@ package posts
 import (
 	"encoding/json"
 	"html"
+	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-	"net/http"
 	"strings"
 	"time"
 
@@ -313,7 +313,7 @@ func CreateOrUpdatePost(
 
 	mqpayload, _ := json.Marshal(mqevent.BlogPostUpdatedPayload{})
 
-	mq.PublishWithMeta(ctx, app.MQ, mqevent.BlogPostUpdatedEvent, mqpayload)
+	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.BlogPostUpdatedEvent, mqpayload)
 
 	utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 		"postid": post.PostID,
@@ -378,7 +378,7 @@ func DeletePost(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.BlogPostDeletedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.BlogPostDeletedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.BlogPostDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"postid":  postID,

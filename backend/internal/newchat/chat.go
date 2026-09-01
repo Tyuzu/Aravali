@@ -3,13 +3,13 @@ package newchat
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/db"
 	"scav/infra/mq"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -154,7 +154,7 @@ func CreateMessage(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ChatMessageCreatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ChatMessageCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ChatMessageCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, msg)
 	}

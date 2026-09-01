@@ -97,7 +97,7 @@ func SendMessageREST(app *infra.Deps) http.HandlerFunc {
 			UserID:    user,
 		})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ChatMessageSentEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ChatMessageSentEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, resp)
 	}

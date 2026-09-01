@@ -26,7 +26,9 @@ func parseWorkerForm(r *http.Request, isUpdate bool) (BaitoWorker, bson.M, error
 	if err := baito.ParseMultipartFormWithLimit(r); err != nil {
 		return worker, update, err
 	}
-	defer r.MultipartForm.RemoveAll()
+	if r.MultipartForm != nil {
+		defer func() { _ = r.MultipartForm.RemoveAll() }()
+	}
 
 	ageStr := r.FormValue("age")
 	age, _ := strconv.Atoi(ageStr)

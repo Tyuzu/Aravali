@@ -64,7 +64,7 @@ func CreateItinerary(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ItineraryCreatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusCreated, it)
 	}
@@ -121,7 +121,7 @@ func UpdateItinerary(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ItineraryUpdatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{"status": "200", "message": "Itinerary updated successfully"})
 	}
@@ -147,7 +147,7 @@ func DeleteItinerary(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ItineraryDeletedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryDeletedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{"message": "Itinerary deleted"})
 	}
@@ -194,7 +194,7 @@ func ForkItinerary(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ItineraryForkedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryForkedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryForkedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusCreated, newItinerary)
 	}
@@ -220,7 +220,7 @@ func PublishItinerary(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.ItineraryPublishedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryPublishedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ItineraryPublishedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{"published": true})
 	}

@@ -2,9 +2,9 @@ package posts
 
 import (
 	"fmt"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 
 	"scav/infra/db"
 
@@ -40,13 +40,13 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 		page := 1
 
 		if l := query.Get("limit"); l != "" {
-			fmt.Sscanf(l, "%d", &limit)
+			_, _ = fmt.Sscanf(l, "%d", &limit)
 			if limit > 100 {
 				limit = 100
 			}
 		}
 		if p := query.Get("page"); p != "" {
-			fmt.Sscanf(p, "%d", &page)
+			_, _ = fmt.Sscanf(p, "%d", &page)
 			if page < 1 {
 				page = 1
 			}

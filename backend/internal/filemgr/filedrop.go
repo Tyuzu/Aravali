@@ -104,9 +104,9 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 			Count:      len(attachments),
 		}
 
-		mqpayload, err := json.Marshal(payload)
+		mqpayload, _ := json.Marshal(payload)
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.FileCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.FileCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, convertToAttachments(attachments))
 	}

@@ -80,7 +80,7 @@ func EditMedia(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MediaUpdatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MediaUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MediaUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, updatedMedias)
 	}

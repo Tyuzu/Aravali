@@ -3,11 +3,11 @@ package recipes
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -172,7 +172,7 @@ func CreateRecipe(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.RecipeCreatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.RecipeCreatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.RecipeCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, recipe)
 	}
@@ -275,7 +275,7 @@ func UpdateRecipe(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.RecipeUpdatedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.RecipeUpdatedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.RecipeUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, []byte(`{"status":"updated"}`))
 	}

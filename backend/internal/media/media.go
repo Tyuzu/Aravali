@@ -2,9 +2,9 @@ package media
 
 import (
 	"encoding/json"
+	"net/http"
 	"scav/infra/mq"
 	log "scav/utils/logger"
-	"net/http"
 	"strings"
 	"time"
 
@@ -127,7 +127,7 @@ func AddMedia(app *infra.Deps) http.HandlerFunc {
 
 		mqpayload, _ := json.Marshal(mqevent.MediaUploadedPayload{})
 
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.MediaUploadedEvent, mqpayload)
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.MediaUploadedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, insertedMedia)
 	}

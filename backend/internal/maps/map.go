@@ -485,7 +485,7 @@ func HandleLiveTrackingWS(w http.ResponseWriter, r *http.Request) {
 	}
 	DefaultStore.Hub.mu.RUnlock()
 
-	conn.WriteJSON(map[string]interface{}{
+	_ = conn.WriteJSON(map[string]interface{}{
 		"type": "initial_state",
 		"data": initialEntities,
 	})
