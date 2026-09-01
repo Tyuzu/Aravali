@@ -69,9 +69,82 @@ func GetMyFarmOrders(app *infra.Deps) http.HandlerFunc {
 
 		paginatedOrders := orders[start:end]
 
+		// Enrich orders: populate entityName for items when possible
+		enriched := make([]map[string]any, 0, len(paginatedOrders))
+
+		// cache farm names by id to avoid repeated DB lookups
+		farmNameCache := map[string]string{}
+
+		for _, o := range paginatedOrders {
+			ordMap := map[string]any{
+				"orderId":         o.OrderID,
+				"userid":          o.UserID,
+				"farmId":          o.FarmID,
+				"cropId":          o.CropID,
+				"quantity":        o.Quantity,
+				"priceAtPurchase": o.PriceAtPurchase,
+				"createdAt":       o.CreatedAt,
+				"status":          o.Status,
+				"approvedBy":      o.ApprovedBy,
+				"subtotal":        o.Subtotal,
+				"discount":        o.Discount,
+				"tax":             o.Tax,
+				"delivery":        o.Delivery,
+				"total":           o.Total,
+				"address":         o.Address,
+				"name":            o.Name,
+				"phone":           o.Phone,
+			}
+
+			// copy and enrich items
+			itemsOut := map[string]any{}
+			for cat, items := range o.Items {
+				arr := make([]map[string]any, 0, len(items))
+				for _, it := range items {
+					itMap := map[string]any{
+						"itemId":     it.ItemID,
+						"itemType":   it.ItemType,
+						"entityId":   it.EntityID,
+						"entityType": it.EntityType,
+						"itemName":   it.ItemName,
+						"quantity":   it.Quantity,
+						"price":      it.Price,
+						"discount":   it.Discount,
+						"category":   it.Category,
+						"addedAt":    it.AddedAt,
+						"updatedAt":  it.UpdatedAt,
+					}
+
+					// resolve entityName if entityId present and entityType is farm (or empty)
+					if it.EntityID != "" {
+						name := ""
+						if v, ok := farmNameCache[it.EntityID]; ok {
+							name = v
+						} else if it.EntityType == "farm" || it.EntityType == "" {
+							f := fetchFarmByID(r.Context(), it.EntityID, app)
+							if f.FarmID != "" {
+								name = f.Name
+							}
+							farmNameCache[it.EntityID] = name
+						}
+						if name != "" {
+							itMap["entityName"] = name
+						}
+					}
+
+					arr = append(arr, itMap)
+				}
+				itemsOut[cat] = arr
+			}
+
+			ordMap["items"] = itemsOut
+
+			enriched = append(enriched, ordMap)
+		}
+
 		utils.RespondWithJSON(w, http.StatusOK, utils.M{
 			"success": true,
-			"orders":  paginatedOrders,
+			"orders":  enriched,
 			"total":   total,
 			"skip":    skip,
 			"limit":   limit,

@@ -8,5 +8,5 @@ export async function Dash(
   contentContainer: HTMLElement
 ): Promise<void> {
   contentContainer.innerHTML = "";
-  displayDash(contentContainer, isLoggedIn);
+  await displayDash(contentContainer, isLoggedIn);
 }

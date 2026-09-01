@@ -90,7 +90,7 @@ interface FarmDashResponse {
   dashboard?: DashboardData;
 }
 
-export function displayDash(content: HTMLElement, isLoggedIn: boolean): void {
+export async function displayDash(content: HTMLElement, isLoggedIn: boolean): Promise<void> {
   content.replaceChildren();
 
   if (!isLoggedIn) {
@@ -105,26 +105,51 @@ export function displayDash(content: HTMLElement, isLoggedIn: boolean): void {
     return;
   }
 
-  const tabs = [
-    { id: "overview", title: "Overview", render: renderOverviewTab },
-    { id: "orders", title: "Orders", render: renderOrdersTab },
-    { id: "myfarm", title: "My Farm", render: renderMyFarmTab },
-  ];
+  try {
+    const response = await getFarmDashboard();
 
-  const activeTabId = localStorage.getItem("dash-active-tab") || "overview";
-
-  const tabUI = createTabs(
-    tabs,
-    "farmdash-tabs",
-    activeTabId,
-    (newTabId: string) => {
-      localStorage.setItem("dash-active-tab", newTabId);
+    if (!response?.success || !response?.farm) {
+      content.appendChild(
+        renderAccessRestricted(
+          response?.message || "Only the farm owner or creator can view this dashboard."
+        )
+      );
+      return;
     }
-  );
 
-  content.appendChild(
-    createElement("div", { class: "farmdashpage" }, [tabUI])
-  );
+    const tabs = [
+      { id: "overview", title: "Overview", render: renderOverviewTab },
+      { id: "orders", title: "Orders", render: renderOrdersTab },
+      { id: "myfarm", title: "My Farm", render: renderMyFarmTab },
+    ];
+
+    const activeTabId = localStorage.getItem("dash-active-tab") || "overview";
+
+    const tabUI = createTabs(
+      tabs,
+      "farmdash-tabs",
+      activeTabId,
+      (newTabId: string) => {
+        localStorage.setItem("dash-active-tab", newTabId);
+      }
+    );
+
+    content.appendChild(
+      createElement("div", { class: "farmdashpage" }, [tabUI])
+    );
+  } catch (error) {
+    console.error("Dashboard access check failed:", error);
+    content.appendChild(
+      renderAccessRestricted("Only the farm owner or creator can view this dashboard.")
+    );
+  }
+}
+
+function renderAccessRestricted(message: string): HTMLElement {
+  return createElement("div", { class: "empty-state" }, [
+    createElement("h3", {}, ["Access Restricted"]),
+    createElement("p", {}, [message]),
+  ]);
 }
 
 function renderOverviewTab(container: HTMLElement): void {
