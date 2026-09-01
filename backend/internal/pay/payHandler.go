@@ -295,6 +295,83 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to publish payment event: %v", err)
 	}
 
+	// If this payment is for an order, mark the order as paid and decrement inventory.
+	if req.EntityType == "order" {
+		// Try regular orders first (use generic map to avoid import cycles)
+		var ord map[string]any
+		if err := p.app.DB.FindOne(ctx, ordersCollection, map[string]any{"orderId": req.EntityID}, &ord); err == nil {
+			_, _ = p.app.DB.UpdateOne(ctx, ordersCollection, map[string]any{"orderId": req.EntityID}, map[string]any{"$set": map[string]any{"status": "paid"}})
+
+			if itemsRaw, ok := ord["items"].(map[string]any); ok {
+				for category, raw := range itemsRaw {
+					itemsSlice, ok := raw.([]any)
+					if !ok {
+						continue
+					}
+					for _, it := range itemsSlice {
+						itMap, ok := it.(map[string]any)
+						if !ok {
+							continue
+						}
+						itemID, _ := itMap["itemId"].(string)
+						// quantity may decode as float64
+						qty := 0
+						if qf, ok := itMap["quantity"].(float64); ok {
+							qty = int(qf)
+						} else if qi, ok := itMap["quantity"].(int); ok {
+							qty = qi
+						}
+
+						switch category {
+						case "crops":
+							if itemID != "" && qty > 0 {
+								_, _ = p.app.DB.UpdateOne(ctx, cropsCollection, map[string]any{"cropid": itemID}, map[string]any{"$inc": map[string]any{"quantity": -qty}})
+							}
+						case "menu":
+							if itemID != "" && qty > 0 {
+								_, _ = p.app.DB.UpdateOne(ctx, menuCollection, map[string]any{"menuid": itemID}, map[string]any{"$inc": map[string]any{"stock": -qty}})
+							}
+						case "merch":
+							if itemID != "" && qty > 0 {
+								_, _ = p.app.DB.UpdateOne(ctx, merchCollection, map[string]any{"merchid": itemID}, map[string]any{"$inc": map[string]any{"stock": -qty}})
+							}
+						default:
+							if itemID != "" && qty > 0 {
+								_, _ = p.app.DB.UpdateOne(ctx, productCollection, map[string]any{"productid": itemID}, map[string]any{"$inc": map[string]any{"quantity": -qty}})
+							}
+						}
+					}
+				}
+			}
+
+		} else {
+			// Try farm orders with generic map
+			var ford map[string]any
+			if err := p.app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": req.EntityID}, &ford); err == nil {
+				_, _ = p.app.DB.UpdateOne(ctx, farmOrdersCollection, map[string]any{"orderid": req.EntityID}, map[string]any{"$set": map[string]any{"status": "paid"}})
+				if itemsRaw, ok := ford["items"].(map[string]any); ok {
+					if cropsRaw, ok := itemsRaw["crops"].([]any); ok {
+						for _, it := range cropsRaw {
+							itMap, ok := it.(map[string]any)
+							if !ok {
+								continue
+							}
+							itemID, _ := itMap["itemId"].(string)
+							qty := 0
+							if qf, ok := itMap["quantity"].(float64); ok {
+								qty = int(qf)
+							} else if qi, ok := itMap["quantity"].(int); ok {
+								qty = qi
+							}
+							if itemID != "" && qty > 0 {
+								_, _ = p.app.DB.UpdateOne(ctx, cropsCollection, map[string]any{"cropid": itemID}, map[string]any{"$inc": map[string]any{"quantity": -qty}})
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
 		"success":        true,
 		"transaction_id": txnID,

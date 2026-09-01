@@ -8,6 +8,31 @@ function normalizeMoney(value: any): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function derivePaymentStatus(order: Record<string, any>): string {
+  const explicitStatus = String(
+    order["paymentStatus"] || order["payment_status"] || order["payment"] || order["paymentMethod"] || ""
+  ).trim().toLowerCase();
+  const status = String(order["status"] || order["orderStatus"] || "").trim().toLowerCase();
+
+  if (["paid", "success", "completed"].includes(explicitStatus) || ["paid", "delivered"].includes(status)) {
+    return "paid";
+  }
+
+  if (["unpaid", "failed", "cancelled", "canceled", "rejected"].includes(explicitStatus) || status === "rejected") {
+    return "unpaid";
+  }
+
+  if (explicitStatus) {
+    return explicitStatus;
+  }
+
+  if (["accepted", "pending"].includes(status)) {
+    return status;
+  }
+
+  return "pending";
+}
+
 /**
  * Normalizes user order payload parameters into strict local layout configurations.
  */
@@ -18,14 +43,15 @@ export function normalizeOrders(orders: Record<string, any>[]): Order[] {
     .map((order): Order => {
       const explicitTime =
         order["createdAt"] || order["created_at"] || order["createdTime"] || order["timestamp"] || 0;
+      const normalizedStatus = String(order["status"] || order["orderStatus"] || "pending").trim().toLowerCase();
 
       return {
         ...order,
         orderId: String(order["orderId"] || order["orderid"] || order["id"] || order["OrderID"] || ""),
         orderType: order["orderType"] || (order["farmId"] || order["farmid"] ? "farm" : "regular"),
         createdAt: explicitTime,
-        status: order["status"] || order["orderStatus"] || "pending",
-        paymentMethod: order["paymentMethod"] || order["payment"] || order["paymentStatus"] || "pending",
+        status: normalizedStatus || "pending",
+        paymentMethod: derivePaymentStatus(order),
         address: order["address"] || order["deliveryAddress"] || order["shippingAddress"] || "",
         total: normalizeMoney(order["total"]),
         subtotal: normalizeMoney(order["subtotal"]),
