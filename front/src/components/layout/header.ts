@@ -25,9 +25,49 @@ export interface UserState {
   userid?: string;
   username?: string;
   name?: string;
+  avatar?: string;
+  profilepicture?: string;
+  profileImage?: string;
+  image?: string;
+  picture?: string;
   role?: string;
   [key: string]: unknown;
 }
+
+function getCurrentUserState(): Partial<UserState> {
+  const authUser = (getState("user") || {}) as Partial<UserState>;
+  const profileUser = (getState("userProfile") || {}) as Partial<UserState>;
+  return {
+    ...profileUser,
+    ...authUser
+  };
+}
+
+function getUserAvatarSrc(user: Partial<UserState> = {}): string {
+  const mergedUser = {
+    ...getCurrentUserState(),
+    ...user
+  };
+
+  const avatar =
+    typeof mergedUser.avatar === "string" ? mergedUser.avatar :
+    typeof mergedUser.profilepicture === "string" ? mergedUser.profilepicture :
+    typeof mergedUser.profileImage === "string" ? mergedUser.profileImage :
+    typeof mergedUser.image === "string" ? mergedUser.image :
+    typeof mergedUser.picture === "string" ? mergedUser.picture :
+    "";
+
+  if (avatar) {
+    if (/^https?:\/\//i.test(avatar) || avatar.startsWith("/")) {
+      return avatar;
+    }
+    return resolveImagePath(EntityType.USER, PictureType.THUMB, avatar);
+  }
+
+  const userid = mergedUser.userid || mergedUser.id || "default";
+  return resolveImagePath(EntityType.USER, PictureType.THUMB, `${userid}.jpg`);
+}
+
 function createIconButton(
   svg: string,
   href?: string | null,
@@ -75,13 +115,11 @@ function createDropdownMenu(
 }
 
 export function createProfileSection(): HTMLDivElement {
-  const user = (getState("user") || {}) as UserState;
-  const userid = user.userid || user.id;
+  const user = getCurrentUserState() as UserState;
   const username = user.username || user.name || "Profile";
-  const imageSrc = userid ? `${userid}.jpg` : "default.jpg";
 
   const img = Imagex({
-    src: resolveImagePath(EntityType.USER, PictureType.THUMB, imageSrc),
+    src: getUserAvatarSrc(user),
     alt: username,
     classes: "profile-pic"
   });
@@ -216,14 +254,13 @@ function createHeader(): void {
     createElement("a", { href: "/home", class: "logo-link" }, [webSiteName])
   ]);
 
-  const user = (getState("user") || {}) as UserState;
-  const userid = user.id || user.userid || "default";
+  const user = getCurrentUserState() as UserState;
 
   const sky = createElement("div", { class: "hflexcen" }, []);
   sky.append(
     sticky({
       imglink: Imagex({
-        src: resolveImagePath(EntityType.USER, PictureType.THUMB, `${userid}.jpg`),
+        src: getUserAvatarSrc(user),
         alt: "Profile",
         classes: "profile-pic"
       })

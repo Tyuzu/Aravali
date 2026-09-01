@@ -1,10 +1,11 @@
 import "../../../css/ui/ToggleSwitch.css";
-import { createElement } from "../createElement.js"; // Adjust path as needed
+import { createElement } from "../createElement.js";
 
 // ---- Types & Interfaces ----
 
 export interface ToggleSwitchOptions {
   checked?: boolean;
+  disabled?: boolean;
   id?: string;
   label?: string;
 }
@@ -16,39 +17,67 @@ export type OnToggleCallback = (checked: boolean) => void;
  */
 const ToggleSwitch = (
   onToggle: OnToggleCallback,
-  { checked = false, id = "", label = "" }: ToggleSwitchOptions = {}
+  {
+    checked = false,
+    disabled = false,
+    id = "",
+    label = "",
+  }: ToggleSwitchOptions = {}
 ): HTMLLabelElement => {
+  // Fallback unique ID generation if no ID is passed
+  const switchId = id || `toggle-${Math.random().toString(36).substring(2, 9)}`;
+
   const inputAttributes: Record<string, unknown> = {
     type: "checkbox",
+    id: switchId,
     checked: Boolean(checked),
-    "aria-label": label || "Toggle",
+    disabled: Boolean(disabled),
+    "aria-checked": String(Boolean(checked)),
+    class: "sr-only",
     events: {
       change: (e: Event) => {
         const target = e.target as HTMLInputElement;
+        target.setAttribute("aria-checked", String(target.checked));
         onToggle(target.checked);
       },
     },
   };
 
-  if (id) {
-    inputAttributes.id = id;
+  const input = createElement("input", inputAttributes) as HTMLInputElement;
+  const slider = createElement("span", {
+    class: "slider",
+    "aria-hidden": "true",
+  });
+
+  const trackWrapper = createElement(
+    "span",
+    { class: "toggle-track" },
+    [input, slider]
+  );
+
+  const labelChildren: (HTMLElement | string)[] = [trackWrapper];
+
+  if (label) {
+    const labelText = createElement("span", { class: "toggle-label-text" }, [
+      label,
+    ]);
+    labelChildren.push(labelText);
+  } else {
+    input.setAttribute("aria-label", "Toggle switch");
   }
 
-  const input = createElement("input", inputAttributes);
-  const slider = createElement("span", { class: "slider" });
+  const labelAttributes: Record<string, unknown> = {
+    class: `toggle-switch${disabled ? " toggle-disabled" : ""}`,
+    htmlFor: switchId,
+  };
 
-  const labelAttributes: Record<string, unknown> = { class: "toggle-switch" };
-  if (id) {
-    labelAttributes.for = id;
-  }
-
-  const toggle = createElement(
+  const toggleContainer = createElement(
     "label",
     labelAttributes,
-    [input, slider]
+    labelChildren
   ) as HTMLLabelElement;
 
-  return toggle;
+  return toggleContainer;
 };
 
 export default ToggleSwitch;

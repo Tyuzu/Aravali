@@ -8,5 +8,11 @@ export async function AboutCrop(
   contentContainer: HTMLElement
 ): Promise<void> {
   contentContainer.innerHTML = "";
-  displayAboutCrop(contentContainer, cropID, isLoggedIn);
+  const resolvedId = typeof (cropID as any) === "string"
+    ? (cropID as string)
+    : (cropID as any && typeof cropID === "object")
+      ? (cropID as any).id ?? (cropID as any).cropid ?? ""
+      : "";
+
+  displayAboutCrop(contentContainer, resolvedId, isLoggedIn);
 }

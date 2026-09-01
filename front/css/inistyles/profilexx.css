@@ -6,7 +6,7 @@
 /* ── Base Container ── */
 .profilepage {
   width: 100%;
-  max-width: var(--max-width-md); /* Keeps the layout clean and compact */
+  max-width: var(--max-width-md);
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -22,13 +22,14 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  align-items: center; /* Center-align all direct vflex children */
+  align-items: center;
   text-align: center;
 }
 
 /* ── Compact Banner ── */
 .user-banner {
   position: relative;
+  width: 100%;
 }
 
 .user-banner img {
@@ -62,7 +63,7 @@
 /* ── Centered Profile Picture ── */
 .profile_area {
   position: relative;
-  margin-top: -55px; /* Pulls image up onto the banner */
+  margin-top: -55px;
   width: 100px;
   height: 100px;
   display: inline-block;
@@ -85,13 +86,12 @@
   object-fit: cover;
 }
 
-.edit-profile-pic {
+.edit-avatar-btn {
   position: absolute;
   bottom: 2px;
   right: 2px;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-circle);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
   background-color: var(--color-primary);
   color: #fff;
   border: 2px solid var(--color-card-bg);
@@ -103,9 +103,10 @@
   justify-content: center;
   box-shadow: var(--shadow-elev-1);
   transition: background-color var(--transition);
+  z-index: 2;
 }
 
-.edit-profile-pic:hover {
+.edit-avatar-btn:hover {
   background-color: var(--color-primary-hover);
 }
 
@@ -147,13 +148,12 @@
   margin: var(--space-xs) 0 var(--space-md) 0;
 }
 
- 
-.dropdown-item {
+.profile-actions .button {
   font-family: var(--font-base);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-full); /* Rounded pill buttons */
+  border-radius: var(--radius-full);
   border: 1px solid transparent;
   cursor: pointer;
   transition: all var(--transition);
@@ -241,9 +241,15 @@
 /* Actions & Trigger Buttons */
 #load-user-data {
   margin: var(--space-md) 0 0 0;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
   background-color: var(--color-space);
   color: var(--color-fg);
   border: 1px solid var(--color-border);
+  transition: all var(--transition);
 }
 
 #load-user-data:hover {
@@ -254,7 +260,7 @@
 .udata-info {
   width: 100%;
   padding: var(--space-md);
-  text-align: left; /* Restores left alignment for tabular data list */
+  text-align: left;
 }
 
 /* Main Section Tabs */
@@ -282,33 +288,6 @@
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
 }
-
-/* Sub-Tab Segment Pill Bar */
-
-/*
-.content-tab-buttons,
-
-
-.tab-button {
-  padding: var(--space-xs) var(--space-md);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-muted);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.tab-button.active {
-  background-color: var(--color-card-bg);
-  color: var(--color-fg);
-  box-shadow: var(--shadow-elev-1);
-}
-
-.tab-button:hover:not(.active) {
-  color: var(--color-fg);
-}
-*/
 
 /* ── Entity List & Card Items ── */
 .entity-list {
@@ -362,8 +341,8 @@
   border: 1px dashed var(--color-border);
 }
 
-/* ── Responsive adjustments ── */
-@media (width <= 640px) {
+/* ── Responsive Adjustments ── */
+@media (max-width: 640px) {
   .statistics {
     gap: var(--space-md);
   }
