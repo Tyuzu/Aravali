@@ -11,11 +11,11 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/workers"
 	"scav/internal/mechat"
 	"scav/internal/newchat"
 	"scav/middleware"
 	"scav/routes"
+	"scav/subscribers"
 	"scav/utils/logger"
 
 	"github.com/julienschmidt/httprouter"
@@ -77,7 +77,7 @@ func main() {
 	// We do NOT subscribe every time an event is published.
 	//
 	if app.MQ != nil {
-		if err := workers.RegisterAll(appCtx, app); err != nil {
+		if err := subscribers.RegisterAll(appCtx, app); err != nil {
 			logger.L.Sugar().Fatalw(
 				"failed to register MQ subscribers",
 				"error", err,
