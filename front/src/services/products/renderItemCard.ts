@@ -124,6 +124,7 @@ export function renderItemCard(
     try {
       const success = await addToCart({
         itemId: item.productid,
+        itemType: type,
         quantity,
         isLoggedIn: Boolean(getState("token")),
         onCartUpdated: (response: unknown) => {

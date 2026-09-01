@@ -19,6 +19,7 @@ export async function handleAddToCart(
   try {
     const success = await addToCart({
       itemId: listingId,
+        itemType: "crop",
       quantity: getQuantity(),
       isLoggedIn,
       onCartUpdated: (response: unknown) => {

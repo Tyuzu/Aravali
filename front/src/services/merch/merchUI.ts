@@ -257,6 +257,7 @@ async function displayMerchandise(
                       try {
                         const success = await addToCart({
                           itemId: merch.merchid,
+                            itemType: "merchandise",
                           quantity,
                           isLoggedIn: Boolean(getState("token")),
                           onCartUpdated: (response: unknown) => {

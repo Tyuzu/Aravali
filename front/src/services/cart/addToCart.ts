@@ -39,6 +39,7 @@ const ERROR_CODES = Object.freeze({
 
 export interface AddToCartOptions {
   itemId?: string | number;
+  itemType?: string;
   quantity?: number | string;
   isLoggedIn?: boolean;
   onCartUpdated?: (response: any) => void;
@@ -59,6 +60,14 @@ function normalizeItemId(value: unknown): string {
     return "";
   }
   return String(value).trim();
+}
+
+/**
+ * Normalize item type to a trimmed lowercase string.
+ */
+function normalizeItemType(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value).trim().toLowerCase();
 }
 
 /**
@@ -135,7 +144,7 @@ function getUserErrorMessage(error: any): string {
 /**
  * Validate the normalized request before sending it.
  */
-function validateCartInput({ itemId, quantity }: { itemId: string; quantity: number | null }): string | null {
+function validateCartInput({ itemId, itemType, quantity }: { itemId: string; itemType: string; quantity: number | null }): string | null {
   if (!itemId) {
     return "Invalid item ID";
   }
@@ -150,6 +159,9 @@ function validateCartInput({ itemId, quantity }: { itemId: string; quantity: num
   }
   if (quantity > CART_CONFIG.MAX_QUANTITY) {
     return `Maximum quantity is ${CART_CONFIG.MAX_QUANTITY}`;
+  }
+  if (!itemType) {
+    return "Invalid item type";
   }
   return null;
 }
@@ -196,8 +208,11 @@ export async function addToCart(options: AddToCartOptions = {}): Promise<boolean
 
   const cleanItemId = normalizeItemId(itemId);
   const cleanQuantity = parseQuantity(quantity);
+  const cleanItemType = normalizeItemType((options as AddToCartOptions).itemType);
+
   const validationError = validateCartInput({
     itemId: cleanItemId,
+    itemType: cleanItemType,
     quantity: cleanQuantity
   });
 
@@ -208,8 +223,9 @@ export async function addToCart(options: AddToCartOptions = {}): Promise<boolean
 
   const idempotencyKey = createIdempotencyKey();
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     itemId: cleanItemId,
+    itemType: cleanItemType,
     quantity: cleanQuantity,
     idempotencyKey
   };

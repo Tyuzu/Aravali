@@ -109,6 +109,7 @@ export async function displayProduct(
 
             const success = await addToCart({
               itemId: product.productid || safeId,
+              itemType: safeType,
               quantity: rawQty,
               isLoggedIn: true,
             });

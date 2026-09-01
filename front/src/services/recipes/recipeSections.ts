@@ -47,6 +47,7 @@ export function renderIngredients(
           if (!token) {
             await addToCart({
               itemId: getIngredientItemId(ingredient),
+              itemType: "product",
               quantity: normalizeCartQuantity(recipeQuantity),
               isLoggedIn: false,
             });
@@ -73,6 +74,7 @@ export function renderIngredients(
           try {
             await addToCart({
               itemId,
+                itemType: "product",
               quantity,
               isLoggedIn: true,
               onCartUpdated: (response: unknown) => {

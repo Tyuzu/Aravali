@@ -559,6 +559,7 @@ export function createUserControls(
         try {
           const success = await addToCart({
             itemId: crop.cropid,
+            itemType: "crop",
             quantity,
             isLoggedIn: Boolean(getState("token")),
             onCartUpdated: (response: unknown) => {
