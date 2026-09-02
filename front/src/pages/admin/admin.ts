@@ -1,10 +1,10 @@
 import "../../../css/inistyles/adminpage.css";
-//import { displayModerator } from "../../services/admin/modPage.js";
+import { RoleRequestsPage } from "./roleRequests.js";
 
 export async function Admin(
   isLoggedIn: boolean,
   contentContainer: HTMLElement
 ): Promise<void> {
   contentContainer.innerHTML = "";
-  //displayModerator(contentContainer, isLoggedIn);
+  await RoleRequestsPage(isLoggedIn, contentContainer);
 }

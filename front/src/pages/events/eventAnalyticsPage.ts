@@ -5,8 +5,11 @@ import { viewEventAnalytics } from "../../services/event/eventAnalytics.js";
 
 export async function EventAnalytics(
   isLoggedIn: boolean,
-  eventid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  viewEventAnalytics(contentContainer, isLoggedIn, eventid);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).eventid)) || "";
+  viewEventAnalytics(contentContainer, isLoggedIn, String(resolved));
 }

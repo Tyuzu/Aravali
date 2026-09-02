@@ -3,9 +3,12 @@ import { displayHashtag } from "../../services/hashtag/hashtagService.js";
 
 export async function Hashtag(
   isLoggedIn: boolean,
-  hashtag: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).hashtag)) || "";
   contentContainer.innerHTML = "";
-  displayHashtag(contentContainer, hashtag, isLoggedIn);
+  displayHashtag(contentContainer, String(resolved), isLoggedIn);
 }

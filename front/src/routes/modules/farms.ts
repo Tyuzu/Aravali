@@ -14,6 +14,8 @@ export const farmsRoutes: AppRoute[] = [
     functionName: "Dash",
     meta: {
       requiresAuth: true,
+      roles: ["farmer", "admin"],
+      roleMatchMode: "ANY",
       title: "Dashboard"
     }
   },
@@ -43,6 +45,8 @@ export const farmsRoutes: AppRoute[] = [
     functionName: "CreateFarm",
     meta: {
       requiresAuth: true,
+      roles: ["farmer", "admin"],
+      roleMatchMode: "ANY",
       title: "Create Farm"
     }
   },

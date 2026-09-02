@@ -5,8 +5,11 @@ import { displayPost } from "../../services/posts/postDisplay.js";
 
 export async function Post(
   isLoggedIn: boolean,
-  postid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  displayPost(isLoggedIn, postid, contentContainer);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).postid)) || "";
+  displayPost(isLoggedIn, String(resolved), contentContainer);
 }

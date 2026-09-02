@@ -2,6 +2,7 @@ package routes
 
 import (
 	"scav/infra"
+	"scav/internal/admin"
 	"scav/internal/artists"
 	"scav/internal/auth"
 	"scav/internal/baito"
@@ -58,6 +59,7 @@ import (
 )
 
 func RoutesWrapper(router *httprouter.Router, app *infra.Deps, rateLimiter *middleware.RateLimiter) {
+	admin.AddAdminRoutes(router, app, rateLimiter)
 	activity.AddActivityRoutes(router, app, rateLimiter)
 	ads.AddAdsRoutes(router, app, rateLimiter)
 	analytics.AddAnalyticsRoutes(router, app, rateLimiter)

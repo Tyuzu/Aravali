@@ -4,8 +4,11 @@ import { displayWorkerPage } from "../../services/baitos/workers/displayWorkerPa
 
 export async function Worker(
   isLoggedIn: boolean,
-  workerid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  displayWorkerPage(contentContainer, isLoggedIn, workerid);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).workerid)) || "";
+  displayWorkerPage(contentContainer, isLoggedIn, String(resolved));
 }

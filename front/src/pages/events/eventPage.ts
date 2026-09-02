@@ -4,8 +4,11 @@ import { displayEvent } from "../../services/event/eventService.js";
 
 export async function Event(
   isLoggedIn: boolean,
-  eventid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  displayEvent(isLoggedIn, eventid, contentContainer);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).eventid)) || "";
+  displayEvent(isLoggedIn, String(resolved), contentContainer);
 }

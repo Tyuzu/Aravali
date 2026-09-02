@@ -7,11 +7,14 @@ import { displayArtist } from "../../services/artist/artistPage.js";
 
 async function Artist(
   isLoggedIn: boolean,
-  artistID: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).artistID)) || "";
   contentContainer.innerHTML = "";
-  displayArtist(contentContainer, artistID, isLoggedIn);
+  displayArtist(contentContainer, String(resolved), isLoggedIn);
 }
 
 export { Artist };

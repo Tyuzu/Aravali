@@ -28,6 +28,8 @@ export const baitoRoutes: AppRoute[] = [
     functionName: "BaitoDash",
     meta: {
       requiresAuth: true,
+      roles: ["worker", "admin"],
+      roleMatchMode: "ANY",
       title: "Baito Dashboard"
     }
   },
@@ -53,6 +55,8 @@ export const baitoRoutes: AppRoute[] = [
     functionName: "CreateBaitoProfile",
     meta: {
       requiresAuth: true,
+      roles: ["worker", "admin"],
+      roleMatchMode: "ANY",
       title: "Create Baito Profile"
     }
   },

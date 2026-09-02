@@ -4,8 +4,11 @@ import { displayBaito } from "../../services/baitos/onebaito/baitoDisplay.js";
 
 export async function Baito(
   isLoggedIn: boolean,
-  baitoid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  displayBaito(isLoggedIn, baitoid, contentContainer);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).baitoid)) || "";
+  displayBaito(isLoggedIn, String(resolved), contentContainer);
 }

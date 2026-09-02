@@ -26,6 +26,20 @@ export const adminRoutes: AdminRoute[] = [
     }
   },
 
+  {
+    path: "/admin/role-requests",
+    component: () =>
+      import(
+        "../../pages/admin/roleRequests.js"
+      ),
+    functionName: "RoleRequestsPage",
+    meta: {
+      requiresAuth: true,
+      roles: ["admin"],
+      title: "Role Requests"
+    }
+  },
+
   /* =======================================================
      DASHBOARD
   ======================================================= */

@@ -21,12 +21,24 @@ export async function MyProfile(
 
 export async function UserProfile(
   isLoggedIn: boolean,
-  username: string,
+  // Router passes a params object for dynamic segments (e.g. { id: 'bob' }).
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
   contentContainer.innerHTML = "";
   const content = document.createElement("div");
   content.className = "profilepage";
   contentContainer.appendChild(content);
-  displayUserProfile(isLoggedIn, content, username);
+
+  // Support both direct string usage and router params object.
+  let username: string | undefined;
+  if (!params) {
+    username = undefined;
+  } else if (typeof params === "string") {
+    username = params;
+  } else {
+    username = params.id || (params.username as string | undefined);
+  }
+
+  await displayUserProfile(Boolean(isLoggedIn), content, String(username));
 }

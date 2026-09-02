@@ -3,8 +3,11 @@ import { renderTicksPage } from "../../services/tickets/ticketsOnlyPage.js";
 
 export async function EventTickets(
   isLoggedIn: boolean,
-  eventid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  renderTicksPage(isLoggedIn, eventid, contentContainer);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).eventid)) || "";
+  renderTicksPage(isLoggedIn, String(resolved), contentContainer);
 }

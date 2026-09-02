@@ -4,8 +4,11 @@ import { displayFarm } from "../../services/crops/farm/farmDisplay.js";
 
 export async function Farm(
   isLoggedIn: boolean,
-  farmid: string,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  displayFarm(isLoggedIn, farmid, contentContainer);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).farmid)) || "";
+  displayFarm(isLoggedIn, String(resolved), contentContainer);
 }

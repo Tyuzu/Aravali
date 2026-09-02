@@ -20,7 +20,6 @@ async function displayUserProfile(
   if (!content) return;
 
   content.replaceChildren(); // Clear existing container content
-
   try {
     const userProfile = await fetchUserProfile(username);
 
@@ -30,28 +29,16 @@ async function displayUserProfile(
       content.appendChild(profileElement);
       attachProfileEventListeners(content);
     } else {
-      const notFoundMessage = createElement(
-        "p",
-        { class: "error-message" },
-        "User not found."
-      );
+      const notFoundMessage = createElement("p", { class: "error-message" }, "User not found.");
       content.appendChild(notFoundMessage);
     }
   } catch (error) {
     console.error("Failed to display user profile:", error);
 
-    const errorMessage = createElement(
-      "p",
-      { class: "error-message" },
-      "Failed to load user profile. Please try again later."
-    );
+    const errorMessage = createElement("p", { class: "error-message" }, "Failed to load user profile. Please try again later.");
     content.appendChild(errorMessage);
 
-    Notify("Error fetching user profile.", {
-      type: "error",
-      duration: 3000,
-      dismissible: true
-    });
+    Notify("Error fetching user profile.", { type: "error", duration: 3000, dismissible: true });
   }
 }
 

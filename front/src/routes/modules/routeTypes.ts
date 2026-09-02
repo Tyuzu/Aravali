@@ -1,6 +1,7 @@
 export interface RouteMeta {
   requiresAuth?: boolean;
   roles?: string[];
+  roleMatchMode?: "ANY" | "ALL";
   title?: string;
 }
 

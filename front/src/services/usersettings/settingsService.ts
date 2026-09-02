@@ -1,6 +1,8 @@
 import { navigate } from "../../routes/navigate.js";
+import { getState } from "../../state/state.js";
 import { createElement } from "../../components/createElement.js";
 import ToggleSwitch from "../../components/ui/ToggleSwitch.js";
+import { submitRoleRequest } from "../admin/roleManagement.js";
 import {
   loadSettingsRequest,
   updateSettingRequest,
@@ -208,6 +210,68 @@ function createSettingCard(setting: SettingSchemaItem, value: unknown): HTMLElem
   return createElement("div", { class: "setting-card" }, [info, controlContainer]);
 }
 
+function createRoleAccessCard(): HTMLElement {
+  const existingRoles = Array.isArray(getState("roles")) ? getState("roles") as string[] : [];
+  const availableRoles = ["farmer", "worker", "admin"].filter((role) => !existingRoles.includes(role));
+
+  const title = createElement("h3", { class: "setting-title" }, ["Role access"]);
+  const description = createElement(
+    "p",
+    { class: "setting-description" },
+    ["Apply for additional access, such as farmer, worker, or admin permissions."]
+  );
+  const info = createElement("div", { class: "setting-info" }, [title, description]);
+
+  const select = createElement("select", { class: "setting-select" }) as HTMLSelectElement;
+  if (availableRoles.length === 0) {
+    const option = createElement("option", { value: "" }, ["You already have the available role requests"]);
+    select.appendChild(option);
+    select.disabled = true;
+  } else {
+    availableRoles.forEach((role) => {
+      select.appendChild(createElement("option", { value: role }, [role.charAt(0).toUpperCase() + role.slice(1)]));
+    });
+  }
+
+  const reason = createElement("input", {
+    type: "text",
+    class: "setting-input",
+    placeholder: "Tell us why you want this role",
+    value: ""
+  }) as HTMLInputElement;
+
+  const button = createElement("button", {
+    class: "buttonx",
+    type: "button",
+    disabled: availableRoles.length === 0
+  }, ["Apply for role"]) as HTMLButtonElement;
+
+  button.addEventListener("click", async () => {
+    const role = select.value;
+    const text = reason.value.trim();
+    if (!role) {
+      showToast("Choose a role first.", true);
+      return;
+    }
+    if (!text) {
+      showToast("Please add a brief reason for the role request.", true);
+      return;
+    }
+
+    try {
+      await submitRoleRequest({ role, reason: text });
+      showToast("Role request submitted.");
+      reason.value = "";
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to submit role request.";
+      showToast(message, true);
+    }
+  });
+
+  const control = createElement("div", { class: "setting-control" }, [select, reason, button]);
+  return createElement("div", { class: "setting-card" }, [info, control]);
+}
+
 function renderSettings(
   container: HTMLElement,
   schema: SettingSchemaItem[],
@@ -235,6 +299,12 @@ function renderSettings(
     const categoryBody = categories.get(categoryName)!;
     categoryBody.appendChild(createSettingCard(setting, values[setting.type]));
   });
+
+  const roleSection = createElement("section", { class: "settings-category" }, [
+    createElement("h2", { class: "settings-category-title" }, ["Access Requests"]),
+    createElement("div", { class: "settings-category-body" }, [createRoleAccessCard()])
+  ]);
+  fragment.appendChild(roleSection);
 
   container.appendChild(fragment);
 }

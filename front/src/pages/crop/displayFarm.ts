@@ -9,8 +9,11 @@ export interface FarmTarget {
 
 export async function Farm(
   isLoggedIn: boolean,
-  farm: FarmTarget,
+  params: Record<string, string | undefined> | string | undefined,
   contentContainer: HTMLElement
 ): Promise<void> {
-  displayFarm(isLoggedIn, farm.id, contentContainer);
+  const resolved = typeof params === "string"
+    ? params
+    : (params && (params.id || (params as any).farmid)) || "";
+  displayFarm(isLoggedIn, String(resolved), contentContainer);
 }
