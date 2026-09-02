@@ -12,6 +12,8 @@ import (
 
 	"scav/config"
 	"scav/infra"
+	mq "scav/infra/mq"
+	workers "scav/infra/workers"
 	"scav/internal/mechat"
 	"scav/internal/newchat"
 	"scav/middleware"
@@ -80,6 +82,9 @@ func main() {
 	)
 	defer appCancel()
 
+	// media worker subscription (set if MQ available)
+	var mediaSub mq.Subscription
+
 	// =====================
 	// MQ Subscribers
 	// =====================
@@ -106,6 +111,14 @@ func main() {
 		logger.L.Sugar().Infow(
 			"MQ subscribers registered",
 		)
+
+		// Start media worker consumer so background workers process media.jobs
+		if sub, err := workers.StartMediaWorker(appCtx, app.MQ); err != nil {
+			logger.L.Sugar().Errorw("failed to start media worker", "error", err)
+		} else {
+			mediaSub = sub
+			logger.L.Sugar().Infow("media worker started")
+		}
 	} else {
 		logger.L.Sugar().Warnw(
 			"MQ is not configured; skipping MQ subscribers",
@@ -337,6 +350,13 @@ func main() {
 	// =====================
 	// Stop Application Workers
 	// =====================
+
+	// Unsubscribe media worker if running
+	if mediaSub != nil {
+		if err := mediaSub.Unsubscribe(); err != nil {
+			logger.L.Sugar().Errorw("media worker unsubscribe failed", "error", err)
+		}
+	}
 	logger.L.Sugar().Infow(
 		"Stopping application workers...",
 	)

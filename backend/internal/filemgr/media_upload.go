@@ -2,10 +2,15 @@ package filemgr
 
 import (
 	"fmt"
+	"io"
 	"mime/multipart"
-	log "scav/utils/logger"
 	"net/http"
+	"os"
 	"path/filepath"
+	"scav/infra"
+	"scav/infra/mq"
+	mediaworker "scav/infra/workers"
+	log "scav/utils/logger"
 	"strings"
 )
 
@@ -30,14 +35,34 @@ var mediaPicTypes = map[MediaType]PictureType{
 }
 
 var mediaProcessors = map[MediaType]mediaProcessor{
-	Video: ProcessVideo,
+	Video: func(r *http.Request, savedPath, uploadDir, uniqueID string, entity EntityType) ([]int, []string, error) {
+		var tmpThumbPath string
+		thumbnailFile, _, thumbErr := r.FormFile("thumbnail")
+		if thumbErr == nil {
+			defer thumbnailFile.Close()
+			tmpThumb, err := os.CreateTemp("", uniqueID+"_thumb-*")
+			if err == nil {
+				if _, err := io.Copy(tmpThumb, thumbnailFile); err == nil {
+					tmpThumbPath = tmpThumb.Name()
+				}
+				_ = tmpThumb.Close()
+			}
+		}
+
+		posterDir := ResolvePath(entity, PicThumb)
+		res, paths, err := mediaworker.ProcessVideo(savedPath, uploadDir, uniqueID, posterDir, tmpThumbPath)
+		if tmpThumbPath != "" {
+			_ = os.Remove(tmpThumbPath)
+		}
+		return res, paths, err
+	},
 	Audio: func(r *http.Request, savedPath, uploadDir, uniqueID string, entity EntityType) ([]int, []string, error) {
-		res, paths := processAudio(savedPath, uploadDir, uniqueID, entity)
+		res, paths := mediaworker.ProcessAudio(savedPath, uploadDir, uniqueID)
 		return res, paths, nil
 	},
 }
 
-func ProcessMediaUpload(r *http.Request, formKey string, mediaType MediaType, entity EntityType, userid string) (*MediaResult, error) {
+func ProcessMediaUpload(app *infra.Deps, r *http.Request, formKey string, mediaType MediaType, entity EntityType, userid string) (*MediaResult, error) {
 	file, err := getUploadedFile(r, formKey)
 	if err != nil || file == nil {
 		return nil, fmt.Errorf("no file uploaded: %w", err)
@@ -58,6 +83,40 @@ func ProcessMediaUpload(r *http.Request, formKey string, mediaType MediaType, en
 	processor, ok := mediaProcessors[mediaType]
 	if !ok {
 		return nil, fmt.Errorf("no processor for media type: %s", mediaType)
+	}
+
+	// If MQ is available and the processor is the video processor, enqueue a job.
+	if app != nil && app.MQ != nil && mediaType == Video {
+		// reuse the existing inline video processor behavior to extract optional thumbnail
+		var tmpThumbPath string
+		thumbnailFile, _, thumbErr := r.FormFile("thumbnail")
+		if thumbErr == nil {
+			defer thumbnailFile.Close()
+			tmpThumb, err := os.CreateTemp("", uniqueID+"_thumb-*")
+			if err == nil {
+				if _, err := io.Copy(tmpThumb, thumbnailFile); err == nil {
+					tmpThumbPath = tmpThumb.Name()
+				}
+				_ = tmpThumb.Close()
+			}
+		}
+
+		job := mediaworker.MediaJob{
+			JobID:         generateUniqueID(),
+			Type:          "video",
+			SavedPath:     savedPath,
+			UploadDir:     ResolvePath(entity, picType),
+			PosterDir:     ResolvePath(entity, PicThumb),
+			ThumbnailPath: tmpThumbPath,
+			UniqueID:      uniqueID,
+			Filename:      uniqueID,
+			Ext:           ".mp4",
+			ThumbWidth:    defaultThumbWidth,
+			UserID:        userid,
+		}
+		_ = mq.PublishWithMeta(r.Context(), app.MQ, "media.jobs", job)
+
+		return &MediaResult{Resolutions: nil, Paths: nil, IDs: []string{uniqueID}}, nil
 	}
 
 	res, paths, err := processor(r, savedPath, ResolvePath(entity, picType), uniqueID, entity)

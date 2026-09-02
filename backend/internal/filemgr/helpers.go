@@ -3,15 +3,13 @@ package filemgr
 import (
 	"bytes"
 	"fmt"
-	"image"
-	"image/jpeg"
 	"io"
-	log "scav/utils/logger"
 	"net"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	log "scav/utils/logger"
 	"strings"
 
 	"github.com/google/uuid"
@@ -66,35 +64,6 @@ func ScanForViruses(filePath string) error {
 		return fmt.Errorf("scan: suspicious javascript-like content")
 	}
 
-	return nil
-}
-
-func StripEXIF(img image.Image) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
-	if err := jpeg.Encode(buf, img, &jpeg.Options{Quality: 90}); err != nil {
-		return nil, fmt.Errorf("strip exif: encode failed: %w", err)
-	}
-	return buf, nil
-}
-
-func ExtractImageMetadata(img image.Image, uid string) error {
-	if img == nil {
-		return fmt.Errorf("extract metadata: nil image")
-	}
-
-	bounds := img.Bounds()
-	buf, err := StripEXIF(img)
-	if err != nil {
-		return fmt.Errorf("extract metadata: encoding failed: %w", err)
-	}
-
-	size := buf.Len()
-	msg := fmt.Sprintf("metadata uid=%s width=%d height=%d size=%d", uid, bounds.Dx(), bounds.Dy(), size)
-	if LogFunc != nil {
-		LogFunc(msg, int64(size), "metadata")
-	} else {
-		log.Println(msg)
-	}
 	return nil
 }
 
@@ -164,17 +133,6 @@ func isImageType(picType PictureType) bool {
 	default:
 		return false
 	}
-}
-
-func ValidateImageDimensions(img image.Image, maxWidth, maxHeight int) error {
-	if img == nil {
-		return fmt.Errorf("validate dimensions: nil image")
-	}
-	bounds := img.Bounds()
-	if bounds.Dx() > maxWidth || bounds.Dy() > maxHeight {
-		return fmt.Errorf("image dimensions %dx%d exceed max %dx%d", bounds.Dx(), bounds.Dy(), maxWidth, maxHeight)
-	}
-	return nil
 }
 
 func normalizePictureKey(key string) PictureType {
@@ -325,17 +283,7 @@ func validateRemoteHost(rawURL string) error {
 	return nil
 }
 
-func normalizePath(p string) string {
-	if !strings.HasPrefix(p, "/") {
-		p = "/" + filepath.ToSlash(p)
-	}
-	return filepath.ToSlash(p)
-}
-
-func generateFilePath(baseDir, uniqueID, extension string) string {
-	extension = strings.TrimPrefix(extension, ".")
-	return filepath.Join(baseDir, uniqueID+"."+extension)
-}
+// normalizePath and generateFilePath moved to infra/workers
 
 func generateUniqueID() string {
 	return uuid.NewString()

@@ -23,9 +23,10 @@ func HandleMediaUpload(r *http.Request, postType string, entitytype EntityType, 
 }
 
 func saveUploadedVideoFile(r *http.Request, formKey string, entitytype EntityType, userid string) (*MediaResult, error) {
-	return ProcessMediaUpload(r, formKey, Video, entitytype, userid)
+	// This caller doesn't have access to infra.Deps; call the variant without MQ.
+	return ProcessMediaUpload(nil, r, formKey, Video, entitytype, userid)
 }
 
 func saveUploadedAudioFile(r *http.Request, formKey string, entitytype EntityType, userid string) (*MediaResult, error) {
-	return ProcessMediaUpload(r, formKey, Audio, entitytype, userid)
+	return ProcessMediaUpload(nil, r, formKey, Audio, entitytype, userid)
 }

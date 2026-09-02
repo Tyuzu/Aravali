@@ -1,14 +1,14 @@
-package filemgr
+package workers
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"math"
-	log "scav/utils/logger"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,13 +17,19 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	log "scav/utils/logger"
+
+	"github.com/disintegration/imaging"
 )
 
 const (
-	ffprobeTimeout   = 30 * time.Second
-	transcodeTimeout = 10 * time.Minute
-	posterTimeout    = 45 * time.Second
-	audioTimeout     = 3 * time.Minute
+	ffprobeTimeout    = 30 * time.Second
+	transcodeTimeout  = 10 * time.Minute
+	posterTimeout     = 45 * time.Second
+	audioTimeout      = 3 * time.Minute
+	defaultThumbWidth = 500
+	defaultQuality    = 85
 )
 
 type Runner interface {
@@ -49,6 +55,198 @@ func (realRunner) Run(timeout time.Duration, name string, args ...string) (strin
 }
 
 var cmdRunner Runner = realRunner{}
+
+func ProcessAudio(savedPath, uploadDir, uniqueID string) ([]int, []string) {
+	resolutions, outputPath := processAudioResolutions(savedPath, uploadDir, uniqueID)
+	var paths []string
+	if outputPath != "" {
+		paths = []string{normalizePath(outputPath)}
+	}
+	return resolutions, paths
+}
+
+func ProcessVideo(savedPath, uploadDir, uniqueID, posterDir, thumbnailPath string) ([]int, []string, error) {
+	width, height, err := getVideoDimensions(savedPath)
+	if err != nil {
+		_ = os.Remove(savedPath) // #nosec G703
+		return nil, nil, fmt.Errorf("failed to get video dimensions: %w", err)
+	}
+
+	resolutions, outputPaths := processVideoResolutionsParallel(savedPath, uploadDir, uniqueID, width, height, 3)
+	if len(outputPaths) == 0 {
+		_ = os.Remove(savedPath) // #nosec G703
+		return nil, nil, fmt.Errorf("video transcoding failed")
+	}
+
+	if err := os.MkdirAll(posterDir, 0o750); err != nil {
+		cleanupPaths(outputPaths)
+		_ = os.Remove(savedPath) // #nosec G703
+		return nil, nil, fmt.Errorf("failed to create poster directory: %w", err)
+	}
+	thumbPath := filepath.Join(posterDir, uniqueID+".jpg")
+	if thumbnailPath != "" {
+		args := []string{
+			"-y",
+			"-i", thumbnailPath,
+			"-vf", "scale=w=iw*min(1280/iw\\,720/ih):h=ih*min(1280/iw\\,720/ih),pad=1280:720:(1280-iw*min(1280/iw\\,720/ih))/2:(720-ih*min(1280/iw\\,720/ih))/2:black",
+			thumbPath,
+		}
+		stdout, stderr, err := cmdRunner.Run(time.Minute, "ffmpeg", args...)
+		if err != nil {
+			cleanupPaths(outputPaths)
+			_ = os.Remove(savedPath) // #nosec G703
+			return nil, nil, fmt.Errorf("failed to process thumbnail: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
+		}
+	} else {
+		if err := CreatePoster(savedPath, thumbPath); err != nil {
+			cleanupPaths(outputPaths)
+			_ = os.Remove(savedPath) // #nosec G703
+			return nil, nil, fmt.Errorf("poster creation failed: %w", err)
+		}
+	}
+
+	return resolutions, outputPaths, nil
+}
+
+func ProcessImage(fullPath, thumbDir, filename, ext string, thumbWidth int) (string, string, error) {
+	img, _, err := openImage(fullPath)
+	if err != nil {
+		return fullPath, ext, fmt.Errorf("open image %s: %w", fullPath, err)
+	}
+
+	if err := ValidateImageDimensions(img, 12000, 12000); err != nil {
+		return fullPath, ext, err
+	}
+
+	finalPath := fullPath
+	finalExt := ext
+	if strings.ToLower(ext) != ".png" {
+		finalPath, err = normalizeImageFormat(fullPath, ext, img)
+		if err != nil {
+			return fullPath, ext, err
+		}
+		finalExt = filepath.Ext(finalPath)
+	}
+
+	if thumbWidth <= 0 {
+		return finalPath, finalExt, fmt.Errorf("invalid thumbnail width: %d", thumbWidth)
+	}
+
+	imgCopy := imaging.Clone(img)
+	if err := generateThumbnail(imgCopy, thumbDir, filename+".jpg", thumbWidth); err != nil {
+		return finalPath, finalExt, fmt.Errorf("generate thumbnail %s: %w", filename, err)
+	}
+	return finalPath, finalExt, nil
+}
+
+func GenerateVideoPoster(videoPath, thumbDir, baseFilename string) (string, error) {
+	thumbName := strings.TrimSuffix(baseFilename, filepath.Ext(baseFilename)) + ".jpg"
+	thumbPath := filepath.Join(thumbDir, thumbName)
+	if err := os.MkdirAll(thumbDir, 0o750); err != nil {
+		return "", fmt.Errorf("mkdir %s: %w", thumbDir, err)
+	}
+	if err := CreatePoster(videoPath, thumbPath); err != nil {
+		return "", err
+	}
+	return thumbName, nil
+}
+
+func openImage(path string) (image.Image, string, error) {
+	f, err := os.Open(path) // #nosec G703 G304
+	if err != nil {
+		return nil, "", fmt.Errorf("open image: %w", err)
+	}
+	defer f.Close()
+	img, format, err := image.Decode(f)
+	return img, format, err
+}
+
+func generateThumbnail(img image.Image, thumbDir, baseFilename string, thumbWidth int) error {
+	if img == nil {
+		return fmt.Errorf("nil image")
+	}
+	if thumbWidth <= 0 {
+		return fmt.Errorf("invalid thumbnail width: %d", thumbWidth)
+	}
+
+	resized := imaging.Resize(img, thumbWidth, 0, imaging.Lanczos)
+	name := strings.TrimSuffix(baseFilename, filepath.Ext(baseFilename)) + ".jpg"
+	path := filepath.Join(thumbDir, name)
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil { // #nosec G703
+		return fmt.Errorf("mkdir %s: %w", filepath.Dir(path), err)
+	}
+
+	out, err := os.Create(path) // #nosec G703 G304
+	if err != nil {
+		return fmt.Errorf("create thumbnail %s: %w", path, err)
+	}
+	defer out.Close()
+
+	if err := jpeg.Encode(out, resized, &jpeg.Options{Quality: defaultQuality}); err != nil {
+		_ = os.Remove(path) // #nosec G703
+		return fmt.Errorf("encode thumbnail %s: %w", path, err)
+	}
+	if err := out.Sync(); err != nil {
+		return fmt.Errorf("sync thumbnail %s: %w", path, err)
+	}
+	return nil
+}
+
+func normalizeImageFormat(fullPath, ext string, img image.Image) (string, error) {
+	if strings.EqualFold(ext, ".png") {
+		return fullPath, nil
+	}
+	pngPath := strings.TrimSuffix(fullPath, ext) + ".png"
+	out, err := os.Create(pngPath) // #nosec G703 G304
+	if err != nil {
+		return fullPath, fmt.Errorf("create png %s: %w", pngPath, err)
+	}
+	defer out.Close()
+
+	if err := png.Encode(out, img); err != nil {
+		_ = os.Remove(pngPath) // #nosec G703
+		return fullPath, fmt.Errorf("encode png: %w", err)
+	}
+	_ = os.Remove(fullPath) // #nosec G703
+	return pngPath, nil
+}
+
+func ValidateImageDimensions(img image.Image, maxWidth, maxHeight int) error {
+	if img == nil {
+		return fmt.Errorf("validate dimensions: nil image")
+	}
+	bounds := img.Bounds()
+	if bounds.Dx() > maxWidth || bounds.Dy() > maxHeight {
+		return fmt.Errorf("image dimensions %dx%d exceed max %dx%d", bounds.Dx(), bounds.Dy(), maxWidth, maxHeight)
+	}
+	return nil
+}
+
+func StripEXIF(img image.Image) (*bytes.Buffer, error) {
+	buf := new(bytes.Buffer)
+	if err := jpeg.Encode(buf, img, &jpeg.Options{Quality: 90}); err != nil {
+		return nil, fmt.Errorf("strip exif: encode failed: %w", err)
+	}
+	return buf, nil
+}
+
+func ExtractImageMetadata(img image.Image, uid string) error {
+	if img == nil {
+		return fmt.Errorf("extract metadata: nil image")
+	}
+
+	bounds := img.Bounds()
+	buf, err := StripEXIF(img)
+	if err != nil {
+		return fmt.Errorf("extract metadata: encoding failed: %w", err)
+	}
+
+	size := buf.Len()
+	msg := fmt.Sprintf("metadata uid=%s width=%d height=%d size=%d", uid, bounds.Dx(), bounds.Dy(), size)
+	log.Println(msg)
+	return nil
+}
 
 func getVideoDimensions(videoPath string) (int, int, error) {
 	args := []string{
@@ -188,14 +386,6 @@ func formatTimestamp(seconds float64) string {
 	return fmt.Sprintf("%02d:%02d:%02d.%03d", h, m, s, ms)
 }
 
-func ExtractVideoDuration(videoPath string) float64 {
-	res, err := getVideoDuration(videoPath)
-	if err != nil {
-		return 0
-	}
-	return res
-}
-
 func processAudioResolutions(originalFilePath, uploadDir, uniqueID string) ([]int, string) {
 	if err := os.MkdirAll(uploadDir, 0o750); err != nil {
 		log.Printf("audio: failed to create output dir %s: %v", uploadDir, err)
@@ -266,74 +456,6 @@ func probeAudioBitrate(path string) int {
 		return 0
 	}
 	return br
-}
-
-func ProcessVideo(r *http.Request, savedPath, uploadDir, uniqueID string, entitytype EntityType) ([]int, []string, error) {
-	width, height, err := getVideoDimensions(savedPath)
-	if err != nil {
-		_ = os.Remove(savedPath) // #nosec G703
-		return nil, nil, fmt.Errorf("failed to get video dimensions: %w", err)
-	}
-
-	resolutions, outputPaths := processVideoResolutionsParallel(savedPath, uploadDir, uniqueID, width, height, 3)
-	if len(outputPaths) == 0 {
-		_ = os.Remove(savedPath) // #nosec G703
-		return nil, nil, fmt.Errorf("video transcoding failed")
-	}
-
-	posterDir := ResolvePath(entitytype, PicPoster)
-	if err := os.MkdirAll(posterDir, 0o750); err != nil {
-		cleanupPaths(outputPaths)
-		_ = os.Remove(savedPath) // #nosec G703
-		return nil, nil, fmt.Errorf("failed to create poster directory: %w", err)
-	}
-	thumbPath := filepath.Join(posterDir, uniqueID+".jpg")
-
-	thumbnailFile, _, thumbErr := r.FormFile("thumbnail")
-	if thumbErr == nil {
-		defer thumbnailFile.Close()
-
-		tmpThumb, err := os.CreateTemp("", uniqueID+"_thumb-*")
-		if err != nil {
-			cleanupPaths(outputPaths)
-			_ = os.Remove(savedPath) // #nosec G703
-			return nil, nil, fmt.Errorf("failed to create temp thumbnail: %w", err)
-		}
-		tmpThumbPath := tmpThumb.Name()
-		if _, err := io.Copy(tmpThumb, thumbnailFile); err != nil {
-			if err := tmpThumb.Close(); err != nil {
-				log.Printf("failed to close temp thumbnail: %v", err) // #nosec G706
-			}
-			_ = os.Remove(tmpThumbPath) // #nosec G703
-			cleanupPaths(outputPaths)
-			_ = os.Remove(savedPath) // #nosec G703
-			return nil, nil, fmt.Errorf("failed to write temp thumbnail: %w", err)
-		}
-		_ = tmpThumb.Close()
-
-		args := []string{
-			"-y",
-			"-i", tmpThumbPath,
-			"-vf", "scale=w=iw*min(1280/iw\\,720/ih):h=ih*min(1280/iw\\,720/ih),pad=1280:720:(1280-iw*min(1280/iw\\,720/ih))/2:(720-ih*min(1280/iw\\,720/ih))/2:black",
-			thumbPath,
-		}
-		stdout, stderr, err := cmdRunner.Run(time.Minute, "ffmpeg", args...)
-		_ = os.Remove(tmpThumbPath) // #nosec G703
-		if err != nil {
-			cleanupPaths(outputPaths)
-			_ = os.Remove(savedPath) // #nosec G703
-			return nil, nil, fmt.Errorf("failed to process thumbnail: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
-		}
-	} else {
-		if err := CreatePoster(savedPath, thumbPath); err != nil {
-			cleanupPaths(outputPaths)
-			_ = os.Remove(savedPath) // #nosec G703
-			return nil, nil, fmt.Errorf("poster creation failed: %w", err)
-		}
-	}
-
-	go createSubtitleFile(uniqueID)
-	return resolutions, outputPaths, nil
 }
 
 type videoTask struct {
@@ -447,11 +569,29 @@ func cleanupPaths(paths []string) {
 	}
 }
 
-func isVideoExt(ext string) bool {
-	switch strings.ToLower(ext) {
-	case ".mp4", ".mov", ".mkv", ".webm", ".avi", ".flv", ".m4v":
-		return true
-	default:
-		return false
+func normalizePath(p string) string {
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + filepath.ToSlash(p)
 	}
+	return filepath.ToSlash(p)
+}
+
+func generateFilePath(baseDir, uniqueID, extension string) string {
+	extension = strings.TrimPrefix(extension, ".")
+	return filepath.Join(baseDir, uniqueID+"."+extension)
+}
+
+// GenerateFilePath returns a file path under baseDir for uniqueID with extension.
+func GenerateFilePath(baseDir, uniqueID, extension string) string {
+	return generateFilePath(baseDir, uniqueID, extension)
+}
+
+// NormalizePath makes a filesystem path canonical and ensures it begins with '/'
+func NormalizePath(p string) string {
+	return normalizePath(p)
+}
+
+// CleanupPaths removes a list of paths on disk.
+func CleanupPaths(paths []string) {
+	cleanupPaths(paths)
 }

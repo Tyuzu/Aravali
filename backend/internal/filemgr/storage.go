@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"scav/utils"
-	log "scav/utils/logger"
 	"net/http"
 	"os"
 	"path/filepath"
+	mediaworker "scav/infra/workers"
+	"scav/utils"
+	log "scav/utils/logger"
 	"strings"
 )
 
@@ -18,6 +19,15 @@ const (
 	maxUploadSize     = 200 << 20 // 200 MB
 	defaultQuality    = 85
 )
+
+func isVideoExt(ext string) bool {
+	switch strings.ToLower(ext) {
+	case ".mp4", ".mov", ".mkv", ".webm", ".avi", ".flv", ".m4v":
+		return true
+	default:
+		return false
+	}
+}
 
 func SaveFileForEntity(file multipart.File, header *multipart.FileHeader, entity EntityType, picType PictureType, userid string) (string, string, error) {
 	return saveFileAndProcess(file, header, entity, picType, defaultThumbWidth, userid)
@@ -36,23 +46,13 @@ func saveFileAndProcess(file multipart.File, header *multipart.FileHeader, entit
 
 	switch {
 	case isImageType(picType):
-		finalPath, finalExt, err = processImage(fullPath, entity, picType, thumbWidth, filename, ext)
+		thumbDir := ResolvePath(entity, PicThumb)
+		finalPath, finalExt, err = mediaworker.ProcessImage(fullPath, thumbDir, filename, ext, thumbWidth)
 		if err != nil {
 			return "", "", err
 		}
 	case picType == PicVideo || isVideoExt(ext):
-		go func(vpath string, ent EntityType, fname string) {
-			thumb, err := generateVideoPoster(vpath, ent, fname)
-			if err != nil {
-				if LogFunc != nil {
-					LogFunc(fmt.Sprintf("warning: video poster generation failed for %s: %v", fname, err), 0, "")
-				}
-				return
-			}
-			if LogFunc != nil {
-				LogFunc(thumb, 0, "image/jpeg")
-			}
-		}(fullPath, entity, filename+ext)
+		// Poster generation moved to media worker; enqueue job in upload handler.
 	}
 
 	finalBase := strings.TrimSuffix(filepath.Base(finalPath), filepath.Ext(finalPath))

@@ -6,9 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"image"
-	"image/jpeg"
 	"io"
 	"net"
 	"net/http"
@@ -18,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	workers "scav/infra/workers"
 
 	"github.com/disintegration/imaging"
 )
@@ -39,7 +39,6 @@ var (
 	DomainBlocklist = map[string]bool{}
 	DomainAllowlist = map[string]bool{}
 	fetchSem        = make(chan struct{}, MaxFetchers)
-	encSem          = make(chan struct{}, MaxEncoders)
 )
 
 // ProxyHandler fetches external images, resizes/caches them safely, and serves content.
@@ -157,7 +156,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := encode(img, cachePath, format, qParam); err != nil {
+	if err := workers.EncodeJPEG(img, cachePath, qParam); err != nil {
 		http.Error(w, "encode fail", http.StatusBadGateway)
 		return
 	}
@@ -253,7 +252,6 @@ func fetchWithContext(ctx context.Context, target string) (*http.Response, error
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	if err != nil {
 		return nil, err
@@ -272,56 +270,10 @@ func streamFallback(w http.ResponseWriter, r *http.Request, cachePath, contentTy
 }
 
 func streamToCache(src io.Reader, cachePath string) error {
-	return saveAtomically(cachePath, func(f *os.File) error {
+	return workers.SaveAtomically(cachePath, func(f *os.File) error {
 		_, err := io.Copy(f, src)
 		return err
 	})
 }
 
-func saveAtomically(path string, writeFn func(*os.File) error) error {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o750); err != nil {
-		return err
-	}
-	tmp, err := os.CreateTemp(dir, ".cache-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	cleanup := true
-	defer func() {
-		_ = tmp.Close()
-		if cleanup {
-			_ = os.Remove(tmpName)
-		}
-	}()
-
-	if err := writeFn(tmp); err != nil {
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpName, path); err != nil {
-		return err
-	}
-	cleanup = false
-	return nil
-}
-
-func encode(img image.Image, cachePath, format string, quality int) error {
-	_ = format
-	select {
-	case encSem <- struct{}{}:
-		defer func() { <-encSem }()
-	case <-time.After(5 * time.Second):
-		return fmt.Errorf("encoding semaphore timeout")
-	}
-
-	return saveAtomically(cachePath, func(f *os.File) error {
-		return jpeg.Encode(f, img, &jpeg.Options{Quality: quality})
-	})
-}
+// encoding and atomic save delegated to infra/workers

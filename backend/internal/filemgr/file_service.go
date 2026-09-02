@@ -4,8 +4,13 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	log "scav/utils/logger"
 	"net/http"
+	"os"
+	"path/filepath"
+	"scav/infra"
+	"scav/infra/mq"
+	mediaworker "scav/infra/workers"
+	log "scav/utils/logger"
 	"strings"
 )
 
@@ -15,7 +20,7 @@ func NewFileService() *FileService {
 	return &FileService{}
 }
 
-func (fs *FileService) ProcessUploadedFiles(r *http.Request, entityType string, entityId string, userid string) ([]Attachment, error) {
+func (fs *FileService) ProcessUploadedFiles(app *infra.Deps, r *http.Request, entityType string, entityId string, userid string) ([]Attachment, error) {
 	log.Println("--|--|--|--|")
 	_ = entityId
 
@@ -33,7 +38,7 @@ func (fs *FileService) ProcessUploadedFiles(r *http.Request, entityType string, 
 		}
 
 		for _, fileHeader := range files {
-			atts, err := fs.processRegularFile(r, fileHeader, entity, userid, picType)
+			atts, err := fs.processRegularFile(app, r, fileHeader, entity, userid, picType)
 			if err != nil {
 				return nil, fmt.Errorf("failed to process file %s: %w", fileHeader.Filename, err)
 			}
@@ -44,9 +49,9 @@ func (fs *FileService) ProcessUploadedFiles(r *http.Request, entityType string, 
 	return attachments, nil
 }
 
-func (fs *FileService) processRegularFile(r *http.Request, fileHeader *multipart.FileHeader, entity EntityType, userID string, picType PictureType) ([]Attachment, error) {
+func (fs *FileService) processRegularFile(app *infra.Deps, r *http.Request, fileHeader *multipart.FileHeader, entity EntityType, userID string, picType PictureType) ([]Attachment, error) {
 	if entity == EntityFeed {
-		return fs.processFeedFile(r, fileHeader, entity, userID)
+		return fs.processFeedFile(app, r, fileHeader, entity, userID)
 	}
 
 	file, err := fileHeader.Open()
@@ -101,7 +106,7 @@ func (fs *FileService) processRegularFile(r *http.Request, fileHeader *multipart
 	return []Attachment{{Filename: savedName, Extension: ext, Key: string(picType)}}, nil
 }
 
-func (fs *FileService) processFeedFile(r *http.Request, fileHeader *multipart.FileHeader, entity EntityType, userid string) ([]Attachment, error) {
+func (fs *FileService) processFeedFile(app *infra.Deps, r *http.Request, fileHeader *multipart.FileHeader, entity EntityType, userid string) ([]Attachment, error) {
 	postType := strings.ToLower(strings.TrimSpace(r.FormValue("postType")))
 	if postType == "" {
 		if isVideoFile(fileHeader.Filename) {
@@ -122,15 +127,95 @@ func (fs *FileService) processFeedFile(r *http.Request, fileHeader *multipart.Fi
 		}
 
 		uploadDir := ResolvePath(entity, picType)
+		// If MQ is available, enqueue media jobs instead of processing inline.
+		if app != nil && app.MQ != nil {
+			if postType == "video" {
+				// If a thumbnail was uploaded in the form, persist it inside the poster directory so workers can access it.
+				var tmpThumbPath string
+				thumbnailFile, _, thumbErr := r.FormFile("thumbnail")
+				posterDir := ResolvePath(entity, PicThumb)
+				if thumbErr == nil {
+					defer thumbnailFile.Close()
+					// ensure poster directory exists
+					_ = os.MkdirAll(posterDir, 0o750)
+					tmpThumbPath = filepath.Join(posterDir, uniqueID+"_thumb.jpg")
+					tmpThumb, err := os.Create(tmpThumbPath)
+					if err == nil {
+						if _, err := io.Copy(tmpThumb, thumbnailFile); err != nil {
+							_ = tmpThumb.Close()
+							tmpThumbPath = ""
+						} else {
+							_ = tmpThumb.Close()
+						}
+					} else {
+						tmpThumbPath = ""
+					}
+				}
+				job := mediaworker.MediaJob{
+					JobID:         generateUniqueID(),
+					Type:          "video",
+					SavedPath:     savedPath,
+					UploadDir:     uploadDir,
+					PosterDir:     posterDir,
+					ThumbnailPath: tmpThumbPath,
+					UniqueID:      uniqueID,
+					Filename:      uniqueID,
+					Ext:           ".mp4",
+					ThumbWidth:    defaultThumbWidth,
+					UserID:        userid,
+				}
+				_ = mq.PublishWithMeta(r.Context(), app.MQ, "media.jobs", job)
+				return []Attachment{{Filename: uniqueID, Extension: ".mp4", Key: string(picType), Resolutions: nil}}, nil
+			}
+
+			// audio
+			job := mediaworker.MediaJob{
+				JobID:     generateUniqueID(),
+				Type:      "audio",
+				SavedPath: savedPath,
+				UploadDir: uploadDir,
+				UniqueID:  uniqueID,
+				Filename:  uniqueID,
+				Ext:       ".mp3",
+				UserID:    userid,
+			}
+			_ = mq.PublishWithMeta(r.Context(), app.MQ, "media.jobs", job)
+			return []Attachment{{Filename: uniqueID, Extension: ".mp3", Key: string(picType), Resolutions: nil}}, nil
+		}
+
+		// Fallback to synchronous processing when MQ is not available
 		if postType == "video" {
-			resolutions, _, err := ProcessVideo(r, savedPath, uploadDir, uniqueID, entity)
+			var tmpThumbPath string
+			thumbnailFile, _, thumbErr := r.FormFile("thumbnail")
+			posterDir := ResolvePath(entity, PicThumb)
+			if thumbErr == nil {
+				defer thumbnailFile.Close()
+				_ = os.MkdirAll(posterDir, 0o750)
+				tmpThumbPath = filepath.Join(posterDir, uniqueID+"_thumb.jpg")
+				tmpThumb, err := os.Create(tmpThumbPath)
+				if err == nil {
+					if _, err := io.Copy(tmpThumb, thumbnailFile); err == nil {
+						_ = tmpThumb.Close()
+					} else {
+						_ = tmpThumb.Close()
+						tmpThumbPath = ""
+					}
+				} else {
+					tmpThumbPath = ""
+				}
+			}
+
+			resolutions, _, err := mediaworker.ProcessVideo(savedPath, uploadDir, uniqueID, posterDir, tmpThumbPath)
+			if tmpThumbPath != "" {
+				_ = os.Remove(tmpThumbPath)
+			}
 			if err != nil {
 				return nil, fmt.Errorf("video processing failed: %w", err)
 			}
 			return []Attachment{{Filename: uniqueID, Extension: ".mp4", Key: string(picType), Resolutions: resolutions}}, nil
 		}
 
-		resolutions, _ := ProcessAudio(savedPath, uploadDir, uniqueID, entity)
+		resolutions, _ := mediaworker.ProcessAudio(savedPath, uploadDir, uniqueID)
 		return []Attachment{{Filename: uniqueID, Extension: ".mp3", Key: string(picType), Resolutions: resolutions}}, nil
 	}
 
