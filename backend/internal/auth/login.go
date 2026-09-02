@@ -16,6 +16,8 @@ import (
 	"scav/middleware"
 	"scav/utils"
 
+	log "scav/utils/logger"
+
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -35,6 +37,7 @@ func Login(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 		creds.Username = strings.TrimSpace(creds.Username)
+		creds.Password = strings.TrimSpace(creds.Password)
 
 		ip := clientIP(r)
 		failKey := fmt.Sprintf("auth:fail:%s:%s", creds.Username, ipPrefix(ip))
@@ -79,10 +82,43 @@ func Login(app *infra.Deps) http.HandlerFunc {
 func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds LoginRequest, uaHash string, ipPrefix string) (string, string, string, error) {
 	user, err := GetUserByUsername(ctx, app, creds.Username)
 	if err != nil {
+		log.Printf("auth: user lookup failed for username=%s: %v", creds.Username, err)
 		return "", "", "", ErrAuthInvalidCredentials
 	}
+	// Ensure incoming password is trimmed
+	creds.Password = strings.TrimSpace(creds.Password)
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)); err != nil {
+	isBcrypt := func(s string) bool {
+		return strings.HasPrefix(s, "$2a$") || strings.HasPrefix(s, "$2b$") || strings.HasPrefix(s, "$2y$")
+	}
+
+	// Sanity info (do not log full hashes)
+	log.Printf("auth: user=%s userid=%s password_hash_present=%v password_present=%v", creds.Username, user.UserID, len(user.PasswordHash) > 0, len(user.Password) > 0)
+
+	var matched bool
+
+	// Prefer canonical `PasswordHash` field
+	if len(user.PasswordHash) > 0 && isBcrypt(user.PasswordHash) {
+		if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(creds.Password)) == nil {
+			matched = true
+		} else {
+			log.Printf("auth: password mismatch for username=%s userid=%s using field=password_hash", creds.Username, user.UserID)
+		}
+	}
+
+	// Fallback to legacy `Password` field (migrate on success)
+	if !matched && len(user.Password) > 0 && isBcrypt(user.Password) {
+		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)) == nil {
+			matched = true
+			// migrate existing hash into canonical field
+			_, _ = app.DB.Update(ctx, UsersCollection, map[string]string{"userid": user.UserID}, map[string]any{"$set": map[string]any{"password_hash": user.Password}})
+			log.Printf("auth: migrated password -> password_hash for userid=%s", user.UserID)
+		} else {
+			log.Printf("auth: password mismatch for username=%s userid=%s using field=password", creds.Username, user.UserID)
+		}
+	}
+
+	if !matched {
 		return "", "", "", ErrAuthInvalidCredentials
 	}
 

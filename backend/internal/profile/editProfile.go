@@ -137,7 +137,9 @@ func BuildProfileUpdates(
 		if err != nil {
 			return nil, err
 		}
-		updates["password"] = string(hashed)
+		// store in both fields for compatibility
+		// store bcrypt hash in canonical `password_hash` field
+		updates["password_hash"] = string(hashed)
 	}
 
 	return updates, nil

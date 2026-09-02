@@ -22,7 +22,7 @@ export const DOMAIN_FEATURE_MAP: Record<string, FeatureKey[]> = {
   // Local development, staging, and main hub access
   "localhost": ["ALL"],
   "127.0.0.1": ["ALL"],
-  ".netlify.app": ["ALL"]
+  "indium.netlify.app": ["ALL"]
 };
 
 export const DOMAIN_METADATA: Record<string, DomainMetadata> = {

@@ -166,11 +166,11 @@ func main() {
 		logger.L.Sugar().Infow("API server listening", "addr", cfg.HTTPPort)
 
 		var err error
-		if !cfg.TerminateTLSAtLB && cfg.TLSCertPath != "" && cfg.TLSKeyPath != "" {
-			err = server.ListenAndServeTLS(cfg.TLSCertPath, cfg.TLSKeyPath)
-		} else {
-			err = server.ListenAndServe()
-		}
+		// if !cfg.TerminateTLSAtLB && cfg.TLSCertPath != "" && cfg.TLSKeyPath != "" {
+		// 	err = server.ListenAndServeTLS(cfg.TLSCertPath, cfg.TLSKeyPath)
+		// } else {
+		err = server.ListenAndServe()
+		//}
 
 		if err != nil && err != http.ErrServerClosed {
 			logger.L.Sugar().Fatalw("Server error", "error", err)

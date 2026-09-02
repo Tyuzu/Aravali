@@ -34,8 +34,8 @@ export async function meChat(
     }
 
     if (entityType === "user") {
-        userNewChatInit(String(otherUserId));
-        // navigate(`/merechats/${chat.chatid}`);
+        await userNewChatInit(String(otherUserId));
+        return;
     } else {
         const participants = [userId, otherUserId];
 

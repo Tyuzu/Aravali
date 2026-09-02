@@ -1,4 +1,6 @@
 
+import "../../../css/inistyles/mecaht.css";
+import "../../../css/inistyles/onechat.css";
 import { displayOneChat } from "../../services/merechats/onechat.js";
 
 export async function OneChatPage(

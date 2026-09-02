@@ -14,5 +14,5 @@ export async function initNewChat(payload: Record<string, unknown>): Promise<New
 }
 
 export async function uploadNewChatFiles(payload: Record<string, unknown>): Promise<any> {
-  return await chatFetch("/newchat/upload", "POST", payload);
+  return await chatFetch("/api/v1/newchat/upload", "POST", payload);
 }

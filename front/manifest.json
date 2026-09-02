@@ -1,18 +1,12 @@
 {
-  "id": "/",
   "name": "Scav",
-  "short_name": "Scav",
-  "description": "Scav web app with offline capabilities, quick tools, and shortcuts.",
-  "start_url": "/?source=pwa",
+  "short_name": "SPA",
+  "start_url": "/?source=homescreen",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#202124",
+  "theme_color": "#222222",
   "background_color": "#ffffff",
-  "categories": [
-    "productivity",
-    "utilities"
-  ],
   "icons": [
     {
       "src": "/assets/icon-72.png",
@@ -32,40 +26,34 @@
     {
       "src": "/assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ],
   "shortcuts": [
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "View your Scav dashboard",
       "url": "/dashboard",
       "icons": [
         {
           "src": "/assets/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "sizes": "96x96"
         }
       ]
     },
     {
       "name": "Profile",
       "short_name": "Profile",
-      "description": "Manage your user profile",
       "url": "/profile",
       "icons": [
         {
           "src": "/assets/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "sizes": "96x96"
         }
       ]
     }

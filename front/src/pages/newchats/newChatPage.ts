@@ -1,3 +1,5 @@
+import "../../../css/inistyles/newchat.css";
+
 import { displayNewChat } from "../../services/newchat/displayNewchat.js";
 import { getState } from "../../state/state.js";
 
