@@ -40,6 +40,20 @@ export const adminRoutes: AdminRoute[] = [
     }
   },
 
+  {
+    path: "/admin/moderator-applications",
+    component: () =>
+      import(
+        "../../pages/admin/moderatorApplications.js"
+      ),
+    functionName: "ModeratorApplicationsPage",
+    meta: {
+      requiresAuth: true,
+      roles: ["admin"],
+      title: "Moderator Applications"
+    }
+  },
+
   /* =======================================================
      DASHBOARD
   ======================================================= */

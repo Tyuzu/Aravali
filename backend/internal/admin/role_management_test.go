@@ -1,6 +1,14 @@
 package admin
 
-import "testing"
+import (
+	"net/http"
+	"testing"
+)
+
+func TestModeratorApplicationHandlersExist(t *testing.T) {
+	var _ http.HandlerFunc = ApplyModerator(nil)
+	var _ ModeratorApplication
+}
 
 func TestNormalizeRoleName(t *testing.T) {
 	if got := NormalizeRoleName("  Farmer "); got != "farmer" {
@@ -22,5 +30,20 @@ func TestMergeRoleList(t *testing.T) {
 		if roles[i] != role {
 			t.Fatalf("MergeRoleList()[%d] = %q, want %q", i, roles[i], role)
 		}
+	}
+}
+
+func TestNormalizeRoleRequestStatus(t *testing.T) {
+	if got := normalizeRoleRequestStatus("PENDING"); got != "pending" {
+		t.Fatalf("normalizeRoleRequestStatus() = %q, want %q", got, "pending")
+	}
+	if got := normalizeRoleRequestStatus(" Approved "); got != "approved" {
+		t.Fatalf("normalizeRoleRequestStatus() = %q, want %q", got, "approved")
+	}
+	if !isFinalRoleRequestStatus("rejected") {
+		t.Fatal("isFinalRoleRequestStatus(rejected) = false, want true")
+	}
+	if isFinalRoleRequestStatus("pending") {
+		t.Fatal("isFinalRoleRequestStatus(pending) = true, want false")
 	}
 }

@@ -21,6 +21,20 @@ func NormalizeRoleName(role string) string {
 	return strings.ToLower(strings.TrimSpace(role))
 }
 
+func normalizeRoleRequestStatus(status string) string {
+	switch NormalizeRoleName(status) {
+	case "pending", "approved", "rejected":
+		return NormalizeRoleName(status)
+	default:
+		return ""
+	}
+}
+
+func isFinalRoleRequestStatus(status string) bool {
+	normalized := normalizeRoleRequestStatus(status)
+	return normalized == "approved" || normalized == "rejected"
+}
+
 func MergeRoleList(existing []string, roles ...string) []string {
 	seen := map[string]struct{}{}
 	merged := make([]string, 0, len(existing)+len(roles))
@@ -138,7 +152,7 @@ func ListRoleRequests(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		var applications []RoleApplication
 		filter := bson.M{}
-		if status := r.URL.Query().Get("status"); status != "" {
+		if status := normalizeRoleRequestStatus(r.URL.Query().Get("status")); status != "" {
 			filter["status"] = status
 		}
 		if err := app.DB.FindMany(ctx, roleApplicationsCollection, filter, &applications); err != nil {
@@ -161,6 +175,10 @@ func ApproveRoleRequest(app *infra.Deps) http.HandlerFunc {
 		var application RoleApplication
 		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"id": appID}, &application); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Application not found")
+			return
+		}
+		if isFinalRoleRequestStatus(application.Status) {
+			utils.RespondWithError(w, http.StatusConflict, "This role request has already been resolved")
 			return
 		}
 
@@ -193,6 +211,16 @@ func RejectRoleRequest(app *infra.Deps) http.HandlerFunc {
 		appID := utils.GetParam(r, "id")
 		if appID == "" {
 			utils.RespondWithError(w, http.StatusBadRequest, "Missing application id")
+			return
+		}
+
+		var application RoleApplication
+		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"id": appID}, &application); err != nil {
+			utils.RespondWithError(w, http.StatusNotFound, "Application not found")
+			return
+		}
+		if isFinalRoleRequestStatus(application.Status) {
+			utils.RespondWithError(w, http.StatusConflict, "This role request has already been resolved")
 			return
 		}
 

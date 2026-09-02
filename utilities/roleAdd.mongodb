@@ -1,0 +1,4 @@
+db.users.updateOne(
+  { username: "bob" },
+  { $addToSet: { role: "admin" } }
+);
