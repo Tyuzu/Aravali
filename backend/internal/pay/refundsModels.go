@@ -6,7 +6,7 @@ import "time"
 type OrderRefundRequest struct {
 	ID            string `bson:"_id,omitempty" json:"id"`
 	OrderID       string `bson:"order_id" json:"order_id"`                                 // Order being refunded
-	UserID        string `bson:"user_id" json:"user_id"`                                   // User requesting refund
+	UserID        string `bson:"userid" json:"userid"`                                     // User requesting refund
 	OrderType     string `bson:"order_type" json:"order_type"`                             // "regular" or "farm"
 	Amount        int64  `bson:"amount" json:"amount"`                                     // Refund amount in paise
 	Reason        string `bson:"reason" json:"reason"`                                     // Reason for refund request

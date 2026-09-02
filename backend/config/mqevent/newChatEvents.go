@@ -48,7 +48,7 @@ type ChatDeletedPayload struct {
 type ChatMessageCreatedPayload struct {
 	MessageID  string    `json:"message_id"`
 	ChatID     string    `json:"chat_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -59,6 +59,6 @@ type ChatMessageCreatedPayload struct {
 type FileAddedToChatPayload struct {
 	FileID     string    `json:"file_id"`
 	ChatID     string    `json:"chat_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

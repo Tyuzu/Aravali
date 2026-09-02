@@ -59,3 +59,33 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 		utils.RespondWithJSON(w, http.StatusOK, appeals)
 	}
 }
+
+func GetMyAppeals(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		userID := utils.GetUserIDFromRequest(r)
+		if userID == "" {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		filter := bson.M{"userid": userID}
+		if status := strings.TrimSpace(r.URL.Query().Get("status")); status != "" {
+			filter["status"] = status
+		}
+
+		var appeals []bson.M
+		if err := app.DB.FindMany(ctx, appealsCollection, filter, &appeals); err != nil {
+			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
+				"error": "Failed to fetch your appeals",
+			})
+			return
+		}
+		if appeals == nil {
+			appeals = []bson.M{}
+		}
+
+		utils.SortAndSlice(&appeals, bson.D{{Key: "createdAt", Value: -1}}, 0, int64(len(appeals)))
+		utils.RespondWithJSON(w, http.StatusOK, appeals)
+	}
+}

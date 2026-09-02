@@ -34,7 +34,7 @@ func (r *mongoRepository) Insert(ctx context.Context, like Like) error {
 
 func (r *mongoRepository) Delete(ctx context.Context, userID, entityType, entityID string) (int64, error) {
 	filter := bson.M{
-		"user_id":     userID,
+		"userid":      userID,
 		"entity_type": entityType,
 		"entity_id":   entityID,
 	}
@@ -43,7 +43,7 @@ func (r *mongoRepository) Delete(ctx context.Context, userID, entityType, entity
 
 func (r *mongoRepository) FindOne(ctx context.Context, userID, entityType, entityID string) (bool, error) {
 	filter := bson.M{
-		"user_id":     userID,
+		"userid":      userID,
 		"entity_type": entityType,
 		"entity_id":   entityID,
 	}

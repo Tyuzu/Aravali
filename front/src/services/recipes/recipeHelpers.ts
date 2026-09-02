@@ -29,7 +29,7 @@ export function isRecipeOwner(recipe?: Recipe | null): boolean {
   if (!currentUserId) {
     return false;
   }
-  const recipeUserId = recipe.userid ?? recipe.user_id;
+  const recipeUserId = recipe.userid ?? recipe.userid;
   if (recipeUserId === null || recipeUserId === undefined) {
     return false;
   }

@@ -40,7 +40,7 @@ const (
 type TicketCreatedPayload struct {
 	TicketID   string    `json:"ticket_id"`
 	EventID    string    `json:"event_id,omitempty"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -50,7 +50,7 @@ type TicketCreatedPayload struct {
 
 type TicketUpdatedPayload struct {
 	TicketID   string    `json:"ticket_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -61,7 +61,7 @@ type TicketUpdatedPayload struct {
 type TicketDeletedPayload struct {
 	TicketID   string    `json:"ticket_id"`
 	EventID    string    `json:"event_id,omitempty"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -71,7 +71,7 @@ type TicketDeletedPayload struct {
 
 type TicketBoughtPayload struct {
 	TicketID   string    `json:"ticket_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	EventID    string    `json:"event_id,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -83,7 +83,7 @@ type TicketBoughtPayload struct {
 type TicketCancelledPayload struct {
 	TicketID   string    `json:"ticket_id"`
 	EventID    string    `json:"event_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	Reason     string    `json:"reason,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -94,8 +94,8 @@ type TicketCancelledPayload struct {
 
 type TicketTransferredPayload struct {
 	TicketID   string    `json:"ticket_id"`
-	FromUserID string    `json:"from_user_id"`
-	ToUserID   string    `json:"to_user_id"`
+	FromUserID string    `json:"from_userid"`
+	ToUserID   string    `json:"to_userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -106,7 +106,7 @@ type TicketTransferredPayload struct {
 type SeatsLockedPayload struct {
 	EventID    string    `json:"event_id"`
 	SeatIDs    []string  `json:"seat_ids"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	ExpiresAt  time.Time `json:"expires_at,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -118,7 +118,7 @@ type SeatsLockedPayload struct {
 type SeatsUnlockedPayload struct {
 	EventID    string    `json:"event_id"`
 	SeatIDs    []string  `json:"seat_ids"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -130,7 +130,7 @@ type SeatPurchaseConfirmedPayload struct {
 	TicketID   string    `json:"ticket_id"`
 	EventID    string    `json:"event_id"`
 	SeatIDs    []string  `json:"seat_ids"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -141,7 +141,7 @@ type SeatPurchaseConfirmedPayload struct {
 type TicketPaymentSessionCreatedPayload struct {
 	TicketID   string    `json:"ticket_id"`
 	SessionID  string    `json:"session_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 

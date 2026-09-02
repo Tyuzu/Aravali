@@ -47,7 +47,7 @@ type MenuDeletedPayload struct {
 
 type MenuBoughtPayload struct {
 	MenuID     string    `json:"menu_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	Quantity   int       `json:"quantity,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -58,7 +58,7 @@ type MenuBoughtPayload struct {
 
 type MenuPaymentSessionInitiatedPayload struct {
 	MenuID     string    `json:"menu_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	SessionID  string    `json:"session_id,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

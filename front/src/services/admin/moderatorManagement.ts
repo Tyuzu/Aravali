@@ -2,7 +2,7 @@ import { apiFetch } from "../../api/api.js";
 
 export interface ModeratorApplication {
   id: string;
-  user_id: string;
+  userid: string;
   reason: string;
   status: "pending" | "approved" | "rejected";
   created_at?: string;

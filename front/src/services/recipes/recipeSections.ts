@@ -420,7 +420,7 @@ export function renderActions(
       ? currentUser.id ?? currentUser.userid
       : currentUser;
 
-  const resolvedRecipeUserId = recipe?.userid ?? recipe?.user_id;
+  const resolvedRecipeUserId = recipe?.userid ?? recipe?.userid;
 
   const isOwner =
     resolvedCurrentUserId !== null &&

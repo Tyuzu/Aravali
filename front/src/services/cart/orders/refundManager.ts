@@ -65,7 +65,7 @@ function renderRefundCard(
     createElement("div", { class: "refund-header" }, [
       createElement("div", { class: "header-left" }, [
         createElement("h3", {}, [`Refund: ${refund.order_id || "N/A"}`]),
-        createElement("p", { class: "refund-user" }, [`User ID: ${refund.user_id || "N/A"}`]),
+        createElement("p", { class: "refund-user" }, [`User ID: ${refund.userid || "N/A"}`]),
       ]),
       createElement("div", { class: "header-right" }, [
         createElement("span", { class: `status-badge ${statusClass}` }, [

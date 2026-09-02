@@ -26,7 +26,7 @@ const (
 ============================================================ */
 
 type UserRegisteredPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Username   string    `json:"username"`
 	Email      string    `json:"email"`
 	OccurredAt time.Time `json:"occurred_at"`
@@ -37,7 +37,7 @@ type UserRegisteredPayload struct {
 ============================================================ */
 
 type UserLoggedInPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Username   string    `json:"username"`
 	IPAddress  string    `json:"ip_address"`
 	UserAgent  string    `json:"user_agent"`
@@ -49,12 +49,12 @@ type UserLoggedInPayload struct {
 ============================================================ */
 
 type UserLoggedOutPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type UserLoggedOutAllSessionsPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -63,13 +63,13 @@ type UserLoggedOutAllSessionsPayload struct {
 ============================================================ */
 
 type PasswordResetRequestedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Email      string    `json:"email"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type PasswordResetCompletedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -78,12 +78,12 @@ type PasswordResetCompletedPayload struct {
 ============================================================ */
 
 type OTPRequestedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type OTPVerifiedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -92,7 +92,7 @@ type OTPVerifiedPayload struct {
 ============================================================ */
 
 type TokenRefreshedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	IPAddress  string    `json:"ip_address"`
 	UserAgent  string    `json:"user_agent"`
 	OccurredAt time.Time `json:"occurred_at"`

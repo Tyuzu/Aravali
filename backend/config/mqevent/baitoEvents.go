@@ -38,7 +38,7 @@ type BaitoDeletedPayload struct {
 
 type AppliedToBaitoPayload struct {
 	BaitoID    string    `json:"baito_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -48,18 +48,18 @@ type AppliedToBaitoPayload struct {
 
 type WorkerProfileCreatedPayload struct {
 	WorkerProfileID string    `json:"worker_profile_id"`
-	UserID          string    `json:"user_id"`
+	UserID          string    `json:"userid"`
 	OccurredAt      time.Time `json:"occurred_at"`
 }
 
 type WorkerProfileUpdatedPayload struct {
 	WorkerProfileID string    `json:"worker_profile_id"`
-	UserID          string    `json:"user_id"`
+	UserID          string    `json:"userid"`
 	OccurredAt      time.Time `json:"occurred_at"`
 }
 
 type WorkerProfileDeletedPayload struct {
 	WorkerProfileID string    `json:"worker_profile_id"`
-	UserID          string    `json:"user_id"`
+	UserID          string    `json:"userid"`
 	OccurredAt      time.Time `json:"occurred_at"`
 }

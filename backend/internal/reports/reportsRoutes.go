@@ -26,4 +26,11 @@ func AddReportingRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter 
 		"/api/v1/appeals",
 		middleware.Chain(rateLimiter.Limit, authMid)(CreateAppeal(app)),
 	)
+
+	// List the current user's appeals for status tracking
+	router.HandlerFunc(
+		http.MethodGet,
+		"/api/v1/appeals/me",
+		authMid(GetMyAppeals(app)),
+	)
 }

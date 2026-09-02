@@ -15,7 +15,9 @@ export type EntityType =
   | "collection";
 
 export interface EntityItem {
-  entity_id: string | number;
+  entity_id?: string | number;
+  id?: string | number;
+  postid?: string | number;
   created_at: string | number | Date;
   image_url?: string;
   caption?: string;

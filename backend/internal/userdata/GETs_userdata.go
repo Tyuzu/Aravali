@@ -3,12 +3,15 @@ package userdata
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"scav/config"
 	"scav/infra"
 	"scav/middleware"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GetUserProfileData fetches user-specific entity data
@@ -23,7 +26,7 @@ func GetUserProfileData(app *infra.Deps) http.HandlerFunc {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		if username != claims.UserID {
+		if username != claims.UserID && username != claims.Username {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -72,66 +75,87 @@ func GetUserProfileData(app *infra.Deps) http.HandlerFunc {
 
 func GetOtherUserProfileData(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// username := utils.GetParam(r,"username") // from /user/{username}/data
-		// entityType := r.URL.Query().Get("entity_type")
-
-		// if entityType != "feedpost" {
-		// 	http.Error(w, "Invalid entity type", http.StatusBadRequest)
-		// 	return
-		// }
-
-		// // Connect to MongoDB collection "posts"
-		// collection := db.PostsCollection
-
-		// filter := bson.M{"userid": username}
-		// cursor, err := collection.Find(context.Background(), filter)
-		// if err != nil {
-		// 	http.Error(w, "DB error", http.StatusInternalServerError)
-		// 	return
-		// }
-		// defer cursor.Close(context.Background())
-
-		// var posts []bson.M
-		// if err = cursor.All(context.Background(), &posts); err != nil {
-		// 	http.Error(w, "Cursor decode error", http.StatusInternalServerError)
-		// 	return
-		// }
-
-		// // Convert MongoDB docs to a simplified response
-		// var response []map[string]interface{}
-		// for _, post := range posts {
-		// 	response = append(response, map[string]interface{}{
-		// 		"id":         post["_id"],
-		// 		"image_url":  post["image_url"],
-		// 		"caption":    post["caption"],
-		// 		"created_at": post["created_at"],
-		// 	})
-		// }
-
-		// w.Header().Set("Content-Type", "application/json")
-		// json.NewEncoder(w).Encode(response)
-
-		const res string = `[
-		{
-		  "id": "post_001",
-		  "image_url": "https://i.pinimg.com/1200x/41/6a/dd/416add5d8b8f0ea89bbcd78ef4471866.jpg",
-		  "caption": "Sunset in Bali",
-		  "created_at": "2025-05-19T12:34:56Z"
-		},
-		{
-		  "id": "post_002",
-		  "image_url": "https://i.pinimg.com/736x/28/f5/b9/28f5b9cb0281e66944d2b5834283122f.jpg",
-		  "caption": "Coffee time",
-		  "created_at": "2025-05-18T08:12:44Z"
-		},
-		{
-		  "id": "post_003",
-		  "image_url": "https://i.pinimg.com/736x/ce/a1/6a/cea16abe291fde62df608ed9460c99a1.jpg",
-		  "caption": "City lights",
-		  "created_at": "2025-05-17T21:09:13Z"
+		username := utils.GetParam(r, "username")
+		if username == "" {
+			http.Error(w, "Missing user identifier", http.StatusBadRequest)
+			return
 		}
-	  ]
-	  `
-		utils.RespondWithJSON(w, http.StatusOK, res)
+
+		entityType := r.URL.Query().Get("entity_type")
+		if entityType == "" {
+			http.Error(w, "Entity type is required", http.StatusBadRequest)
+			return
+		}
+		if entityType != "feedpost" {
+			http.Error(w, "Invalid entity type", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		type postDoc struct {
+			PostID    string    `bson:"postid"`
+			Title     string    `bson:"title"`
+			Thumb     string    `bson:"thumb"`
+			CreatedBy string    `bson:"createdBy"`
+			Username  string    `bson:"username"`
+			CreatedAt time.Time `bson:"createdAt"`
+			Blocks    []struct {
+				Type    string `bson:"type"`
+				URL     string `bson:"url"`
+				Caption string `bson:"caption"`
+			} `bson:"blocks"`
+		}
+
+		var posts []postDoc
+		filter := bson.M{
+			"$or": []bson.M{
+				{"createdBy": username},
+				{"username": username},
+			},
+		}
+
+		if err := app.DB.FindMany(ctx, config.Collections.FeedPostsCollection, filter, &posts); err != nil {
+			http.Error(w, "DB error", http.StatusInternalServerError)
+			log.Printf("Error fetching other user feed posts: %v", err)
+			return
+		}
+
+		response := make([]map[string]any, 0, len(posts))
+		for _, post := range posts {
+			imageURL := post.Thumb
+			caption := post.Title
+			if imageURL == "" && len(post.Blocks) > 0 {
+				for _, block := range post.Blocks {
+					if block.URL != "" {
+						imageURL = block.URL
+						if block.Caption != "" {
+							caption = block.Caption
+						}
+						break
+					}
+				}
+			}
+			if caption == "" {
+				caption = "Post image"
+			}
+
+			response = append(response, map[string]any{
+				"id":          post.PostID,
+				"entity_id":   post.PostID,
+				"postid":      post.PostID,
+				"entity_type": "feedpost",
+				"image_url":   imageURL,
+				"caption":     caption,
+				"created_at":  post.CreatedAt.Format(time.RFC3339),
+			})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			log.Printf("Error encoding other user feed posts: %v", err)
+		}
 	}
 }

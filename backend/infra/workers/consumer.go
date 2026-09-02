@@ -27,7 +27,7 @@ type MediaJob struct {
 	Filename      string `json:"filename"`
 	Ext           string `json:"ext"`
 	ThumbWidth    int    `json:"thumb_width"`
-	UserID        string `json:"user_id"`
+	UserID        string `json:"userid"`
 }
 
 // StartMediaWorker subscribes to the media job subject and processes messages.

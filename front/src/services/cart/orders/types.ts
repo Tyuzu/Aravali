@@ -4,7 +4,7 @@ export type OrderType = "farm" | "regular";
 export interface RefundRequest {
   id: string;
   order_id: string;
-  user_id: string;
+  userid: string;
   amount: number;
   reason?: string;
   status: RefundStatus;

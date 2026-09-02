@@ -54,7 +54,7 @@ export async function RoleRequestsPage(
         title.textContent = `${item.role} request`;
 
         const user = document.createElement("p");
-        user.textContent = `User: ${item.user_id}`;
+        user.textContent = `User: ${item.userid}`;
 
         const reason = document.createElement("p");
         reason.textContent = `Reason: ${item.reason || "No reason provided."}`;

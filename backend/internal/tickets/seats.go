@@ -3,12 +3,12 @@ package tickets
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
 )
 
@@ -41,8 +41,8 @@ func LockSeats(app *infra.Deps) http.HandlerFunc {
 		}
 		update := map[string]any{
 			"$set": map[string]any{
-				"seats.$[].status":  "locked",
-				"seats.$[].user_id": userID, // Use authenticated userID, not client-provided
+				"seats.$[].status": "locked",
+				"seats.$[].userid": userID, // Use authenticated userID, not client-provided
 			},
 		}
 
@@ -85,12 +85,12 @@ func UnlockSeats(app *infra.Deps) http.HandlerFunc {
 		filter := map[string]any{
 			"eventid":       eventID,
 			"seats.seat_id": map[string]any{"$in": req.Seats},
-			"seats.user_id": userID, // Only unlock seats locked by this user
+			"seats.userid":  userID, // Only unlock seats locked by this user
 		}
 		update := map[string]any{
 			"$set": map[string]any{
-				"seats.$[].status":  "available",
-				"seats.$[].user_id": nil,
+				"seats.$[].status": "available",
+				"seats.$[].userid": nil,
 			},
 		}
 

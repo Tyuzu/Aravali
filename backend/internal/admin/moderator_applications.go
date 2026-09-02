@@ -19,7 +19,7 @@ var moderatorApplicationsCollection = config.Collections.ModeratorApplications
 
 type ModeratorApplication struct {
 	ID        string    `json:"id" bson:"id"`
-	UserID    string    `json:"user_id" bson:"user_id"`
+	UserID    string    `json:"userid" bson:"userid"`
 	Reason    string    `json:"reason" bson:"reason"`
 	Status    string    `json:"status" bson:"status"`
 	CreatedAt time.Time `json:"created_at" bson:"created_at"`

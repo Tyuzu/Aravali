@@ -49,7 +49,6 @@ export interface Recipe {
   version?: string | number;
   lastUpdated?: string | number | Date;
   userid?: string | number;
-  user_id?: string | number;
   username?: string;
 }
 

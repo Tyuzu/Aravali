@@ -1,7 +1,6 @@
 import { createElement } from "../../components/createElement.js";
 import Imagex from "../../components/base/Imagex.js";
-import { fetchUserProfileData } from "./api.js";
-import type { EntityItem } from "./types.js";
+import { fetchOtherUserProfileData } from "./api.js";
 
 // Renders posts in a 3-column grid
 export async function othusrdata(kc: HTMLElement, userid: string): Promise<void> {
@@ -9,10 +8,9 @@ export async function othusrdata(kc: HTMLElement, userid: string): Promise<void>
   const grid = createElement("div", { class: "grid-container" });
 
   try {
-    const posts = await fetchUserProfileData(userid, "feedpost");
-    const displayPosts = posts;
+    const posts = await fetchOtherUserProfileData(userid, "feedpost");
 
-    displayPosts.forEach((post) => {
+    posts.forEach((post) => {
       const postBox = createElement("div", { class: "grid-item" });
 
       const img = Imagex({

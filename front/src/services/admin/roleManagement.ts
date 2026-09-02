@@ -7,7 +7,7 @@ export interface RoleRequestPayload {
 
 export interface RoleApplication {
   id: string;
-  user_id: string;
+  userid: string;
   role: string;
   reason: string;
   status: "pending" | "approved" | "rejected";

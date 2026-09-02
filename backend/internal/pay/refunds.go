@@ -3,13 +3,13 @@ package pay
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/internal/tickets"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -182,7 +182,7 @@ func GetMyRefundRequests(app *infra.Deps) http.HandlerFunc {
 
 		// Count total
 		total, err := app.DB.Count(ctx, RefundsCollection, bson.M{
-			"user_id": userID,
+			"userid": userID,
 		})
 		if err != nil {
 			log.Println("Count refund requests error:", err)
@@ -201,7 +201,7 @@ func GetMyRefundRequests(app *infra.Deps) http.HandlerFunc {
 		err = app.DB.FindMany(
 			ctx,
 			RefundsCollection,
-			bson.M{"user_id": userID},
+			bson.M{"userid": userID},
 			&refunds,
 			opts,
 		)
@@ -400,7 +400,7 @@ func ApproveRefundRequest(app *infra.Deps) http.HandlerFunc {
 		event := map[string]any{
 			"refund_request_id": refundID,
 			"order_id":          refund.OrderID,
-			"user_id":           refund.UserID,
+			"userid":            refund.UserID,
 			"amount":            refund.Amount,
 			"transaction_id":    refundTxn.ID,
 		}
@@ -490,7 +490,7 @@ func RejectRefundRequest(app *infra.Deps) http.HandlerFunc {
 		event := map[string]any{
 			"refund_request_id": refundID,
 			"order_id":          refund.OrderID,
-			"user_id":           refund.UserID,
+			"userid":            refund.UserID,
 			"reason":            req.Notes,
 		}
 

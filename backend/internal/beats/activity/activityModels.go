@@ -12,7 +12,7 @@ type Activity struct {
 	IPAddress    string    `json:"ipAddress,omitempty" bson:"ipAddress,omitempty"`
 	DeviceInfo   string    `json:"deviceInfo,omitempty" bson:"deviceInfo,omitempty"`
 	ActivityID   string    `json:"activityid" bson:"activityid,omitempty"`
-	UserID       string    `json:"user_id" bson:"user_id"`
+	UserID       string    `json:"userid" bson:"userid"`
 	ActivityType string    `json:"activity_type" bson:"activity_type"` // e.g., "follow", "review", "buy"
 	EntityID     string    `json:"entity_id,omitempty" bson:"entity_id,omitempty"`
 	EntityType   *string   `json:"entity_type,omitempty" bson:"entity_type,omitempty"` // "event", "place", or null

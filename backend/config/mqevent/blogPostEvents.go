@@ -18,7 +18,7 @@ const (
 
 type BlogPostCreatedPayload struct {
 	BlogPostID string    `json:"post_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Username   string    `json:"username"`
 	PostType   string    `json:"post_type"`
 	OccurredAt time.Time `json:"occurred_at"`
@@ -30,7 +30,7 @@ type BlogPostCreatedPayload struct {
 
 type BlogPostUpdatedPayload struct {
 	BlogPostID string    `json:"post_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -40,6 +40,6 @@ type BlogPostUpdatedPayload struct {
 
 type BlogPostDeletedPayload struct {
 	BlogPostID string    `json:"post_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

@@ -31,8 +31,8 @@ const (
 ============================================================ */
 
 type UserFollowedPayload struct {
-	UserID       string    `json:"user_id"`
-	TargetUserID string    `json:"target_user_id"`
+	UserID       string    `json:"userid"`
+	TargetUserID string    `json:"target_userid"`
 	OccurredAt   time.Time `json:"occurred_at"`
 }
 
@@ -41,7 +41,7 @@ type UserFollowedPayload struct {
 ============================================================ */
 
 type UserLikedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	EntityType string    `json:"entity_type"`
 	EntityID   string    `json:"entity_id"`
 	CreatedAt  time.Time `json:"created_at"`
@@ -53,7 +53,7 @@ type UserLikedPayload struct {
 ============================================================ */
 
 type UserLikesBatchFlushedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Count      int       `json:"count"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -65,13 +65,13 @@ type UserLikesBatchFlushedPayload struct {
 type NotificationCreatedPayload struct {
 	EventID        string    `json:"event_id"`
 	NotificationID string    `json:"notification_id"`
-	UserID         string    `json:"user_id"`
+	UserID         string    `json:"userid"`
 	Type           string    `json:"type"`
 	Title          string    `json:"title"`
 	Message        string    `json:"message"`
 	EntityType     string    `json:"entity_type,omitempty"`
 	EntityID       string    `json:"entity_id,omitempty"`
-	RelatedUserID  string    `json:"related_user_id,omitempty"`
+	RelatedUserID  string    `json:"related_userid,omitempty"`
 	OccurredAt     time.Time `json:"occurred_at"`
 }
 
@@ -81,7 +81,7 @@ type NotificationCreatedPayload struct {
 
 type NotificationsBulkCreatedPayload struct {
 	Count      int       `json:"count"`
-	UserIDs    []string  `json:"user_ids"`
+	UserIDs    []string  `json:"userids"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -91,12 +91,12 @@ type NotificationsBulkCreatedPayload struct {
 
 type NotificationReadPayload struct {
 	NotificationID string    `json:"notification_id"`
-	UserID         string    `json:"user_id"`
+	UserID         string    `json:"userid"`
 	OccurredAt     time.Time `json:"occurred_at"`
 }
 
 type NotificationsAllReadPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Count      int       `json:"count"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -107,12 +107,12 @@ type NotificationsAllReadPayload struct {
 
 type NotificationDeletedPayload struct {
 	NotificationID string    `json:"notification_id"`
-	UserID         string    `json:"user_id"`
+	UserID         string    `json:"userid"`
 	OccurredAt     time.Time `json:"occurred_at"`
 }
 
 type NotificationsAllClearedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -121,6 +121,6 @@ type NotificationsAllClearedPayload struct {
 ============================================================ */
 
 type NotificationPreferencesUpdatedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

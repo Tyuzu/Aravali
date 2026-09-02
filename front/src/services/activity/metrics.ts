@@ -59,8 +59,8 @@ const SESSION_ID: string = (() => {
   return id;
 })();
 
-const USER_ID: string = (() => {
-  const key = "__user_id__";
+const userid: string = (() => {
+  const key = "__userid__";
   let id = localStorage.getItem(key);
   if (!id) {
     id = generateUUID();
@@ -109,7 +109,7 @@ function getBatchMetadata(): BatchMetadata {
     ua: navigator.userAgent,
     screen: `${window.innerWidth}x${window.innerHeight}`,
     session: SESSION_ID,
-    user: USER_ID,
+    user: userid,
   };
 }
 

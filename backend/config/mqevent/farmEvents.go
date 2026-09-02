@@ -65,7 +65,7 @@ const (
 
 type FarmCreatedPayload struct {
 	FarmID     string    `json:"farm_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	FarmName   string    `json:"farm_name"`
 	Location   string    `json:"location"`
 	OccurredAt time.Time `json:"occurred_at"`
@@ -77,7 +77,7 @@ type FarmCreatedPayload struct {
 
 type FarmUpdatedPayload struct {
 	FarmID     string    `json:"farm_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -87,7 +87,7 @@ type FarmUpdatedPayload struct {
 
 type FarmDeletedPayload struct {
 	FarmID     string    `json:"farm_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -98,7 +98,7 @@ type FarmDeletedPayload struct {
 type CropCreatedPayload struct {
 	CropID     string    `json:"crop_id"`
 	FarmID     string    `json:"farm_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	CropName   string    `json:"crop_name"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -110,7 +110,7 @@ type CropCreatedPayload struct {
 type CropUpdatedPayload struct {
 	CropID     string    `json:"crop_id"`
 	FarmID     string    `json:"farm_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -121,7 +121,7 @@ type CropUpdatedPayload struct {
 type CropDeletedPayload struct {
 	CropID     string    `json:"crop_id"`
 	FarmID     string    `json:"farm_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -133,7 +133,7 @@ type FarmProductCreatedPayload struct {
 	ProductID   string    `json:"product_id"`
 	FarmID      string    `json:"farm_id,omitempty"`
 	CropID      string    `json:"crop_id,omitempty"`
-	UserID      string    `json:"user_id"`
+	UserID      string    `json:"userid"`
 	ProductName string    `json:"product_name"`
 	OccurredAt  time.Time `json:"occurred_at"`
 }
@@ -146,7 +146,7 @@ type FarmProductUpdatedPayload struct {
 	ProductID  string    `json:"product_id"`
 	FarmID     string    `json:"farm_id,omitempty"`
 	CropID     string    `json:"crop_id,omitempty"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -158,7 +158,7 @@ type FarmProductDeletedPayload struct {
 	ProductID  string    `json:"product_id"`
 	FarmID     string    `json:"farm_id,omitempty"`
 	CropID     string    `json:"crop_id,omitempty"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -169,7 +169,7 @@ type FarmProductDeletedPayload struct {
 type CropBoughtPayload struct {
 	ProductID  string    `json:"product_id"`
 	CropID     string    `json:"crop_id,omitempty"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Quantity   int       `json:"quantity,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -180,7 +180,7 @@ type CropBoughtPayload struct {
 
 type OrderStatusUpdatedPayload struct {
 	OrderID        string    `json:"order_id"`
-	UserID         string    `json:"user_id,omitempty"`
+	UserID         string    `json:"userid,omitempty"`
 	Status         string    `json:"status"`
 	PreviousStatus string    `json:"previous_status,omitempty"`
 	OccurredAt     time.Time `json:"occurred_at"`
@@ -192,7 +192,7 @@ type OrderStatusUpdatedPayload struct {
 
 type OrdersBulkUpdatedPayload struct {
 	OrderIDs   []string  `json:"order_ids"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	Status     string    `json:"status,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -204,7 +204,7 @@ type OrdersBulkUpdatedPayload struct {
 type CropAboutCreatedPayload struct {
 	CropAboutID string    `json:"crop_about_id"`
 	CropID      string    `json:"crop_id"`
-	UserID      string    `json:"user_id"`
+	UserID      string    `json:"userid"`
 	OccurredAt  time.Time `json:"occurred_at"`
 }
 
@@ -215,7 +215,7 @@ type CropAboutCreatedPayload struct {
 type CropAboutUpdatedPayload struct {
 	CropAboutID string    `json:"crop_about_id"`
 	CropID      string    `json:"crop_id"`
-	UserID      string    `json:"user_id"`
+	UserID      string    `json:"userid"`
 	OccurredAt  time.Time `json:"occurred_at"`
 }
 
@@ -226,6 +226,6 @@ type CropAboutUpdatedPayload struct {
 type CropAboutDeletedPayload struct {
 	CropAboutID string    `json:"crop_about_id"`
 	CropID      string    `json:"crop_id"`
-	UserID      string    `json:"user_id"`
+	UserID      string    `json:"userid"`
 	OccurredAt  time.Time `json:"occurred_at"`
 }

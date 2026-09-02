@@ -17,7 +17,7 @@ const (
 ============================================================ */
 
 type UserSettingsUpdatedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -26,7 +26,7 @@ type UserSettingsUpdatedPayload struct {
 ============================================================ */
 
 type UserSettingsResetPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -35,6 +35,6 @@ type UserSettingsResetPayload struct {
 ============================================================ */
 
 type UserSettingsInitiatedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

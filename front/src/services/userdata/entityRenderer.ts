@@ -17,7 +17,7 @@ const ENTITY_LABELS: Record<string, string> = {
 };
 
 // Route mapping dictionary
-const ENTITY_ROUTES: Record<string, (id: string | number) => string> = {
+const ENTITY_ROUTES: Partial<Record<EntityType, (id: string | number) => string>> = {
   place: (id) => `/place/${id}`,
   event: (id) => `/event/${id}`,
   feedpost: (id) => `/feedpost/${id}`,
@@ -45,22 +45,25 @@ async function copyToClipboard(text: string, targetElement: HTMLElement): Promis
  */
 function createEntityCard(item: EntityItem, entityType: EntityType): HTMLDivElement {
   const label = ENTITY_LABELS[entityType] || "Post ID";
+  const entityId = item.entity_id ?? item.postid ?? item.id;
   const getRoute = ENTITY_ROUTES[entityType];
-  const href = getRoute ? getRoute(item.entity_id) : "#";
+  const safeEntityId = entityId !== undefined && entityId !== null ? String(entityId) : "";
+  const href = getRoute && safeEntityId ? getRoute(safeEntityId) : "#";
 
-  // Card text content
   const cardContent = createElement("p", { class: "entity-card-info" }, [
-    `${label}: ${item.entity_id} - Created At: ${Datex(item.created_at, true)}`
+    `${label}: ${safeEntityId || "N/A"} - Created At: ${Datex(item.created_at, true)}`
   ]);
 
-  cardContent.addEventListener("click", () =>
-    copyToClipboard(String(item.entity_id), cardContent)
-  );
+  if (safeEntityId) {
+    cardContent.addEventListener("click", () => copyToClipboard(safeEntityId, cardContent));
+  }
 
-  // Entity navigation link
   const entityLink = createElement("a", { class: "entity-card-link", href }, ["View Details"]);
+  entityLink.setAttribute("aria-disabled", safeEntityId ? "false" : "true");
+  if (!safeEntityId) {
+    entityLink.setAttribute("tabindex", "-1");
+  }
 
-  // Card container
   return createElement("div", { class: "card entity-card" }, [cardContent, entityLink]);
 }
 

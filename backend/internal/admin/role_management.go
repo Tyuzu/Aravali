@@ -63,7 +63,7 @@ func MergeRoleList(existing []string, roles ...string) []string {
 
 type RoleApplication struct {
 	ID        string    `json:"id" bson:"id"`
-	UserID    string    `json:"user_id" bson:"user_id"`
+	UserID    string    `json:"userid" bson:"userid"`
 	Role      string    `json:"role" bson:"role"`
 	Reason    string    `json:"reason" bson:"reason"`
 	Status    string    `json:"status" bson:"status"`
@@ -102,7 +102,7 @@ func ApplyForRole(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing RoleApplication
-		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"user_id": userID, "role": payload.Role, "status": "pending"}, &existing); err == nil {
+		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"userid": userID, "role": payload.Role, "status": "pending"}, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You already submitted a pending request for this role")
 			return
 		}
@@ -139,7 +139,7 @@ func GetMyRoleRequests(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var applications []RoleApplication
-		if err := app.DB.FindMany(ctx, roleApplicationsCollection, bson.M{"user_id": userID}, &applications); err != nil {
+		if err := app.DB.FindMany(ctx, roleApplicationsCollection, bson.M{"userid": userID}, &applications); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to load your role requests")
 			return
 		}

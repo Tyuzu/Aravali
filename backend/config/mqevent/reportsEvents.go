@@ -73,7 +73,7 @@ type ReportSoftDeletedPayload struct {
 
 type AppealCreatedPayload struct {
 	AppealID   string    `json:"appeal_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	ReportID   string    `json:"report_id,omitempty"`
 	Reason     string    `json:"reason"`
 	OccurredAt time.Time `json:"occurred_at"`
@@ -97,13 +97,13 @@ type AppealDeletedPayload struct {
 
 type AppliedForModeratorRolePayload struct {
 	ApplicationID string    `json:"application_id"`
-	UserID        string    `json:"user_id"`
+	UserID        string    `json:"userid"`
 	OccurredAt    time.Time `json:"occurred_at"`
 }
 
 type ApprovedModeratorRoleRequestPayload struct {
 	ApplicationID string    `json:"application_id"`
-	UserID        string    `json:"user_id,omitempty"`
+	UserID        string    `json:"userid,omitempty"`
 	ApprovedBy    string    `json:"approved_by,omitempty"`
 	ApprovedAt    time.Time `json:"approved_at"`
 	OccurredAt    time.Time `json:"occurred_at"`
@@ -111,7 +111,7 @@ type ApprovedModeratorRoleRequestPayload struct {
 
 type RejectedModeratorRoleRequestPayload struct {
 	ApplicationID string    `json:"application_id"`
-	UserID        string    `json:"user_id,omitempty"`
+	UserID        string    `json:"userid,omitempty"`
 	RejectedBy    string    `json:"rejected_by,omitempty"`
 	RejectedAt    time.Time `json:"rejected_at"`
 	OccurredAt    time.Time `json:"occurred_at"`

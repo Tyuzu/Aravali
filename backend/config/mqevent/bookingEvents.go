@@ -24,7 +24,7 @@ const (
 
 type BookingCreatedPayload struct {
 	BookingID  string    `json:"booking_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	EntityID   string    `json:"entity_id,omitempty"`
 	EntityType string    `json:"entity_type,omitempty"`
 	Status     string    `json:"status,omitempty"`
@@ -33,20 +33,20 @@ type BookingCreatedPayload struct {
 
 type BookingUpdatedPayload struct {
 	BookingID  string    `json:"booking_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	Status     string    `json:"status,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type BookingDeletedPayload struct {
 	BookingID  string    `json:"booking_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type BookingCancelledPayload struct {
 	BookingID  string    `json:"booking_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 

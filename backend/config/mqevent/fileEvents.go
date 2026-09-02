@@ -19,7 +19,7 @@ const (
 type FileCreatedPayload struct {
 	FileID     string    `json:"file_id,omitempty"`
 	FileIDs    []string  `json:"file_ids,omitempty"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	EntityType string    `json:"entity_type"`
 	EntityID   string    `json:"entity_id,omitempty"`
 	Count      int       `json:"count"`
@@ -32,7 +32,7 @@ type FileCreatedPayload struct {
 
 type FileUpdatedPayload struct {
 	FileID     string    `json:"file_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	EntityType string    `json:"entity_type,omitempty"`
 	EntityID   string    `json:"entity_id,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
@@ -44,7 +44,7 @@ type FileUpdatedPayload struct {
 
 type FileDeletedPayload struct {
 	FileID     string    `json:"file_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	EntityType string    `json:"entity_type,omitempty"`
 	EntityID   string    `json:"entity_id,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`

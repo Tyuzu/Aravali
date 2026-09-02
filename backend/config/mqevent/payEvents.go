@@ -54,7 +54,7 @@ const (
 type RefundRequestedPayload struct {
 	RefundID   string    `json:"refund_id"`
 	OrderID    string    `json:"order_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Reason     string    `json:"reason"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -109,7 +109,7 @@ type RefundCompletedPayload struct {
 
 type CashOnDeliveryProcessedPayload struct {
 	OrderID     string    `json:"order_id"`
-	UserID      string    `json:"user_id,omitempty"`
+	UserID      string    `json:"userid,omitempty"`
 	Amount      int64     `json:"amount"`
 	Currency    string    `json:"currency"`
 	ProcessedAt time.Time `json:"processed_at"`
@@ -123,7 +123,7 @@ type CashOnDeliveryProcessedPayload struct {
 type PaymentDonePayload struct {
 	PaymentID   string    `json:"payment_id"`
 	OrderID     string    `json:"order_id,omitempty"`
-	UserID      string    `json:"user_id,omitempty"`
+	UserID      string    `json:"userid,omitempty"`
 	Amount      int64     `json:"amount"`
 	Currency    string    `json:"currency"`
 	CompletedAt time.Time `json:"completed_at"`
@@ -136,7 +136,7 @@ type PaymentDonePayload struct {
 
 type TopupDonePayload struct {
 	TopupID     string    `json:"topup_id"`
-	UserID      string    `json:"user_id"`
+	UserID      string    `json:"userid"`
 	Amount      int64     `json:"amount"`
 	Currency    string    `json:"currency"`
 	CompletedAt time.Time `json:"completed_at"`
@@ -149,8 +149,8 @@ type TopupDonePayload struct {
 
 type MoneyTransferredPayload struct {
 	TransferID  string    `json:"transfer_id"`
-	FromUserID  string    `json:"from_user_id"`
-	ToUserID    string    `json:"to_user_id"`
+	FromUserID  string    `json:"from_userid"`
+	ToUserID    string    `json:"to_userid"`
 	Amount      int64     `json:"amount"`
 	Currency    string    `json:"currency"`
 	CompletedAt time.Time `json:"completed_at"`
@@ -164,7 +164,7 @@ type MoneyTransferredPayload struct {
 type PaymentProcessedPayload struct {
 	PaymentID   string    `json:"payment_id"`
 	OrderID     string    `json:"order_id,omitempty"`
-	UserID      string    `json:"user_id,omitempty"`
+	UserID      string    `json:"userid,omitempty"`
 	Amount      int64     `json:"amount"`
 	Currency    string    `json:"currency"`
 	ProcessedAt time.Time `json:"processed_at"`

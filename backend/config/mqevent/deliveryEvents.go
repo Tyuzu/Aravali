@@ -38,7 +38,7 @@ const (
 
 type DeliveryCreatedPayload struct {
 	DeliveryID string    `json:"delivery_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OrderID    string    `json:"order_id,omitempty"`
 	BookingID  string    `json:"booking_id,omitempty"`
 	EntityID   string    `json:"entity_id,omitempty"`
@@ -52,7 +52,7 @@ type DeliveryCreatedPayload struct {
 
 type DeliveryUpdatedPayload struct {
 	DeliveryID string    `json:"delivery_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -62,7 +62,7 @@ type DeliveryUpdatedPayload struct {
 
 type DeliveryDeletedPayload struct {
 	DeliveryID string    `json:"delivery_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -135,7 +135,7 @@ type DeliveryDeliveredPayload struct {
 
 type DeliveryCancelledPayload struct {
 	DeliveryID       string    `json:"delivery_id"`
-	UserID           string    `json:"user_id,omitempty"`
+	UserID           string    `json:"userid,omitempty"`
 	DriverID         string    `json:"driver_id,omitempty"`
 	CancellationCode string    `json:"cancellation_code,omitempty"`
 	Reason           string    `json:"reason,omitempty"`
@@ -144,7 +144,7 @@ type DeliveryCancelledPayload struct {
 
 type DeliveryFailedPayload struct {
 	DeliveryID  string    `json:"delivery_id"`
-	UserID      string    `json:"user_id,omitempty"`
+	UserID      string    `json:"userid,omitempty"`
 	DriverID    string    `json:"driver_id,omitempty"`
 	FailureCode string    `json:"failure_code,omitempty"`
 	Reason      string    `json:"reason,omitempty"`

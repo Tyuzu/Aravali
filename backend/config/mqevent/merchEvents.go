@@ -48,7 +48,7 @@ type MerchDeletedPayload struct {
 
 type MerchBoughtPayload struct {
 	MerchID    string    `json:"merch_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	Quantity   int       `json:"quantity,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -59,7 +59,7 @@ type MerchBoughtPayload struct {
 
 type MerchPaymentSessionCreatedPayload struct {
 	MerchID    string    `json:"merch_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	SessionID  string    `json:"session_id,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -70,7 +70,7 @@ type MerchPaymentSessionCreatedPayload struct {
 
 type MerchPurchaseConfirmedPayload struct {
 	MerchID    string    `json:"merch_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OrderID    string    `json:"order_id,omitempty"`
 	Quantity   int       `json:"quantity,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`

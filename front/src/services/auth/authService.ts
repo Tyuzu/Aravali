@@ -23,7 +23,6 @@ import { navigate } from "../../routes/navigate.js";
 export interface JwtPayload {
   userid?: string;
   userID?: string;
-  user_id?: string;
   sub?: string;
   username?: string;
   roles?: string | string[];
@@ -45,7 +44,6 @@ export interface RawUserRecord {
 export interface AuthResponseData {
   token?: string;
   Token?: string;
-  user_id?: string;
   userid?: string;
   UserID?: string;
   username?: string;
@@ -177,15 +175,15 @@ function extractAuthPayload(response: AuthResponseData, fallbackUsername = ""): 
 
   const jwt = parseJwtPayload(token) || {};
   const userId =
-    response?.user_id ??
+    response?.userid ??
     response?.userid ??
     response?.UserID ??
-    data?.user_id ??
+    data?.userid ??
     data?.userid ??
     data?.UserID ??
     jwt.userid ??
     jwt.userID ??
-    jwt.user_id ??
+    jwt.userid ??
     jwt.sub ??
     "";
 

@@ -8,7 +8,6 @@ export interface JwtPayload {
   exp?: number;
   userid?: string;
   userID?: string;
-  user_id?: string;
   sub?: string;
   username?: string;
   roles?: string[];
@@ -212,7 +211,7 @@ export async function refreshToken(): Promise<boolean> {
           return;
         }
 
-        const userId = parsed.userid || parsed.userID || parsed.user_id || parsed.sub || "";
+        const userId = parsed.userid || parsed.userID || parsed.userid || parsed.sub || "";
         const roles = Array.isArray(parsed.roles || parsed.role)
           ? ((parsed.roles || parsed.role) as string[])
           : parsed.role

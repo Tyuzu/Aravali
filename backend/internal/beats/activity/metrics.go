@@ -43,9 +43,9 @@ func getActivities(
 	cursor time.Time,
 	limit int,
 ) ([]Activity, error) {
-	// FIX: Matched struct bson tag "user_id" instead of "userid"
+	// FIX: Matched struct bson tag "userid" instead of "userid"
 	filter := bson.M{
-		"user_id": userID,
+		"userid": userID,
 	}
 
 	if !cursor.IsZero() {

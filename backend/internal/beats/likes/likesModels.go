@@ -8,7 +8,7 @@ import (
 
 type Like struct {
 	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	UserID     string             `bson:"user_id" json:"user_id"`
+	UserID     string             `bson:"userid" json:"userid"`
 	EntityType string             `bson:"entity_type" json:"entity_type"`
 	EntityID   string             `bson:"entity_id" json:"entity_id"`
 	CreatedAt  time.Time          `bson:"created_at" json:"created_at"`

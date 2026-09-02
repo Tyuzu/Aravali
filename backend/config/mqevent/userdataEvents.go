@@ -18,7 +18,7 @@ const (
 
 type UserDataCreatedPayload struct {
 	UserDataID string    `json:"user_data_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -28,7 +28,7 @@ type UserDataCreatedPayload struct {
 
 type UserDataUpdatedPayload struct {
 	UserDataID string    `json:"user_data_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -38,6 +38,6 @@ type UserDataUpdatedPayload struct {
 
 type UserDataDeletedPayload struct {
 	UserDataID string    `json:"user_data_id"`
-	UserID     string    `json:"user_id,omitempty"`
+	UserID     string    `json:"userid,omitempty"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

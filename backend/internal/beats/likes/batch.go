@@ -82,7 +82,7 @@ func BatchUserLikes(app *infra.Deps) http.HandlerFunc {
 			ctx,
 			likesCollection,
 			bson.M{
-				"user_id":     userID,
+				"userid":      userID,
 				"entity_type": entityType,
 				"entity_id": bson.M{
 					"$in": req.EntityIDs,

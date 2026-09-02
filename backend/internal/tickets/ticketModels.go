@@ -42,7 +42,7 @@ type Seat struct {
 	EntityID   string `json:"entity_id" bson:"entity_id"`
 	EntityType string `json:"entity_type" bson:"entity_type"` // e.g., "event" or "place"
 	SeatNumber string `json:"seat_number" bson:"seat_number"`
-	UserID     string `json:"user_id" bson:"user_id,omitempty"`
+	UserID     string `json:"userid" bson:"userid,omitempty"`
 	Status     string `json:"status" bson:"status"` // e.g., "booked", "available"
 }
 

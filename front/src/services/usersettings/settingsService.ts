@@ -3,6 +3,7 @@ import { getState } from "../../state/state.js";
 import { createElement } from "../../components/createElement.js";
 import ToggleSwitch from "../../components/ui/ToggleSwitch.js";
 import { submitRoleRequest } from "../admin/roleManagement.js";
+import { getMyAppeals } from "../reporting/api.js";
 import {
   loadSettingsRequest,
   updateSettingRequest,
@@ -210,6 +211,55 @@ function createSettingCard(setting: SettingSchemaItem, value: unknown): HTMLElem
   return createElement("div", { class: "setting-card" }, [info, controlContainer]);
 }
 
+async function createAppealStatusCard(): Promise<HTMLElement> {
+  const title = createElement("h3", { class: "setting-title" }, ["Appeal status"]);
+  const description = createElement(
+    "p",
+    { class: "setting-description" },
+    ["Track your submitted appeals and see whether they are still pending or have been reviewed."]
+  );
+  const info = createElement("div", { class: "setting-info" }, [title, description]);
+
+  const listHost = createElement("div", { class: "setting-control" });
+
+  try {
+    const appeals = await getMyAppeals();
+    if (!appeals || appeals.length === 0) {
+      listHost.appendChild(createElement("p", { class: "setting-description" }, ["No appeals submitted yet."]));
+      return createElement("div", { class: "setting-card" }, [info, listHost]);
+    }
+
+    const rows = appeals.map((appeal) => {
+      const item = createElement("div", { class: "setting-card" }, []);
+      const label = createElement("strong", {}, [appeal.targetType ? `${appeal.targetType} appeal` : "Appeal"]);
+      const status = createElement("span", {}, [String(appeal.status || "pending")]);
+      status.style.textTransform = "capitalize";
+      status.style.marginLeft = "8px";
+
+      const summary = createElement("p", { class: "setting-description" }, [
+        `${appeal.reason || "No reason provided."}`
+      ]);
+
+      const meta = createElement("p", { class: "setting-description" }, [
+        `Status: ${String(appeal.status || "pending")}${appeal.reviewNotes ? ` · ${appeal.reviewNotes}` : ""}`
+      ]);
+
+      item.appendChild(label);
+      item.appendChild(status);
+      item.appendChild(summary);
+      item.appendChild(meta);
+      return item;
+    });
+
+    rows.forEach((row) => listHost.appendChild(row));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to load appeals.";
+    listHost.appendChild(createElement("p", { class: "setting-description" }, [message]));
+  }
+
+  return createElement("div", { class: "setting-card" }, [info, listHost]);
+}
+
 function createRoleAccessCard(): HTMLElement {
   const existingRoles = Array.isArray(getState("roles")) ? getState("roles") as string[] : [];
   const availableRoles = ["farmer", "worker", "admin"].filter((role) => !existingRoles.includes(role));
@@ -309,6 +359,14 @@ function renderSettings(
   container.appendChild(fragment);
 }
 
+async function renderAppealStatus(container: HTMLElement): Promise<void> {
+  const section = createElement("section", { class: "settings-category" }, [
+    createElement("h2", { class: "settings-category-title" }, ["Appeal Status"]),
+    createElement("div", { class: "settings-category-body" }, [await createAppealStatusCard()])
+  ]);
+  container.appendChild(section);
+}
+
 // --- Main Entry Point ---
 
 export async function displaySettings(isLoggedIn: boolean, settingsSec: HTMLElement): Promise<void> {
@@ -326,6 +384,7 @@ export async function displaySettings(isLoggedIn: boolean, settingsSec: HTMLElem
 
     container.replaceChildren();
     renderSettings(container, schema, values);
+    await renderAppealStatus(container);
   } catch (err) {
     const error = err as Error;
     console.error("Display settings error:", error);

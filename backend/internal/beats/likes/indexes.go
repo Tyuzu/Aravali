@@ -18,7 +18,7 @@ func EnsureIndexes(
 		[]mongo.IndexModel{
 			{
 				Keys: bson.D{
-					{Key: "user_id", Value: 1},
+					{Key: "userid", Value: 1},
 					{Key: "entity_type", Value: 1},
 					{Key: "entity_id", Value: 1},
 				},

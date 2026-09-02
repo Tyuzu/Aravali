@@ -48,7 +48,7 @@ type ItineraryDeletedPayload struct {
 type ItineraryForkedPayload struct {
 	ItineraryID       string    `json:"itinerary_id"`
 	ForkedItineraryID string    `json:"forked_itinerary_id,omitempty"`
-	UserID            string    `json:"user_id,omitempty"`
+	UserID            string    `json:"userid,omitempty"`
 	OccurredAt        time.Time `json:"occurred_at"`
 }
 
@@ -58,6 +58,6 @@ type ItineraryForkedPayload struct {
 
 type ItineraryPublishedPayload struct {
 	ItineraryID string    `json:"itinerary_id"`
-	UserID      string    `json:"user_id,omitempty"`
+	UserID      string    `json:"userid,omitempty"`
 	OccurredAt  time.Time `json:"occurred_at"`
 }

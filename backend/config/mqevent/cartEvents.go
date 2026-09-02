@@ -38,7 +38,7 @@ const (
 
 type CartItemCreatedPayload struct {
 	CartItemID string    `json:"cart_item_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	ProductID  string    `json:"product_id"`
 	Quantity   int       `json:"quantity"`
 	OccurredAt time.Time `json:"occurred_at"`
@@ -46,20 +46,20 @@ type CartItemCreatedPayload struct {
 
 type CartItemUpdatedPayload struct {
 	CartItemID string    `json:"cart_item_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Quantity   int       `json:"quantity"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type CartItemDeletedPayload struct {
 	CartItemID string    `json:"cart_item_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type ItemQuantityUpdatedPayload struct {
 	CartItemID string    `json:"cart_item_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	Quantity   int       `json:"quantity"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -69,7 +69,7 @@ type ItemQuantityUpdatedPayload struct {
 ============================================================ */
 
 type CartClearedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
@@ -78,19 +78,19 @@ type CartClearedPayload struct {
 ============================================================ */
 
 type CheckoutInitiatedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	ItemCount  int       `json:"item_count"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type CheckoutSessionCreatedPayload struct {
 	CheckoutID string    `json:"checkout_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
 type CouponValidatedPayload struct {
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	CouponCode string    `json:"coupon_code"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
@@ -101,6 +101,6 @@ type CouponValidatedPayload struct {
 
 type OrderPlacedPayload struct {
 	OrderID    string    `json:"order_id"`
-	UserID     string    `json:"user_id"`
+	UserID     string    `json:"userid"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
