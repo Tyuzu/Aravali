@@ -147,6 +147,7 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 const createNav = (): HTMLDivElement => {
   // 1. Master list of navigation items mapped to feature keys
   const allNavItems: NavItemConfig[] = [
+    { href: "/dash", label: "Dash", feature: "farms" },
     { href: "/farms", label: "Farms", feature: "farms" },
     { href: "/grocery", label: "Grocery", feature: "farms" },
     { href: "/recipes", label: "Recipes", feature: "farms" },

@@ -1,95 +1,74 @@
 // src/config/domainFeatures.ts
 
-export type FeatureKey =
-  | "core"
-  | "farms"
-  | "places"
-  | "events"
-  | "baito"
-  | "chats"
-  | "admin"
-  | "social"
-  | "ALL"
-  | string;
+export type FeatureKey = string;
 
 export interface DomainMetadata {
   title: string;
   description: string;
-  theme: string;
-  logo: string;
-  favicon: string;
+  theme?: string;
+  logo?: string;
+  favicon?: string;
 }
 
 export const DOMAIN_FEATURE_MAP: Record<string, FeatureKey[]> = {
-  "farms.myapp.com": ["core", "farms", "chats"],
-  "places.myapp.com": ["core", "places", "chats", "events", "baito"],
-  "events.myapp.com": ["core", "events"],
-  "baito.myapp.com": ["core", "baito", "chats", "places"],
-  "chats.myapp.com": ["core", "chats"],
-  "admin.myapp.com": ["core", "admin"],
-  "social.myapp.com": ["core", "social", "chats"],
+  "farms.netlify.app": ["core", "farms", "chats"],
+  "places.netlify.app": ["core", "places", "chats", "events", "baito"],
+  "events.netlify.app": ["core", "events"],
+  "baito.netlify.app": ["core", "baito", "chats", "places"],
+  "chats.netlify.app": ["core", "chats"],
+  "admin.netlify.app": ["core", "admin"],
+  "social.netlify.app": ["core", "social", "chats"],
 
   // Local development, staging, and main hub access
   "localhost": ["ALL"],
   "127.0.0.1": ["ALL"],
-  "myapp.com": ["ALL"]
-};
-
-/** Reverse lookup map linking feature keys back to their domain hostnames */
-const FEATURE_TO_DOMAIN_MAP: Record<string, string> = {
-  farms: "farms.myapp.com",
-  places: "places.myapp.com",
-  events: "events.myapp.com",
-  baito: "baito.myapp.com",
-  chats: "chats.myapp.com",
-  admin: "admin.myapp.com",
-  social: "social.myapp.com"
+  ".netlify.app": ["ALL"]
 };
 
 export const DOMAIN_METADATA: Record<string, DomainMetadata> = {
-  "farms.myapp.com": {
+  "farms.netlify.app": {
     title: "FarmHub",
     description: "Discover local farms, fresh produce, and community crops.",
     theme: "theme-green",
     logo: "/logos/farm.svg",
     favicon: "/favicons/farm.ico"
   },
-  "places.myapp.com": {
+  "places.netlify.app": {
     title: "Places",
     description: "Explore local spots and community landmarks.",
     theme: "theme-emerald",
     logo: "/logos/places.svg",
     favicon: "/favicons/places.ico"
   },
-  "events.myapp.com": {
+  "events.netlify.app": {
     title: "EventPulse",
     description: "Find concerts, gatherings, and local experiences.",
     theme: "theme-purple",
     logo: "/logos/events.svg",
     favicon: "/favicons/events.ico"
   },
-  "baito.myapp.com": {
+  "baito.netlify.app": {
     title: "BaitoJobs",
     description: "Part-time gigs, local hiring, and quick work.",
     theme: "theme-amber",
     logo: "/logos/baito.svg",
     favicon: "/favicons/baito.ico"
   },
-  "chats.myapp.com": {
+  "chats.netlify.app": {
     title: "MereChat",
     description: "Connect and message directly with community members.",
     theme: "theme-blue",
     logo: "/logos/chats.svg",
     favicon: "/favicons/chats.ico"
   },
-  "social.myapp.com": {
+  "social.netlify.app": {
     title: "Community Posts",
     description: "Share updates, fan media, and community stories.",
     theme: "theme-pink",
     logo: "/logos/social.svg",
     favicon: "/favicons/social.ico"
   },
-  "admin.myapp.com": {
+  "admin.netlify.app": {
     title: "System Admin",
     description: "Platform management and system controls.",
     theme: "theme-slate",
@@ -112,7 +91,7 @@ export const DOMAIN_METADATA: Record<string, DomainMetadata> = {
     logo: "/logos/main.svg",
     favicon: "/favicon.ico"
   },
-  "myapp.com": {
+  "netlify.app": {
     title: "Main Network",
     description: "All-in-one community hub.",
     theme: "theme-default",
@@ -121,9 +100,7 @@ export const DOMAIN_METADATA: Record<string, DomainMetadata> = {
   }
 };
 
-/**
- * Gets the feature override parameter from URL if present (`?feature=events`).
- */
+/** Gets the feature override parameter from URL if present (`?feature=events`). */
 function getUrlFeatureOverride(): string | null {
   if (typeof window === "undefined") return null;
   const urlParams = new URLSearchParams(window.location.search);
@@ -131,9 +108,7 @@ function getUrlFeatureOverride(): string | null {
   return override ? override.toLowerCase() : null;
 }
 
-/**
- * Returns allowed features for the current hostname or URL override.
- */
+/** Returns allowed features for the current hostname or URL override. */
 export function getCurrentAllowedFeatures(): FeatureKey[] {
   const featureOverride = getUrlFeatureOverride();
   if (featureOverride) {
@@ -144,31 +119,17 @@ export function getCurrentAllowedFeatures(): FeatureKey[] {
   return DOMAIN_FEATURE_MAP[hostname] || ["ALL"];
 }
 
-/**
- * Checks if a specific feature key is allowed on the active domain.
- */
-export function isFeatureAllowed(featureKey: FeatureKey): boolean {
-  const allowed = getCurrentAllowedFeatures();
-  if (allowed.includes("ALL")) return true;
-  return allowed.includes(featureKey);
-}
-
-/**
- * Returns metadata object for current hostname or target URL override.
- */
+/** Returns metadata object for current hostname or target URL override. */
 export function getActiveDomainMetadata(): DomainMetadata {
-  // 1. If testing via ?feature=events on localhost, dynamically switch branding metadata
   const featureOverride = getUrlFeatureOverride();
-  if (featureOverride && FEATURE_TO_DOMAIN_MAP[featureOverride]) {
-    const targetDomain = FEATURE_TO_DOMAIN_MAP[featureOverride];
-    if (DOMAIN_METADATA[targetDomain]) {
-      return DOMAIN_METADATA[targetDomain];
-    }
+  if (featureOverride) {
+    const direct = DOMAIN_METADATA[featureOverride];
+    if (direct) return direct;
+    const dotted = DOMAIN_METADATA[`${featureOverride}.netlify.app`];
+    if (dotted) return dotted;
   }
 
-  // 2. Otherwise resolve by window hostname
   const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
-
   return DOMAIN_METADATA[hostname] || DOMAIN_METADATA["localhost"] || {
     title: "App Network",
     description: "Community platform",
