@@ -12,6 +12,7 @@ import {
 } from "../../utils/utils.js";
 import { fetchProfile } from "../profile/fetchProfile.js";
 import Notify from "../../components/ui/Notify.js";
+import { t } from "../../i18n/i18n.js";
 import { registerUser, loginUser, logoutUser } from "./api.js";
 import LoadingSpinner from "../../components/ui/LoadingSpinner.js";
 import { navigate } from "../../routes/navigate.js";
@@ -251,17 +252,17 @@ export async function signup(payload: SignupPayload = {}): Promise<boolean> {
     {
       value: username,
       validator: isValidUsername,
-      message: "Username must be between 3 and 20 characters."
+      message: t("auth.validation.username", {}, "Username must be between 3 and 20 characters.")
     },
     {
       value: email,
       validator: isValidEmail,
-      message: "Please enter a valid email."
+      message: t("auth.validation.email", {}, "Please enter a valid email.")
     },
     {
       value: password,
       validator: isValidPassword,
-      message: "Password must be at least 6 characters long."
+      message: t("auth.validation.password", {}, "Password must be at least 6 characters long.")
     }
   ]);
 
@@ -284,7 +285,7 @@ export async function signup(payload: SignupPayload = {}): Promise<boolean> {
   try {
     await registerUser(username as string, email as string, password as string);
 
-    Notify("Signup successful! You can now log in.", {
+    Notify(t("auth.signup.success", {}, "Signup successful! You can now log in."), {
       type: "success",
       duration: 3000,
       dismissible: true
@@ -325,7 +326,7 @@ export async function login(payload: LoginPayload = {}): Promise<boolean> {
   username = typeof username === "string" ? username.trim() : "";
 
   if (!username || !password) {
-    Notify("Username and password are required.", {
+    Notify(t("auth.login.requiredFields", {}, "Username and password are required."), {
       type: "error",
       duration: 3000,
       dismissible: true
@@ -387,7 +388,7 @@ export async function login(payload: LoginPayload = {}): Promise<boolean> {
         }
       }
     } catch {
-      Notify("Logged in, but profile details could not be loaded.", {
+      Notify(t("auth.login.profileLoadIssue", {}, "Logged in, but profile details could not be loaded."), {
         type: "info",
         duration: 3000,
         dismissible: true

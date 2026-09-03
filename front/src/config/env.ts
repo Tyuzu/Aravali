@@ -3,7 +3,7 @@
  * Vite + Netlify same-origin API configuration.
  */
 
-export const webSiteName: string = "Agrinet";
+export const webSiteName: string = "Aravali";
 
 // Access Vite environment variables safely without TypeScript compiler errors
 const env = (import.meta as unknown as { env: Record<string, string | undefined> }).env || {};

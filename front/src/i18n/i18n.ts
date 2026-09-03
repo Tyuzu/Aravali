@@ -15,8 +15,33 @@ let activeRequest: number = 0;
 const cache = new Map<string, Promise<TranslationDictionary>>();
 let cachedPluralRules: Intl.PluralRules | null = null;
 
-const SUPPORTED_LANGS: readonly string[] = ["en", "es", "fr", "hi", "ar", "ja"];
+const SUPPORTED_LANGS: readonly string[] = ["en", "es", "fr", "hi", "ar", "jp"];
 const FALLBACK_LANG: string = "en";
+
+function normalizeLanguageCode(lang: string): string {
+  const raw = (lang || "").trim().toLowerCase();
+  if (!raw) {
+    return FALLBACK_LANG;
+  }
+
+  if (raw === "ja" || raw === "jp") {
+    return "jp";
+  }
+
+  if (SUPPORTED_LANGS.includes(raw)) {
+    return raw;
+  }
+
+  const base = raw.split("-")[0];
+  if (base === "ja") {
+    return "jp";
+  }
+  if (SUPPORTED_LANGS.includes(base)) {
+    return base;
+  }
+
+  return FALLBACK_LANG;
+}
 
 function fetchTranslations(lang: string): Promise<TranslationDictionary> {
   return fetch(`/i18n/${lang}.json`, {
@@ -62,23 +87,21 @@ async function loadTranslations(lang: string): Promise<void> {
 }
 
 export async function setLanguage(lang: string): Promise<void> {
-  const targetLang = SUPPORTED_LANGS.includes(lang) ? lang : FALLBACK_LANG;
+  const targetLang = normalizeLanguageCode(lang);
   await loadTranslations(targetLang);
 }
 
 export function detectLanguage(): string {
   const saved = localStorage.getItem("lang");
-  if (saved && SUPPORTED_LANGS.includes(saved)) {
-    return saved;
+  if (saved) {
+    return normalizeLanguageCode(saved);
   }
+
   const langs = navigator.languages || [navigator.language];
   for (const lang of langs) {
-    if (SUPPORTED_LANGS.includes(lang)) {
-      return lang;
-    }
-    const base = lang.split("-")[0];
-    if (SUPPORTED_LANGS.includes(base)) {
-      return base;
+    const normalized = normalizeLanguageCode(lang);
+    if (SUPPORTED_LANGS.includes(normalized)) {
+      return normalized;
     }
   }
   return FALLBACK_LANG;

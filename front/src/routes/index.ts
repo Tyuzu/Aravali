@@ -127,7 +127,7 @@ function renderStaticLayout(): void {
 }
 
 function refreshStaticLayout(): void {
-    const { header, nav } = getElements();
+    const { header, nav, footer } = getElements();
     if (header) {
         // createheader updates header in place
         createheader();
@@ -135,6 +135,10 @@ function refreshStaticLayout(): void {
     if (nav) {
         const updatedNav = createNav();
         if (updatedNav) nav.replaceChildren(updatedNav);
+    }
+    if (footer) {
+        const updatedFooter = Footer();
+        if (updatedFooter) footer.replaceChildren(updatedFooter);
     }
 }
 
@@ -227,9 +231,26 @@ subscribe("token", (token: unknown) => {
     });
 });
 
+subscribe("lang", async () => {
+    try {
+        refreshStaticLayout();
+        const currentLocation = getCurrentAppLocation();
+        await loadContent(currentLocation);
+    } catch (error) {
+        console.error("[LANG] Failed to refresh UI after language change:", error);
+    }
+});
+
 window.addEventListener("storage", (event: StorageEvent) => {
     if (event.key === "token" || event.key === "user") {
         hydrateAuthState(true);
         refreshStaticLayout();
+    }
+
+    if (event.key === "lang") {
+        refreshStaticLayout();
+        loadContent(getCurrentAppLocation()).catch((error) => {
+            console.error("[LANG] Failed to re-render after storage language change:", error);
+        });
     }
 });

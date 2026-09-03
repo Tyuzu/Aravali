@@ -9,6 +9,7 @@ import {
 import {
   getState
 } from "../../state/state.js";
+import { t } from "../../i18n/i18n.js";
 import Notify from "../../components/ui/Notify.js";
 
 type ToggleViewFn = () => void;
@@ -71,20 +72,20 @@ function createLoginForm(
   setSubmitting: SetSubmittingFn
 ): HTMLElement {
   const section = createElement("section", { class: "auth-section" });
-  const title = createElement("h2", { class: "auth-title" }, "Log In");
-  
+  const title = createElement("h2", { class: "auth-title" }, t("auth.login.title", {}, "Log In"));
+
   // Strongly typed as HTMLInputElement via createElement generic map
-  const usernameInput = inputField("text", "Username", "login-username", "username");
-  const passwordInput = inputField("password", "Password", "login-password", "current-password");
+  const usernameInput = inputField("text", t("auth.login.usernamePlaceholder", {}, "Username"), "login-username", "username");
+  const passwordInput = inputField("password", t("auth.login.passwordPlaceholder", {}, "Password"), "login-password", "current-password");
 
   // Strongly typed as HTMLButtonElement
   const submitBtn = createElement("button", {
     type: "submit",
     class: "btn-primary"
-  }, "Login");
+  }, t("auth.login.button", {}, "Login"));
 
   const toggleText = createElement("p", { class: "auth-toggle" }, [
-    "Don't have an account? ",
+    t("auth.login.noAccount", {}, "Don't have an account? "),
     createElement("a", {
       href: "#",
       events: {
@@ -95,7 +96,7 @@ function createLoginForm(
           }
         }
       }
-    }, "Sign Up")
+    }, t("auth.login.signUpLink", {}, "Sign Up"))
   ]);
 
   // Strongly typed as HTMLFormElement
@@ -114,7 +115,7 @@ function createLoginForm(
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
     if (!username || !password) {
-      Notify("Username and password are required.", {
+      Notify(t("auth.login.requiredFields", {}, "Username and password are required."), {
         type: "error",
         duration: 3000
       });
@@ -148,12 +149,12 @@ function createSignupForm(
   setSubmitting: SetSubmittingFn
 ): HTMLElement {
   const section = createElement("section", { class: "auth-section" });
-  const title = createElement("h2", { class: "auth-title" }, "Sign Up");
+  const title = createElement("h2", { class: "auth-title" }, t("auth.signup.title", {}, "Sign Up"));
 
   // Strongly typed HTMLInputElements
-  const usernameInput = inputField("text", "Username", "signup-username", "username");
-  const emailInput = inputField("email", "Email", "signup-email", "email");
-  const passwordInput = inputField("password", "Password", "signup-password", "new-password");
+  const usernameInput = inputField("text", t("auth.signup.usernamePlaceholder", {}, "Username"), "signup-username", "username");
+  const emailInput = inputField("email", t("auth.signup.emailPlaceholder", {}, "Email"), "signup-email", "email");
+  const passwordInput = inputField("password", t("auth.signup.passwordPlaceholder", {}, "Password"), "signup-password", "new-password");
 
   const checkbox = createElement("input", {
     type: "checkbox",
@@ -165,18 +166,18 @@ function createSignupForm(
     class: "auth-terms",
     htmlFor: "signup-terms"
   }, [
-    checkbox, 
-    " I agree to the Terms & Conditions"
+    checkbox,
+    ` ${t("auth.signup.terms", {}, "I agree to the Terms & Conditions")}`
   ]);
 
   // Strongly typed HTMLButtonElement
   const submitBtn = createElement("button", {
     type: "submit",
     class: "btn-primary"
-  }, "Sign Up");
+  }, t("auth.signup.button", {}, "Sign Up"));
 
   const toggleText = createElement("p", { class: "auth-toggle" }, [
-    "Already have an account? ",
+    t("auth.signup.hasAccount", {}, "Already have an account? "),
     createElement("a", {
       href: "#",
       events: {
@@ -187,7 +188,7 @@ function createSignupForm(
           }
         }
       }
-    }, "Log In")
+    }, t("auth.signup.loginLink", {}, "Log In"))
   ]);
 
   // Strongly typed HTMLFormElement
@@ -206,7 +207,7 @@ function createSignupForm(
       return;
     }
     if (!checkbox.checked) {
-      Notify("You must agree to the Terms & Conditions.", {
+      Notify(t("auth.signup.termsRequired", {}, "You must agree to the Terms & Conditions."), {
         type: "warning",
         duration: 3000
       });

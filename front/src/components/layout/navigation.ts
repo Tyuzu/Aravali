@@ -1,4 +1,5 @@
 import "../../../css/layout/navi.css";
+import { t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { getCurrentAllowedFeatures } from "../../config/domainFeatures.js";
 import { enableDragDrop, getNavOrder } from "./navigationDrag.js";
@@ -64,10 +65,10 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 const createNav = (): HTMLDivElement => {
   // 1. Master list of navigation items mapped to feature keys
   const allNavItems: NavItemConfig[] = [
-    { href: "/dash", label: "Dash", feature: "farms" },
-    { href: "/farms", label: "Farms", feature: "farms" },
-    { href: "/grocery", label: "Grocery", feature: "farms" },
-    { href: "/recipes", label: "Recipes", feature: "farms" },
+    { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms" },
+    { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
+    { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
+    { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
   ];
 
   // 2. Filter available items based on domain permissions
@@ -114,7 +115,7 @@ const createNav = (): HTMLDivElement => {
   const toggleLabel = document.createElement("label");
   toggleLabel.className = "navigation__link";
   toggleLabel.setAttribute("for", "more");
-  toggleLabel.innerText = "More";
+  toggleLabel.innerText = t("nav.more", {}, "More");
 
   toggleLabelWrapper.appendChild(toggleLabel);
   inner.appendChild(ul);
