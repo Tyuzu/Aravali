@@ -1,6 +1,7 @@
 import Button from "../../../components/base/Button.js";
 import { createElement } from "../../../components/createElement.js";
 import { deleteMessage, updateMessage } from "../api.js";
+import { createDropdownMenu } from "../../../components/ui/Dropdown.js";
 
 // Message interface representing the expected input structure
 export interface MenuMessagePayload {
@@ -30,55 +31,26 @@ export function renderMenu(msg: MenuMessagePayload): HTMLElement | null {
       : null;
 
   return createElement("div", { class: "msg-menu" }, [
-    Button({
-      title: "⋮",
-      id: "menu-btn",
-      events: {
-        click: (e: Event) => {
-          const mouseEvent = e as MouseEvent;
-          mouseEvent.stopPropagation();
-          const currentTarget = mouseEvent.currentTarget as HTMLElement | null;
-          const dropdown = currentTarget?.nextSibling as HTMLElement | null;
-          if (dropdown) {
-            dropdown.classList.toggle("open");
+    (() => {
+      const toggle = Button({
+        title: "⋮",
+        id: "menu-btn",
+        events: {
+          click: (e: Event) => {
+            const mouseEvent = e as MouseEvent;
+            mouseEvent.stopPropagation();
           }
         }
-      }
-    }),
+      });
 
-    createElement(
-      "div",
-      { class: "dropdown" },
-      [
-        messageId &&
-          Button({
-            title: "Edit",
-            events: {
-              click: () => handleEdit(messageId)
-            }
-          }),
+      const items = [
+        messageId && { text: "Edit", onClick: () => handleEdit(messageId) },
+        messageId && { text: "Delete", onClick: () => handleDelete(messageId) },
+        msg.content && { text: "Copy", onClick: () => { if (msg.content) navigator.clipboard.writeText(msg.content); } }
+      ].filter(Boolean) as any[];
 
-        messageId &&
-          Button({
-            title: "Delete",
-            events: {
-              click: () => handleDelete(messageId)
-            }
-          }),
-
-        msg.content &&
-          Button({
-            title: "Copy",
-            events: {
-              click: () => {
-                if (msg.content) {
-                  navigator.clipboard.writeText(msg.content);
-                }
-              }
-            }
-          })
-      ].filter(Boolean) as HTMLElement[] // clean type guard filter
-    )
+      return createDropdownMenu("msg-menu", "Message menu", items, toggle as HTMLElement);
+    })()
   ]) as HTMLElement;
 }
 
