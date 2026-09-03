@@ -1,5 +1,5 @@
 import { apiFetch, stripeFetch } from "../../api/api.js";
-import type { Paise } from "../../types/api.types.js";
+import type { Paise } from "./money.js";
 
 export interface PaymentIntentRequest {
   paymentType?: string;

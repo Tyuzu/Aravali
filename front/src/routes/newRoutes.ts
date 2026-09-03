@@ -213,7 +213,7 @@ const coreRoutes: Route[] = [
 const legalRoutes: Route[] = [
   {
     path: "/about",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "About",
     meta: {
       title: "About Us"
@@ -222,7 +222,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/contact",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Contact",
     meta: {
       title: "Contact Us"
@@ -231,7 +231,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/faq",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Faq",
     meta: {
       title: "FAQ"
@@ -240,7 +240,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/terms",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Terms",
     meta: {
       title: "Terms of Service"
@@ -249,7 +249,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/privacy",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Privacy",
     meta: {
       title: "Privacy Policy"
@@ -258,7 +258,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/refund",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Refund",
     meta: {
       title: "Refund Policy"
@@ -267,7 +267,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/shipping",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Shipping",
     meta: {
       title: "Shipping Information"
@@ -276,7 +276,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/returns",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Returns",
     meta: {
       title: "Returns Policy"
@@ -285,7 +285,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/disclaimer",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Disclaimer",
     meta: {
       title: "Disclaimer"
@@ -294,7 +294,7 @@ const legalRoutes: Route[] = [
 
   {
     path: "/blog",
-    component: () => import("../legalPages/home.js"),
+    component: () => import("../pages/legalPages/home.js"),
     functionName: "Blog",
     meta: {
       title: "Blog"

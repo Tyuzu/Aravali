@@ -1,7 +1,12 @@
 // generate-manifest.mjs
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import path from "path";
 
 const domain = process.env.VITE_DOMAIN || "https://indium.netlify.app";
+
+// ensure output directory exists
+const outputDir = path.resolve("public");
+if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
 
 const manifest = {
   name: "Scav",
@@ -39,10 +44,10 @@ const manifest = {
   ],
   prefer_related_applications: false,
   url_handlers: [
-    { origin: domain },
-    { origin: `https://*.${domain.replace("https://", "")}` },
+    { origin: new URL(domain).origin },
   ],
 };
 
-writeFileSync("manifest.json", JSON.stringify(manifest, null, 2));
-console.log("✅ manifest.json generated dynamically");
+const manifestPath = path.join(outputDir, "manifest.json");
+writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+console.log("✅ manifest generated at:", manifestPath);

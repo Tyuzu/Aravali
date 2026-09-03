@@ -1,4 +1,3 @@
-// generate-manifest.mjs
 // generate-manifest.js
 import sharp from "sharp";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
@@ -6,29 +5,38 @@ import path from "path";
 
 const domain = process.env.VITE_DOMAIN || "https://indium.netlify.app";
 const baseIcon = "assets/logo.png";      // your source logo
-const outputDir = "public/assets";
-const manifestPath = "public/manifest.json";
+const outputDir = path.resolve("public", "assets");
+const manifestPath = path.join(path.resolve("public"), "manifest.json");
 
 const sizes = [72, 96, 128, 192, 512];
 
 // ensure output directory exists
 if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
 
-// generate icons
-for (const size of sizes) {
-  const output = path.join(outputDir, `icon-${size}.png`);
-  await sharp(baseIcon)
-    .resize(size, size)
-    .png({ compressionLevel: 9 })
-    .toFile(output);
-  console.log(`✅ generated icon-${size}.png`);
-}
+// ensure manifest directory exists
+const manifestDir = path.dirname(manifestPath);
+if (!existsSync(manifestDir)) mkdirSync(manifestDir, { recursive: true });
 
-const icons = sizes.map((size) => ({
-  src: `/assets/icon-${size}.png`,
-  sizes: `${size}x${size}`,
-  type: "image/png",
-}));
+// generate icons (skip if base icon missing)
+let icons = [];
+if (!existsSync(baseIcon)) {
+  console.warn(`⚠️ base icon not found at ${baseIcon}, skipping icon generation.`);
+} else {
+  for (const size of sizes) {
+    const output = path.join(outputDir, `icon-${size}.png`);
+    await sharp(baseIcon)
+      .resize(size, size)
+      .png({ compressionLevel: 9 })
+      .toFile(output);
+    console.log(`✅ generated icon-${size}.png`);
+  }
+
+  icons = sizes.map((size) => ({
+    src: `/assets/icon-${size}.png`,
+    sizes: `${size}x${size}`,
+    type: "image/png",
+  }));
+}
 
 const manifest = {
   name: "Scav",
@@ -60,11 +68,10 @@ const manifest = {
   ],
   prefer_related_applications: false,
   url_handlers: [
-    { origin: domain },
-    { origin: `https://*.${domain.replace("https://", "")}` },
+    { origin: new URL(domain).origin },
   ],
 };
 
 // write manifest
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-console.log("✅ manifest.json generated dynamically");
+console.log("✅ manifest generated at:", manifestPath);

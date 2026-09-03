@@ -1,4 +1,4 @@
-import { formatCurrency } from "../../types/api.types.js";
+import { formatCurrency } from "./money.js";
 import { validateCouponCode as validateCouponCodeApi, requestWalletTopup as requestWalletTopupApi } from "./api.js";
 
 /* ───────────────────────────────────────── */

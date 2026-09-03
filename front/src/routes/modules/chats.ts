@@ -31,18 +31,18 @@ export const chatsRoutes: AppRoute[] = [
     }
   },
 
-  {
-    path: "/discord",
-    component: () =>
-      import(
-        "../../pages/discord/discord.js"
-      ),
-    functionName: "Discord",
-    meta: {
-      requiresAuth: true,
-      title: "Discord"
-    }
-  },
+  // {
+  //   path: "/discord",
+  //   component: () =>
+  //     import(
+  //       "../../pages/discord/discord.js"
+  //     ),
+  //   functionName: "Discord",
+  //   meta: {
+  //     requiresAuth: true,
+  //     title: "Discord"
+  //   }
+  // },
 
   /* =======================================================
      DYNAMIC ROUTES
@@ -74,16 +74,16 @@ export const chatsRoutes: AppRoute[] = [
     }
   },
 
-  {
-    path: "/discord/:guildId/:channelId",
-    component: () =>
-      import(
-        "../../pages/discord/discordChannel.js"
-      ),
-    functionName: "DiscordChannel",
-    meta: {
-      requiresAuth: true,
-      title: "Discord Channel"
-    }
-  }
+  // {
+  //   path: "/discord/:guildId/:channelId",
+  //   component: () =>
+  //     import(
+  //       "../../pages/discord/discordChannel.js"
+  //     ),
+  //   functionName: "DiscordChannel",
+  //   meta: {
+  //     requiresAuth: true,
+  //     title: "Discord Channel"
+  //   }
+  // }
 ];

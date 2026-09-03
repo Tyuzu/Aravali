@@ -1,6 +1,6 @@
 import { createElement } from "../../components/createElement.js";
 import { Button } from "../../components/base/Button.js";
-import { formatCurrency, Paise, toPaise } from "../../types/api.types.js";
+import { formatCurrency, Paise, toPaise } from "./money.js";
 import { v4 as uuidv4 } from "uuid";
 import Notify from "../../components/ui/Notify.js";
 import { transferWallet } from "./api.js";

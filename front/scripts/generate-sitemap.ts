@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const BASE_URL = "https://indium.netlify.app";
+const BASE_URL = process.env.VITE_BASE_URL || "https://indium.netlify.app";
 
 const routes = [
   "/", "baitos", "baitos/hire", "grocery", "recipes",
@@ -16,12 +16,15 @@ const sitemap =
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes.map(route => `
   <url>
-    <loc>${BASE_URL}${route === "/" ? "/" : "/" + route}</loc>
+    <loc>${BASE_URL}${route === "/" ? "/" : "/" + route.replace(/^\//, "")}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>${route === "/" ? "1.0" : "0.7"}</priority>
   </url>`).join("")}
 </urlset>`;
-
-fs.writeFileSync(path.resolve("sitemap.xml"), sitemap);
-console.log("✅ Sitemap generated:", today);
+// ensure public dir exists and write into it
+const outDir = path.resolve("public");
+if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+const outPath = path.join(outDir, "sitemap.xml");
+fs.writeFileSync(outPath, sitemap);
+console.log("✅ Sitemap generated at:", outPath);
