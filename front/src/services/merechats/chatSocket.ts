@@ -91,6 +91,21 @@ export const ChatState = (() => {
   let reconnectAttempts = 0;
   let currentChatId: string | null = null;
 
+  const clearChatEntries = (chatId?: string | null): void => {
+    const target = chatId ?? currentChatId;
+    if (!target) {
+      return;
+    }
+
+    renderedIdsMap.delete(target);
+
+    for (const [clientId, pending] of pendingMap.entries()) {
+      if (String(pending.chatid) === target) {
+        pendingMap.delete(clientId);
+      }
+    }
+  };
+
   return {
     setSocket: (ws: WebSocket | null): void => {
       socket = ws;
@@ -109,8 +124,19 @@ export const ChatState = (() => {
     setChatId: (id: string | number): void => {
       const strId = String(id);
       currentChatId = strId;
+      if (!strId) {
+        return;
+      }
       if (!renderedIdsMap.has(strId)) {
         renderedIdsMap.set(strId, new Set<string>());
+      }
+    },
+    clearChatId: (id?: string | number): void => {
+      const target = id ? String(id) : currentChatId;
+      clearChatEntries(target);
+
+      if (!id || currentChatId === target) {
+        currentChatId = null;
       }
     },
     getChatId: (): string | null => currentChatId
@@ -302,7 +328,6 @@ function joinChatRoom(socket: WebSocket | null, chatid: string | number | null):
 export function closeExistingSocket(reason = ""): void {
   const ws = ChatState.getSocket();
   if (ws) {
-    // Cleanly unbind closing callbacks before closing manually to prevent infinite reconnect cascades
     ws.onclose = null;
     ws.onerror = null;
     ws.onmessage = null;
@@ -317,6 +342,13 @@ export function closeExistingSocket(reason = ""): void {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
   }
+
+  if (["switch", "back", "manual"].includes(reason)) {
+    const activeChatId = ChatState.getChatId();
+    ChatState.clearChatId(activeChatId || undefined);
+    setMessageContainer(null);
+  }
+
   ChatState.resetReconnectAttempts();
 }
 
