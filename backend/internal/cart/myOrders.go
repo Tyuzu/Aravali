@@ -47,8 +47,13 @@ func GetMyOrders(app *infra.Deps) http.HandlerFunc {
 
 		for _, order := range regularOrders {
 			allOrders = append(allOrders, combinedOrder{
-				OrderID:       order.OrderID,
-				OrderType:     "regular",
+				OrderID: order.OrderID,
+				OrderType: func() string {
+					if order.OrderType != "" {
+						return order.OrderType
+					}
+					return "regular"
+				}(),
 				UserID:        order.UserID,
 				Items:         order.Items,
 				Address:       order.Address,

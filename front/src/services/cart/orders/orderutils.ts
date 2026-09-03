@@ -45,10 +45,28 @@ export function normalizeOrders(orders: Record<string, any>[]): Order[] {
         order["createdAt"] || order["created_at"] || order["createdTime"] || order["timestamp"] || 0;
       const normalizedStatus = String(order["status"] || order["orderStatus"] || "pending").trim().toLowerCase();
 
+      const inferredTypeFromItems = (() => {
+        try {
+          const items = order["items"] || {};
+          if (items && typeof items === "object") {
+            const keys = Object.keys(items).map(k => k.toLowerCase());
+            if (keys.includes("merchandise") || keys.includes("merch")) return "merch";
+            if (keys.includes("tickets") || keys.includes("ticket")) return "ticket";
+            if (keys.includes("subscriptions") || keys.includes("subscription")) return "subscription";
+            if (keys.includes("products") || keys.includes("product")) return "product";
+            if (keys.includes("menu") || keys.includes("food")) return "menu";
+            if (keys.includes("crops")) return "farm";
+          }
+        } catch (e) {
+          /* ignore */
+        }
+        return undefined;
+      })();
+
       return {
         ...order,
         orderId: String(order["orderId"] || order["orderid"] || order["id"] || order["OrderID"] || ""),
-        orderType: order["orderType"] || (order["farmId"] || order["farmid"] ? "farm" : "regular"),
+        orderType: order["orderType"] || (order["farmId"] || order["farmid"] ? "farm" : inferredTypeFromItems || "regular"),
         createdAt: explicitTime,
         status: normalizedStatus || "pending",
         paymentMethod: derivePaymentStatus(order),

@@ -71,6 +71,7 @@ type CheckoutSession struct {
 // Order represents a finalized order.
 type Order struct {
 	OrderID       string                `json:"orderId" bson:"orderId"`
+	OrderType     string                `json:"orderType" bson:"orderType"`
 	UserID        string                `json:"userid" bson:"userid"`
 	Items         map[string][]CartItem `json:"items" bson:"items"` // grouped by category
 	Address       string                `json:"address" bson:"address"`

@@ -1,5 +1,5 @@
 export type RefundStatus = "pending" | "approved" | "rejected" | "completed" | "none";
-export type OrderType = "farm" | "regular";
+export type OrderType = "farm" | "regular" | "product" | "merch" | "ticket" | "subscription" | "menu";
 
 export interface RefundRequest {
   id: string;

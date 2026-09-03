@@ -221,13 +221,42 @@
 ========================= */
 
 @media (width <= 768px) {
+    #settings-container {
+        gap: 16px;
+        padding: 0 12px 24px;
+    }
+
+    .settings-category {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .settings-category h2 {
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+    }
+
     .setting-card {
         flex-direction: column;
         align-items: stretch;
-        gap: 16px;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .setting-info {
+        min-width: 0;
+    }
+
+    .setting-info p {
+        font-size: .88rem;
     }
 
     .setting-control {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .setting-control > * {
         width: 100%;
     }
 
@@ -237,6 +266,10 @@
     .setting-control input[type="number"] {
         width: 100%;
         min-width: 0;
+    }
+
+    .toggle-switch {
+        margin-left: auto;
     }
 
     .settings-toast {

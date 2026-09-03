@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"scav/config/mqevent"
@@ -146,7 +147,7 @@ func PlaceOrder(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		genOrder, err := processGeneralOrders(ctx, checkout, app)
+		genOrders, err := processGeneralOrders(ctx, checkout, app)
 		if err != nil {
 			log.Printf("PlaceOrder: failed to process general orders: %v", err)
 			http.Error(w, "Failed to process orders", http.StatusInternalServerError)
@@ -160,8 +161,11 @@ func PlaceOrder(app *infra.Deps) http.HandlerFunc {
 			"success":    true,
 			"farmOrders": farmOrders,
 		}
-		if genOrder != nil {
-			resp["order"] = genOrder
+		if len(genOrders) == 1 {
+			resp["order"] = genOrders[0]
+			resp["orders"] = genOrders
+		} else if len(genOrders) > 1 {
+			resp["orders"] = genOrders
 		}
 
 		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.OrderPlacedEvent, mqevent.OrderPlacedPayload{}); err != nil {
@@ -259,7 +263,7 @@ func processGeneralOrders(
 	ctx context.Context,
 	checkout CheckoutSession,
 	app *infra.Deps,
-) (*Order, error) {
+) ([]Order, error) {
 	nonCropItems := make(map[string][]CartItem)
 
 	for category, items := range checkout.Items {
@@ -272,26 +276,137 @@ func processGeneralOrders(
 		return nil, nil
 	}
 
-	order := Order{
-		OrderID:       "ORD" + utils.GenerateRandomDigitString(9),
-		UserID:        checkout.UserID,
-		Items:         nonCropItems,
-		Address:       checkout.Address,
-		PaymentMethod: checkout.PaymentMethod,
-		Subtotal:      checkout.Subtotal,
-		Discount:      checkout.Discount,
-		Tax:           checkout.Tax,
-		Delivery:      checkout.Delivery,
-		Total:         checkout.Total,
-		Status:        "pending",
-		ApprovedBy:    []string{},
-		CreatedAt:     time.Now(),
+	// Group items by entityType + entityId. Use "general" when missing.
+	type entityGroup struct {
+		EntityType string
+		EntityID   string
+		Items      map[string][]CartItem
+		Subtotal   int64
 	}
 
-	if err := app.DB.Insert(ctx, ordersCollection, order); err != nil {
-		log.Printf("processGeneralOrders: DB insert error: %v", err)
-		return nil, fmt.Errorf("failed to insert general order: %w", err)
+	groups := make(map[string]*entityGroup)
+
+	for category, items := range nonCropItems {
+		for _, it := range items {
+			et := strings.ToLower(strings.TrimSpace(it.EntityType))
+			if et == "" {
+				et = "general"
+			}
+			eid := strings.TrimSpace(it.EntityID)
+			if eid == "" {
+				eid = "general"
+			}
+			key := et + "::" + eid
+			g, ok := groups[key]
+			if !ok {
+				g = &entityGroup{EntityType: et, EntityID: eid, Items: make(map[string][]CartItem)}
+				groups[key] = g
+			}
+			g.Items[category] = append(g.Items[category], it)
+			g.Subtotal += it.Price * int64(it.Quantity)
+		}
 	}
 
-	return &order, nil
+	orders := make([]Order, 0, len(groups))
+
+	for _, g := range groups {
+		var discount, tax, delivery int64
+		if checkout.Subtotal > 0 {
+			ratio := float64(g.Subtotal) / float64(checkout.Subtotal)
+			discount = int64(float64(checkout.Discount) * ratio)
+			tax = int64(float64(checkout.Tax) * ratio)
+			delivery = int64(float64(checkout.Delivery) * ratio)
+		}
+
+		total := g.Subtotal - discount + tax + delivery
+
+		inferredType := inferOrderTypeFromItems(g.Items)
+
+		order := Order{
+			OrderID:       "ORD" + utils.GenerateRandomDigitString(9),
+			OrderType:     inferredType,
+			UserID:        checkout.UserID,
+			Items:         g.Items,
+			Address:       checkout.Address,
+			PaymentMethod: checkout.PaymentMethod,
+			Subtotal:      g.Subtotal,
+			Discount:      discount,
+			Tax:           tax,
+			Delivery:      delivery,
+			Total:         total,
+			Status:        "pending",
+			ApprovedBy:    []string{},
+			CreatedAt:     time.Now(),
+		}
+
+		if err := app.DB.Insert(ctx, ordersCollection, order); err != nil {
+			log.Printf("processGeneralOrders: DB insert error for entity %s/%s: %v", g.EntityType, g.EntityID, err)
+			return nil, fmt.Errorf("failed to insert general order: %w", err)
+		}
+
+		orders = append(orders, order)
+	}
+
+	return orders, nil
+}
+
+// inferOrderTypeFromItems inspects grouped items and attempts to return a
+// concise order type string such as "merch", "ticket", "product",
+// "subscription" or "regular" when ambiguous.
+func inferOrderTypeFromItems(items map[string][]CartItem) string {
+	if len(items) == 0 {
+		return "regular"
+	}
+
+	// Collect observed categories and entity types
+	categorySet := make(map[string]struct{})
+	entityTypeSet := make(map[string]struct{})
+
+	for category, list := range items {
+		categorySet[strings.ToLower(strings.TrimSpace(category))] = struct{}{}
+		for _, it := range list {
+			if it.EntityType != "" {
+				entityTypeSet[strings.ToLower(strings.TrimSpace(it.EntityType))] = struct{}{}
+			}
+		}
+	}
+
+	// Prefer explicit entity types when available
+	if len(entityTypeSet) == 1 {
+		for et := range entityTypeSet {
+			switch et {
+			case "merch", "merchandise":
+				return "merch"
+			case "ticket", "tickets":
+				return "ticket"
+			case "product", "products", "book":
+				return "product"
+			case "subscription", "subscriptions":
+				return "subscription"
+			}
+			// otherwise fallthrough to category detection
+			return et
+		}
+	}
+
+	// If entity types are mixed or absent, look at category names
+	if len(categorySet) == 1 {
+		for c := range categorySet {
+			switch c {
+			case "merchandise", "merch":
+				return "merch"
+			case "tickets", "ticket":
+				return "ticket"
+			case "products", "product":
+				return "product"
+			case "subscriptions", "subscription":
+				return "subscription"
+			case "menu", "food":
+				return "menu"
+			}
+			return c
+		}
+	}
+
+	return "regular"
 }

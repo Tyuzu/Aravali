@@ -214,7 +214,7 @@ function buildOrderItemsTable(products: OrderItem[], farmFallback: string = "N/A
       createElement(
         "tr",
         {},
-        ["Farm", "Item", "Qty", "Item Price"].map((h) => createElement("th", {}, [h]))
+        ["Entity", "Item", "Qty", "Item Price"].map((h) => createElement("th", {}, [h]))
       ),
     ]),
     createElement(

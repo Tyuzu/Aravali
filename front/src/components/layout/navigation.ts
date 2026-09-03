@@ -2,13 +2,40 @@ import "../../../css/layout/navi.css";
 import { t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { getCurrentAllowedFeatures } from "../../config/domainFeatures.js";
+import { getState } from "../../state/state.js";
 import { enableDragDrop, getNavOrder } from "./navigationDrag.js";
 
 export interface NavItemConfig {
   href: string;
   label: string;
   feature?: string;
+  roles?: string[];
 }
+
+const normalizeRoles = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .filter((role): role is string => typeof role === "string" && role.trim().length > 0)
+      .map((role) => role.trim().toLowerCase());
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed.toLowerCase()] : [];
+  }
+
+  return [];
+};
+
+const getCurrentUserRoles = (): string[] => {
+  const state = getState() as Record<string, any> | null;
+  const authRoles = normalizeRoles(state?.auth?.roles ?? state?.roles);
+  const userRoles = normalizeRoles(
+    state?.userProfile?.roles ?? state?.user?.roles ?? state?.user?.role ?? state?.userProfile?.role
+  );
+
+  return [...new Set([...authRoles, ...userRoles])];
+};
 
 /** Highlight current active link */
 export const highlightActiveNav = (path: string): void => {
@@ -45,16 +72,22 @@ const createNavItem = (href: string, label: string): HTMLLIElement => {
   return li;
 };
 
-/** Filter nav items according to the active domain's feature flags */
+/** Filter nav items according to the active domain's feature flags and user roles */
 const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => {
   const allowed: string[] = getCurrentAllowedFeatures();
-
-  // If domain allows ALL features, return everything
-  if (allowed.includes("ALL")) {
-    return allNavItems;
-  }
+  const userRoles = getCurrentUserRoles();
 
   return allNavItems.filter((item) => {
+    if (item.roles && item.roles.length > 0) {
+      const hasRoleAccess = item.roles.some((role) => userRoles.includes(role.toLowerCase()));
+      if (!hasRoleAccess) return false;
+    }
+
+    // Domain-level feature gate
+    if (allowed.includes("ALL")) {
+      return true;
+    }
+
     // Shared core items without a feature key are always shown
     if (!item.feature) return true;
     return allowed.includes(item.feature);
@@ -65,7 +98,7 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 const createNav = (): HTMLDivElement => {
   // 1. Master list of navigation items mapped to feature keys
   const allNavItems: NavItemConfig[] = [
-    { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms" },
+    { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
     { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
     { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
     { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
