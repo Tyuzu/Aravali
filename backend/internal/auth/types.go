@@ -14,7 +14,10 @@ type SignUpResponse struct {
 }
 
 const (
-	AccessTokenTTL    = 15 * time.Minute
+	// Keep the short-lived access token from expiring too quickly while the 7-day
+	// refresh token rotates in the background. This prevents unnecessary re-login
+	// loops in browsers when the refresh cookie is healthy but the client is idle.
+	AccessTokenTTL    = 1 * time.Hour
 	maxFailedAttempts = 5
 	lockoutDuration   = 15 * time.Minute
 )

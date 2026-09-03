@@ -63,7 +63,7 @@ func Login(app *infra.Deps) http.HandlerFunc {
 
 		_ = ClearRateLimitCounter(ctx, app, failKey)
 
-		setRefreshCookie(w, refreshToken)
+		setRefreshCookie(w, r, refreshToken)
 		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserLoggedIn, mqevent.UserLoggedInPayload{})
 
 		utils.RespondWithJSON(w, http.StatusOK, LoginResponse{

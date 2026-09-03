@@ -9,6 +9,8 @@ import { fetchFarmItems, fetchFarmCategories } from "../products/api.js";
 import Imagex from "../../components/base/Imagex.js";
 import { resolveImagePath, EntityType, PictureType } from "../../utils/imagePaths.js";
 
+let ingredientPickerCounter = 0;
+
 type FormMode = "create" | "edit";
 
 export function createRecipe(container: HTMLElement): void {
@@ -162,8 +164,9 @@ function renderRecipeForm(
       events: {
         click: async (e: Event) => {
           e.preventDefault();
-          const searchInput = createElement("input", { type: "search", placeholder: "Search products...", id: "ingredient-search-input" }) as HTMLInputElement;
-          const categorySelect = createElement("select", { id: "ingredient-search-category" }) as HTMLSelectElement;
+          const pickId = `ingredient-picker-${++ingredientPickerCounter}`;
+          const searchInput = createElement("input", { type: "search", placeholder: "Search products...", id: `${pickId}-input`, autocomplete: "off" }) as HTMLInputElement;
+          const categorySelect = createElement("select", { id: `${pickId}-category` }) as HTMLSelectElement;
           const results = createElement("div", { class: "picker-results" });
 
           // populate categories
@@ -174,15 +177,12 @@ function renderRecipeForm(
           } catch (err) {
             categorySelect.appendChild(createElement("option", { value: "" }, ["All categories"]));
           }
-
-          const modalRef = Modal({
-            title: "Select Product",
-            content: createElement("div", {}, [searchInput, results]),
-            size: "medium",
-            actions: () => Button({ title: "Close", type: "button", events: { click: () => modalRef?.close() } })
-          });
-
           let typingTimer: number | undefined;
+          let searchSeq = 0;
+          let active = true;
+
+          const modalRefHolder: { ref?: any } = {};
+
           const doSearch = async () => {
             window.clearTimeout(typingTimer);
             typingTimer = window.setTimeout(async () => {
@@ -190,8 +190,10 @@ function renderRecipeForm(
               const cat = (categorySelect as HTMLSelectElement).value || "";
               results.replaceChildren();
               if (!q && !cat) return;
+              const seq = ++searchSeq;
               try {
                 const resp = await fetchFarmItems("product", { search: q, limit: 20, category: cat });
+                if (!active || seq !== searchSeq) return; // ignore out-of-order results
                 const items = resp.items || [];
                 if (items.length === 0) {
                   results.appendChild(createElement("p", {}, ["No products found."]));
@@ -207,18 +209,40 @@ function renderRecipeForm(
                     (hiddenItemId as HTMLInputElement).value = it.productid || it.productId || it.id || "";
                     (hiddenItemType as HTMLInputElement).value = "product";
                     linkedLabel.replaceChildren(it.name || String(it.productid || it.productId || ""));
-                    modalRef?.close();
+                    cleanupAndClose();
                   });
                   results.appendChild(itemBtn);
                 });
               } catch (err) {
+                if (!active) return;
                 results.appendChild(createElement("p", {}, ["Search failed"]));
               }
             }, 250);
           };
 
-          searchInput.addEventListener("input", doSearch);
-          categorySelect.addEventListener("change", doSearch);
+          const onInput = () => doSearch();
+          const onCategoryChange = () => doSearch();
+
+          const cleanupAndClose = () => {
+            active = false;
+            window.clearTimeout(typingTimer);
+            searchInput.removeEventListener("input", onInput);
+            categorySelect.removeEventListener("change", onCategoryChange);
+            try {
+              modalRefHolder.ref?.close();
+            } catch (_) {}
+          };
+
+          const modalRef = Modal({
+            title: "Select Product",
+            content: createElement("div", {}, [searchInput, categorySelect, results]),
+            size: "medium",
+            actions: () => Button({ title: "Close", type: "button", events: { click: () => cleanupAndClose() } })
+          });
+          modalRefHolder.ref = modalRef;
+
+          searchInput.addEventListener("input", onInput);
+          categorySelect.addEventListener("change", onCategoryChange);
         }
       }
     }) as HTMLButtonElement;
@@ -336,17 +360,38 @@ function renderRecipeForm(
     const endpoint =
       mode === "edit" ? `/recipes/recipe/${recipe?.recipeid}` : "/recipes";
     const method = mode === "edit" ? "PUT" : "POST";
-
+    const submitBtnEl = submitBtn as HTMLButtonElement;
+    const originalText = submitBtnEl.textContent || submitBtnEl.innerText || "";
     try {
+      submitBtnEl.disabled = true;
+      form.setAttribute("aria-busy", "true");
+      submitBtnEl.textContent = "Saving...";
+
       const result = await saveRecipeRequest(formData, mode, recipe?.recipeid);
       if (mode === "create") {
         form.reset();
       }
-      alert("Recipe saved successfully!");
-      navigate(`/recipe/${result?.recipeid}`);
+
+      const modalRefHolder: { ref?: any } = {};
+      const modalRef = Modal({
+        title: "Recipe Saved",
+        content: createElement("div", {}, [createElement("p", {}, ["Recipe saved successfully!"])]),
+        size: "small",
+        actions: () => Button({ title: "OK", type: "button", events: { click: () => { try { modalRefHolder.ref?.close(); } catch (_) {}; navigate(`/recipe/${result?.recipeid}`); } } })
+      });
+      modalRefHolder.ref = modalRef;
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Failed to save recipe.");
+      const modalRef = Modal({
+        title: "Save Failed",
+        content: createElement("div", {}, [createElement("p", {}, ["Failed to save recipe. Please try again."])]),
+        size: "small",
+        actions: () => Button({ title: "Close", type: "button", events: { click: () => modalRef?.close() } })
+      });
+      // re-enable on failure
+      submitBtnEl.disabled = false;
+      form.removeAttribute("aria-busy");
+      submitBtnEl.textContent = originalText;
     }
   });
 

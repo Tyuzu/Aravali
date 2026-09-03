@@ -38,7 +38,7 @@ func LogoutUser(app *infra.Deps) http.HandlerFunc {
 			_ = ProcessSingleLogout(ctx, app, tokenStr)
 		}
 
-		clearRefreshCookie(w)
+		clearRefreshCookie(w, r)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Logged out",
@@ -92,7 +92,7 @@ func LogoutAllSessions(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		clearRefreshCookie(w)
+		clearRefreshCookie(w, r)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "All sessions revoked",

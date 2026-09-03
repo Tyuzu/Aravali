@@ -76,26 +76,71 @@ func createAccessToken(claims *middleware.Claims) (string, error) {
 	return t.SignedString(config.JwtSecret)
 }
 
-func setRefreshCookie(w http.ResponseWriter, token string) {
+func isSecureCookieForHost(scheme, host string) bool {
+	scheme = strings.TrimSpace(strings.ToLower(scheme))
+	host = strings.TrimSpace(host)
+
+	if scheme == "https" {
+		return true
+	}
+	if scheme == "http" {
+		if strings.HasPrefix(host, "localhost") || strings.HasPrefix(host, "127.0.0.1") || strings.HasPrefix(host, "[::1]") {
+			return false
+		}
+		return true
+	}
+
+	if strings.HasPrefix(host, "localhost") || strings.HasPrefix(host, "127.0.0.1") || strings.HasPrefix(host, "[::1]") {
+		return false
+	}
+
+	return true
+}
+
+func isSecureCookie(r *http.Request) bool {
+	if r == nil {
+		return true
+	}
+
+	if r.TLS != nil {
+		return true
+	}
+
+	proto := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+	if proto != "" {
+		parts := strings.Split(proto, ",")
+		return isSecureCookieForHost(strings.TrimSpace(parts[0]), r.Host)
+	}
+
+	proto = strings.TrimSpace(r.Header.Get("X-Forwarded-Scheme"))
+	if proto != "" {
+		parts := strings.Split(proto, ",")
+		return isSecureCookieForHost(strings.TrimSpace(parts[0]), r.Host)
+	}
+
+	return isSecureCookieForHost("", r.Host)
+}
+
+func setRefreshCookie(w http.ResponseWriter, r *http.Request, token string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
+		Secure:   isSecureCookie(r),
 		Expires:  time.Now().Add(RefreshTokenTTL),
 		MaxAge:   int(RefreshTokenTTL.Seconds()),
 	})
 }
 
-func clearRefreshCookie(w http.ResponseWriter) {
+func clearRefreshCookie(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   isSecureCookie(r),
 		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,

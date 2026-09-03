@@ -35,14 +35,14 @@ func RefreshToken(app *infra.Deps) http.HandlerFunc {
 		result, err := RefreshTokenFromCookie(ctx, cookie.Value, r, app)
 		if err != nil {
 			if result != nil && result.ClearCookie {
-				clearRefreshCookie(w)
+				clearRefreshCookie(w, r)
 			}
 			utils.RespondWithError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		if result.NewRefresh != "" {
-			setRefreshCookie(w, result.NewRefresh)
+			setRefreshCookie(w, r, result.NewRefresh)
 		}
 
 		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.TokenRefreshed, mqevent.TokenRefreshedPayload{
