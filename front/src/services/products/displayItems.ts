@@ -1,7 +1,7 @@
 import { createElement } from "../../components/createElement.js";
 import Button from "../../components/base/Button.js";
 import { fetchFarmItems } from "./api.js";
-import { renderItemForm } from "./createOrEdit.js";
+import { openItemFormModal } from "./createOrEdit.js";
 import { renderItemCard } from "./renderItemCard.js";
 import { renderCategoryChips } from "./renderCategoryChips.js";
 import { capitalize } from "../profile/profileHelpers.js";
@@ -78,7 +78,7 @@ export async function displayItems(
           id: `create-${type}-btn`,
           classes: "primary-button critical-action",
           events: {
-            click: () => renderItemForm(container, "create", null, type, refresh),
+            click: () => openItemFormModal("create", null, type, refresh),
           },
         })
       : null,

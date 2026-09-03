@@ -61,6 +61,14 @@ export interface ProductDetail {
   banner?: string;
   photo?: string;
   images?: string | string[];
+  seller?: {
+    name?: string;
+    contact?: string;
+    [key: string]: unknown;
+  } | null;
+  sku?: string;
+  tags?: string[];
+  rating?: number | string;
   [key: string]: unknown;
 }
 

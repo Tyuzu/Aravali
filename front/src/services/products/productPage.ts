@@ -64,6 +64,13 @@ export async function displayProduct(
       : priceValue;
 
     const title = createElement("h1", {}, [product.name || "Product"]);
+    // Seller / vendor info
+    const seller = product.seller
+      ? createElement("div", { class: "product-seller" }, [
+          createElement("strong", {}, [product.seller.name || "Vendor"]),
+          product.seller.contact ? createElement("span", {}, [` • ${product.seller.contact}`]) : null,
+        ].filter(Boolean) as HTMLElement[])
+      : null;
     const meta = createElement("div", { class: "product-meta" }, [
       product.category ? createElement("span", {}, [product.category]) : null,
       product.unit ? createElement("span", {}, [`Unit: ${product.unit}`]) : null,
@@ -83,6 +90,13 @@ export async function displayProduct(
     const description = createElement("p", { class: "product-description" }, [
       product.description || "No description available.",
     ]);
+
+    // SKU, tags, rating
+    const sku = product.sku ? createElement("div", { class: "product-sku" }, [`SKU: ${product.sku}`]) : null;
+    const tags = Array.isArray(product.tags) && product.tags.length
+      ? createElement("div", { class: "product-tags" }, product.tags.map(t => createElement("span", { class: "tag" }, [t])))
+      : null;
+    const rating = product.rating !== undefined ? createElement("div", { class: "product-rating" }, [`⭐ ${Number(product.rating).toFixed(1)}`]) : null;
 
     const quantityInput = createElement("input", {
       type: "number",
@@ -133,14 +147,22 @@ export async function displayProduct(
         createElement("div", { class: "product-image-block" }, [image]),
         createElement("div", { class: "product-content" }, [
           title,
+          seller,
           meta,
           priceBlock,
+          rating,
+          sku,
+          tags,
           description,
           createElement("div", { class: "qty-row" }, [
             createElement("label", {}, ["Qty:"]),
             quantityInput,
           ]),
           actions,
+          createElement("div", { class: "product-extra-actions" }, [
+            Button({ title: "Share", classes: "secondary-button", events: { click: () => { navigator.clipboard?.writeText(window.location.href); Notify("Product link copied to clipboard."); } } }) as HTMLElement,
+            Button({ title: "Wishlist", classes: "secondary-button", events: { click: () => { Notify("Added to wishlist."); } } }) as HTMLElement,
+          ]),
         ]),
       ])
     );

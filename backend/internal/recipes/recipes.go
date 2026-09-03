@@ -95,6 +95,8 @@ func CreateRecipe(app *infra.Deps) http.HandlerFunc {
 		quantities := r.MultipartForm.Value["ingredientQuantity[]"]
 		units := r.MultipartForm.Value["ingredientUnit[]"]
 		rawAlts := r.MultipartForm.Value["ingredientAlternatives[]"]
+		itemIDs := r.MultipartForm.Value["ingredientItemId[]"]
+		types := r.MultipartForm.Value["ingredientType[]"]
 
 		ingredients := make([]Ingredient, 0, len(names))
 
@@ -110,6 +112,8 @@ func CreateRecipe(app *infra.Deps) http.HandlerFunc {
 
 			ingredient := Ingredient{
 				Name:         names[i],
+				ItemID:       getSafe(itemIDs, i),
+				Type:         getSafe(types, i),
 				Quantity:     qty,
 				Unit:         units[i],
 				Alternatives: []IngredientAlternative{},

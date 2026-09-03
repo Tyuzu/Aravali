@@ -12,6 +12,7 @@ export interface Ingredient {
   itemid?: string | number;
   productId?: string | number;
   productid?: string | number;
+  type?: string;
   alternatives?: IngredientAlternative[];
 }
 

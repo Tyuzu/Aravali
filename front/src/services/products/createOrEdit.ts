@@ -3,6 +3,7 @@ import { createFormGroup } from "../../components/form/createFormGroupEnhanced.j
 import { saveFarmItem, deleteFarmItem } from "./api.js";
 import Button from "../../components/base/Button.js";
 import { CategoryOption, FarmItem, ItemPayload, ItemType } from "./types.js";
+import Modal from "../../components/ui/Modal.js";
 
 export function renderItemForm(
   container: HTMLElement,
@@ -293,4 +294,25 @@ export function renderItemForm(
   };
 
   container.appendChild(form);
+}
+
+export function openItemFormModal(
+  mode: "create" | "edit",
+  itemData: FarmItem | null,
+  type: ItemType,
+  onDone: () => void
+): void {
+  const temp = createElement("div", {});
+  renderItemForm(temp, mode, itemData, type, () => {
+    onDone();
+    modalRef?.close();
+  });
+
+  let modalRef: any = null;
+  modalRef = Modal({
+    title: mode === "create" ? `Create ${type}` : `Edit ${type}`,
+    content: temp,
+    size: "large",
+    actions: () => null,
+  });
 }

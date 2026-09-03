@@ -69,6 +69,8 @@ const createNav = (): HTMLDivElement => {
     { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
     { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
     { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
+    { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
+    { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
   ];
 
   // 2. Filter available items based on domain permissions

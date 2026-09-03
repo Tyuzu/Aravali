@@ -11,6 +11,7 @@ import { updateImageWithCrop } from "../../utils/bannerEditor.js";
 import { addToCart, isValidCartQuantity } from "../cart/addToCart.js";
 import { getState } from "../../state/state.js";
 import { renderItemForm } from "./createOrEdit.js";
+import ProductCard from "../../components/ui/ProductCard.js";
 import { FarmItem, ItemType, UserState } from "./types.js";
 
 const MAX_CART_QUANTITY = 99;
@@ -245,24 +246,21 @@ export function renderItemCard(
     );
   }
 
-  // CARD ASSEMBLY
-  const cardChildren = [
-    imageSection,
-    createElement("div", { class: "card-details" }, [
-      createElement("div", { class: "card-header-meta" }, [
-        createElement("h3", { class: "item-title" }, [item.name || "Unnamed Product"]),
-        item.category ? createElement("span", { class: "category-tag" }, [item.category]) : null
-      ].filter(Boolean) as HTMLElement[]),
-      createElement("p", { class: "item-description" }, [item.description || "No description provided."]),
-      pricingSection
-    ]),
-    actionWrapper
-  ];
+  const details = createElement("div", { class: "card-details" }, [
+    createElement("div", { class: "card-header-meta" }, [
+      createElement("h3", { class: "item-title" }, [item.name || "Unnamed Product"]),
+      item.category ? createElement("span", { class: "category-tag" }, [item.category]) : null
+    ].filter(Boolean) as HTMLElement[]),
+    createElement("p", { class: "item-description" }, [item.description || "No description provided."]),
+    pricingSection
+  ]);
 
-  const card = createElement("div", { class: `${type}-card items-card-wrapper` }, cardChildren);
-
-  card.addEventListener("click", () => {
-    navigate(`/products/${type}/${item.productid}`);
+  const card = ProductCard({
+    image: imageSection,
+    title: item.name || "Unnamed Product",
+    details,
+    actions: actionWrapper,
+    onClick: () => navigate(`/products/${type}/${item.productid}`)
   });
 
   return card;

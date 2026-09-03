@@ -1,4 +1,4 @@
-import { createElement } from "../components/createElement.js";
+import { createElement } from "../../components/createElement.js";
 
 type RouteContainer = HTMLElement;
 

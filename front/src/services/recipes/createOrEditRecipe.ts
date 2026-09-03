@@ -4,6 +4,10 @@ import { createFormGroup } from "../../components/form/createFormGroupEnhanced.j
 import { navigate } from "../../routes/navigate.js";
 import { saveRecipeRequest } from "./api.js";
 import { Recipe, IngredientAlternative } from "./types/recipe.js";
+import Modal from "../../components/ui/Modal.js";
+import { fetchFarmItems, fetchFarmCategories } from "../products/api.js";
+import Imagex from "../../components/base/Imagex.js";
+import { resolveImagePath, EntityType, PictureType } from "../../utils/imagePaths.js";
 
 type FormMode = "create" | "edit";
 
@@ -126,7 +130,9 @@ function renderRecipeForm(
     name: string = "",
     quantity: number | string = "",
     unit: string = "",
-    alternatives: IngredientAlternative[] = []
+    alternatives: IngredientAlternative[] = [],
+    linkedItemId: string | null = null,
+    linkedItemType: string | null = null
   ): void {
     const altStr = alternatives
       .map((a) => [a.name, a.itemId, a.type].join("|"))
@@ -143,6 +149,79 @@ function renderRecipeForm(
         },
       },
     });
+
+    const hiddenItemId = createElement("input", { type: "hidden", name: "ingredientItemId[]", value: linkedItemId || "" });
+    const hiddenItemType = createElement("input", { type: "hidden", name: "ingredientType[]", value: linkedItemType || "" });
+
+    const linkedLabel = createElement("span", { class: "linked-item" }, [linkedItemId ? "Linked" : "Not linked"]);
+
+    const linkBtn = Button({
+      title: "Link Item",
+      type: "button",
+      classes: "small-button",
+      events: {
+        click: async (e: Event) => {
+          e.preventDefault();
+          const searchInput = createElement("input", { type: "search", placeholder: "Search products...", id: "ingredient-search-input" }) as HTMLInputElement;
+          const categorySelect = createElement("select", { id: "ingredient-search-category" }) as HTMLSelectElement;
+          const results = createElement("div", { class: "picker-results" });
+
+          // populate categories
+          try {
+            const cats = await fetchFarmCategories("product");
+            categorySelect.appendChild(createElement("option", { value: "" }, ["All categories"]));
+            cats.forEach((c: string) => categorySelect.appendChild(createElement("option", { value: c }, [c])));
+          } catch (err) {
+            categorySelect.appendChild(createElement("option", { value: "" }, ["All categories"]));
+          }
+
+          const modalRef = Modal({
+            title: "Select Product",
+            content: createElement("div", {}, [searchInput, results]),
+            size: "medium",
+            actions: () => Button({ title: "Close", type: "button", events: { click: () => modalRef?.close() } })
+          });
+
+          let typingTimer: number | undefined;
+          const doSearch = async () => {
+            window.clearTimeout(typingTimer);
+            typingTimer = window.setTimeout(async () => {
+              const q = searchInput.value.trim();
+              const cat = (categorySelect as HTMLSelectElement).value || "";
+              results.replaceChildren();
+              if (!q && !cat) return;
+              try {
+                const resp = await fetchFarmItems("product", { search: q, limit: 20, category: cat });
+                const items = resp.items || [];
+                if (items.length === 0) {
+                  results.appendChild(createElement("p", {}, ["No products found."]));
+                  return;
+                }
+                items.forEach((it: any) => {
+                  const thumbSrc = resolveImagePath(EntityType.PRODUCT, PictureType.THUMB, it.banner || (Array.isArray(it.images) ? it.images[0] : it.images));
+                  const thumb = Imagex({ src: thumbSrc, alt: it.name || "", classes: "picker-thumb" });
+                  const meta = createElement("div", { class: "picker-meta" }, [createElement("div", { class: "picker-name" }, [it.name || String(it.productid || it.productId || "")]), it.category ? createElement("div", { class: "picker-cat" }, [it.category]) : null].filter(Boolean) as HTMLElement[]);
+                  const itemBtn = createElement("button", { type: "button", class: "picker-item" }, [thumb, meta]) as HTMLButtonElement;
+                  itemBtn.addEventListener("click", (ev: Event) => {
+                    ev.preventDefault();
+                    (hiddenItemId as HTMLInputElement).value = it.productid || it.productId || it.id || "";
+                    (hiddenItemType as HTMLInputElement).value = "product";
+                    linkedLabel.replaceChildren(it.name || String(it.productid || it.productId || ""));
+                    modalRef?.close();
+                  });
+                  results.appendChild(itemBtn);
+                });
+              } catch (err) {
+                results.appendChild(createElement("p", {}, ["Search failed"]));
+              }
+            }, 250);
+          };
+
+          searchInput.addEventListener("input", doSearch);
+          categorySelect.addEventListener("change", doSearch);
+        }
+      }
+    }) as HTMLButtonElement;
 
     const row = createElement("div", { class: "ingredient-row hvflex" }, [
       createElement("input", {
@@ -173,6 +252,10 @@ function renderRecipeForm(
         placeholder: "Alternatives (name|itemId|type, ...)",
         value: altStr,
       }),
+      hiddenItemId,
+      hiddenItemType,
+      linkedLabel,
+      linkBtn,
       removeBtn,
     ]);
 
@@ -185,7 +268,9 @@ function renderRecipeForm(
         ing.name,
         ing.quantity,
         ing.unit,
-        ing.alternatives || []
+        ing.alternatives || [],
+        (ing.itemId as unknown as string) || null,
+        (ing.type as unknown as string) || null
       )
     );
   } else {
