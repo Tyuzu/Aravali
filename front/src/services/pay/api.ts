@@ -1,87 +1,40 @@
 import { apiFetch, stripeFetch } from "../../api/api.js";
 import type { Paise } from "./money.js";
+import type {
+  CouponApiResponse,
+  CouponValidationResult,
+  PaymentIntentRequest,
+  PaymentIntentResponse,
+  PaymentSuccessPayload,
+  TopupResponse,
+  TransactionItem,
+  TransactionResponse,
+  WalletBalanceResponse,
+  WalletCreateResponse,
+  WalletPayRequest,
+  WalletPayResponse,
+  WalletTopupResponse,
+  WalletTransferResponse,
+  RefundResponse
+} from "./types.js";
 
-export interface PaymentIntentRequest {
-  paymentType?: string;
-  entityType: string;
-  entityId: string | number;
-}
-
-export interface PaymentIntentResponse {
-  clientSecret?: string;
-  [key: string]: unknown;
-}
-
-export interface PaymentSuccessPayload extends PaymentIntentRequest {
-  paymentIntentId: string;
-}
-
-export interface WalletBalanceResponse {
-  exists?: boolean;
-  accountExists?: boolean;
-  balance?: number;
-  currency?: string;
-  [key: string]: unknown;
-}
-
-export interface WalletCreateResponse {
-  success: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
-
-export interface WalletTopupResponse {
-  success?: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
-
-export interface TransactionItem {
-  id: string | number;
-  type?: string;
-  amount: Paise | number;
-  method?: string;
-  status?: string;
-  created_at: string | number | Date;
-  from_account?: string | number;
-  userid?: string | number;
-  [key: string]: unknown;
-}
-
-export interface TransactionResponse {
-  transactions?: TransactionItem[];
-  [key: string]: unknown;
-}
-
-export interface RefundResponse {
-  success?: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
-
-export interface WalletTransferResponse {
-  success?: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
-
-export interface CouponValidationResult {
-  valid: boolean;
-  discount: number;
-  reason?: string;
-}
-
-export interface CouponApiResponse {
-  data?: CouponValidationResult;
-  [key: string]: unknown;
-}
-
-export interface TopupResponse {
-  transactionId?: string | number;
-  status?: string;
-  balance?: number;
-  [key: string]: unknown;
-}
+export type {
+  CouponApiResponse,
+  CouponValidationResult,
+  PaymentIntentRequest,
+  PaymentIntentResponse,
+  PaymentSuccessPayload,
+  TopupResponse,
+  TransactionItem,
+  TransactionResponse,
+  WalletBalanceResponse,
+  WalletCreateResponse,
+  WalletPayRequest,
+  WalletPayResponse,
+  WalletTopupResponse,
+  WalletTransferResponse,
+  RefundResponse
+} from "./types.js";
 
 export async function createPaymentIntent(payload: PaymentIntentRequest): Promise<PaymentIntentResponse> {
   return await stripeFetch<PaymentIntentResponse>("/create-payment-intent", "POST", payload);
@@ -156,6 +109,17 @@ export async function validateCouponCode(
     console.error("Coupon alignment verification error:", error);
     return { valid: false, discount: 0, reason: error?.message || "Validation failed" };
   }
+}
+
+export async function payWallet(payload: WalletPayRequest): Promise<WalletPayResponse> {
+  return await apiFetch<WalletPayResponse>("/wallet/pay", "POST", payload);
+}
+
+export async function payCashOnDelivery(payload: Omit<WalletPayRequest, "method">): Promise<WalletPayResponse> {
+  return await apiFetch<WalletPayResponse>("/wallet/pay", "POST", {
+    ...payload,
+    method: "cod"
+  });
 }
 
 export async function requestWalletTopup(

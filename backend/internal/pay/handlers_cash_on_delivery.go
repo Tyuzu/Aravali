@@ -2,59 +2,45 @@ package pay
 
 import (
 	"encoding/json"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra/mq"
 	"scav/internal/beats/auditlog"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
 )
 
-// CashOnDelivery handles cash-on-delivery payment requests
-func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) {
+func (p *PaymentService) handleCashOnDelivery(w http.ResponseWriter, r *http.Request, req PayRequest, userID string) {
 	ctx := r.Context()
-	userID := utils.GetUserIDFromRequest(r)
-
-	var req struct {
-		PaymentType string `json:"paymentType"`
-		EntityType  string `json:"entityType"`
-		EntityID    string `json:"entityId"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
-		return
-	}
-
-	// ────────── VALIDATION ──────────
 	if req.PaymentType == "" || req.EntityType == "" || req.EntityID == "" {
 		utils.RespondWithError(w, http.StatusBadRequest, "missing required fields: paymentType, entityType, or entityId")
 		return
 	}
 
-	// Validate payment rules
+	req.Method = NormalizePaymentMethod(req.Method)
+	if req.Method == "" {
+		req.Method = "cash_on_delivery"
+	}
+
 	rule, ok := PaymentRules[req.PaymentType]
 	if !ok {
 		utils.RespondWithError(w, http.StatusBadRequest, "invalid payment type")
 		return
 	}
-
 	if !rule.AllowedEntities[req.EntityType] {
 		utils.RespondWithError(w, http.StatusBadRequest, "entity not allowed for payment type")
 		return
 	}
-
 	if req.EntityType != "order" && req.EntityType != "cart" {
 		utils.RespondWithError(w, http.StatusBadRequest, "cash on delivery is only supported for orders and carts")
 		return
 	}
-
-	if !rule.AllowedMethods["cod"] {
+	if !rule.AllowedMethods[req.Method] && !rule.AllowedMethods["cod"] && !rule.AllowedMethods["cash_on_delivery"] {
 		utils.RespondWithError(w, http.StatusBadRequest, "cash on delivery not allowed for this payment type")
 		return
 	}
 
-	// ────────── PRICE RESOLUTION ──────────
 	resolver, err := p.resolver(req.EntityType)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusBadRequest, "unsupported entity")
@@ -67,10 +53,8 @@ func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// ────────── CREATE TRANSACTION RECORD ──────────
 	txnID := utils.GetUUID()
 	now := time.Now()
-
 	txn := Transaction{
 		ID:         txnID,
 		UserID:     userID,
@@ -85,13 +69,11 @@ func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) 
 		UpdatedAt:  now,
 		Meta:       Meta{"payment_type": req.PaymentType},
 	}
-
 	if err := p.app.DB.InsertOne(ctx, transactionsCollection, txn); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed to create transaction")
 		return
 	}
 
-	// ────────── UPDATE ORDER STATUS ──────────
 	if req.EntityType == "order" {
 		filter := map[string]any{"orderId": req.EntityID}
 		update := map[string]any{
@@ -102,7 +84,6 @@ func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) 
 			},
 		}
 		if _, err := p.app.DB.UpdateOne(ctx, "orders", filter, update); err != nil {
-			// Log but don't fail - transaction was created
 			auditlog.LogAction(
 				ctx, p.app, r, userID,
 				auditlog.AuditActionPayment,
@@ -116,7 +97,6 @@ func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// ────────── AUDIT LOG ──────────
 	auditlog.LogAction(
 		ctx, p.app, r, userID,
 		auditlog.AuditActionPayment,
@@ -136,4 +116,21 @@ func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) 
 	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 	})
+}
+
+// CashOnDelivery handles cash-on-delivery payment requests
+func (p *PaymentService) CashOnDelivery(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID := utils.GetUserIDFromRequest(r)
+
+	var req PayRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	if req.Method != "" {
+		req.Method = NormalizePaymentMethod(req.Method)
+	}
+	p.handleCashOnDelivery(w, r, req, userID)
+	_ = ctx
 }

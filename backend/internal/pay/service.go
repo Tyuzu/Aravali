@@ -281,6 +281,21 @@ type PaymentRule struct {
 	AllowCustomAmt  bool
 }
 
+func NormalizePaymentMethod(method string) string {
+	switch method {
+	case "", "wallet":
+		return "wallet"
+	case "card", "card_payment", "stripe":
+		return "card"
+	case "cod", "cash_on_delivery":
+		return "cash_on_delivery"
+	case "transfer", "wallet_transfer":
+		return "transfer"
+	default:
+		return method
+	}
+}
+
 var PaymentRules = map[string]PaymentRule{
 	"funding": {
 		AllowedEntities: map[string]bool{"artist": true},
@@ -307,10 +322,11 @@ var PaymentRules = map[string]PaymentRule{
 			"beat":    true,
 		},
 		AllowedMethods: map[string]bool{
-			"wallet":   true,
-			"card":     true,
-			"transfer": true,
-			"cod":      true, // Added COD method compatibility
+			"wallet":           true,
+			"card":             true,
+			"transfer":         true,
+			"cod":              true,
+			"cash_on_delivery": true,
 		},
 		AllowCustomAmt: false,
 	},

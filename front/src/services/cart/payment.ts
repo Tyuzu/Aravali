@@ -4,7 +4,7 @@ import { showPaymentModal } from "../pay/pay.js";
 import Notify from "../../components/ui/Notify.js";
 import Button from "../../components/base/Button.js";
 import { printInvoice } from "./invoice.js";
-import { createCartOrder } from "./api.js";
+import { createCartOrder, clearCart } from "./api.js";
 
 // --- INTERFACES & TYPES ---
 interface OrderItem {
@@ -241,6 +241,12 @@ export function displayPayment(container: HTMLElement, sessionData: SessionData 
 
       if (!paymentResult) {
         throw new Error("Payment window closed or cancelled.");
+      }
+
+      try {
+        await clearCart();
+      } catch (clearError) {
+        console.warn("Failed to clear cart after successful payment:", clearError);
       }
 
       const successContainer = createElement(

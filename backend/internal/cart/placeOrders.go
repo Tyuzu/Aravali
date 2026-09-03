@@ -153,11 +153,9 @@ func PlaceOrder(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// 5. Cleanup user's active cart upon success
-		if _, err := app.DB.Delete(ctx, cartCollection, bson.M{"userid": userID}); err != nil {
-			log.Printf("PlaceOrder: cart cleanup error for user %s: %v", userID, err)
-		}
-
+		// 5. Do not clear the cart here.
+		// A cart must only be cleared after the payment succeeds; otherwise a failed wallet
+		// or card payment leaves the user's cart empty even though the order was not paid.
 		resp := map[string]any{
 			"success":    true,
 			"farmOrders": farmOrders,

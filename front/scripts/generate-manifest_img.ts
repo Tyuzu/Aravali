@@ -3,6 +3,12 @@ import sharp from "sharp";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
 
+type IconEntry = {
+  src: string;
+  sizes: string;
+  type: string;
+};
+
 const domain = process.env.VITE_DOMAIN || "https://indium.netlify.app";
 const baseIcon = "assets/logo.png";      // your source logo
 const outputDir = path.resolve("public", "assets");
@@ -18,7 +24,7 @@ const manifestDir = path.dirname(manifestPath);
 if (!existsSync(manifestDir)) mkdirSync(manifestDir, { recursive: true });
 
 // generate icons (skip if base icon missing)
-let icons = [];
+let icons: IconEntry[] = [];
 if (!existsSync(baseIcon)) {
   console.warn(`⚠️ base icon not found at ${baseIcon}, skipping icon generation.`);
 } else {

@@ -25,13 +25,20 @@ export function formatCurrency(paise?: Paise | number | null): string {
   }).format(amount / 100);
 }
 
+export function normalizeAmountInput(value: number | string | null | undefined): number {
+  if (value === null || value === undefined || value === "") return 0;
+  const parsed = typeof value === "string" ? Number(value.trim()) : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 /**
  * Converts rupees to paise for API requests.
  * Example: toPaise(50.5) => 5050 as Paise
  */
 export function toPaise(rupees: number): Paise {
-  if (isNaN(rupees) || !isFinite(rupees)) return 0 as Paise;
-  return Math.round(rupees * 100) as Paise;
+  const amount = normalizeAmountInput(rupees);
+  if (amount <= 0 || !Number.isFinite(amount)) return 0 as Paise;
+  return Math.round(amount * 100) as Paise;
 }
 
 /**

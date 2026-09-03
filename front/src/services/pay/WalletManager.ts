@@ -4,26 +4,16 @@ import { formatCurrency, Paise, toPaise } from "./money.js";
 import { v4 as uuidv4 } from "uuid";
 import Notify from "../../components/ui/Notify.js";
 import { getWalletBalance, topupWallet } from "./api.js";
+import type { WalletBalanceResponse, WalletTopupResponse } from "./types.js";
 
 /* ───────────────────────────────────────── */
 /* Types & Interfaces */
 /* ───────────────────────────────────────── */
 
-export interface WalletBalanceResponse {
-  balance?: number;
-  exists?: boolean;
-  [key: string]: unknown;
-}
-
-export interface WalletTopupResponse {
-  success?: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
-
 export interface WalletManagerInstance {
   element: HTMLElement;
   loadBalance: () => Promise<void>;
+  destroy: () => void;
 }
 
 /* ───────────────────────────────────────── */
@@ -46,6 +36,19 @@ export function WalletManager(): WalletManagerInstance {
   const balanceEl = createElement("div", { id: "wallet-balance", class: "balance-display" }, [
     "Loading balance..."
   ]);
+
+  const handleBalanceChange = () => {
+    void loadBalance();
+  };
+
+  const globalWindow = window as Window & {
+    __walletBalanceListenerRegistered?: boolean;
+  };
+
+  if (!globalWindow.__walletBalanceListenerRegistered) {
+    globalWindow.addEventListener("wallet:balance-changed", handleBalanceChange);
+    globalWindow.__walletBalanceListenerRegistered = true;
+  }
 
   const amountInput = createElement("input", {
     type: "number",
@@ -111,9 +114,14 @@ export function WalletManager(): WalletManagerInstance {
     }
   }
 
-  // Auto-listen to global balance updates
-  window.addEventListener("wallet:balance-changed", loadBalance);
   loadBalance();
+
+  const destroy = (): void => {
+    if (globalWindow.__walletBalanceListenerRegistered) {
+      globalWindow.removeEventListener("wallet:balance-changed", handleBalanceChange);
+      globalWindow.__walletBalanceListenerRegistered = false;
+    }
+  };
 
   return {
     element: createElement("div", { id: "wallet-manager", class: "wallet-card" }, [
@@ -121,6 +129,7 @@ export function WalletManager(): WalletManagerInstance {
       balanceEl,
       createElement("div", { class: "wallet-form" }, [amountInput, methodSelect, topupBtn])
     ]),
-    loadBalance
+    loadBalance,
+    destroy
   };
 }

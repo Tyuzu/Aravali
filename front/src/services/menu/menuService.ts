@@ -9,8 +9,7 @@ import {
     createMenuItem,
     updateMenuItem,
     deleteMenuItem,
-    getMenuStock,
-    confirmMenuPurchase
+    getMenuStock
 } from "./api.js";
 import { createElement } from "../../components/createElement.js";
 import Modal, { ModalResult } from "../../components/ui/Modal.js";
@@ -19,17 +18,8 @@ import Notify from "../../components/ui/Notify.js";
 import { createFormGroup, FormGroupConfig } from "../../components/form/createFormGroupEnhanced.js";
 import { uploadFile, MediaUploadResult } from "../media/api/mediaApi.js";
 import { uid } from "../media/ui/mediaUploadForm.js";
-import { showPaymentModal } from "../pay/pay.js";
-
-/* =========================
-   TYPES & INTERFACES
-========================= */
-
-
-export interface PaymentResult {
-    success: boolean;
-    [key: string]: unknown;
-}
+import { addToCart, isValidCartQuantity } from "../cart/addToCart.js";
+import { getState } from "../../state/state.js";
 
 /* =========================
    FUNCTIONS
@@ -315,82 +305,72 @@ export async function displayMenu(
     menuData.forEach((menu) => menuList.appendChild(createMenuCard(menu, isCreator, isLoggedIn, placeId)));
 }
 
-/** Prompt quantity and optional note, then payment */
+/** Prompt quantity, then add the item to cart like other crop-based buying flows. */
 async function promptMenuNote(menu: ApiMenuItem, placeId: string | number): Promise<void> {
-    const quantityInput = createElement("input", { type: "number", min: 1, value: 1 }) as HTMLInputElement;
-    const noteInput = createElement("textarea", {
-        rows: 3,
-        placeholder: "Special request (optional)"
-    }) as HTMLTextAreaElement;
+    const stock = await getMenuStock(placeId, menu.menuid).catch(() => ({ stock: menu.stock ?? 0 }));
+    const maxQuantity = Math.min(Math.max(Number(stock.stock) || 0, 0), 99);
+
+    if (maxQuantity <= 0) {
+        Notify("This menu item is out of stock.", { type: "warning", duration: 3000 });
+        return;
+    }
+
+    const quantityInput = createElement("input", {
+        type: "number",
+        min: 1,
+        max: maxQuantity,
+        step: 1,
+        value: 1
+    }) as HTMLInputElement;
 
     const wrapper = createElement("div", { class: "modal-form-group" }, [
-        createElement("label", {}, ["Quantity: ", quantityInput]),
-        createElement("label", {}, ["Note: ", noteInput])
+        createElement("label", {}, ["Quantity: ", quantityInput])
     ]);
 
-    let modalRef: ModalResult | null = null;
-
-    const executePurchase = async (): Promise<void> => {
-        const quantity = parseInt(quantityInput.value, 10);
-        const note = noteInput.value.trim();
-
-        if (!Number.isInteger(quantity) || quantity < 1) {
-            Notify("⚠️ Please enter a valid quantity.", { type: "warning" });
-            return;
-        }
-
-        try {
-            const { stock } = await getMenuStock(placeId, menu.menuid);
-
-            if (stock <= 0) {
-                Notify("❌ Out of stock.", { type: "warning" });
-                return;
-            }
-
-            if (quantity > stock) {
-                Notify(`⚠️ Only ${stock} available.`, { type: "warning" });
-                return;
-            }
-
-            modalRef?.close();
-
-            const paymentResult = (await showPaymentModal({
-                paymentType: "purchase",
-                entityType: "menu",
-                entityId: menu.menuid,
-                entityName: menu.name
-            })) as PaymentResult | undefined;
-
-            if (!paymentResult || paymentResult.success !== true) {
-                Notify("Payment was cancelled or failed.", { type: "warning" });
-                return;
-            }
-
-            const res = await confirmMenuPurchase(placeId, menu.menuid, { quantity, note });
-
-            if (res.success) {
-                Notify("Menu purchased successfully!", { type: "success" });
-            } else {
-                Notify(res.message || "Purchase failed.", { type: "error" });
-            }
-        } catch (err) {
-            const error = err as Error;
-            console.error(error);
-            Notify(`Error: ${error.message}`, { type: "error" });
-        }
-    };
-
-    modalRef = Modal({
-        title: `Purchase: ${menu.name}`,
+    const modal = Modal({
+        title: `Add ${menu.name} to cart`,
         content: wrapper,
-        onConfirm: executePurchase,
         actions: () =>
-            Button({
-                title: "Next",
-                classes: "buttonx",
-                events: {
-                    click: executePurchase
-                }
-            })
+            createElement("div", { class: "modal-actions" }, [
+                Button({
+                    title: "Add to Cart",
+                    classes: "buttonx primary",
+                    events: {
+                        click: async () => {
+                            const quantity = parseInt(quantityInput.value, 10);
+
+                            if (!Number.isInteger(quantity) || quantity < 1 || !isValidCartQuantity(quantity) || quantity > maxQuantity) {
+                                Notify(`Enter a valid quantity from 1-${maxQuantity}.`, {
+                                    type: "warning",
+                                    duration: 3000
+                                });
+                                return;
+                            }
+
+                            modal.close();
+
+                            const success = await addToCart({
+                                itemId: menu.menuid,
+                                itemType: "menu",
+                                quantity,
+                                isLoggedIn: Boolean(getState("token"))
+                            });
+
+                            if (success) {
+                                Notify("Added to cart successfully.", {
+                                    type: "success",
+                                    duration: 3000,
+                                    dismissible: true
+                                });
+                            }
+                        }
+                    }
+                }),
+                Button({
+                    title: "Cancel",
+                    classes: "buttonx",
+                    events: { click: () => modal.close() }
+                })
+            ])
     });
 }

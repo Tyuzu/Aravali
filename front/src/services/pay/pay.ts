@@ -3,45 +3,21 @@ import Modal from "../../components/ui/Modal.js";
 import { createElement } from "../../components/createElement.js";
 import { STRIPE_PUB_KEY } from "./pubkey.js";
 import { Button } from "../../components/base/Button.js";
-import { createPaymentIntent, recordPaymentSuccess } from "./api.js";
-
-/* ───────────────────────────────────────── */
-/* Types & Interfaces */
-/* ───────────────────────────────────────── */
-
-export type PaymentType = "funding" | "purchase";
-
-export type PaymentMethod = "card" | "wallet" | "cash_on_delivery";
-
-export interface PaymentConfig {
-  allowedEntities: string[];
-  methods: PaymentMethod[];
-}
-
-export type PaymentRules = Record<PaymentType, PaymentConfig>;
-
-export interface ValidationResult {
-  valid: boolean;
-  error?: string;
-}
-
-export interface StripePaymentParams {
-  paymentType?: PaymentType;
-  entityType: string;
-  entityId: string | number;
-}
-
-export interface ShowPaymentModalParams extends StripePaymentParams {
-  entityName: string;
-}
-
-export interface PaymentResult {
-  success: boolean;
-  paymentIntentId?: string;
-  method?: PaymentMethod;
-  error?: string;
-  redirectingToStripe?: boolean;
-}
+import {
+  createPaymentIntent,
+  recordPaymentSuccess,
+  payWallet,
+  payCashOnDelivery as submitCashOnDeliveryApi
+} from "./api.js";
+import type {
+  PaymentMethod,
+  PaymentResult,
+  PaymentRules,
+  PaymentType,
+  ShowPaymentModalParams,
+  StripePaymentParams,
+  ValidationResult
+} from "./types.js";
 
 // Global ambient declaration for Stripe JS SDK
 declare global {
@@ -98,13 +74,54 @@ function setMessage(element: HTMLElement | null, text: string): void {
 
 // Placeholder fallbacks for alternate processing pipelines
 async function payViaWallet(data: StripePaymentParams): Promise<PaymentResult> {
-  console.log("Processing wallet routing:", data);
-  return { success: true, method: "wallet" };
+  const validation = validatePaymentConfig(data.paymentType ?? "purchase", data.entityType);
+  if (!validation.valid) {
+    return { success: false, error: validation.error };
+  }
+
+  try {
+    const result = await payWallet({
+      paymentType: data.paymentType ?? "purchase",
+      entityType: data.entityType,
+      entityId: data.entityId,
+      method: "wallet"
+    });
+
+    if (result?.success) {
+      return { success: true, method: "wallet" };
+    }
+
+    return { success: false, error: result?.message || "Wallet payment was declined." };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Wallet payment failed.";
+    console.error("Wallet payment error:", error);
+    return { success: false, error: message };
+  }
 }
 
-async function payCashOnDelivery(data: StripePaymentParams): Promise<PaymentResult> {
-  console.log("Processing cod distribution parameters:", data);
-  return { success: true, method: "cash_on_delivery" };
+async function processCashOnDelivery(data: StripePaymentParams): Promise<PaymentResult> {
+  const validation = validatePaymentConfig(data.paymentType ?? "purchase", data.entityType);
+  if (!validation.valid) {
+    return { success: false, error: validation.error };
+  }
+
+  try {
+    const result = await submitCashOnDeliveryApi({
+      paymentType: data.paymentType ?? "purchase",
+      entityType: data.entityType,
+      entityId: data.entityId
+    });
+
+    if (result?.success) {
+      return { success: true, method: "cash_on_delivery", message: result.message || "Cash on delivery accepted." };
+    }
+
+    return { success: false, error: result?.message || "Cash on delivery was unavailable.", message: result?.message || "Cash on delivery was unavailable." };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Cash on delivery failed.";
+    console.error("Cash on delivery error:", error);
+    return { success: false, error: message, message };
+  }
 }
 
 /* ───────────────────────────────────────── */
@@ -256,7 +273,7 @@ async function showPaymentModal({
   const paymentHandlers: Record<PaymentMethod, () => Promise<PaymentResult>> = {
     card: () => payViaStripe({ paymentType, entityType, entityId }),
     wallet: () => payViaWallet({ paymentType, entityType, entityId }),
-    cash_on_delivery: () => payCashOnDelivery({ paymentType, entityType, entityId })
+    cash_on_delivery: () => processCashOnDelivery({ paymentType, entityType, entityId })
   };
 
   const confirmBtn = Button({
@@ -286,15 +303,19 @@ async function showPaymentModal({
         try {
           if (method === "card") {
             modalRef.close({ redirectingToStripe: true });
-            await handler();
-          } else {
             const result = await handler();
-
-            if (result?.success) {
-              modalRef.close({ success: true, method });
-            } else {
-              setMessage(messageEl, result?.error || "Payment failed");
+            if (!result.success && result.error) {
+              setMessage(messageEl, result.error);
             }
+            return;
+          }
+
+          const result = await handler();
+
+          if (result?.success) {
+            modalRef.close({ success: true, method });
+          } else {
+            setMessage(messageEl, result?.error || "Payment failed");
           }
         } catch (err: any) {
           console.error("Payment processing error:", err);

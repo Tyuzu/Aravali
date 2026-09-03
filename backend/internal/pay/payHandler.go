@@ -35,11 +35,11 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 	if req.Method == "" {
 		req.Method = "wallet"
 	}
+	req.Method = NormalizePaymentMethod(req.Method)
 
 	// Validate allowed methods globally or forward to CashOnDelivery handler if req.Method == "cod"
-	if req.Method == "cod" {
-		// Route or handle through CashOnDelivery logic contextually
-		p.CashOnDelivery(w, r)
+	if req.Method == "cod" || req.Method == "cash_on_delivery" {
+		p.handleCashOnDelivery(w, r, req, userID)
 		return
 	}
 

@@ -16,11 +16,21 @@ func (p *PaymentService) Transfer(w http.ResponseWriter, r *http.Request) {
 	senderID := utils.GetUserIDFromRequest(r)
 
 	var req struct {
-		Recipient string `json:"recipient"`
-		Amount    int64  `json:"amount"`
+		Recipient   string `json:"recipient"`
+		RecipientID string `json:"recipient_id"`
+		Amount      int64  `json:"amount"`
+		Note        string `json:"note"`
+		Description string `json:"description"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Amount <= 0 || req.Recipient == "" {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	if req.Recipient == "" {
+		req.Recipient = req.RecipientID
+	}
+	if req.Amount <= 0 || req.Recipient == "" {
 		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
 	}

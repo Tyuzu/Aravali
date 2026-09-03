@@ -59,6 +59,17 @@ function formatCurrency(minorValue: number, currencyCode = "INR"): string {
   }).format((minorValue || 0) / divisor);
 }
 
+function formatSeatRange(ticket: Ticket): string {
+  const seatStart = Number(ticket.seatstart);
+  const seatEnd = Number(ticket.seatend);
+
+  if (Number.isFinite(seatStart) && Number.isFinite(seatEnd) && seatStart > 0 && seatEnd > 0) {
+    return `Seats ${seatStart}–${seatEnd}`;
+  }
+
+  return "Seat allocation not specified";
+}
+
 /* ────────── Ticket Card ────────── */
 function createTicketCard(
   ticket: Ticket,
@@ -77,88 +88,137 @@ function createTicketCard(
     quantity: ticket.quantity,
     color: ticket.color || "#a3a3a349",
     attributes: { "data-ticket-id": String(ticket.ticketid) },
-    onClick: async () => {
-      if (!isLoggedIn || isCreator) return;
+    onClick: () => {
+      if (!isLoggedIn || isCreator) {
+        return;
+      }
 
+      const availableQuantity = Math.max(0, Number(ticket.quantity) || 0);
+      if (availableQuantity <= 0) {
+        Notify("This ticket is sold out.", {
+          type: "warning",
+          dismissible: true
+        });
+        return;
+      }
+
+      const currencyCode = String(ticket.currency || "INR").toUpperCase();
+      const unitPrice = Number(ticket.price) || 0;
       const quantityInput = createElement("input", {
         type: "number",
         min: 1,
-        value: 1
+        max: availableQuantity,
+        step: 1,
+        value: 1,
+        style: { width: "100%", maxWidth: "120px" }
       });
 
-      const wrapper = createElement("div", { class: "modal-form-group" }, [
-        createElement("label", {}, ["Quantity: ", quantityInput])
+      const totalLabel = createElement("p", {
+        style: { margin: "8px 0 0", fontWeight: "bold" }
+      }, [`Total: ${formatCurrency(unitPrice * 1, currencyCode)}`]);
+
+      quantityInput.addEventListener("input", () => {
+        const quantity = parseInt(quantityInput.value, 10);
+        const safeQuantity = Number.isInteger(quantity) && quantity > 0 ? quantity : 0;
+        const cappedQuantity = Math.min(safeQuantity, availableQuantity);
+        totalLabel.textContent = `Total: ${formatCurrency(unitPrice * cappedQuantity, currencyCode)}`;
+      });
+
+      const summary = createElement("div", {
+        style: {
+          display: "grid",
+          gap: "8px",
+          background: "#f8f8f8",
+          border: "1px solid #e5e5e5",
+          borderRadius: "8px",
+          padding: "12px",
+          marginBottom: "12px"
+        }
+      }, [
+        createElement("p", { style: { margin: "0", fontWeight: "600" } }, [`${ticket.name}`]),
+        createElement("p", { style: { margin: "0" } }, [`Price: ${formatCurrency(unitPrice, currencyCode)}`]),
+        createElement("p", { style: { margin: "0" } }, [`Available: ${availableQuantity}`]),
+        createElement("p", { style: { margin: "0" } }, [formatSeatRange(ticket)]),
+        totalLabel
       ]);
+
+      const wrapper = createElement("div", { class: "modal-form-group" }, [
+        summary,
+        createElement("label", { style: { display: "grid", gap: "6px" } }, [
+          "Quantity",
+          quantityInput
+        ])
+      ]);
+
       const modal = Modal({
-        title: `Purchase ${ticket.name}`,
+        title: `Buy ${ticket.name}`,
         content: wrapper,
         actions: () =>
           createElement("div", { class: "modal-actions" }, [
             Button({
-              title: "Next",
+              title: "Confirm Purchase",
               classes: "buttonx primary",
               events: {
-                click: async () => {
-                  const quantity = parseInt(
-                    (quantityInput as HTMLInputElement).value,
-                    10
-                  );
+                click: () => {
+                  void (async () => {
+                    const quantity = parseInt(quantityInput.value, 10);
 
-                  if (
-                    !Number.isInteger(quantity) ||
-                    quantity < 1 ||
-                    quantity > ticket.quantity
-                  ) {
-                    Notify(
-                      `Enter a valid quantity (1-${ticket.quantity}).`,
-                      { type: "warning", dismissible: true }
-                    );
-                    return;
-                  }
-
-                  modal.close();
-
-                  try {
-                    const paymentResult = (await showPaymentModal({
-                      paymentType: "purchase",
-                      entityType: "ticket",
-                      entityId: ticket.ticketid,
-                      entityName: ticket.name
-                    })) as PaymentResult | null;
-
-                    if (!paymentResult?.success) {
-                      Notify("Payment cancelled or failed.", {
-                        type: "error",
-                        dismissible: true
-                      });
+                    if (
+                      !Number.isInteger(quantity) ||
+                      quantity < 1 ||
+                      quantity > availableQuantity
+                    ) {
+                      Notify(
+                        `Enter a valid quantity (1-${availableQuantity}).`,
+                        { type: "warning", dismissible: true }
+                      );
                       return;
                     }
 
-                    const resp = await apiFetch<ApiFetchTicketResponse>(
-                      `/ticket/event/${eventId}/${ticket.ticketid}/confirm-purchase`,
-                      "POST",
-                      { quantity }
-                    );
+                    modal.close();
 
-                    if (resp?.success) {
-                      Notify("Ticket purchased successfully!", {
-                        type: "success",
-                        dismissible: true
-                      });
-                    } else {
-                      Notify(resp?.message || "Purchase failed.", {
+                    try {
+                      const paymentResult = await showPaymentModal({
+                        paymentType: "purchase",
+                        entityType: "ticket",
+                        entityId: ticket.ticketid,
+                        entityName: ticket.name
+                      }) as PaymentResult | null;
+
+                      if (!paymentResult?.success) {
+                        Notify("Payment cancelled or failed.", {
+                          type: "error",
+                          dismissible: true
+                        });
+                        return;
+                      }
+
+                      const resp = await apiFetch<ApiFetchTicketResponse>(
+                        `/ticket/event/${eventId}/${ticket.ticketid}/confirm-purchase`,
+                        "POST",
+                        { quantity }
+                      );
+
+                      if (resp?.success) {
+                        Notify(`Ticket${quantity > 1 ? "s" : ""} purchased successfully!`, {
+                          type: "success",
+                          dismissible: true
+                        });
+                      } else {
+                        Notify(resp?.message || "Purchase failed.", {
+                          type: "error",
+                          dismissible: true
+                        });
+                      }
+                    } catch (err: unknown) {
+                      console.error("Ticket purchase failed:", err);
+                      const errorMessage = err instanceof Error ? err.message : String(err);
+                      Notify(`Purchase failed: ${errorMessage}`, {
                         type: "error",
                         dismissible: true
                       });
                     }
-                  } catch (err: unknown) {
-                    console.error("Ticket purchase failed:", err);
-                    const errorMessage = err instanceof Error ? err.message : String(err);
-                    Notify(`Purchase failed: ${errorMessage}`, {
-                      type: "error",
-                      dismissible: true
-                    });
-                  }
+                  })();
                 }
               }
             }),
@@ -215,7 +275,9 @@ export async function displayTickets(
 ): Promise<void> {
   let tickets: Ticket[] = [];
 
-  const handleRefresh = () => displayTickets(ticketContainer, eventId, isCreator, isLoggedIn);
+  const handleRefresh = () => {
+    void displayTickets(ticketContainer, eventId, isCreator, isLoggedIn);
+  };
 
   try {
     const resp = await apiFetch<ApiFetchTicketResponse>(`/ticket/event/${eventId}`);
@@ -236,27 +298,27 @@ export async function displayTickets(
       Button({
         title: "Verify Ticket",
         classes: "buttonx action-btn",
-        events: { click: () => verifyTicketAndShowModal(eventId) }
+        events: { click: () => { void verifyTicketAndShowModal(eventId); } }
       }),
       Button({
         title: "Print Ticket",
         classes: "buttonx action-btn",
-        events: { click: () => printTicket(eventId) }
+        events: { click: () => { void printTicket(eventId); } }
       }),
       Button({
         title: "Cancel Ticket",
         classes: "buttonx action-btn",
-        events: { click: () => cancelTicket(eventId) }
+        events: { click: () => { void cancelTicket(eventId); } }
       }),
       Button({
         title: "Transfer Ticket",
         classes: "buttonx action-btn",
-        events: { click: () => transferTicket(eventId) }
+        events: { click: () => { void transferTicket(eventId); } }
       }),
       Button({
         title: "My Tickets",
         classes: "buttonx action-btn",
-        events: { click: () => listMyTickets(eventId) }
+        events: { click: () => { void listMyTickets(eventId); } }
       })
     );
   }
@@ -269,7 +331,7 @@ export async function displayTickets(
         title: "Add Tickets",
         id: "add-ticket-btn",
         classes: "buttonx",
-        events: { click: () => addTicketForm(eventId, ticketListDiv) }
+        events: { click: () => { void addTicketForm(eventId, ticketListDiv); } }
       })
     );
   }
@@ -296,12 +358,16 @@ async function handleAddTicketSubmit(
 ): Promise<void> {
   const formData = new FormData(form);
 
+  const nameValue = formData.get("name");
+  const currencyValue = formData.get("currency");
+  const colorValue = formData.get("color");
+
   const payload = {
-    name: String(formData.get("name") || "").trim(),
+    name: typeof nameValue === "string" ? nameValue.trim() : "",
     price: Number(formData.get("price")),
     quantity: Number(formData.get("quantity")),
-    currency: String(formData.get("currency")),
-    color: String(formData.get("color") || "#f3f3f3"),
+    currency: typeof currencyValue === "string" ? currencyValue : "INR",
+    color: typeof colorValue === "string" ? colorValue : "#f3f3f3",
     seatstart: Number(formData.get("seatstart") || 0),
     seatend: Number(formData.get("seatend") || 0)
   };
@@ -317,6 +383,7 @@ async function handleAddTicketSubmit(
       dismissible: true,
       duration: 3000
     });
+    return;
   }
 
   try {
@@ -342,7 +409,7 @@ async function handleAddTicketSubmit(
 }
 
 export function addTicketForm(eventId: string | number, ticketList: HTMLElement): void {
-  const form = createElement("form", { id: "add-ticket-form" }, []) as HTMLFormElement;
+  const form = createElement<HTMLFormElement>("form", { id: "add-ticket-form" }, []);
 
   const fields = [
     { label: "Ticket Name", type: "text", id: "ticket-name", name: "name", required: true },
@@ -393,7 +460,7 @@ export function addTicketForm(eventId: string | number, ticketList: HTMLElement)
         Button({
           title: "Add Ticket",
           classes: "buttonx primary",
-          events: { click: () => form.requestSubmit() }
+          events: { click: () => { form.requestSubmit(); } }
         }),
         Button({
           title: "Cancel",
@@ -405,6 +472,6 @@ export function addTicketForm(eventId: string | number, ticketList: HTMLElement)
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    handleAddTicketSubmit(form, eventId, ticketList, modal);
+    void handleAddTicketSubmit(form, eventId, ticketList, modal);
   });
 }

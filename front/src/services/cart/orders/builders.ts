@@ -162,7 +162,7 @@ function buildExpandableOrderRows(
   const addressInfo = meta.address || "N/A";
   const farmInfo = meta.farmId || "N/A";
   const approvedList =
-    Array.isArray(meta.approvedBy) && meta.approvedBy.length ? meta.approvedBy.join(", ") : "None";
+    Array.isArray(meta.approvedBy) && meta.approvedBy.length ? meta.approvedBy.join(", ") : "N/A";
 
   const summaryRow = createElement("tr", { class: "order-summary-row" }, [
     createElement("td", {}, [
@@ -199,7 +199,7 @@ function buildExpandableOrderRows(
             createElement("p", {}, [`Address: ${addressInfo}`]),
             createElement("p", {}, [`Farm: ${farmInfo}`]),
             createElement("p", {}, [`Approved By: ${approvedList}`]),
-            buildOrderItemsTable(products),
+            buildOrderItemsTable(products, farmInfo),
           ])
         : createElement("div", { style: "display: none;" }, []),
     ]),
@@ -208,7 +208,7 @@ function buildExpandableOrderRows(
   return [summaryRow, detailRow];
 }
 
-function buildOrderItemsTable(products: OrderItem[]): HTMLElement {
+function buildOrderItemsTable(products: OrderItem[], farmFallback: string = "N/A"): HTMLElement {
   return createElement("table", { class: "order-items-table" }, [
     createElement("thead", {}, [
       createElement(
@@ -223,7 +223,7 @@ function buildOrderItemsTable(products: OrderItem[]): HTMLElement {
       products.length
         ? products.map((item) =>
             createElement("tr", {}, [
-              createElement("td", {}, [item.entityName || "Unknown Entity"]),
+              createElement("td", {}, [item.entityName || farmFallback || "N/A"]),
               createElement("td", {}, [item.itemName || "N/A"]),
               createElement("td", {}, [String(item.quantity || 0)]),
               createElement("td", {}, [formatINR(item.price || 0, true)]),
@@ -265,7 +265,7 @@ function buildExpandableOrderCard(
 
   const addressInfo = meta.address || "N/A";
   const approvedList =
-    Array.isArray(meta.approvedBy) && meta.approvedBy.length ? meta.approvedBy.join(", ") : "None";
+    Array.isArray(meta.approvedBy) && meta.approvedBy.length ? meta.approvedBy.join(", ") : "N/A";
 
   return createElement("div", { class: "order-card" }, [
     createElement("div", { class: "order-card-header" }, [
@@ -292,7 +292,7 @@ function buildExpandableOrderCard(
           createElement("p", {}, [`Approved By: ${approvedList}`]),
           ...products.map((item) =>
             createElement("div", { class: "order-card-item" }, [
-              createElement("p", {}, [`Farm: ${item.entityName || "Unknown"}`]),
+              createElement("p", {}, [`Farm: ${item.entityName || meta.farmId || "N/A"}`]),
               createElement("p", {}, [`Item: ${item.itemName || "N/A"}`]),
               createElement("p", {}, [`Qty: ${item.quantity || 0}`]),
               createElement("p", {}, [`Item Price: ${formatINR(item.price || 0, true)}`]),

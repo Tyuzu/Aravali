@@ -14,8 +14,6 @@ import { reportEntity } from "../reporting/reporting.js";
 import { createFormGroup } from "../../components/form/createFormGroupEnhanced.js";
 import { addToCart, isValidCartQuantity } from "../cart/addToCart.js";
 import { getState } from "../../state/state.js";
-import { showPaymentModal } from "../pay/pay.js";
-import { confirmMerchPurchase } from "./api.js";
 import { addMerchandise } from "./merchAPI.js";
 
 // External declarations for unprovided helpers
@@ -47,7 +45,6 @@ interface ModalInstance {
 
 
 const MAX_CART_QUANTITY = 99;
-const MAX_PURCHASE_NOTE_LENGTH = 1000;
 
 function normalizeStock(value: unknown): number {
   const stock = Number(value);
@@ -257,7 +254,7 @@ async function displayMerchandise(
                       try {
                         const success = await addToCart({
                           itemId: merch.merchid,
-                            itemType: "merchandise",
+                          itemType: "merch",
                           quantity,
                           isLoggedIn: Boolean(getState("token")),
                           onCartUpdated: (response: unknown) => {
@@ -312,24 +309,16 @@ async function displayMerchandise(
           inputmode: "numeric"
         }) as HTMLInputElement;
 
-        const noteInput = createElement("textarea", {
-          placeholder: "Special request (optional)",
-          rows: 3,
-          maxlength: String(MAX_PURCHASE_NOTE_LENGTH)
-        }) as HTMLTextAreaElement;
-
         const wrapper = createElement(
           "div",
           { class: "modal-form-group" },
           [
-            createElement("label", {}, ["Quantity: ", quantityInput]),
-            createElement("label", {}, ["Note: ", noteInput])
+            createElement("label", {}, ["Quantity: ", quantityInput])
           ]
         );
 
-        let purchasing = false;
         const modal = Modal({
-          title: `Purchase ${merch.name || "Merchandise"}`,
+          title: `Add ${merch.name || "Merchandise"} to Cart`,
           content: wrapper,
           actions: () =>
             createElement(
@@ -337,12 +326,10 @@ async function displayMerchandise(
               { class: "modal-actions" },
               [
                 Button({
-                  title: "Proceed to Payment",
+                  title: "Add to Cart",
                   classes: "buttonx primary",
                   events: {
                     click: async () => {
-                      if (purchasing) return;
-
                       const quantity = parseQuantity(quantityInput.value, maxQuantity);
                       if (quantity === null) {
                         Notify(`Enter a valid quantity from 1-${maxQuantity}.`, {
@@ -352,55 +339,20 @@ async function displayMerchandise(
                         return;
                       }
 
-                      const note = String(noteInput.value || "")
-                        .trim()
-                        .slice(0, MAX_PURCHASE_NOTE_LENGTH);
-
-                      purchasing = true;
                       modal.close();
 
-                      try {
-                        const paymentResult = await showPaymentModal({
-                          paymentType: "purchase",
-                          entityType: "merch",
-                          entityId: merch.merchid,
-                          entityName: merch.name
-                        });
+                      const success = await addToCart({
+                        itemId: merch.merchid,
+                        itemType: "merch",
+                        quantity,
+                        isLoggedIn: Boolean(getState("token"))
+                      });
 
-                        if (!paymentResult || paymentResult.success !== true) {
-                          Notify("Payment cancelled or failed.", {
-                            type: "warning",
-                            duration: 3000
-                          });
-                          return;
-                        }
-
-                        const resp = await confirmMerchPurchase(
-                          entityType,
-                          eventId,
-                          merch.merchid,
-                          { quantity, note }
-                        );
-
-                        if (resp?.success) {
-                          Notify("Merchandise purchased successfully!", {
-                            type: "success",
-                            duration: 3000
-                          });
-                        } else {
-                          Notify(resp?.message || "Purchase failed.", {
-                            type: "error",
-                            duration: 3000
-                          });
-                        }
-                      } catch (error) {
-                        console.error("Purchase error:", error);
-                        Notify("Purchase failed. Please try again.", {
-                          type: "error",
+                      if (success) {
+                        Notify("Added to cart successfully.", {
+                          type: "success",
                           duration: 3000
                         });
-                      } finally {
-                        purchasing = false;
                       }
                     }
                   }
