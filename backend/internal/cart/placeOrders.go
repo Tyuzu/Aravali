@@ -264,6 +264,15 @@ func processGeneralOrders(
 	checkout CheckoutSession,
 	app *infra.Deps,
 ) ([]Order, error) {
+	var user auth.User
+	var userName, userPhone string
+	if err := app.DB.FindOne(ctx, "users", bson.M{"userid": checkout.UserID}, &user); err == nil {
+		userName = user.Name
+		if user.PhoneNumber != "" {
+			userPhone = user.PhoneNumber
+		}
+	}
+
 	nonCropItems := make(map[string][]CartItem)
 
 	for category, items := range checkout.Items {
@@ -337,6 +346,8 @@ func processGeneralOrders(
 			Status:        "pending",
 			ApprovedBy:    []string{},
 			CreatedAt:     time.Now(),
+			Name:          userName,
+			Phone:         userPhone,
 		}
 
 		if err := app.DB.Insert(ctx, ordersCollection, order); err != nil {

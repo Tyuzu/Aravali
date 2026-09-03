@@ -7,7 +7,7 @@ export interface InvoiceItem {
   quantity?: number;
   itemName?: string;
   name?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface InvoiceOrder {
@@ -19,14 +19,23 @@ export interface InvoiceOrder {
   payment_status?: string;
   customerName?: string;
   customer_name?: string;
+  name?: string;
+  fullName?: string;
   phone?: string;
+  customerPhone?: string;
+  customer_phone?: string;
+  phone_number?: string;
+  phoneNumber?: string;
   address?: string;
+  deliveryAddress?: string;
+  shippingAddress?: string;
   subtotal?: number;
   discount?: number;
   tax?: number;
   delivery?: number;
   total?: number;
-  [key: string]: any;
+  user?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /* ────────────────────── Core Functional Helpers ────────────────────── */
@@ -46,14 +55,52 @@ function formatINR(amount: number): string {
 /**
  * Defensive XSS Sanitizer to safeguard HTML string templates
  */
-function escapeHTML(str: any): string {
-  if (!str) return "";
-  return String(str)
+function escapeHTML(str: unknown): string {
+  if (str === undefined || str === null || str === "") {
+    return "";
+  }
+
+  if (typeof str !== "string" && typeof str !== "number" && typeof str !== "boolean") {
+    return "";
+  }
+
+  const text = String(str);
+
+  return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function firstNonEmpty(...values: unknown[]): string {
+  for (const value of values) {
+    if (value !== undefined && value !== null) {
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        const text = String(value);
+        if (text.trim() !== "") {
+          return text;
+        }
+      }
+    }
+  }
+  return "-";
+}
+
+function readNestedString(record: Record<string, unknown> | undefined, keys: string[]): string {
+  if (!record) {
+    return "";
+  }
+
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim() !== "") {
+      return value;
+    }
+  }
+
+  return "";
 }
 
 /* ────────────────────── Main Print Processing ────────────────────── */
@@ -95,6 +142,31 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
 
   const rawDate = order.createdAt || order.created_at || Date.now();
   const invoiceDate = new Date(rawDate).toLocaleString();
+  const userProfile = order.user;
+  const customerName = firstNonEmpty(
+    order.customerName,
+    order.customer_name,
+    order.name,
+    order.fullName,
+    readNestedString(userProfile, ["name", "fullName"]),
+    "-"
+  );
+  const customerPhone = firstNonEmpty(
+    order.phone,
+    order.customerPhone,
+    order.customer_phone,
+    order.phone_number,
+    order.phoneNumber,
+    readNestedString(userProfile, ["phone", "phone_number"]),
+    "-"
+  );
+  const customerAddress = firstNonEmpty(
+    order.address,
+    order.deliveryAddress,
+    order.shippingAddress,
+    readNestedString(userProfile, ["address"]),
+    "-"
+  );
 
   // FIXED: Double-wrapped all parameters in validation escape filters
   invoiceWindow.document.write(`
@@ -169,9 +241,9 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
 
         <div class="section">
           <h3>Customer Details</h3>
-          <p><strong>Name:</strong> ${escapeHTML(order.customerName || order.customer_name || "-")}</p>
-          <p><strong>Phone:</strong> ${escapeHTML(order.phone || "-")}</p>
-          <p><strong>Address:</strong> ${escapeHTML(order.address || "-")}</p>
+          <p><strong>Name:</strong> ${escapeHTML(customerName)}</p>
+          <p><strong>Phone:</strong> ${escapeHTML(customerPhone)}</p>
+          <p><strong>Address:</strong> ${escapeHTML(customerAddress)}</p>
         </div>
 
         <div class="section">

@@ -84,6 +84,8 @@ type Order struct {
 	Tax           int64                 `json:"tax" bson:"tax"`
 	Delivery      int64                 `json:"delivery" bson:"delivery"`
 	Total         int64                 `json:"total" bson:"total"`
+	Name          string                `json:"name" bson:"name"`
+	Phone         string                `json:"phone" bson:"phone"`
 }
 
 type FarmOrder struct {
