@@ -47,6 +47,46 @@ const getWebSocketURL = (): string => {
   return "";
 };
 
+export function normalizeSocketBase(baseUrl: string): string {
+  const cleanBase = (baseUrl || "").replace(/\/+$/, "");
+
+  if (!cleanBase) {
+    return "";
+  }
+
+  if (/^wss?:\/\//i.test(cleanBase)) {
+    return cleanBase;
+  }
+
+  if (/^https?:\/\//i.test(cleanBase)) {
+    return cleanBase.replace(/^http/, "ws");
+  }
+
+  if (typeof window !== "undefined") {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${cleanBase.replace(/^\/\//, "")}`;
+  }
+
+  return cleanBase.replace(/^http/, "ws");
+}
+
+export function buildWebSocketUrl(
+  baseUrl: string,
+  path: string = "",
+  token?: string | null
+): string {
+  const normalizedBase = normalizeSocketBase(baseUrl || "");
+  const safePath = path ? (path.startsWith("/") ? path : `/${path}`) : "";
+  const url = `${normalizedBase}${safePath}`;
+
+  if (!token) {
+    return url;
+  }
+
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}token=${encodeURIComponent(token)}`;
+}
+
 const WS_URL: string = getWebSocketURL();
 
 export interface ApiConfig {
@@ -93,7 +133,7 @@ export const apiConfig: ApiConfig = {
   /* WebSockets */
   MERE_WS: WS_URL,
   CHAT_URL: MAIN_URL,
-  CHAT_WS: WS_URL ? `${WS_URL}/ws/newchat/chat` : "",
+  CHAT_WS: WS_URL ? buildWebSocketUrl(WS_URL, "/ws/newchat/chat") : "",
 
   /* Media & Static */
   SRC_URL: buildURL(BANNERDROP_URL, "/static"),

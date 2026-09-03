@@ -4,6 +4,9 @@ import {
   MERE_WS
 } from "../../state/state.js";
 import {
+  buildWebSocketUrl
+} from "../../config/env.js";
+import {
   renderMessage
 } from "./components/index.js";
 import {
@@ -277,11 +280,7 @@ export function reconcilePending(
 
 function wsUrl(): string {
   const token = getState("token") as string | undefined;
-  let url = (MERE_WS as string).replace(/^http/, "ws") + "/ws/merechat";
-  if (token) {
-    url += `?token=${encodeURIComponent(token)}`;
-  }
-  return url;
+  return buildWebSocketUrl(MERE_WS, "/ws/merechat", token);
 }
 
 function joinChatRoom(socket: WebSocket | null, chatid: string | number | null): void {

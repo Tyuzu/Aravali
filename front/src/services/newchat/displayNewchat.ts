@@ -1,4 +1,5 @@
 import { createElement } from "../../components/createElement.js";
+import { buildWebSocketUrl } from "../../config/env.js";
 import { CHAT_WS, getState, setState } from "../../state/state.js";
 import { renderMessage } from "./renderMessage.js";
 import { setupFileUpload } from "./fileUpload.js";
@@ -327,19 +328,13 @@ function disableInputs(elements: (HTMLInputElement | HTMLButtonElement | null)[]
 
 function createWebSocket(chatid: string | number): WebSocket {
   const token: string = getState("token") ?? "";
-  let base: string = CHAT_WS.replace(/\/+$/, "");
-
-  if (
-    !base.startsWith("ws://") &&
-    !base.startsWith("wss://")
-  ) {
-    const protocol = location.protocol === "https:" ? "wss" : "ws";
-    base = `${protocol}://${base}`;
-  }
-
-  return new WebSocket(
-    `${base}/${encodeURIComponent(chatid)}?token=${encodeURIComponent(token)}`
+  const url = buildWebSocketUrl(
+    CHAT_WS,
+    `/${encodeURIComponent(chatid)}`,
+    token
   );
+
+  return new WebSocket(url);
 }
 
 function setupSocketListeners(
