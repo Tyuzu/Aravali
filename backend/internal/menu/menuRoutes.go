@@ -24,5 +24,4 @@ func AddMenuRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	// Buying & payment flows
 	router.HandlerFunc(http.MethodPost, "/api/v1/places/menu/:placeid/:menuid/buy", rateLimiter.Limit(authmidware(BuyMenu(app))))
 	router.HandlerFunc(http.MethodPost, "/api/v1/places/menu/:placeid/:menuid/payment-session", rateLimiter.Limit(authmidware(CreateMenuPaymentSession(app))))
-	router.HandlerFunc(http.MethodPost, "/api/v1/places/menu/:placeid/:menuid/confirm-purchase", rateLimiter.Limit(authmidware(ConfirmMenuPurchase(app))))
 }

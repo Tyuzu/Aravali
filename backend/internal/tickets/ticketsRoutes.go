@@ -21,11 +21,9 @@ func AddTicketRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter *mi
 
 	// Buying
 	router.HandlerFunc(http.MethodPost, "/api/v1/ticket/event/:eventid/:ticketid/buy", rateLimiter.Limit(authmidware(BuyTicket(app))))
-	router.HandlerFunc(http.MethodPost, "/api/v1/tickets/book", rateLimiter.Limit(authmidware(BuysTicket(app))))
 
 	// Payment flows
 	router.HandlerFunc(http.MethodPost, "/api/v1/ticket/event/:eventid/:ticketid/payment-session", rateLimiter.Limit(authmidware(CreateTicketPaymentSession(app))))
-	router.HandlerFunc(http.MethodPost, "/api/v1/ticket/event/:eventid/:ticketid/confirm-purchase", rateLimiter.Limit(authmidware(ConfirmTicketPurchase(app))))
 
 	// Verification/printing
 	router.HandlerFunc(http.MethodGet, "/api/v1/ticket/verify/:eventid", rateLimiter.Limit(authmidware(VerifyTicket(app))))

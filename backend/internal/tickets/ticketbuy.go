@@ -1,23 +1,17 @@
 package tickets
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	log "scav/utils/logger"
 	"net/http"
+	log "scav/utils/logger"
 	"sync"
-	"time"
 
-	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/internal/pay/stripe"
-	"scav/internal/userdata"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ------------------------------------------------------------------
@@ -152,126 +146,4 @@ func BroadcastTicketUpdate(eventId, ticketId string, remaining int) {
 	default:
 		log.Printf("event %s update channel full", eventId)
 	}
-}
-
-// ------------------------------------------------------------------
-// Purchase Flow
-// ------------------------------------------------------------------
-
-type TicketPurchaseRequest struct {
-	TicketID string `json:"ticketId"`
-	EventID  string `json:"eventId"`
-	Quantity int    `json:"quantity"`
-}
-
-func ConfirmTicketPurchase(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req TicketPurchaseRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "Invalid request", http.StatusBadRequest)
-			return
-		}
-
-		// Extract eventid and ticketid from URL parameters
-		req.EventID = utils.GetParam(r, "eventid")
-		req.TicketID = utils.GetParam(r, "ticketid")
-
-		buyTicket(w, r, req, app)
-	}
-}
-
-func PurchaseTicket(eventID, ticketID, userID string, qty int, app *infra.Deps) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var ticket Ticket
-	if err := app.DB.FindOne(ctx, ticketsCollection, bson.M{
-		"eventid":  eventID,
-		"ticketid": ticketID,
-	}, &ticket); err != nil {
-		return nil, fmt.Errorf("ticket not found")
-	}
-
-	if ticket.Quantity < qty {
-		return nil, fmt.Errorf("not enough tickets")
-	}
-
-	if _, err := app.DB.UpdateOne(ctx, ticketsCollection,
-		bson.M{"eventid": eventID, "ticketid": ticketID},
-		bson.M{"$inc": bson.M{"quantity": -qty, "sold": qty}},
-	); err != nil {
-		return nil, err
-	}
-
-	codes := make([]string, qty)
-	for i := 0; i < qty; i++ {
-		codes[i] = utils.GetUUID()
-	}
-	return codes, nil
-}
-
-func StorePurchasedTickets(eventID, ticketID, userID string, codes []string, app *infra.Deps) error {
-	now := time.Now()
-
-	purchased := make([]any, 0, len(codes))
-	userData := make([]userdata.UserData, 0, len(codes))
-
-	for _, code := range codes {
-		purchased = append(purchased, PurchasedTicket{
-			EventID:      eventID,
-			TicketID:     ticketID,
-			UserID:       userID,
-			UniqueCode:   code,
-			PurchaseDate: now,
-		})
-
-		userData = append(userData, userdata.UserData{
-			UserID:     userID,
-			EntityID:   code,
-			EntityType: "ticket",
-			ItemID:     ticketID,
-			ItemType:   "ticket",
-			CreatedAt:  now.Format(time.RFC3339),
-		})
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := app.DB.InsertMany(ctx, purchasedTicketsCollection, purchased); err != nil {
-		return err
-	}
-
-	userdata.AddUserDataBatch(userData, app)
-	return nil
-}
-
-func buyTicket(w http.ResponseWriter, r *http.Request, req TicketPurchaseRequest, app *infra.Deps) {
-	ctx := r.Context()
-	userID, ok := r.Context().Value(config.UserIDKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	codes, err := PurchaseTicket(req.EventID, req.TicketID, userID, req.Quantity, app)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := StorePurchasedTickets(req.EventID, req.TicketID, userID, codes, app); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.TicketBoughtEvent, mqevent.TicketBoughtPayload{}); err != nil {
-		log.Printf("failed to publish ticket bought event: %v", err)
-	}
-
-	utils.RespondWithJSON(w, http.StatusOK, map[string]any{
-		"success":     true,
-		"message":     "Tickets purchased successfully",
-		"uniqueCodes": codes,
-	})
 }
