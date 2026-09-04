@@ -1,9 +1,9 @@
 package routes
 
 import (
+	"net/http"
 	"scav/config"
 	"scav/middleware"
-	"net/http"
 	"time"
 )
 

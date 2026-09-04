@@ -2,9 +2,9 @@ package tickets
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 	"time"
 )
 

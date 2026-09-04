@@ -38,6 +38,8 @@
     "@babel/traverse": "^8.0.4",
     "@types/cropperjs": "^1.1.5",
     "@types/sharp": "^0.31.1",
+    "@typescript-eslint/eslint-plugin": "^8.69.0",
+    "@typescript-eslint/parser": "^8.69.0",
     "eslint": "^9.39.5",
     "glob": "^13.0.6",
     "prettier": "^3.2.5",

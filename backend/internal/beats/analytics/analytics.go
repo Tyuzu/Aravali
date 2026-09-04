@@ -1,8 +1,8 @@
 package analytics
 
 import (
-	"scav/utils"
 	"net/http"
+	"scav/utils"
 	"time"
 )
 

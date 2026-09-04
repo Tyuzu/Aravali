@@ -3,12 +3,12 @@ package vendors
 import (
 	"context"
 	"errors"
+	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-	"net/http"
 	"strings"
 	"time"
 )

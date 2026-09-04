@@ -1,4 +1,4 @@
-﻿package places
+package places
 
 import (
 	"testing"

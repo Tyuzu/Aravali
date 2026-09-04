@@ -2,12 +2,12 @@ package events
 
 import (
 	"context"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
 )
 

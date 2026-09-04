@@ -2,10 +2,10 @@ package vendors
 
 import (
 	"context"
+	"net/http"
 	"scav/config"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 	"strings"
 	"time"
 )

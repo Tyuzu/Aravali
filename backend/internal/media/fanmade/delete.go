@@ -1,6 +1,7 @@
 package fanmade
 
 import (
+	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
@@ -8,7 +9,6 @@ import (
 	"scav/internal/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 )
 
 // DeleteMedia deletes a single media item if the requesting user is the creator

@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
@@ -10,7 +11,6 @@ import (
 	"scav/internal/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"strings"
 	"time"
 )

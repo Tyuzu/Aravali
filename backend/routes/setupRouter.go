@@ -2,9 +2,9 @@ package routes
 
 import (
 	"fmt"
+	"net/http"
 	"scav/infra"
 	"scav/middleware"
-	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 )

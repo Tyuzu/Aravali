@@ -1,8 +1,8 @@
 package media
 
 import (
-	"scav/infra"
 	"net/http"
+	"scav/infra"
 )
 
 // ---------------------- Delete Media ----------------------

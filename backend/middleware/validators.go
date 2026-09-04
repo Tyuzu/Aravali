@@ -3,9 +3,9 @@ package middleware
 import (
 	"encoding/json"
 	"html"
-	log "scav/utils/logger"
 	"net/http"
 	"regexp"
+	log "scav/utils/logger"
 	"strings"
 )
 

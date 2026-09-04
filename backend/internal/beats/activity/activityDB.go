@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"scav/config"
 	"net/http"
+	"scav/config"
 	"strconv"
 	"time"
 )

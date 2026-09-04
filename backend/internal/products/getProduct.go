@@ -2,10 +2,10 @@ package products
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/internal/farms"
 	"scav/utils"
-	"net/http"
 )
 
 func getProductEntity(ctx context.Context, id string, app *infra.Deps) farms.Product {

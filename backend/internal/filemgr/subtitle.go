@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"scav/utils"
-	log "scav/utils/logger"
 	"net/http"
 	"os"
 	"path/filepath"
+	"scav/utils"
+	log "scav/utils/logger"
 	"strconv"
 	"strings"
 
