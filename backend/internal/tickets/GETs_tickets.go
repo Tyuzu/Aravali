@@ -8,8 +8,6 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetTickets(app *infra.Deps) http.HandlerFunc {
@@ -23,7 +21,7 @@ func GetTickets(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			ticketsCollection,
-			bson.M{"eventid": eventID},
+			map[string]any{"eventid": eventID},
 			&tickets,
 		); err != nil {
 			http.Error(w, "Failed to fetch tickets", http.StatusInternalServerError)
@@ -51,7 +49,7 @@ func GetTicket(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			ticketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid":  eventID,
 				"ticketid": ticketID,
 			},

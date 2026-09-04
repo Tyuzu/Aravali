@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
@@ -77,12 +75,12 @@ func CreateBooking(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 2. One booking per user per date restriction
-		count, err := CountBookings(ctx, app.DB, bson.M{
+		count, err := CountBookings(ctx, app.DB, map[string]any{
 			"entityType": req.EntityType,
 			"entityId":   req.EntityId,
 			"userid":     req.UserId,
 			"date":       req.Date,
-			"status":     bson.M{"$ne": StatusCancelled},
+			"status":     map[string]any{"$ne": StatusCancelled},
 		})
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "db error")
@@ -152,7 +150,7 @@ func UpdateBookingStatus(app *infra.Deps) http.HandlerFunc {
 			ctx,
 			app.DB,
 			bookingID,
-			bson.M{"$set": bson.M{"status": body.Status}},
+			map[string]any{"$set": map[string]any{"status": body.Status}},
 			&updated,
 		)
 		if err != nil {
@@ -182,7 +180,7 @@ func CancelBooking(app *infra.Deps) http.HandlerFunc {
 			ctx,
 			app.DB,
 			bookingID,
-			bson.M{"$set": bson.M{"status": StatusCancelled}},
+			map[string]any{"$set": map[string]any{"status": StatusCancelled}},
 			&updated,
 		)
 		if err != nil {
@@ -218,7 +216,7 @@ func SetDateCapacity(app *infra.Deps) http.HandlerFunc {
 			req.EntityType,
 			req.EntityId,
 			req.Date,
-			bson.M{"$set": req},
+			map[string]any{"$set": req},
 		)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "db error")
@@ -251,11 +249,11 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 		}
 
 		var slotBookings []Booking
-		err := FindBookings(ctx, app.DB, bson.M{
+		err := FindBookings(ctx, app.DB, map[string]any{
 			"entityType": req.EntityType,
 			"entityId":   req.EntityId,
 			"slotId":     req.SlotId,
-			"status":     bson.M{"$ne": StatusCancelled},
+			"status":     map[string]any{"$ne": StatusCancelled},
 		}, &slotBookings)
 		if err != nil {
 			return "", err
@@ -277,12 +275,12 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 		}
 
 		var tierBookings []Booking
-		err := FindBookings(ctx, app.DB, bson.M{
+		err := FindBookings(ctx, app.DB, map[string]any{
 			"entityType": req.EntityType,
 			"entityId":   req.EntityId,
 			"tierId":     req.TierId,
 			"date":       req.Date,
-			"status":     bson.M{"$ne": StatusCancelled},
+			"status":     map[string]any{"$ne": StatusCancelled},
 		}, &tierBookings)
 		if err != nil {
 			return "", err
@@ -301,11 +299,11 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 		var dc DateCap
 		if err := FindDateCap(ctx, app.DB, req.EntityType, req.EntityId, req.Date, &dc); err == nil {
 			var dateBookings []Booking
-			err := app.DB.FindMany(ctx, bookingsCollection, bson.M{
+			err := app.DB.FindMany(ctx, bookingsCollection, map[string]any{
 				"entityType": req.EntityType,
 				"entityId":   req.EntityId,
 				"date":       req.Date,
-				"status":     bson.M{"$ne": StatusCancelled},
+				"status":     map[string]any{"$ne": StatusCancelled},
 			}, &dateBookings)
 			if err != nil {
 				return "", err

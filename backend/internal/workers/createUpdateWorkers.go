@@ -12,16 +12,14 @@ import (
 	"scav/internal/baito"
 	"scav/utils"
 	"scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------- Helpers -------------------- */
 
 // parseWorkerForm parses form data for create or update
-func parseWorkerForm(r *http.Request, isUpdate bool) (BaitoWorker, bson.M, error) {
+func parseWorkerForm(r *http.Request, isUpdate bool) (BaitoWorker, map[string]any, error) {
 	var worker BaitoWorker
-	update := bson.M{"$set": bson.M{}}
+	update := map[string]any{"$set": map[string]any{}}
 
 	if err := baito.ParseMultipartFormWithLimit(r); err != nil {
 		return worker, update, err
@@ -44,7 +42,7 @@ func parseWorkerForm(r *http.Request, isUpdate bool) (BaitoWorker, bson.M, error
 	}
 
 	if isUpdate {
-		set := update["$set"].(bson.M)
+		set := update["$set"].(map[string]any)
 		set["name"] = r.FormValue("name")
 		set["age"] = age
 		set["phone"] = r.FormValue("phone")

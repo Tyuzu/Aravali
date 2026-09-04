@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	log "scav/utils/logger"
 	"net/http"
+	log "scav/utils/logger"
 	"time"
 
 	"scav/config/mqevent"
@@ -13,8 +13,6 @@ import (
 	"scav/infra/mq"
 	"scav/internal/beats/auditlog"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func CancelTicket(app *infra.Deps) http.HandlerFunc {
@@ -48,7 +46,7 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			purchasedTicketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid":    eventID,
 				"uniquecode": payload.UniqueCode,
 			},
@@ -87,12 +85,12 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 			if _, err := app.DB.Update(
 				ctx,
 				purchasedTicketsCollection,
-				bson.M{
+				map[string]any{
 					"eventid":    eventID,
 					"uniquecode": payload.UniqueCode,
 				},
-				bson.M{
-					"$set": bson.M{
+				map[string]any{
+					"$set": map[string]any{
 						"canceled":        true,
 						"canceledat":      time.Now().UTC(),
 						"cancelledreason": "user_requested",
@@ -131,8 +129,8 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 
 		now := time.Now().UTC()
 
-		update := bson.M{
-			"$set": bson.M{
+		update := map[string]any{
+			"$set": map[string]any{
 				"canceled":        true,
 				"canceledat":      now,
 				"cancelledreason": "user_requested",
@@ -142,7 +140,7 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.Update(
 			ctx,
 			purchasedTicketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid":    eventID,
 				"uniquecode": payload.UniqueCode,
 			},

@@ -3,8 +3,6 @@ package subscribe
 import (
 	"net/http"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/internal/auth"
 	"scav/utils"
@@ -38,9 +36,9 @@ func DoesSubscribeEntity(app *infra.Deps) http.HandlerFunc {
 		count, err := app.DB.CountDocuments(
 			r.Context(),
 			subscribersCollection,
-			bson.M{
+			map[string]any{
 				"userid": currentUserID,
-				"subscribed": bson.M{
+				"subscribed": map[string]any{
 					"$in": []string{entityID},
 				},
 			},
@@ -71,7 +69,7 @@ func GetSubscribers(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOne(
 			r.Context(),
 			subscribersCollection,
-			bson.M{"userid": targetUserID},
+			map[string]any{"userid": targetUserID},
 			&sub,
 		)
 		if err != nil || len(sub.Subscribers) == 0 {
@@ -83,8 +81,8 @@ func GetSubscribers(app *infra.Deps) http.HandlerFunc {
 		err = app.DB.FindMany(
 			r.Context(),
 			usersCollection,
-			bson.M{
-				"userid": bson.M{
+			map[string]any{
+				"userid": map[string]any{
 					"$in": sub.Subscribers,
 				},
 			},

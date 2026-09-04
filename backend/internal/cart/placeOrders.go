@@ -14,8 +14,6 @@ import (
 	"scav/internal/auth"
 	"scav/utils"
 	log "scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const checkoutTimeout = 15 * time.Second
@@ -189,7 +187,7 @@ func processFarmOrders(
 	// Fetch buyer info once up front rather than inside the per-farm loop
 	var user auth.User
 	var userName, userPhone string
-	if err := app.DB.FindOne(ctx, "users", bson.M{"userid": checkout.UserID}, &user); err == nil {
+	if err := app.DB.FindOne(ctx, "users", map[string]any{"userid": checkout.UserID}, &user); err == nil {
 		userName = user.Name
 		if user.PhoneNumber != "" {
 			userPhone = user.PhoneNumber
@@ -266,7 +264,7 @@ func processGeneralOrders(
 ) ([]Order, error) {
 	var user auth.User
 	var userName, userPhone string
-	if err := app.DB.FindOne(ctx, "users", bson.M{"userid": checkout.UserID}, &user); err == nil {
+	if err := app.DB.FindOne(ctx, "users", map[string]any{"userid": checkout.UserID}, &user); err == nil {
 		userName = user.Name
 		if user.PhoneNumber != "" {
 			userPhone = user.PhoneNumber

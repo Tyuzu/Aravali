@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/utils"
 )
@@ -81,10 +79,10 @@ func BatchUserLikes(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindMany(
 			ctx,
 			likesCollection,
-			bson.M{
+			map[string]any{
 				"userid":      userID,
 				"entity_type": entityType,
-				"entity_id": bson.M{
+				"entity_id": map[string]any{
 					"$in": req.EntityIDs,
 				},
 			},

@@ -8,8 +8,6 @@ import (
 
 	"scav/config"
 	"scav/infra"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
@@ -39,7 +37,7 @@ func getCartItemsFromDB(
 	err := app.DB.FindMany(
 		ctx,
 		cartCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 		&items,
 	)
 
@@ -76,7 +74,7 @@ func replaceCartItemsInDB(
 	if _, err := app.DB.Delete(
 		ctx,
 		cartCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 	); err != nil {
 		return err
 	}
@@ -128,11 +126,11 @@ func upsertCartItemInDB(
 
 	now := time.Now()
 
-	update := bson.M{
-		"$inc": bson.M{
+	update := map[string]any{
+		"$inc": map[string]any{
 			"quantity": item.Quantity,
 		},
-		"$set": bson.M{
+		"$set": map[string]any{
 			"userid":     userID,
 			"itemId":     item.ItemID,
 			"itemName":   item.ItemName,
@@ -145,7 +143,7 @@ func upsertCartItemInDB(
 			"discount":   item.Discount,
 			"updatedAt":  now,
 		},
-		"$setOnInsert": bson.M{
+		"$setOnInsert": map[string]any{
 			"addedAt": now,
 		},
 	}
@@ -180,8 +178,8 @@ func updateCartItemQuantityInDB(
 		entityType,
 	)
 
-	update := bson.M{
-		"$set": bson.M{
+	update := map[string]any{
+		"$set": map[string]any{
 			"quantity":  quantity,
 			"updatedAt": time.Now(),
 		},
@@ -233,7 +231,7 @@ func clearCartForUser(
 	_, err := app.DB.Delete(
 		ctx,
 		cartCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 	)
 
 	return err
@@ -278,7 +276,7 @@ func fetchUserOrdersFromDB(
 	if err := app.DB.FindMany(
 		ctx,
 		ordersCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 		&regularOrders,
 	); err != nil {
 		return nil, nil, err
@@ -289,7 +287,7 @@ func fetchUserOrdersFromDB(
 	if err := app.DB.FindMany(
 		ctx,
 		farmOrdersCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 		&farmOrders,
 	); err != nil {
 		/*
@@ -420,7 +418,7 @@ func lookupProduct(
 	if err := app.DB.FindOne(
 		ctx,
 		"products",
-		bson.M{"productid": productID},
+		map[string]any{"productid": productID},
 		&product,
 	); err != nil {
 		return nil, err
@@ -479,7 +477,7 @@ func lookupCrop(
 	if err := app.DB.FindOne(
 		ctx,
 		"crops",
-		bson.M{"cropid": cropID},
+		map[string]any{"cropid": cropID},
 		&crop,
 	); err != nil {
 		return nil, err
@@ -503,7 +501,7 @@ func lookupCrop(
 		if err := app.DB.FindOne(
 			ctx,
 			"farms",
-			bson.M{"farmid": crop.FarmID},
+			map[string]any{"farmid": crop.FarmID},
 			&farm,
 		); err == nil {
 			farmName = farm.Name
@@ -554,7 +552,7 @@ func lookupMenu(
 	if err := app.DB.FindOne(
 		ctx,
 		"menu",
-		bson.M{"menuid": menuID},
+		map[string]any{"menuid": menuID},
 		&menu,
 	); err != nil {
 		return nil, err
@@ -602,7 +600,7 @@ func lookupMerchandise(
 	if err := app.DB.FindOne(
 		ctx,
 		"merchandise",
-		bson.M{"merchid": merchID},
+		map[string]any{"merchid": merchID},
 		&merch,
 	); err != nil {
 		return nil, err
@@ -649,8 +647,8 @@ func buildCartFilter(
 	category,
 	entityID,
 	entityType string,
-) bson.M {
-	filter := bson.M{
+) map[string]any {
+	filter := map[string]any{
 		"userid": userID,
 		"itemId": itemID,
 	}

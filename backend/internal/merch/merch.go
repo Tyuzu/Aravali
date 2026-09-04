@@ -14,8 +14,6 @@ import (
 	"scav/internal/beats/auditlog"
 	"scav/internal/userdata"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func validateEntityType(t string) bool {
@@ -62,8 +60,8 @@ func CreateMerch(app *infra.Deps) http.HandlerFunc {
 		}
 
 		if collection != "" {
-			var ownerEntity bson.M
-			err := app.DB.FindOne(r.Context(), collection, bson.M{
+			var ownerEntity map[string]any
+			err := app.DB.FindOne(r.Context(), collection, map[string]any{
 				idField: eventID,
 			}, &ownerEntity)
 
@@ -180,8 +178,8 @@ func EditMerch(app *infra.Deps) http.HandlerFunc {
 		}
 
 		if collection != "" {
-			var ownerEntity bson.M
-			err := app.DB.FindOne(r.Context(), collection, bson.M{
+			var ownerEntity map[string]any
+			err := app.DB.FindOne(r.Context(), collection, map[string]any{
 				idField: eventID,
 			}, &ownerEntity)
 
@@ -209,7 +207,7 @@ func EditMerch(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{
+		update := map[string]any{
 			"updatedat": time.Now(),
 		}
 
@@ -229,12 +227,12 @@ func EditMerch(app *infra.Deps) http.HandlerFunc {
 		_, err := app.DB.UpdateOne(
 			r.Context(),
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"entity_type": entityType,
 				"entity_id":   eventID,
 				"merchid":     merchID,
 			},
-			bson.M{"$set": update},
+			map[string]any{"$set": update},
 		)
 		if err != nil {
 			utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "merch not found"})
@@ -295,8 +293,8 @@ func DeleteMerch(app *infra.Deps) http.HandlerFunc {
 		}
 
 		if collection != "" {
-			var ownerEntity bson.M
-			err := app.DB.FindOne(r.Context(), collection, bson.M{
+			var ownerEntity map[string]any
+			err := app.DB.FindOne(r.Context(), collection, map[string]any{
 				idField: eventID,
 			}, &ownerEntity)
 
@@ -317,13 +315,13 @@ func DeleteMerch(app *infra.Deps) http.HandlerFunc {
 		_, err := app.DB.UpdateOne(
 			r.Context(),
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"entity_type": entityType,
 				"entity_id":   eventID,
 				"merchid":     merchID,
-				"deletedAt":   bson.M{"$exists": false}, // Only soft-delete if not already deleted
+				"deletedAt":   map[string]any{"$exists": false}, // Only soft-delete if not already deleted
 			},
-			bson.M{"$set": bson.M{
+			map[string]any{"$set": map[string]any{
 				"deletedAt": now,
 				"updatedat": now,
 			}},
@@ -371,7 +369,7 @@ func BuyMerch(app *infra.Deps) http.HandlerFunc {
 
 		err := app.DB.WithDB(r.Context(), func(ctx context.Context) error {
 			var merch Merch
-			err := app.DB.FindOne(ctx, merchCollection, bson.M{
+			err := app.DB.FindOne(ctx, merchCollection, map[string]any{
 				"entity_type": utils.GetParam(r, "entityType"),
 				"entity_id":   utils.GetParam(r, "eventid"),
 				"merchid":     utils.GetParam(r, "merchid"),
@@ -387,8 +385,8 @@ func BuyMerch(app *infra.Deps) http.HandlerFunc {
 			_, err = app.DB.UpdateOne(
 				ctx,
 				merchCollection,
-				bson.M{"merchid": merch.MerchID},
-				bson.M{"$inc": bson.M{"stock": -body.Quantity}},
+				map[string]any{"merchid": merch.MerchID},
+				map[string]any{"$inc": map[string]any{"stock": -body.Quantity}},
 			)
 			if err != nil {
 				return err

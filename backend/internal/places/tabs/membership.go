@@ -3,12 +3,12 @@ package places
 import (
 	"context"
 	"encoding/json"
-	"scav/utils"
 	"net/http"
+	"scav/utils"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"go.mongodb.org/mongo-driver/bson"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -33,7 +33,7 @@ func GetMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 
 	var membership Membership
-	err = membershipColl.FindOne(r.Context(), bson.M{"_id": id}).Decode(&membership)
+	err = membershipColl.FindOne(r.Context(), map[string]any{"_id": id}).Decode(&membership)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Membership not found", http.StatusNotFound)
@@ -88,8 +88,8 @@ func PutMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 
 	_, err = membershipColl.UpdateOne(
 		r.Context(),
-		bson.M{"_id": id},
-		bson.M{"$set": bson.M{
+		map[string]any{"_id": id},
+		map[string]any{"$set": map[string]any{
 			"name":        update.Name,
 			"price":       update.Price,
 			"description": update.Description,
@@ -111,7 +111,7 @@ func DeleteMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 		return
 	}
 
-	_, err = membershipColl.DeleteOne(r.Context(), bson.M{"_id": id})
+	_, err = membershipColl.DeleteOne(r.Context(), map[string]any{"_id": id})
 	if err != nil {
 		http.Error(w, "Failed to delete membership", http.StatusInternalServerError)
 		return
@@ -134,7 +134,7 @@ func GetMemberships(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 		return
 	}
 
-	cur, err := membershipColl.Find(r.Context(), bson.M{"placeId": placeID})
+	cur, err := membershipColl.Find(r.Context(), map[string]any{"placeId": placeID})
 	if err != nil {
 		http.Error(w, "Failed to fetch memberships", http.StatusInternalServerError)
 		return

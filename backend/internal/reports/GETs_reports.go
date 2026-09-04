@@ -21,7 +21,7 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 			status = "pending"
 		}
 
-		filter := bson.M{"status": status}
+		filter := map[string]any{"status": status}
 
 		limit := int64(20)
 		offset := int64(0)
@@ -37,7 +37,7 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		var appeals []bson.M
+		var appeals []map[string]any
 		if err := app.DB.FindMany(ctx, appealsCollection, filter, &appeals); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch appeals",
@@ -53,7 +53,7 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 		)
 
 		if appeals == nil {
-			appeals = []bson.M{}
+			appeals = []map[string]any{}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, appeals)
@@ -69,12 +69,12 @@ func GetMyAppeals(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		filter := bson.M{"userid": userID}
+		filter := map[string]any{"userid": userID}
 		if status := strings.TrimSpace(r.URL.Query().Get("status")); status != "" {
 			filter["status"] = status
 		}
 
-		var appeals []bson.M
+		var appeals []map[string]any
 		if err := app.DB.FindMany(ctx, appealsCollection, filter, &appeals); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch your appeals",
@@ -82,7 +82,7 @@ func GetMyAppeals(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 		if appeals == nil {
-			appeals = []bson.M{}
+			appeals = []map[string]any{}
 		}
 
 		utils.SortAndSlice(&appeals, []bson.E{{Key: "createdAt", Value: -1}}, 0, int64(len(appeals)))

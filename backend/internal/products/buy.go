@@ -15,8 +15,6 @@ import (
 	"scav/internal/farms"
 	"scav/utils"
 	log "scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* ---------------------------------------------------- */
@@ -91,19 +89,19 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 		cropID := utils.GetParam(r, "cropid")
 
 		// Atomic decrement to prevent concurrent overselling.
-		var updatedCrop bson.M
+		var updatedCrop map[string]any
 		err := app.DB.FindOneAndUpdate(
 			ctx,
 			cropsCollection,
-			bson.M{
+			map[string]any{
 				"farmid":     farmID,
 				"cropid":     cropID,
-				"quantity":   bson.M{"$gt": 0},
+				"quantity":   map[string]any{"$gt": 0},
 				"outOfStock": false,
 			},
-			bson.M{
-				"$inc": bson.M{"quantity": -1},
-				"$set": bson.M{"updatedAt": time.Now()},
+			map[string]any{
+				"$inc": map[string]any{"quantity": -1},
+				"$set": map[string]any{"updatedAt": time.Now()},
 			},
 			&updatedCrop,
 		)
@@ -121,8 +119,8 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 			_, _ = app.DB.UpdateOne(
 				ctx,
 				cropsCollection,
-				bson.M{"farmid": farmID, "cropid": cropID},
-				bson.M{"$set": bson.M{"outOfStock": true, "updatedAt": time.Now()}},
+				map[string]any{"farmid": farmID, "cropid": cropID},
+				map[string]any{"$set": map[string]any{"outOfStock": true, "updatedAt": time.Now()}},
 			)
 		}
 		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.CropBoughtEvent, mqevent.CropBoughtPayload{}); err != nil {
@@ -158,7 +156,7 @@ func updateOrderStatus(
 	}
 
 	var order cart.FarmOrder
-	if err := app.DB.FindOne(ctx, farmOrdersCollection, bson.M{"orderid": orderID}, &order); err != nil {
+	if err := app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": orderID}, &order); err != nil {
 		utils.RespondWithJSON(
 			w,
 			http.StatusNotFound,
@@ -168,7 +166,7 @@ func updateOrderStatus(
 	}
 
 	var farm farms.Farm
-	if err := app.DB.FindOne(ctx, farmsCollection, bson.M{"farmid": order.FarmID}, &farm); err != nil {
+	if err := app.DB.FindOne(ctx, farmsCollection, map[string]any{"farmid": order.FarmID}, &farm); err != nil {
 		utils.RespondWithJSON(
 			w,
 			http.StatusNotFound,
@@ -202,8 +200,8 @@ func updateOrderStatus(
 	_, err := app.DB.UpdateOne(
 		ctx,
 		farmOrdersCollection,
-		bson.M{"orderid": orderID},
-		bson.M{"$set": bson.M{"status": newStatus, "updatedAt": time.Now()}},
+		map[string]any{"orderid": orderID},
+		map[string]any{"$set": map[string]any{"status": newStatus, "updatedAt": time.Now()}},
 	)
 	if err != nil {
 		utils.RespondWithJSON(
@@ -321,7 +319,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 	}
 
 	var ownedFarms []farms.Farm
-	if err := app.DB.FindMany(ctx, farmsCollection, bson.M{"createdBy": userID}, &ownedFarms); err != nil {
+	if err := app.DB.FindMany(ctx, farmsCollection, map[string]any{"createdBy": userID}, &ownedFarms); err != nil {
 		utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 			"success": false,
 			"message": "Failed to fetch farms",
@@ -339,7 +337,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 
 	for _, orderID := range req.OrderIDs {
 		var order cart.FarmOrder
-		if err := app.DB.FindOne(ctx, farmOrdersCollection, bson.M{"orderid": orderID}, &order); err != nil {
+		if err := app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": orderID}, &order); err != nil {
 			response.Failed++
 			errorsList = append(errorsList, fmt.Sprintf("Order %s not found", orderID))
 			continue
@@ -368,8 +366,8 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 		if _, err := app.DB.UpdateOne(
 			ctx,
 			farmOrdersCollection,
-			bson.M{"orderid": orderID},
-			bson.M{"$set": bson.M{"status": newStatus, "updatedAt": time.Now()}},
+			map[string]any{"orderid": orderID},
+			map[string]any{"$set": map[string]any{"status": newStatus, "updatedAt": time.Now()}},
 		); err != nil {
 			response.Failed++
 			errorsList = append(errorsList, fmt.Sprintf("Order %s: update failed", orderID))
@@ -427,7 +425,7 @@ func DownloadReceipt(app *infra.Deps) http.HandlerFunc {
 		orderID := utils.GetParam(r, "id")
 
 		var order cart.FarmOrder
-		if err := app.DB.FindOne(ctx, farmOrdersCollection, bson.M{"orderid": orderID}, &order); err != nil {
+		if err := app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": orderID}, &order); err != nil {
 			utils.RespondWithJSON(
 				w,
 				http.StatusNotFound,

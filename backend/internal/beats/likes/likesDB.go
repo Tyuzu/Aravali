@@ -6,7 +6,6 @@ import (
 	"scav/config"
 	"scav/infra"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -33,7 +32,7 @@ func (r *mongoRepository) Insert(ctx context.Context, like Like) error {
 }
 
 func (r *mongoRepository) Delete(ctx context.Context, userID, entityType, entityID string) (int64, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"userid":      userID,
 		"entity_type": entityType,
 		"entity_id":   entityID,
@@ -42,7 +41,7 @@ func (r *mongoRepository) Delete(ctx context.Context, userID, entityType, entity
 }
 
 func (r *mongoRepository) FindOne(ctx context.Context, userID, entityType, entityID string) (bool, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"userid":      userID,
 		"entity_type": entityType,
 		"entity_id":   entityID,
@@ -64,7 +63,7 @@ func (r *mongoRepository) Count(ctx context.Context, entityType, entityID string
 	return r.app.DB.CountDocuments(
 		ctx,
 		likesCollection,
-		bson.M{
+		map[string]any{
 			"entity_type": entityType,
 			"entity_id":   entityID,
 		},

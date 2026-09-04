@@ -2,8 +2,8 @@ package farms
 
 import (
 	"encoding/json"
-	log "scav/utils/logger"
 	"net/http"
+	log "scav/utils/logger"
 	"strings"
 	"time"
 
@@ -14,8 +14,6 @@ import (
 	"scav/internal/beats/auditlog"
 	"scav/middleware"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --------------------------------------------------
@@ -182,7 +180,7 @@ func EditFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{}
+		update := map[string]any{}
 		contentType := r.Header.Get("Content-Type")
 
 		var input Farm
@@ -274,7 +272,7 @@ func EditFarm(app *infra.Deps) http.HandlerFunc {
 			app.DB,
 			farmID,
 			userID,
-			bson.M{
+			map[string]any{
 				"$set": update,
 			},
 		); err != nil {

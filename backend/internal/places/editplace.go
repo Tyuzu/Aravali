@@ -11,8 +11,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- EditPlace endpoint ---
@@ -38,7 +36,7 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			placesCollection,
-			bson.M{"placeid": placeID},
+			map[string]any{"placeid": placeID},
 			&existing,
 		); err != nil {
 			http.Error(w, "Place not found", http.StatusNotFound)
@@ -69,7 +67,7 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.Update(
 			ctx,
 			placesCollection,
-			bson.M{"placeid": placeID},
+			map[string]any{"placeid": placeID},
 			updateFields,
 		); err != nil {
 			http.Error(w, "Failed to update place", http.StatusInternalServerError)

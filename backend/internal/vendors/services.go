@@ -8,12 +8,11 @@ import (
 
 	"scav/infra"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func vendorBaseFilter() bson.M {
-	return bson.M{
+func vendorBaseFilter() map[string]any {
+	return map[string]any{
 		"available": true,
 	}
 }
@@ -67,7 +66,7 @@ func GetVendorByID(ctx context.Context, app *infra.Deps, vendorID string) (*Vend
 	err := app.DB.FindOne(
 		ctx,
 		vendorCollection,
-		bson.M{
+		map[string]any{
 			"vendorid":  vendorID,
 			"available": true,
 		},
@@ -86,7 +85,7 @@ func GetVendorByUserID(ctx context.Context, app *infra.Deps, userID string) (*Ve
 	err := app.DB.FindOne(
 		ctx,
 		vendorCollection,
-		bson.M{
+		map[string]any{
 			"userid":    userID,
 			"available": true,
 		},
@@ -102,7 +101,7 @@ func GetVendorByUserID(ctx context.Context, app *infra.Deps, userID string) (*Ve
 // GetVendorsByCategory retrieves all vendors in a specific category.
 func GetVendorsByCategory(ctx context.Context, app *infra.Deps, category string) ([]Vendor, error) {
 	var vendors []Vendor
-	err := app.DB.FindMany(ctx, vendorCollection, bson.M{
+	err := app.DB.FindMany(ctx, vendorCollection, map[string]any{
 		"available": true,
 		"category":  category,
 	}, &vendors)
@@ -127,11 +126,11 @@ func GetAllVendors(ctx context.Context, app *infra.Deps, search string, category
 
 	if search != "" {
 		escaped := regexp.QuoteMeta(strings.TrimSpace(search))
-		filter["$or"] = []bson.M{
-			{"name": bson.M{"$regex": escaped, "$options": "i"}},
-			{"category": bson.M{"$regex": escaped, "$options": "i"}},
-			{"description": bson.M{"$regex": escaped, "$options": "i"}},
-			{"location": bson.M{"$regex": escaped, "$options": "i"}},
+		filter["$or"] = []map[string]any{
+			{"name": map[string]any{"$regex": escaped, "$options": "i"}},
+			{"category": map[string]any{"$regex": escaped, "$options": "i"}},
+			{"description": map[string]any{"$regex": escaped, "$options": "i"}},
+			{"location": map[string]any{"$regex": escaped, "$options": "i"}},
 		}
 	}
 
@@ -149,9 +148,9 @@ func GetAllVendors(ctx context.Context, app *infra.Deps, search string, category
 }
 
 // UpdateVendor updates vendor information.
-func UpdateVendor(ctx context.Context, app *infra.Deps, vendorID string, updates bson.M) (any, error) {
+func UpdateVendor(ctx context.Context, app *infra.Deps, vendorID string, updates map[string]any) (any, error) {
 	if updates == nil {
-		updates = bson.M{}
+		updates = map[string]any{}
 	}
 
 	updates["updated_at"] = time.Now()
@@ -159,8 +158,8 @@ func UpdateVendor(ctx context.Context, app *infra.Deps, vendorID string, updates
 	return app.DB.Update(
 		ctx,
 		vendorCollection,
-		bson.M{"vendorid": vendorID, "available": true},
-		bson.M{"$set": updates},
+		map[string]any{"vendorid": vendorID, "available": true},
+		map[string]any{"$set": updates},
 	)
 }
 
@@ -169,9 +168,9 @@ func DeleteVendor(ctx context.Context, app *infra.Deps, vendorID string) (any, e
 	return app.DB.Update(
 		ctx,
 		vendorCollection,
-		bson.M{"vendorid": vendorID},
-		bson.M{
-			"$set": bson.M{
+		map[string]any{"vendorid": vendorID},
+		map[string]any{
+			"$set": map[string]any{
 				"available":  false,
 				"updated_at": time.Now(),
 			},
@@ -185,7 +184,7 @@ func GetVendorHiringByID(ctx context.Context, app *infra.Deps, hiringID string) 
 	err := app.DB.FindOne(
 		ctx,
 		hiringCollection,
-		bson.M{"hiringid": hiringID},
+		map[string]any{"hiringid": hiringID},
 		&hiring,
 	)
 	if err != nil {
@@ -201,10 +200,10 @@ func GetVendorHiringByEventAndVendor(ctx context.Context, app *infra.Deps, event
 	err := app.DB.FindOne(
 		ctx,
 		hiringCollection,
-		bson.M{
+		map[string]any{
 			"eventid":  eventID,
 			"vendorid": vendorID,
-			"status":   bson.M{"$ne": "rejected"},
+			"status":   map[string]any{"$ne": "rejected"},
 		},
 		&hiring,
 	)
@@ -247,9 +246,9 @@ func HireVendor(ctx context.Context, app *infra.Deps, eventID, vendorID, vendorN
 // GetEventVendors retrieves all vendors hired for an event.
 func GetEventVendors(ctx context.Context, app *infra.Deps, eventID string) ([]VendorHiring, error) {
 	var hirings []VendorHiring
-	err := app.DB.FindMany(ctx, hiringCollection, bson.M{
+	err := app.DB.FindMany(ctx, hiringCollection, map[string]any{
 		"eventid": eventID,
-		"status":  bson.M{"$ne": "rejected"},
+		"status":  map[string]any{"$ne": "rejected"},
 	}, &hirings)
 	if err != nil {
 		return nil, err
@@ -265,9 +264,9 @@ func GetEventVendors(ctx context.Context, app *infra.Deps, eventID string) ([]Ve
 // GetVendorHiringsByVendorID retrieves vendor hiring records for a specific vendor.
 func GetVendorHiringsByVendorID(ctx context.Context, app *infra.Deps, vendorID string) ([]VendorHiring, error) {
 	var hirings []VendorHiring
-	err := app.DB.FindMany(ctx, hiringCollection, bson.M{
+	err := app.DB.FindMany(ctx, hiringCollection, map[string]any{
 		"vendorid": vendorID,
-		"status":   bson.M{"$ne": "rejected"},
+		"status":   map[string]any{"$ne": "rejected"},
 	}, &hirings)
 	if err != nil {
 		return nil, err
@@ -283,10 +282,10 @@ func GetVendorHiringsByVendorID(ctx context.Context, app *infra.Deps, vendorID s
 // RemoveVendorFromEvent removes a vendor from an event.
 func RemoveVendorFromEvent(ctx context.Context, app *infra.Deps, eventID, vendorID string) (any, error) {
 	var existing VendorHiring
-	err := app.DB.FindOne(ctx, hiringCollection, bson.M{
+	err := app.DB.FindOne(ctx, hiringCollection, map[string]any{
 		"eventid":  eventID,
 		"vendorid": vendorID,
-		"status":   bson.M{"$ne": "rejected"},
+		"status":   map[string]any{"$ne": "rejected"},
 	}, &existing)
 	if err != nil {
 		return nil, ErrVendorNotInEvent
@@ -295,12 +294,12 @@ func RemoveVendorFromEvent(ctx context.Context, app *infra.Deps, eventID, vendor
 	return app.DB.Update(
 		ctx,
 		hiringCollection,
-		bson.M{
+		map[string]any{
 			"eventid":  eventID,
 			"vendorid": vendorID,
 		},
-		bson.M{
-			"$set": bson.M{
+		map[string]any{
+			"$set": map[string]any{
 				"status":     "rejected",
 				"updated_at": time.Now(),
 			},
@@ -313,9 +312,9 @@ func UpdateVendorStatus(ctx context.Context, app *infra.Deps, hiringID, status s
 	return app.DB.Update(
 		ctx,
 		hiringCollection,
-		bson.M{"hiringid": hiringID},
-		bson.M{
-			"$set": bson.M{
+		map[string]any{"hiringid": hiringID},
+		map[string]any{
+			"$set": map[string]any{
 				"status":     status,
 				"updated_at": time.Now(),
 			},

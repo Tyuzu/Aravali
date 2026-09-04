@@ -14,8 +14,6 @@ import (
 	"scav/infra"
 	"scav/internal/farms"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* ---------------------------------------------------- */
@@ -28,7 +26,7 @@ func GetFilteredCrops(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		params := r.URL.Query()
-		filter := bson.M{}
+		filter := map[string]any{}
 
 		if c := params.Get("category"); c != "" {
 			filter["category"] = c
@@ -37,10 +35,10 @@ func GetFilteredCrops(app *infra.Deps) http.HandlerFunc {
 			filter["farmLocation"] = region
 		}
 		if params.Get("inStock") == "true" {
-			filter["quantity"] = bson.M{"$gt": 0}
+			filter["quantity"] = map[string]any{"$gt": 0}
 		}
 
-		price := bson.M{}
+		price := map[string]any{}
 		if min := utils.ParseFloat(params.Get("minPrice")); min > 0 {
 			price["$gte"] = min
 		}
@@ -94,7 +92,7 @@ func GetPreCropCatalogue(app *infra.Deps) http.HandlerFunc {
 		/* 2. Database                                      */
 		/* ------------------------------------------------ */
 
-		if err := app.DB.FindMany(ctx, catalogueCollection, bson.M{}, &crops); err == nil && len(crops) > 0 {
+		if err := app.DB.FindMany(ctx, catalogueCollection, map[string]any{}, &crops); err == nil && len(crops) > 0 {
 			if jsonBytes, err := json.Marshal(crops); err == nil {
 				_ = app.Cache.Set(ctx, cacheKey, jsonBytes, 2*time.Hour)
 			}
@@ -188,7 +186,7 @@ func GetCropCatalogue(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var allCrops []farms.Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, bson.M{}, &allCrops); err != nil {
+		if err := app.DB.FindMany(ctx, cropsCollection, map[string]any{}, &allCrops); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch crop catalogue",
@@ -224,7 +222,7 @@ func GetCropTypes(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var crops []farms.Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, bson.M{}, &crops); err != nil {
+		if err := app.DB.FindMany(ctx, cropsCollection, map[string]any{}, &crops); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch crops",

@@ -2,15 +2,13 @@ package tickets
 
 import (
 	"context"
-	log "scav/utils/logger"
 	"net/http"
+	log "scav/utils/logger"
 	"sort"
 	"time"
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func ListMyTickets(app *infra.Deps) http.HandlerFunc {
@@ -26,7 +24,7 @@ func ListMyTickets(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			purchasedTicketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid": eventID,
 				"userid":  requestingUserId,
 			},
@@ -56,10 +54,10 @@ func ListMyTickets(app *infra.Deps) http.HandlerFunc {
 			if err := app.DB.FindMany(
 				ctx,
 				refundsCollection,
-				bson.M{
+				map[string]any{
 					"userid":     requestingUserId,
 					"eventid":    eventID,
-					"uniquecode": bson.M{"$in": canceledCodes},
+					"uniquecode": map[string]any{"$in": canceledCodes},
 				},
 				&refunds,
 			); err == nil {

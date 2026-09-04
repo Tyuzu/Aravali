@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/internal/deliveries"
 	"scav/utils"
@@ -28,7 +26,7 @@ func GetProfile(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		var driver deliveries.Driver
-		filter := bson.M{"id": driverID, "tenantid": tenantID}
+		filter := map[string]any{"id": driverID, "tenantid": tenantID}
 		if err := app.DB.FindOne(ctx, "drivers", filter, &driver); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Driver profile not found")
 			return
@@ -42,7 +40,7 @@ func UpdateProfile(app *infra.Deps) http.HandlerFunc {
 		driverID := resolveDriverID(r)
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 
-		var updates bson.M
+		var updates map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 			utils.RespondWithError(w, http.StatusBadRequest, "Invalid body")
 			return
@@ -53,8 +51,8 @@ func UpdateProfile(app *infra.Deps) http.HandlerFunc {
 		delete(updates, "tenantid")
 		updates["updated_at"] = time.Now()
 
-		filter := bson.M{"id": driverID, "tenantid": tenantID}
-		if _, err := app.DB.UpdateOne(ctx, "drivers", filter, bson.M{"$set": updates}); err != nil {
+		filter := map[string]any{"id": driverID, "tenantid": tenantID}
+		if _, err := app.DB.UpdateOne(ctx, "drivers", filter, map[string]any{"$set": updates}); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update driver")
 			return
 		}
@@ -69,8 +67,8 @@ func GoOnline(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		_ = app.Cache.HSet(ctx, "drivers:online", driverID, []byte("true"))
-		filter := bson.M{"id": driverID, "tenantid": tenantID}
-		_, _ = app.DB.UpdateOne(ctx, "drivers", filter, bson.M{"$set": bson.M{"is_online": true}})
+		filter := map[string]any{"id": driverID, "tenantid": tenantID}
+		_, _ = app.DB.UpdateOne(ctx, "drivers", filter, map[string]any{"$set": map[string]any{"is_online": true}})
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "online"})
 	}
@@ -83,8 +81,8 @@ func GoOffline(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		_, _ = app.Cache.HDel(ctx, "drivers:online", driverID)
-		filter := bson.M{"id": driverID, "tenantid": tenantID}
-		_, _ = app.DB.UpdateOne(ctx, "drivers", filter, bson.M{"$set": bson.M{"is_online": false}})
+		filter := map[string]any{"id": driverID, "tenantid": tenantID}
+		_, _ = app.DB.UpdateOne(ctx, "drivers", filter, map[string]any{"$set": map[string]any{"is_online": false}})
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "offline"})
 	}
@@ -96,8 +94,8 @@ func GetStatus(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var status bson.M
-		filter := bson.M{"id": driverID, "tenantid": tenantID}
+		var status map[string]any
+		filter := map[string]any{"id": driverID, "tenantid": tenantID}
 		if err := app.DB.FindOneWithProjection(ctx, "drivers", filter, []string{"is_online", "current_state"}, &status); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Driver status unavailable")
 			return
@@ -112,7 +110,7 @@ func GetAvailableJobs(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		var jobs []deliveries.Delivery
-		filter := bson.M{
+		filter := map[string]any{
 			"status":   deliveries.StatusCreated,
 			"driverid": nil,
 			"tenantid": tenantID,
@@ -136,10 +134,10 @@ func GetActiveDeliveries(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		var active []deliveries.Delivery
-		filter := bson.M{
+		filter := map[string]any{
 			"driverid": driverID,
 			"tenantid": tenantID,
-			"status": bson.M{"$in": []string{
+			"status": map[string]any{"$in": []string{
 				deliveries.StatusAssigned,
 				deliveries.StatusAccepted,
 				deliveries.StatusPickedUp,
@@ -167,7 +165,7 @@ func ClaimJob(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		var current deliveries.Delivery
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindOne(ctx, "deliveries", filter, &current); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
 			return
@@ -184,13 +182,13 @@ func ClaimJob(app *infra.Deps) http.HandlerFunc {
 		}
 
 		now := time.Now()
-		update := bson.M{
-			"$set": bson.M{
+		update := map[string]any{
+			"$set": map[string]any{
 				"status":     deliveries.StatusAssigned,
 				"driverid":   driverID,
 				"updated_at": now,
 			},
-			"$push": bson.M{
+			"$push": map[string]any{
 				"status_history": deliveries.StatusHistoryItem{
 					Status:    deliveries.StatusAssigned,
 					Timestamp: now,
@@ -218,7 +216,7 @@ func AcceptJob(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		var current deliveries.Delivery
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindOne(ctx, "deliveries", filter, &current); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
 			return
@@ -230,13 +228,13 @@ func AcceptJob(app *infra.Deps) http.HandlerFunc {
 		}
 
 		now := time.Now()
-		update := bson.M{
-			"$set": bson.M{
+		update := map[string]any{
+			"$set": map[string]any{
 				"status":     deliveries.StatusAccepted,
 				"driverid":   driverID,
 				"updated_at": now,
 			},
-			"$push": bson.M{
+			"$push": map[string]any{
 				"status_history": deliveries.StatusHistoryItem{
 					Status:    deliveries.StatusAccepted,
 					Timestamp: now,
@@ -265,7 +263,7 @@ func RejectJob(app *infra.Deps) http.HandlerFunc {
 		deliveryID := utils.GetParam(r, "deliveryid")
 		ctx := r.Context()
 
-		_ = app.DB.InsertOne(ctx, "driver_job_rejections", bson.M{
+		_ = app.DB.InsertOne(ctx, "driver_job_rejections", map[string]any{
 			"rejectionid": utils.GenerateRandomString(18),
 			"tenantid":    tenantID,
 			"driverid":    driverID,

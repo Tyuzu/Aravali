@@ -5,8 +5,6 @@ import (
 
 	"scav/config"
 	"scav/infra"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var mediaCollection = config.Collections.MediaCollection
@@ -17,7 +15,7 @@ func insertMedia(ctx context.Context, app *infra.Deps, media Media) error {
 
 func getMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (Media, error) {
 	var media Media
-	err := app.DB.FindOne(ctx, mediaCollection, bson.M{
+	err := app.DB.FindOne(ctx, mediaCollection, map[string]any{
 		"entityid":   entityID,
 		"entitytype": entityType,
 		"mediaid":    mediaID,
@@ -26,7 +24,7 @@ func getMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, me
 }
 
 func listMediaByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Media, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"entityid":   entityID,
 		"entitytype": entityType,
 	}
@@ -58,12 +56,12 @@ func getMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, en
 	return groups, nil
 }
 
-func updateMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, updateFields bson.M) ([]Media, error) {
-	if _, err := app.DB.UpdateMany(ctx, mediaCollection, bson.M{"mediaGroupId": mediaGroupID}, bson.M{"$set": updateFields}); err != nil {
+func updateMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, updateFields map[string]any) ([]Media, error) {
+	if _, err := app.DB.UpdateMany(ctx, mediaCollection, map[string]any{"mediaGroupId": mediaGroupID}, map[string]any{"$set": updateFields}); err != nil {
 		return nil, err
 	}
 
 	var updatedMedias []Media
-	err := app.DB.FindMany(ctx, mediaCollection, bson.M{"mediaGroupId": mediaGroupID}, &updatedMedias)
+	err := app.DB.FindMany(ctx, mediaCollection, map[string]any{"mediaGroupId": mediaGroupID}, &updatedMedias)
 	return updatedMedias, err
 }

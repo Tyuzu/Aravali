@@ -11,8 +11,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var moderatorApplicationsCollection = config.Collections.ModeratorApplications
@@ -52,7 +50,7 @@ func ApplyModerator(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOne(
 			ctx,
 			moderatorApplicationsCollection,
-			bson.M{"userid": payload.UserID},
+			map[string]any{"userid": payload.UserID},
 			&existing,
 		)
 		if err == nil {
@@ -90,7 +88,7 @@ func ListModeratorApplications(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		status := r.URL.Query().Get("status")
 
-		filter := bson.M{}
+		filter := map[string]any{}
 		if status != "" {
 			filter["status"] = status
 		}
@@ -123,9 +121,9 @@ func ApproveModerator(app *infra.Deps) http.HandlerFunc {
 		_, err := app.DB.UpdateOne(
 			ctx,
 			moderatorApplicationsCollection,
-			bson.M{"id": id},
-			bson.M{
-				"$set": bson.M{
+			map[string]any{"id": id},
+			map[string]any{
+				"$set": map[string]any{
 					"status":     "approved",
 					"updatedAt":  now,
 					"updated_at": now,
@@ -166,9 +164,9 @@ func RejectModerator(app *infra.Deps) http.HandlerFunc {
 		_, err := app.DB.UpdateOne(
 			ctx,
 			moderatorApplicationsCollection,
-			bson.M{"id": id},
-			bson.M{
-				"$set": bson.M{
+			map[string]any{"id": id},
+			map[string]any{
+				"$set": map[string]any{
 					"status":     "rejected",
 					"updatedAt":  now,
 					"updated_at": now,

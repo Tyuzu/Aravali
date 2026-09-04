@@ -44,12 +44,12 @@ func getActivities(
 	limit int,
 ) ([]Activity, error) {
 	// FIX: Matched struct bson tag "userid" instead of "userid"
-	filter := bson.M{
+	filter := map[string]any{
 		"userid": userID,
 	}
 
 	if !cursor.IsZero() {
-		filter["timestamp"] = bson.M{
+		filter["timestamp"] = map[string]any{
 			"$lt": cursor,
 		}
 	}
@@ -95,7 +95,7 @@ func insertAnalyticsEvents(
 			}
 
 			// Consolidate payload metadata with specific event data
-			doc := bson.M{
+			doc := map[string]any{
 				"type":      ev["type"],
 				"data":      ev["data"],
 				"url":       url,

@@ -43,7 +43,7 @@ func GetRecommendedSongs(app *infra.Deps) http.HandlerFunc {
 			Sort:  []bson.E{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}},
 		}
 
-		filter := bson.M{"published": true}
+		filter := map[string]any{"published": true}
 
 		songs := []Song{}
 		if err := app.DB.FindManyWithOptions(ctx, songsCollection, filter, opts, &songs); err != nil {
@@ -70,7 +70,7 @@ func GetRecommendedAlbums(app *infra.Deps) http.HandlerFunc {
 			Sort:  []bson.E{{Key: "release_date", Value: -1}, {Key: "_id", Value: -1}},
 		}
 
-		filter := bson.M{"published": true}
+		filter := map[string]any{"published": true}
 
 		albums := []Album{}
 		if err := app.DB.FindManyWithOptions(ctx, albumsCollection, filter, opts, &albums); err != nil {
@@ -90,13 +90,13 @@ func GetRecommendations(app *infra.Deps) http.HandlerFunc {
 
 		basedOn := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("based_on")))
 
-		filter := bson.M{"published": true}
+		filter := map[string]any{"published": true}
 		sort := []bson.E{{Key: "_id", Value: -1}} // default stable sort
 
 		switch basedOn {
 
 		case "recently_played":
-			filter["plays"] = bson.M{"$gt": 0}
+			filter["plays"] = map[string]any{"$gt": 0}
 			sort = []bson.E{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}}
 
 		case "language_en":

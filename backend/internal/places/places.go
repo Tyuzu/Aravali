@@ -14,18 +14,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func parseAndBuildPlace(r *http.Request, mode string) (Place, bson.M, error) {
+func parseAndBuildPlace(r *http.Request, mode string) (Place, map[string]any, error) {
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		return Place{}, nil, fmt.Errorf("unable to parse form")
 	}
 
 	place := Place{}
-	update := bson.M{}
+	update := map[string]any{}
 
 	apply := func(key string, val interface{}) {
 		update[key] = val

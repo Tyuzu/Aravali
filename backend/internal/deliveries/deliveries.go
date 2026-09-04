@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/utils"
 )
@@ -62,7 +60,7 @@ func AssignDriver(app *infra.Deps) http.HandlerFunc {
 
 		ctx := r.Context()
 		var current Delivery
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindOne(ctx, "deliveries", filter, &current); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
 			return
@@ -74,13 +72,13 @@ func AssignDriver(app *infra.Deps) http.HandlerFunc {
 		}
 
 		now := time.Now()
-		update := bson.M{
-			"$set": bson.M{
+		update := map[string]any{
+			"$set": map[string]any{
 				"driverid":   req.DriverID,
 				"status":     StatusAssigned,
 				"updated_at": now,
 			},
-			"$push": bson.M{
+			"$push": map[string]any{
 				"status_history": StatusHistoryItem{
 					Status:    StatusAssigned,
 					Timestamp: now,
@@ -154,7 +152,7 @@ func updateDeliveryStatus(app *infra.Deps, r *http.Request, deliveryID string, n
 	tenantID := GetTenantIDFromContext(ctx)
 
 	var currentDelivery Delivery
-	filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 	if err := app.DB.FindOne(ctx, "deliveries", filter, &currentDelivery); err != nil {
 		return nil, fmt.Errorf("delivery not found")
 	}
@@ -164,12 +162,12 @@ func updateDeliveryStatus(app *infra.Deps, r *http.Request, deliveryID string, n
 	}
 
 	now := time.Now()
-	update := bson.M{
-		"$set": bson.M{
+	update := map[string]any{
+		"$set": map[string]any{
 			"status":     newStatus,
 			"updated_at": now,
 		},
-		"$push": bson.M{
+		"$push": map[string]any{
 			"status_history": StatusHistoryItem{
 				Status:    newStatus,
 				Timestamp: now,
@@ -240,7 +238,7 @@ func GetMyDeliveries(app *infra.Deps) http.HandlerFunc {
 		userID := utils.GetUserIDFromRequest(r)
 		tenantID := GetTenantIDFromContext(ctx)
 
-		filter := bson.M{"userid": userID, "tenantid": tenantID}
+		filter := map[string]any{"userid": userID, "tenantid": tenantID}
 		var myDeliveries []Delivery
 
 		if err := app.DB.FindMany(ctx, "deliveries", filter, &myDeliveries); err != nil {
@@ -274,7 +272,7 @@ func GetDeliveryByID(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var delivery Delivery
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindOne(ctx, "deliveries", filter, &delivery); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
 			return

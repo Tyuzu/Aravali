@@ -13,8 +13,6 @@ import (
 	"scav/internal/pay"
 	"scav/utils"
 	"scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const defaultOrdersTimeout = 10 * time.Second
@@ -150,9 +148,9 @@ func fetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderIDs 
 	}
 
 	var txns []pay.Transaction
-	err := app.DB.FindMany(ctx, "transactions", bson.M{
+	err := app.DB.FindMany(ctx, "transactions", map[string]any{
 		"entity_type": "order",
-		"entity_id":   bson.M{"$in": orderIDs},
+		"entity_id":   map[string]any{"$in": orderIDs},
 	}, &txns)
 	if err != nil {
 		logger.Printf("Warning: failed to fetch transactions: %v", err)
@@ -179,7 +177,7 @@ func fetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[strin
 	}
 
 	var users []auth.User
-	err := app.DB.FindMany(ctx, "users", bson.M{"userid": bson.M{"$in": ids}}, &users)
+	err := app.DB.FindMany(ctx, "users", map[string]any{"userid": map[string]any{"$in": ids}}, &users)
 	if err != nil {
 		logger.Printf("Warning: failed to batch fetch users: %v", err)
 		return nameMap

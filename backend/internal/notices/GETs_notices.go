@@ -41,7 +41,7 @@ func GetNotices(app *infra.Deps) http.HandlerFunc {
 			sort = []bson.E{{Key: "createdAt", Value: -1}}
 		}
 
-		filter := bson.M{
+		filter := map[string]any{
 			"entityType": entityType,
 			"entityId":   entityID,
 		}
@@ -98,7 +98,7 @@ func GetNotice(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			noticesCollection,
-			bson.M{"noticeid": noticeID},
+			map[string]any{"noticeid": noticeID},
 			&notice,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Notice not found")

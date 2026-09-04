@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	log "scav/utils/logger"
 	"net/http"
 	"os"
+	log "scav/utils/logger"
 	"time"
 
 	"scav/infra"
@@ -18,7 +18,6 @@ import (
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/paymentintent"
 	"github.com/stripe/stripe-go/v83/webhook"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -59,7 +58,7 @@ func updatePaymentStatus(
 		return nil, errors.New("invalid entityType")
 	}
 
-	update := bson.M{
+	update := map[string]any{
 		"paid":            true,
 		"amount":          amount,
 		"paymentIntentId": paymentIntentId,
@@ -69,7 +68,7 @@ func updatePaymentStatus(
 	return app.DB.Update(
 		ctx,
 		collection,
-		bson.M{idField: entityId},
+		map[string]any{idField: entityId},
 		update,
 	)
 }

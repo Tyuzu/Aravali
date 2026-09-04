@@ -4,16 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/internal/farms"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --------------------------------------------------
@@ -104,7 +102,7 @@ func updateItem(
 	defer cancel()
 
 	var existingItem farms.Product
-	if err := app.DB.FindOne(ctx, productsCollection, bson.M{"productid": id}, &existingItem); err != nil {
+	if err := app.DB.FindOne(ctx, productsCollection, map[string]any{"productid": id}, &existingItem); err != nil {
 		http.Error(w, "Product not found", http.StatusNotFound)
 		return
 	}
@@ -125,8 +123,8 @@ func updateItem(
 	item.CreatedAt = existingItem.CreatedAt
 	item.UpdatedAt = time.Now()
 
-	update := bson.M{"$set": item}
-	if _, err := app.DB.UpdateOne(ctx, productsCollection, bson.M{"productid": id}, update); err != nil {
+	update := map[string]any{"$set": item}
+	if _, err := app.DB.UpdateOne(ctx, productsCollection, map[string]any{"productid": id}, update); err != nil {
 		http.Error(w, "Failed to update item", http.StatusInternalServerError)
 		return
 	}
@@ -176,7 +174,7 @@ func deleteItem(app *infra.Deps) http.HandlerFunc {
 
 		// SECURITY: Check if user is the creator
 		var item farms.Product
-		if err := app.DB.FindOne(ctx, productsCollection, bson.M{"productid": id}, &item); err != nil {
+		if err := app.DB.FindOne(ctx, productsCollection, map[string]any{"productid": id}, &item); err != nil {
 			http.Error(w, "Product not found", http.StatusNotFound)
 			return
 		}
@@ -186,7 +184,7 @@ func deleteItem(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.DeleteOne(ctx, productsCollection, bson.M{"productid": id}); err != nil {
+		if _, err := app.DB.DeleteOne(ctx, productsCollection, map[string]any{"productid": id}); err != nil {
 			http.Error(w, "Failed to delete item", http.StatusInternalServerError)
 			return
 		}

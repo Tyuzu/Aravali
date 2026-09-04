@@ -86,7 +86,7 @@ func ReportContent(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		filter := bson.M{
+		filter := map[string]any{
 			"reportedBy": payload.ReportedBy,
 			"targetType": payload.TargetType,
 			"targetId":   payload.TargetID,
@@ -128,17 +128,17 @@ func GetReports(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		q := r.URL.Query()
-		filter := bson.M{}
+		filter := map[string]any{}
 
 		if status := stringTrim(q.Get("status")); status != "" && status != "all" {
 			parts := splitAndTrim(status)
 			if len(parts) == 1 {
 				filter["status"] = parts[0]
 			} else {
-				filter["status"] = bson.M{"$in": parts}
+				filter["status"] = map[string]any{"$in": parts}
 			}
 		} else if status == "" {
-			filter["status"] = bson.M{"$nin": []string{"resolved", "rejected"}}
+			filter["status"] = map[string]any{"$nin": []string{"resolved", "rejected"}}
 		}
 
 		if tt := stringTrim(q.Get("targetType")); tt != "" && tt != "all" {
@@ -146,7 +146,7 @@ func GetReports(app *infra.Deps) http.HandlerFunc {
 		}
 
 		if reason := stringTrim(q.Get("reason")); reason != "" && reason != "all" {
-			filter["reason"] = bson.M{"$in": splitAndTrim(reason)}
+			filter["reason"] = map[string]any{"$in": splitAndTrim(reason)}
 		}
 
 		if rb := stringTrim(q.Get("reportedBy")); rb != "" && rb != "all" {
@@ -218,8 +218,8 @@ func UpdateReport(app *infra.Deps) http.HandlerFunc {
 		_, err := app.DB.Update(
 			ctx,
 			reportsCollection,
-			bson.M{"reportid": reportID},
-			bson.M{
+			map[string]any{"reportid": reportID},
+			map[string]any{
 				"status":      payload.Status,
 				"reviewedBy":  getActorID(r),
 				"reviewNotes": payload.ReviewNotes,
@@ -263,14 +263,14 @@ func CreateAppeal(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		filter := bson.M{
+		filter := map[string]any{
 			"userid":     payload.UserID,
 			"targetType": payload.TargetType,
 			"targetId":   payload.TargetID,
-			"status":     bson.M{"$in": []string{"pending", "submitted"}},
+			"status":     map[string]any{"$in": []string{"pending", "submitted"}},
 		}
 
-		var existing bson.M
+		var existing map[string]any
 		if err := app.DB.FindOne(ctx, appealsCollection, filter, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You already have a pending appeal for this content")
 			return
@@ -279,7 +279,7 @@ func CreateAppeal(app *infra.Deps) http.HandlerFunc {
 		now := time.Now().UTC()
 		appealID := utils.GenerateRandomString(17)
 
-		appeal := bson.M{
+		appeal := map[string]any{
 			"appealid":    appealID,
 			"userid":      payload.UserID,
 			"targetType":  payload.TargetType,
@@ -330,8 +330,8 @@ func UpdateAppeal(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var appeal bson.M
-		if err := app.DB.FindOne(ctx, appealsCollection, bson.M{"appealid": appealID}, &appeal); err != nil {
+		var appeal map[string]any
+		if err := app.DB.FindOne(ctx, appealsCollection, map[string]any{"appealid": appealID}, &appeal); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Appeal not found")
 			return
 		}
@@ -339,8 +339,8 @@ func UpdateAppeal(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.Update(
 			ctx,
 			appealsCollection,
-			bson.M{"appealid": appealID},
-			bson.M{
+			map[string]any{"appealid": appealID},
+			map[string]any{
 				"status":      payload.Status,
 				"reviewedBy":  getActorID(r),
 				"reviewNotes": payload.ReviewNotes,
@@ -425,8 +425,8 @@ func setEntityDeletedFlag(
 	_, err := app.DB.Update(
 		ctx,
 		collection,
-		bson.M{idField: id},
-		bson.M{
+		map[string]any{idField: id},
+		map[string]any{
 			"deleted":   deleted,
 			"deletedBy": by,
 			"deletedAt": deletedAtVal,

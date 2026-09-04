@@ -13,8 +13,6 @@ import (
 	"scav/internal/farms"
 	"scav/internal/pay"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* ---------------------------------------------------- */
@@ -46,7 +44,7 @@ func GetMyFarmOrders(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			farmOrdersCollection,
-			bson.M{"userid": userID},
+			map[string]any{"userid": userID},
 			&orders,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -168,7 +166,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			farmsCollection,
-			bson.M{"createdBy": userID},
+			map[string]any{"createdBy": userID},
 			&myfarms,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -192,7 +190,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 2. Build filter query from URL params
-		filter := bson.M{"farmid": bson.M{"$in": farmIDs}}
+		filter := map[string]any{"farmid": map[string]any{"$in": farmIDs}}
 
 		// Filter by status
 		if status := r.URL.Query().Get("status"); status != "" {
@@ -202,7 +200,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		// Filter by date range
 		if dateFrom := r.URL.Query().Get("dateFrom"); dateFrom != "" {
 			if t, err := time.Parse("2006-01-02", dateFrom); err == nil {
-				filter["createdat"] = bson.M{"$gte": t}
+				filter["createdat"] = map[string]any{"$gte": t}
 			}
 		}
 
@@ -212,12 +210,12 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 				t = t.Add(24 * time.Hour)
 				if dateFrom := r.URL.Query().Get("dateFrom"); dateFrom != "" {
 					// If there's already a $gte, we need to use $lte
-					if existingDateFilter, ok := filter["createdat"].(bson.M); ok {
+					if existingDateFilter, ok := filter["createdat"].(map[string]any); ok {
 						existingDateFilter["$lte"] = t
 						filter["createdat"] = existingDateFilter
 					}
 				} else {
-					filter["createdat"] = bson.M{"$lte": t}
+					filter["createdat"] = map[string]any{"$lte": t}
 				}
 			}
 		}
@@ -251,9 +249,9 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		txnByOrder := map[string]pay.Transaction{}
 		if len(orderIDs) > 0 {
 			var txns []pay.Transaction
-			_ = app.DB.FindMany(ctx, "transactions", bson.M{
+			_ = app.DB.FindMany(ctx, "transactions", map[string]any{
 				"entity_type": "order",
-				"entity_id":   bson.M{"$in": orderIDs},
+				"entity_id":   map[string]any{"$in": orderIDs},
 			}, &txns)
 
 			for _, t := range txns {
@@ -326,7 +324,7 @@ func fetchFarmByID(ctx context.Context, id string, app *infra.Deps) farms.Farm {
 	err := app.DB.FindOne(
 		ctx,
 		farmsCollection,
-		bson.M{"farmid": id},
+		map[string]any{"farmid": id},
 		&farm,
 	)
 	if err != nil {
@@ -346,7 +344,7 @@ func fetchUserByID(ctx context.Context, id string, app *infra.Deps) auth.User {
 	err := app.DB.FindOne(
 		ctx,
 		usersCollection,
-		bson.M{"userid": id},
+		map[string]any{"userid": id},
 		&user,
 	)
 	if err != nil {
@@ -399,7 +397,7 @@ func fetchCropByID(ctx context.Context, id string, app *infra.Deps) farms.Crop {
 	err := app.DB.FindOne(
 		ctx,
 		cropsCollection,
-		bson.M{"cropid": id},
+		map[string]any{"cropid": id},
 		&crop,
 	)
 	if err != nil {

@@ -5,16 +5,14 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetReportsForMod(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		filter := bson.M{
-			"status": bson.M{
+		filter := map[string]any{
+			"status": map[string]any{
 				"$nin": []string{"resolved", "rejected"},
 			},
 		}

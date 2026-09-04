@@ -12,8 +12,6 @@ import (
 	"scav/internal/farms"
 	"scav/utils"
 	log "scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func AddCrop(app *infra.Deps) http.HandlerFunc {
@@ -105,7 +103,7 @@ func EditCrop(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{
+		update := map[string]any{
 			"updatedAt": time.Now(),
 		}
 
@@ -155,8 +153,8 @@ func EditCrop(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.UpdateOne(
 			ctx,
 			cropsCollection,
-			bson.M{"cropid": cropID},
-			bson.M{"$set": update},
+			map[string]any{"cropid": cropID},
+			map[string]any{"$set": update},
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,

@@ -7,8 +7,6 @@ import (
 	"scav/infra"
 	log "scav/utils/logger"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var followingsCollection = config.Collections.FollowingsCollection
@@ -29,25 +27,25 @@ func UpdateFollowRelationship(
 	var targetUserUpdate any
 
 	if action == "follow" {
-		currentUserUpdate = bson.M{
-			"$addToSet": bson.M{"follows": targetUserID},
+		currentUserUpdate = map[string]any{
+			"$addToSet": map[string]any{"follows": targetUserID},
 		}
-		targetUserUpdate = bson.M{
-			"$addToSet": bson.M{"followers": currentUserID},
+		targetUserUpdate = map[string]any{
+			"$addToSet": map[string]any{"followers": currentUserID},
 		}
 	} else {
-		currentUserUpdate = bson.M{
-			"$pull": bson.M{"follows": targetUserID},
+		currentUserUpdate = map[string]any{
+			"$pull": map[string]any{"follows": targetUserID},
 		}
-		targetUserUpdate = bson.M{
-			"$pull": bson.M{"followers": currentUserID},
+		targetUserUpdate = map[string]any{
+			"$pull": map[string]any{"followers": currentUserID},
 		}
 	}
 
 	if err := app.DB.Upsert(
 		ctx,
 		followingsCollection,
-		bson.M{"userid": currentUserID},
+		map[string]any{"userid": currentUserID},
 		currentUserUpdate,
 	); err != nil {
 		return fmt.Errorf("failed to update current user's follows: %w", err)
@@ -56,7 +54,7 @@ func UpdateFollowRelationship(
 	if err := app.DB.Upsert(
 		ctx,
 		followingsCollection,
-		bson.M{"userid": targetUserID},
+		map[string]any{"userid": targetUserID},
 		targetUserUpdate,
 	); err != nil {
 		return fmt.Errorf("failed to update target user's followers: %w", err)

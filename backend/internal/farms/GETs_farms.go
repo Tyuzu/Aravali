@@ -10,8 +10,6 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* ---------------------------------------------------- */
@@ -30,7 +28,7 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
 		var crops []Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, bson.M{"cropid": cropID}, &crops); err != nil || len(crops) == 0 {
+		if err := app.DB.FindMany(ctx, cropsCollection, map[string]any{"cropid": cropID}, &crops); err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop not found")
 			return
 		}
@@ -47,7 +45,7 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			farmsCollection,
-			bson.M{"farmid": bson.M{"$in": farmIDs}},
+			map[string]any{"farmid": map[string]any{"$in": farmIDs}},
 			&farms,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
@@ -112,8 +110,8 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		filter := bson.M{
-			"name": bson.M{
+		filter := map[string]any{
+			"name": map[string]any{
 				"$regex":   "^" + regexp.QuoteMeta(cropName) + "$",
 				"$options": "i",
 			},
@@ -136,7 +134,7 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			farmsCollection,
-			bson.M{"farmid": bson.M{"$in": farmIDs}},
+			map[string]any{"farmid": map[string]any{"$in": farmIDs}},
 			&farms,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
@@ -232,7 +230,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 		id := utils.GetParam(r, "id")
 
 		var farm Farm
-		if err := app.DB.FindOne(ctx, farmsCollection, bson.M{"farmid": id}, &farm); err != nil {
+		if err := app.DB.FindOne(ctx, farmsCollection, map[string]any{"farmid": id}, &farm); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
 				"message": "Farm not found",
@@ -241,7 +239,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var crops []Crop
-		_ = app.DB.FindMany(ctx, cropsCollection, bson.M{"farmid": id}, &crops)
+		_ = app.DB.FindMany(ctx, cropsCollection, map[string]any{"farmid": id}, &crops)
 
 		farm.Crops = crops
 
@@ -267,9 +265,9 @@ func GetPaginatedFarms(app *infra.Deps) http.HandlerFunc {
 		pipeline := make([]any, 0)
 
 		if search != "" {
-			pipeline = append(pipeline, bson.M{
-				"$match": bson.M{
-					"$or": []bson.M{
+			pipeline = append(pipeline, map[string]any{
+				"$match": map[string]any{
+					"$or": []map[string]any{
 						utils.RegexFilter("name", search),
 						utils.RegexFilter("location", search),
 						utils.RegexFilter("owner", search),
@@ -280,15 +278,15 @@ func GetPaginatedFarms(app *infra.Deps) http.HandlerFunc {
 
 		pipeline = append(
 			pipeline,
-			bson.M{"$sort": bson.M{"createdAt": -1}},
-			bson.M{"$lookup": bson.M{
+			map[string]any{"$sort": map[string]any{"createdAt": -1}},
+			map[string]any{"$lookup": map[string]any{
 				"from":         "crops",
 				"localField":   "farmid",
 				"foreignField": "farmid",
 				"as":           "crops",
 			}},
-			bson.M{"$skip": skip},
-			bson.M{"$limit": limit},
+			map[string]any{"$skip": skip},
+			map[string]any{"$limit": limit},
 		)
 
 		var farms []Farm
@@ -297,7 +295,7 @@ func GetPaginatedFarms(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		total, _ := app.DB.CountDocuments(ctx, farmsCollection, bson.M{})
+		total, _ := app.DB.CountDocuments(ctx, farmsCollection, map[string]any{})
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"success": true,

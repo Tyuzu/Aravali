@@ -6,18 +6,16 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-func updateEventFields(r *http.Request) (bson.M, error) {
+func updateEventFields(r *http.Request) (map[string]any, error) {
 	// Parse the multipart form with a 10MB limit
 	r.Body = http.MaxBytesReader(nil, r.Body, 10<<20)
 	if err := r.ParseMultipartForm(10 << 20); err != nil { // #nosec G120
 		return nil, fmt.Errorf("unable to parse form: %v", err)
 	}
 
-	updateFields := bson.M{}
+	updateFields := map[string]any{}
 
 	// Extract "event" field from form-data
 	eventJSON := r.FormValue("event")
@@ -72,7 +70,7 @@ func updateEventFields(r *http.Request) (bson.M, error) {
 }
 
 // Validate required fields
-func validateUpdateFields(updateFields bson.M) error {
+func validateUpdateFields(updateFields map[string]any) error {
 	if len(updateFields) == 0 {
 		return fmt.Errorf("at least one event field is required")
 	}

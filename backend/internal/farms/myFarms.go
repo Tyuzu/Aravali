@@ -2,12 +2,10 @@ package farms
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetMyFarms(app *infra.Deps) http.HandlerFunc {
@@ -20,26 +18,26 @@ func GetMyFarms(app *infra.Deps) http.HandlerFunc {
 		skip, limit := utils.ParsePagination(r, 10, 100)
 
 		pipeline := []any{
-			bson.M{
-				"$match": bson.M{
+			map[string]any{
+				"$match": map[string]any{
 					"createdBy": userID,
 				},
 			},
-			bson.M{
-				"$sort": bson.M{
+			map[string]any{
+				"$sort": map[string]any{
 					"createdAt": -1,
 				},
 			},
-			bson.M{
-				"$lookup": bson.M{
+			map[string]any{
+				"$lookup": map[string]any{
 					"from":         "crops",
 					"localField":   "farmid",
 					"foreignField": "farmid",
 					"as":           "crops",
 				},
 			},
-			bson.M{"$skip": skip},
-			bson.M{"$limit": limit},
+			map[string]any{"$skip": skip},
+			map[string]any{"$limit": limit},
 		}
 
 		var farms []Farm
@@ -61,7 +59,7 @@ func GetMyFarms(app *infra.Deps) http.HandlerFunc {
 		total, _ := app.DB.CountDocuments(
 			ctx,
 			farmsCollection,
-			bson.M{
+			map[string]any{
 				"createdBy": userID,
 			},
 		)

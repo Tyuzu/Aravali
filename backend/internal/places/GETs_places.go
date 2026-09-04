@@ -8,8 +8,6 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- Get all places (summary) ---
@@ -19,7 +17,7 @@ func GetPlaces(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var places []Place
-		if err := app.DB.FindMany(ctx, placesCollection, bson.M{}, &places); err != nil {
+		if err := app.DB.FindMany(ctx, placesCollection, map[string]any{}, &places); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch places")
 			return
 		}
@@ -66,7 +64,7 @@ func GetPlace(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			r.Context(),
 			placesCollection,
-			bson.M{"placeid": placeID},
+			map[string]any{"placeid": placeID},
 			&place,
 		); err != nil {
 
@@ -91,7 +89,7 @@ func GetPlaceQ(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			r.Context(),
 			placesCollection,
-			bson.M{"placeid": placeID},
+			map[string]any{"placeid": placeID},
 			&place,
 		); err != nil {
 

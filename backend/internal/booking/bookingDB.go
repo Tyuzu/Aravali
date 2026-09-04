@@ -3,8 +3,6 @@ package booking
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/config"
 	"scav/infra/db"
 )
@@ -35,19 +33,19 @@ func CountBookings(ctx context.Context, d db.Database, filter any) (int64, error
 }
 
 func FindSlotByID(ctx context.Context, d db.Database, id string, out *Slot) error {
-	return d.FindOne(ctx, slotsCollection, bson.M{"id": id}, out)
+	return d.FindOne(ctx, slotsCollection, map[string]any{"id": id}, out)
 }
 
 func FindTierByID(ctx context.Context, d db.Database, id string, out *Tier) error {
-	return d.FindOne(ctx, tiersCollection, bson.M{"id": id}, out)
+	return d.FindOne(ctx, tiersCollection, map[string]any{"id": id}, out)
 }
 
 func FindDateCap(ctx context.Context, d db.Database, entityType, entityId, date string, out *DateCap) error {
-	return d.FindOne(ctx, dateCapsCollection, bson.M{"entityType": entityType, "entityId": entityId, "date": date}, out)
+	return d.FindOne(ctx, dateCapsCollection, map[string]any{"entityType": entityType, "entityId": entityId, "date": date}, out)
 }
 
 func FindVendorAvailability(ctx context.Context, d db.Database, vendorId string, date string, out any) error {
-	return d.FindMany(ctx, config.Collections.VendorAvailabilityCollection, bson.M{"vendorid": vendorId, "start_date": bson.M{"$lte": date}, "end_date": bson.M{"$gte": date}}, out)
+	return d.FindMany(ctx, config.Collections.VendorAvailabilityCollection, map[string]any{"vendorid": vendorId, "start_date": map[string]any{"$lte": date}, "end_date": map[string]any{"$gte": date}}, out)
 }
 
 func InsertBooking(ctx context.Context, d db.Database, b Booking) error {
@@ -55,11 +53,11 @@ func InsertBooking(ctx context.Context, d db.Database, b Booking) error {
 }
 
 func UpdateBookingStatusByID(ctx context.Context, d db.Database, bookingID string, update any, out *Booking) error {
-	return d.FindOneAndUpdate(ctx, bookingsCollection, bson.M{"id": bookingID}, update, out)
+	return d.FindOneAndUpdate(ctx, bookingsCollection, map[string]any{"id": bookingID}, update, out)
 }
 
 func UpdateDateCapacity(ctx context.Context, d db.Database, entityType, entityId, date string, payload any) (any, error) {
-	return d.UpdateOne(ctx, dateCapsCollection, bson.M{"entityType": entityType, "entityId": entityId, "date": date}, payload)
+	return d.UpdateOne(ctx, dateCapsCollection, map[string]any{"entityType": entityType, "entityId": entityId, "date": date}, payload)
 }
 
 func DeleteSlotByID(ctx context.Context, d db.Database, slotID string) (int64, error) {

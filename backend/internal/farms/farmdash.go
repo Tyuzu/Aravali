@@ -10,8 +10,6 @@ import (
 	"scav/infra"
 	"scav/internal/cart"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetFarmDash(app *infra.Deps) http.HandlerFunc {
@@ -33,7 +31,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			farmsCollection,
-			bson.M{"createdBy": userID},
+			map[string]any{"createdBy": userID},
 			&farm,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
@@ -47,7 +45,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			cropsCollection,
-			bson.M{"farmid": farm.FarmID},
+			map[string]any{"farmid": farm.FarmID},
 			&crops,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -61,7 +59,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 		_ = app.DB.FindMany(
 			ctx,
 			farmOrdersCollection,
-			bson.M{"farmid": farm.FarmID},
+			map[string]any{"farmid": farm.FarmID},
 			&orders,
 		)
 

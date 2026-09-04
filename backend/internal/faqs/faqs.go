@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"scav/config/mqevent"
@@ -129,7 +128,7 @@ func UpdateFAQ(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{"$set": bson.M{
+		update := map[string]any{"$set": map[string]any{
 			"content":    content,
 			"updated_at": time.Now(),
 		}}

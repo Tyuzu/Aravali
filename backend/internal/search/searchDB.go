@@ -44,7 +44,7 @@ type AllSearchResults struct {
 // GetAutocompleteSuggestions returns autocomplete suggestions for a prefix
 func GetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix string) ([]string, error) {
 	prefix = strings.ToLower(prefix)
-	regex := bson.M{"$regex": prefix, "$options": "i"}
+	regex := map[string]any{"$regex": prefix, "$options": "i"}
 
 	suggestions := make(map[string]bool) // Using map to avoid duplicates
 
@@ -74,8 +74,8 @@ func GetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix str
 	}
 
 	for _, coll := range collections {
-		var results []bson.M
-		filter := bson.M{coll.field: regex}
+		var results []map[string]any
+		filter := map[string]any{coll.field: regex}
 
 		err := app.DB.FindMany(ctx, coll.name, filter, &results)
 		if err != nil {
@@ -103,7 +103,7 @@ func GetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix str
 // SearchByEntity searches in a specific entity type
 func SearchByEntity(ctx context.Context, app *infra.Deps, entityType, query string) ([]SearchResult, error) {
 	var results []SearchResult
-	regex := bson.M{"$regex": query, "$options": "i"}
+	regex := map[string]any{"$regex": query, "$options": "i"}
 
 	// Map entity types to collections and search fields
 	entityInfo := map[string]struct {
@@ -201,12 +201,12 @@ func SearchByEntity(ctx context.Context, app *infra.Deps, entityType, query stri
 	// Build OR query for multiple fields
 	orQuery := bson.A{}
 	for _, field := range info.fields {
-		orQuery = append(orQuery, bson.M{field: regex})
+		orQuery = append(orQuery, map[string]any{field: regex})
 	}
 
-	filter := bson.M{"$or": orQuery}
+	filter := map[string]any{"$or": orQuery}
 
-	var docs []bson.M
+	var docs []map[string]any
 	opts := db.FindManyOptions{
 		Limit: 50,
 	}
@@ -345,7 +345,7 @@ func SearchAll(ctx context.Context, app *infra.Deps, query string) (AllSearchRes
 }
 
 // Helper function to safely get string field from document
-func getStringField(doc bson.M, fieldName string) string {
+func getStringField(doc map[string]any, fieldName string) string {
 	if val, ok := doc[fieldName]; ok {
 		if str, ok := val.(string); ok {
 			return str

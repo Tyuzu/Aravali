@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/infra/db"
 	"scav/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* =========================

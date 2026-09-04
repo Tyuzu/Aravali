@@ -27,7 +27,7 @@ type UnreadCountResult struct {
 }
 
 func dbEnsureChatAccess(ctx context.Context, app *infra.Deps, chatID, user string) error {
-	return app.DB.FindOne(ctx, MereChatCollection, bson.M{
+	return app.DB.FindOne(ctx, MereChatCollection, map[string]any{
 		"chatid":       chatID,
 		"participants": user,
 	}, &struct{}{})
@@ -46,9 +46,9 @@ func dbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, ms
 
 	_, _ = app.DB.UpdateOne(ctx,
 		MereChatCollection,
-		bson.M{"chatid": chatID},
-		bson.M{
-			"$set": bson.M{
+		map[string]any{"chatid": chatID},
+		map[string]any{
+			"$set": map[string]any{
 				"lastMessage": preview,
 				"updatedAt":   time.Now(),
 			},
@@ -62,13 +62,13 @@ func dbInsertMessage(ctx context.Context, app *infra.Deps, msg *Message) error {
 
 func dbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newContent string) (*Message, error) {
 	now := time.Now()
-	filter := bson.M{
+	filter := map[string]any{
 		"messageid": msgID,
 		"userid":    userID,
-		"deleted":   bson.M{"$ne": true},
+		"deleted":   map[string]any{"$ne": true},
 	}
-	update := bson.M{
-		"$set": bson.M{
+	update := map[string]any{
+		"$set": map[string]any{
 			"content":  newContent,
 			"editedAt": now,
 		},
@@ -84,12 +84,12 @@ func dbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newConte
 }
 
 func dbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID string) (*Message, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"messageid": msgID,
 		"userid":    userID,
 	}
-	update := bson.M{
-		"$set": bson.M{"deleted": true},
+	update := map[string]any{
+		"$set": map[string]any{"deleted": true},
 	}
 
 	var msg Message
@@ -101,11 +101,11 @@ func dbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID string)
 	_, _ = app.DB.UpdateOne(
 		ctx,
 		MereChatCollection,
-		bson.M{
+		map[string]any{
 			"chatid":               msg.ChatID,
 			"lastMessage.senderId": msg.UserID,
 		},
-		bson.M{"$set": bson.M{"lastMessage": nil}},
+		map[string]any{"$set": map[string]any{"lastMessage": nil}},
 	)
 
 	return &msg, nil
@@ -115,7 +115,7 @@ func dbMarkAsRead(ctx context.Context, app *infra.Deps, msgID, userID string) er
 	return app.DB.AddToSet(
 		ctx,
 		MessagesCollection,
-		bson.M{"messageid": msgID},
+		map[string]any{"messageid": msgID},
 		"readBy",
 		userID,
 	)
@@ -126,7 +126,7 @@ func dbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string
 		return app.DB.AddToSet(
 			ctx,
 			MessagesCollection,
-			bson.M{"messageid": msgID},
+			map[string]any{"messageid": msgID},
 			"reactions",
 			userID,
 		)
@@ -135,9 +135,9 @@ func dbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string
 	_, err := app.DB.UpdateOne(
 		ctx,
 		MessagesCollection,
-		bson.M{"messageid": msgID},
-		bson.M{
-			"$pull": bson.M{"reactions": userID},
+		map[string]any{"messageid": msgID},
+		map[string]any{
+			"$pull": map[string]any{"reactions": userID},
 		},
 	)
 	return err
@@ -145,7 +145,7 @@ func dbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string
 
 func dbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID string) ([]string, error) {
 	var chat Chat
-	if err := app.DB.FindOne(ctx, MereChatCollection, bson.M{"chatid": chatID}, &chat); err != nil {
+	if err := app.DB.FindOne(ctx, MereChatCollection, map[string]any{"chatid": chatID}, &chat); err != nil {
 		return nil, err
 	}
 	return chat.Participants, nil
@@ -153,7 +153,7 @@ func dbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID string) 
 
 func dbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string) ([]Chat, map[string]int64, error) {
 	var chats []Chat
-	if err := app.DB.FindMany(ctx, MereChatCollection, bson.M{
+	if err := app.DB.FindMany(ctx, MereChatCollection, map[string]any{
 		"participants": user,
 	}, &chats); err != nil {
 		return nil, nil, err
@@ -165,18 +165,18 @@ func dbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string)
 	}
 
 	pipeline := bson.A{
-		bson.M{
-			"$match": bson.M{
-				"chatid":  bson.M{"$in": chatIDs},
-				"userid":  bson.M{"$ne": user},
-				"deleted": bson.M{"$ne": true},
-				"readBy":  bson.M{"$ne": user},
+		map[string]any{
+			"$match": map[string]any{
+				"chatid":  map[string]any{"$in": chatIDs},
+				"userid":  map[string]any{"$ne": user},
+				"deleted": map[string]any{"$ne": true},
+				"readBy":  map[string]any{"$ne": user},
 			},
 		},
-		bson.M{
-			"$group": bson.M{
+		map[string]any{
+			"$group": map[string]any{
 				"_id":   "$chatid",
-				"count": bson.M{"$sum": 1},
+				"count": map[string]any{"$sum": 1},
 			},
 		},
 	}
@@ -193,13 +193,13 @@ func dbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string)
 }
 
 func dbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string, limit, skip int) ([]Message, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"chatid":  chatID,
-		"deleted": bson.M{"$ne": true},
+		"deleted": map[string]any{"$ne": true},
 	}
 
 	if term != "" {
-		filter["content"] = bson.M{
+		filter["content"] = map[string]any{
 			"$regex":   regexp.QuoteMeta(term),
 			"$options": "i",
 		}

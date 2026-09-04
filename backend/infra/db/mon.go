@@ -294,7 +294,7 @@ func (m *MongoDatabase) Inc(ctx context.Context, collection string, filter any, 
 	filter = m.normalizeFilter(filter)
 
 	_, err := m.collection(collection).
-		UpdateOne(ctx, filter, bson.M{"$inc": bson.M{field: value}})
+		UpdateOne(ctx, filter, map[string]any{"$inc": map[string]any{field: value}})
 
 	return err
 }
@@ -303,7 +303,7 @@ func (m *MongoDatabase) AddToSet(ctx context.Context, collection string, filter 
 	filter = m.normalizeFilter(filter)
 
 	_, err := m.collection(collection).
-		UpdateOne(ctx, filter, bson.M{"$addToSet": bson.M{field: value}})
+		UpdateOne(ctx, filter, map[string]any{"$addToSet": map[string]any{field: value}})
 
 	return err
 }
@@ -383,22 +383,19 @@ func (m *MongoDatabase) normalizeFilter(filter any) any {
 	if mf, ok := filter.(map[string]any); ok {
 		return m.translateFilter(mf)
 	}
-	if mf, ok := filter.(bson.M); ok {
-		return m.translateFilter(map[string]any(mf))
-	}
 	return filter
 }
 
-func (m *MongoDatabase) translateFilter(filter map[string]any) bson.M {
-	out := bson.M{}
+func (m *MongoDatabase) translateFilter(filter map[string]any) map[string]any {
+	out := map[string]any{}
 
 	for k, v := range filter {
 		switch {
 		case strings.HasSuffix(k, "_ne"):
-			out[strings.TrimSuffix(k, "_ne")] = bson.M{"$ne": v}
+			out[strings.TrimSuffix(k, "_ne")] = map[string]any{"$ne": v}
 
 		case strings.HasSuffix(k, "_contains"):
-			out[strings.TrimSuffix(k, "_contains")] = bson.M{
+			out[strings.TrimSuffix(k, "_contains")] = map[string]any{
 				"$regex":   v,
 				"$options": "i",
 			}
@@ -411,8 +408,8 @@ func (m *MongoDatabase) translateFilter(filter map[string]any) bson.M {
 	return out
 }
 
-func buildProjection(fields []string) bson.M {
-	p := bson.M{}
+func buildProjection(fields []string) map[string]any {
+	p := map[string]any{}
 	for _, f := range fields {
 		p[f] = 1
 	}
@@ -421,26 +418,20 @@ func buildProjection(fields []string) bson.M {
 
 func normalizeUpdateDocument(update any) any {
 	switch u := update.(type) {
-	case bson.M:
+	case map[string]any:
 		if hasMongoUpdateOperator(u) {
 			return u
 		}
-		return bson.M{"$set": u}
-
-	case map[string]any:
-		if hasMongoUpdateOperator(u) {
-			return bson.M(u)
-		}
-		return bson.M{"$set": bson.M(u)}
+		return map[string]any{"$set": u}
 
 	case []bson.E:
 		if len(u) > 0 && strings.HasPrefix(u[0].Key, "$") {
 			return u
 		}
-		return bson.M{"$set": u}
+		return map[string]any{"$set": u}
 
 	default:
-		return bson.M{"$set": update}
+		return map[string]any{"$set": update}
 	}
 }
 

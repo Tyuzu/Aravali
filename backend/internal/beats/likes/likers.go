@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/utils"
 )
@@ -66,7 +64,7 @@ func GetLikers(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindMany(
 			ctx,
 			likesCollection,
-			bson.M{
+			map[string]any{
 				"entity_type": entityType,
 				"entity_id":   entityID,
 			},
@@ -112,8 +110,8 @@ func GetLikers(app *infra.Deps) http.HandlerFunc {
 		err = app.DB.FindMany(
 			ctx,
 			usersCollection,
-			bson.M{
-				"userid": bson.M{
+			map[string]any{
+				"userid": map[string]any{
 					"$in": userIDs,
 				},
 			},

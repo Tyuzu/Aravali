@@ -3,15 +3,15 @@ package home
 import (
 	"context"
 	"math/rand"
-	log "scav/utils/logger"
 	"net/http"
+	log "scav/utils/logger"
 	"strconv"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // HomeCard response type
@@ -23,10 +23,10 @@ type HomeCard struct {
 }
 
 // categoryProjection returns collection name and projection function
-func categoryProjection(category string) (string, func(bson.M) HomeCard) {
+func categoryProjection(category string) (string, func(map[string]any) HomeCard) {
 	switch category {
 	case "Places":
-		return "places", func(doc bson.M) HomeCard {
+		return "places", func(doc map[string]any) HomeCard {
 			id, _ := doc["placeid"].(string)
 			banner, _ := doc["banner"].(string)
 			title, _ := doc["name"].(string)
@@ -41,7 +41,7 @@ func categoryProjection(category string) (string, func(bson.M) HomeCard) {
 		}
 
 	case "Events":
-		return "events", func(doc bson.M) HomeCard {
+		return "events", func(doc map[string]any) HomeCard {
 			id, _ := doc["eventid"].(string)
 			banner, _ := doc["banner"].(string)
 			title, _ := doc["title"].(string)
@@ -56,7 +56,7 @@ func categoryProjection(category string) (string, func(bson.M) HomeCard) {
 		}
 
 	case "Baitos":
-		return "baitos", func(doc bson.M) HomeCard {
+		return "baitos", func(doc map[string]any) HomeCard {
 			id, _ := doc["baitoid"].(string)
 			banner, _ := doc["banner"].(string)
 			title, _ := doc["title"].(string)
@@ -71,7 +71,7 @@ func categoryProjection(category string) (string, func(bson.M) HomeCard) {
 		}
 
 	case "Products":
-		return "products", func(doc bson.M) HomeCard {
+		return "products", func(doc map[string]any) HomeCard {
 			id, _ := doc["productid"].(string)
 
 			banner := ""
@@ -93,7 +93,7 @@ func categoryProjection(category string) (string, func(bson.M) HomeCard) {
 		}
 
 	case "Posts":
-		return "posts", func(doc bson.M) HomeCard {
+		return "posts", func(doc map[string]any) HomeCard {
 			id, _ := doc["postid"].(string)
 			banner, _ := doc["thumb"].(string)
 			title, _ := doc["title"].(string)

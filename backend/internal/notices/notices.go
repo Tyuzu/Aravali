@@ -11,8 +11,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- helper: make summary ---
@@ -115,7 +113,7 @@ func UpdateNotice(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			noticesCollection,
-			bson.M{"noticeid": noticeID},
+			map[string]any{"noticeid": noticeID},
 			&existing,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Notice not found")
@@ -127,7 +125,7 @@ func UpdateNotice(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{
+		update := map[string]any{
 			"title":      title,
 			"content":    content,
 			"summary":    summary,
@@ -138,7 +136,7 @@ func UpdateNotice(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.Update(
 			ctx,
 			noticesCollection,
-			bson.M{"noticeid": noticeID},
+			map[string]any{"noticeid": noticeID},
 			update,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB update failed")
@@ -149,7 +147,7 @@ func UpdateNotice(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			noticesCollection,
-			bson.M{"noticeid": noticeID},
+			map[string]any{"noticeid": noticeID},
 			&existing,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Fetch failed")
@@ -182,7 +180,7 @@ func DeleteNotice(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			noticesCollection,
-			bson.M{"noticeid": noticeID},
+			map[string]any{"noticeid": noticeID},
 			&existing,
 		); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Notice not found")
@@ -197,7 +195,7 @@ func DeleteNotice(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.Delete(
 			ctx,
 			noticesCollection,
-			bson.M{"noticeid": noticeID},
+			map[string]any{"noticeid": noticeID},
 		); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Delete failed")
 			return

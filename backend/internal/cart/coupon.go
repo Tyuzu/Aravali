@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
@@ -62,7 +60,7 @@ func validateCouponServer(ctx context.Context, code string, subtotal int64, app 
 	}
 
 	var coupon dbCoupon
-	err := app.DB.FindOne(ctx, couponCollection, bson.M{"code": code}, &coupon)
+	err := app.DB.FindOne(ctx, couponCollection, map[string]any{"code": code}, &coupon)
 	if err != nil || !coupon.Active {
 		return nil, errors.New("invalid coupon")
 	}
@@ -123,7 +121,7 @@ func ValidateCouponHandler(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		code := strings.TrimSpace(strings.ToLower(req.Code))
-		filter := bson.M{
+		filter := map[string]any{
 			"code":       code,
 			"entityId":   req.EntityID,
 			"entityType": strings.ToLower(req.EntityType),

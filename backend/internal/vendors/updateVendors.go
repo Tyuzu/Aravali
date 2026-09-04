@@ -4,16 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-	"net/http"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // UpdateVendorHandler updates vendor information.
@@ -53,7 +51,7 @@ func UpdateVendorHandler(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		updateDoc := bson.M{}
+		updateDoc := map[string]any{}
 		allowedFields := map[string]struct{}{
 			"name":         {},
 			"category":     {},

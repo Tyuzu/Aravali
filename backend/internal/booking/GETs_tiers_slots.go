@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/utils"
 )
@@ -16,7 +14,7 @@ func ListSlots(app *infra.Deps) http.HandlerFunc {
 		entityType := r.URL.Query().Get("entityType")
 		entityID := r.URL.Query().Get("entityId")
 
-		filter := bson.M{}
+		filter := map[string]any{}
 		if entityType != "" {
 			filter["entityType"] = entityType
 		}
@@ -45,7 +43,7 @@ func ListBookings(app *infra.Deps) http.HandlerFunc {
 		entityID := r.URL.Query().Get("entityId")
 		status := r.URL.Query().Get("status")
 
-		filter := bson.M{}
+		filter := map[string]any{}
 		if entityType != "" {
 			filter["entityType"] = entityType
 		}
@@ -104,7 +102,7 @@ func ListTiers(app *infra.Deps) http.HandlerFunc {
 		entityType := r.URL.Query().Get("entityType")
 		entityID := r.URL.Query().Get("entityId")
 
-		filter := bson.M{}
+		filter := map[string]any{}
 		if entityType != "" {
 			filter["entityType"] = entityType
 		}

@@ -5,8 +5,6 @@ import (
 
 	"scav/infra/db"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/config"
 )
 
@@ -23,16 +21,16 @@ func insertFarm(ctx context.Context, database db.Database, farm Farm) error {
 
 func getFarmByID(ctx context.Context, database db.Database, farmID string) (Farm, error) {
 	var farm Farm
-	err := database.FindOne(ctx, farmsCollection, bson.M{"farmid": farmID}, &farm)
+	err := database.FindOne(ctx, farmsCollection, map[string]any{"farmid": farmID}, &farm)
 	return farm, err
 }
 
 func updateOwnedFarm(ctx context.Context, database db.Database, farmID, userID string, update any) (any, error) {
 	// The owner field on Farm is stored as "createdBy" (see farmModels.go).
 	// Use that field to ensure the update only affects farms owned by the user.
-	return database.UpdateOne(ctx, farmsCollection, bson.M{"farmid": farmID, "createdBy": userID}, update)
+	return database.UpdateOne(ctx, farmsCollection, map[string]any{"farmid": farmID, "createdBy": userID}, update)
 }
 
 func deleteFarmByID(ctx context.Context, database db.Database, farmID string) (int64, error) {
-	return database.DeleteOne(ctx, farmsCollection, bson.M{"farmid": farmID})
+	return database.DeleteOne(ctx, farmsCollection, map[string]any{"farmid": farmID})
 }

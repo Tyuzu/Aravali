@@ -11,8 +11,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // UpdatePlaceInfo updates accessibility and amenities for a place
@@ -38,7 +36,7 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			placesCollection,
-			bson.M{"placeid": placeID},
+			map[string]any{"placeid": placeID},
 			&existing,
 		); err != nil {
 			http.Error(w, "Place not found", http.StatusNotFound)
@@ -60,7 +58,7 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{}
+		update := map[string]any{}
 
 		if payload.AccessibilityInfo != "" {
 			update["accessibility_info"] = payload.AccessibilityInfo
@@ -96,7 +94,7 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.Update(
 			ctx,
 			placesCollection,
-			bson.M{"placeid": placeID},
+			map[string]any{"placeid": placeID},
 			update,
 		); err != nil {
 			http.Error(w, "Failed to update place info", http.StatusInternalServerError)

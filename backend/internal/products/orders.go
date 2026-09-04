@@ -2,16 +2,14 @@ package products
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/internal/auth"
 	"scav/internal/cart"
 	"scav/internal/farms"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* ---------------------------------------------------- */
@@ -24,7 +22,7 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var orders []cart.FarmOrder
-		if err := app.DB.FindMany(ctx, farmOrdersCollection, bson.M{}, &orders); err != nil {
+		if err := app.DB.FindMany(ctx, farmOrdersCollection, map[string]any{}, &orders); err != nil {
 			log.Println("GetIncomingOrders error:", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
@@ -65,13 +63,13 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 
 func getUserByID(ctx context.Context, id string, app *infra.Deps) auth.User {
 	var user auth.User
-	_ = app.DB.FindOne(ctx, usersCollection, bson.M{"userid": id}, &user)
+	_ = app.DB.FindOne(ctx, usersCollection, map[string]any{"userid": id}, &user)
 	return user
 }
 
 func getCropByID(ctx context.Context, id string, app *infra.Deps) farms.Crop {
 	var crop farms.Crop
-	_ = app.DB.FindOne(ctx, cropsCollection, bson.M{"cropid": id}, &crop)
+	_ = app.DB.FindOne(ctx, cropsCollection, map[string]any{"cropid": id}, &crop)
 	return crop
 }
 

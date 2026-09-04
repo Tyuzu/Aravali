@@ -12,8 +12,6 @@ import (
 	"scav/internal/pay/stripe"
 	"scav/internal/userdata"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // POST /merch/event/:eventId/:merchId/payment-session
@@ -84,7 +82,7 @@ func ConfirmMerchPurchase(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"entity_id": eventID,
 				"merchid":   merchID,
 			},
@@ -114,13 +112,13 @@ func ConfirmMerchPurchase(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOneAndUpdate(
 			ctx,
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"entity_id": eventID,
 				"merchid":   merchID,
-				"stock":     bson.M{"$gte": body.Quantity},
+				"stock":     map[string]any{"$gte": body.Quantity},
 			},
-			bson.M{
-				"$inc": bson.M{"stock": -body.Quantity},
+			map[string]any{
+				"$inc": map[string]any{"stock": -body.Quantity},
 			},
 			&updatedMerch,
 		)

@@ -22,7 +22,7 @@ func GetItems(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := bson.M{}
+		filter := map[string]any{}
 
 		if t := r.URL.Query().Get("type"); t != "" {
 			filter["type"] = t

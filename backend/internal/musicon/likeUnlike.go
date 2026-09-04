@@ -3,13 +3,11 @@ package musicon
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func LikeSong(app *infra.Deps) http.HandlerFunc {
@@ -33,13 +31,13 @@ func LikeSong(app *infra.Deps) http.HandlerFunc {
 		playlistID := "likes_" + userID
 		now := time.Now()
 
-		filter := bson.M{
+		filter := map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}
 
-		update := bson.M{
-			"$setOnInsert": bson.M{
+		update := map[string]any{
+			"$setOnInsert": map[string]any{
 				"playlistid":  playlistID,
 				"userid":      userID,
 				"name":        "Liked Songs",
@@ -48,10 +46,10 @@ func LikeSong(app *infra.Deps) http.HandlerFunc {
 				"duration":    0,
 				"createdAt":   now,
 			},
-			"$addToSet": bson.M{
+			"$addToSet": map[string]any{
 				"songs": songID,
 			},
-			"$set": bson.M{
+			"$set": map[string]any{
 				"updatedAt": now,
 			},
 		}
@@ -62,7 +60,7 @@ func LikeSong(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		respondJSON(w, http.StatusOK, bson.M{
+		respondJSON(w, http.StatusOK, map[string]any{
 			"song_id": songID,
 			"liked":   true,
 		}, "Song liked successfully")
@@ -89,16 +87,16 @@ func UnlikeSong(app *infra.Deps) http.HandlerFunc {
 		playlistID := "likes_" + userID
 		now := time.Now()
 
-		filter := bson.M{
+		filter := map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}
 
-		update := bson.M{
-			"$pull": bson.M{
+		update := map[string]any{
+			"$pull": map[string]any{
 				"songs": songID,
 			},
-			"$set": bson.M{
+			"$set": map[string]any{
 				"updatedAt": now,
 			},
 		}
@@ -109,7 +107,7 @@ func UnlikeSong(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		respondJSON(w, http.StatusOK, bson.M{
+		respondJSON(w, http.StatusOK, map[string]any{
 			"song_id": songID,
 			"liked":   false,
 		}, "Song unliked successfully")
@@ -133,7 +131,7 @@ func GetUserLikes(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var playlist Playlist
-		err := app.DB.FindOne(ctx, playlistsCollection, bson.M{
+		err := app.DB.FindOne(ctx, playlistsCollection, map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}, &playlist)

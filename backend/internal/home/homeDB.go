@@ -3,10 +3,10 @@ package home
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/infra/db"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func fetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string, skip, limit int) ([]HomeCard, error) {
@@ -21,8 +21,8 @@ func fetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string,
 		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 	}
 
-	var docs []bson.M
-	if err := app.DB.FindManyWithOptions(ctx, collection, bson.M{}, opts, &docs); err != nil {
+	var docs []map[string]any
+	if err := app.DB.FindManyWithOptions(ctx, collection, map[string]any{}, opts, &docs); err != nil {
 		return nil, err
 	}
 

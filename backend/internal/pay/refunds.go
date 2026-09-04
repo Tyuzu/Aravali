@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -66,7 +65,7 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 		var regularOrder struct {
 			Total int64 `bson:"total"`
 		}
-		err := app.DB.FindOne(ctx, ordersCollection, bson.M{
+		err := app.DB.FindOne(ctx, ordersCollection, map[string]any{
 			"orderId": req.OrderID,
 			"userid":  userID,
 		}, &regularOrder)
@@ -80,7 +79,7 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 			var farmOrder struct {
 				Total int64 `bson:"total"`
 			}
-			err = app.DB.FindOne(ctx, farmOrdersCollection, bson.M{
+			err = app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{
 				"orderid": req.OrderID,
 				"userid":  userID,
 			}, &farmOrder)
@@ -107,9 +106,9 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 		// Ensure there isn't already an active refund request.
 		var existingRefund tickets.RefundRequest
 
-		err = app.DB.FindOne(ctx, RefundsCollection, bson.M{
+		err = app.DB.FindOne(ctx, RefundsCollection, map[string]any{
 			"order_id": req.OrderID,
-			"status": bson.M{
+			"status": map[string]any{
 				"$in": []string{"pending", "approved"},
 			},
 		}, &existingRefund)
@@ -181,7 +180,7 @@ func GetMyRefundRequests(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Count total
-		total, err := app.DB.Count(ctx, RefundsCollection, bson.M{
+		total, err := app.DB.Count(ctx, RefundsCollection, map[string]any{
 			"userid": userID,
 		})
 		if err != nil {
@@ -194,14 +193,14 @@ func GetMyRefundRequests(app *infra.Deps) http.HandlerFunc {
 		opts := options.Find().
 			SetSkip(int64(skip)).
 			SetLimit(int64(limit)).
-			SetSort(bson.M{"created_at": -1})
+			SetSort(map[string]any{"created_at": -1})
 
 		// Fetch refunds
 		var refunds []tickets.RefundRequest
 		err = app.DB.FindMany(
 			ctx,
 			RefundsCollection,
-			bson.M{"userid": userID},
+			map[string]any{"userid": userID},
 			&refunds,
 			opts,
 		)
@@ -257,7 +256,7 @@ func GetAllRefundRequests(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Build filter
-		filter := bson.M{}
+		filter := map[string]any{}
 
 		if status != "" {
 			filter["status"] = status
@@ -279,7 +278,7 @@ func GetAllRefundRequests(app *infra.Deps) http.HandlerFunc {
 		opts := options.Find().
 			SetSkip(int64(skip)).
 			SetLimit(int64(limit)).
-			SetSort(bson.M{"created_at": -1})
+			SetSort(map[string]any{"created_at": -1})
 
 		// Fetch refunds
 		var refunds []tickets.RefundRequest
@@ -335,7 +334,7 @@ func ApproveRefundRequest(app *infra.Deps) http.HandlerFunc {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 
 		var refund OrderRefundRequest
-		err := app.DB.FindOne(ctx, RefundsCollection, bson.M{"_id": refundID}, &refund)
+		err := app.DB.FindOne(ctx, RefundsCollection, map[string]any{"_id": refundID}, &refund)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				utils.RespondWithError(w, http.StatusNotFound, "Refund request not found")
@@ -379,9 +378,9 @@ func ApproveRefundRequest(app *infra.Deps) http.HandlerFunc {
 		_, err = app.DB.UpdateOne(
 			ctx,
 			RefundsCollection,
-			bson.M{"_id": refundID},
-			bson.M{
-				"$set": bson.M{
+			map[string]any{"_id": refundID},
+			map[string]any{
+				"$set": map[string]any{
 					"status":         "approved",
 					"transaction_id": refundTxn.ID,
 					"reviewed_by":    adminID,
@@ -450,7 +449,7 @@ func RejectRefundRequest(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var refund OrderRefundRequest
-		err := app.DB.FindOne(ctx, RefundsCollection, bson.M{"_id": refundID}, &refund)
+		err := app.DB.FindOne(ctx, RefundsCollection, map[string]any{"_id": refundID}, &refund)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				utils.RespondWithError(w, http.StatusNotFound, "Refund request not found")
@@ -470,9 +469,9 @@ func RejectRefundRequest(app *infra.Deps) http.HandlerFunc {
 		_, err = app.DB.UpdateOne(
 			ctx,
 			RefundsCollection,
-			bson.M{"_id": refundID},
-			bson.M{
-				"$set": bson.M{
+			map[string]any{"_id": refundID},
+			map[string]any{
+				"$set": map[string]any{
 					"status":       "rejected",
 					"reviewed_by":  adminID,
 					"reviewed_at":  now,

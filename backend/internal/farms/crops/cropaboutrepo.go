@@ -3,8 +3,6 @@ package crops
 import (
 	"context"
 	"scav/infra"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func CreateCropAbout(
@@ -30,7 +28,7 @@ func GetCropAbout(
 	err := app.DB.FindOne(
 		ctx,
 		cropsAboutCollection,
-		bson.M{"id": cropID},
+		map[string]any{"id": cropID},
 		&crop,
 	)
 
@@ -51,7 +49,7 @@ func GetAllCropAbouts(
 	err := app.DB.FindMany(
 		ctx,
 		cropsAboutCollection,
-		bson.M{},
+		map[string]any{},
 		&crops,
 	)
 
@@ -68,8 +66,8 @@ func UpdateCropAbout(
 	return app.DB.UpdateOne(
 		ctx,
 		cropsAboutCollection,
-		bson.M{"id": cropID},
-		bson.M{
+		map[string]any{"id": cropID},
+		map[string]any{
 			"$set": crop,
 		},
 	)
@@ -84,7 +82,7 @@ func DeleteCropAbout(
 	_, err := app.DB.DeleteOne(
 		ctx,
 		cropsAboutCollection,
-		bson.M{"id": cropID},
+		map[string]any{"id": cropID},
 	)
 
 	return err

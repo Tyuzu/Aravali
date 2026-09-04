@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- Helpers ---
@@ -193,7 +191,7 @@ func UpdateRecipe(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		updates := bson.M{
+		updates := map[string]any{
 			"title":       r.FormValue("title"),
 			"description": r.FormValue("description"),
 			"cookTime":    r.FormValue("cookTime"),
@@ -269,8 +267,8 @@ func UpdateRecipe(app *infra.Deps) http.HandlerFunc {
 		_, err := app.DB.Update(
 			ctx,
 			recipeCollection,
-			bson.M{"recipeid": id},
-			bson.M{"$set": updates},
+			map[string]any{"recipeid": id},
+			map[string]any{"$set": updates},
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

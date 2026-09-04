@@ -3,12 +3,10 @@ package musicon
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --------------------------- Playlist Handlers ---------------------------
@@ -26,9 +24,9 @@ func GetUserPlaylists(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		// Exclude special likes playlist from normal playlists list
-		filter := bson.M{
+		filter := map[string]any{
 			"userid": userID,
-			"playlistid": bson.M{
+			"playlistid": map[string]any{
 				"$ne": "likes_" + userID,
 			},
 		}
@@ -114,7 +112,7 @@ func DeletePlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := bson.M{
+		filter := map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}
@@ -164,14 +162,14 @@ func AddSongToPlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := bson.M{
+		filter := map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}
 
-		update := bson.M{
-			"$addToSet": bson.M{"songs": body.SongID},
-			"$set":      bson.M{"updatedAt": time.Now()},
+		update := map[string]any{
+			"$addToSet": map[string]any{"songs": body.SongID},
+			"$set":      map[string]any{"updatedAt": time.Now()},
 		}
 
 		if _, err := app.DB.UpdateOne(ctx, playlistsCollection, filter, update); err != nil {
@@ -207,14 +205,14 @@ func RemoveSongFromPlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := bson.M{
+		filter := map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}
 
-		update := bson.M{
-			"$pull": bson.M{"songs": songID},
-			"$set":  bson.M{"updatedAt": time.Now()},
+		update := map[string]any{
+			"$pull": map[string]any{"songs": songID},
+			"$set":  map[string]any{"updatedAt": time.Now()},
 		}
 
 		if _, err := app.DB.UpdateOne(ctx, playlistsCollection, filter, update); err != nil {
@@ -266,13 +264,13 @@ func UpdatePlaylistInfo(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := bson.M{
+		filter := map[string]any{
 			"playlistid": playlistID,
 			"userid":     userID,
 		}
 
-		update := bson.M{
-			"$set": bson.M{
+		update := map[string]any{
+			"$set": map[string]any{
 				"name":        req.Name,
 				"description": req.Description,
 				"coverUrl":    req.CoverURL,

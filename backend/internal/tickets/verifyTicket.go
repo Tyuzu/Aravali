@@ -3,12 +3,10 @@ package tickets
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func VerifyTicket(app *infra.Deps) http.HandlerFunc {
@@ -28,7 +26,7 @@ func VerifyTicket(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			purchasedTicketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid":    eventID,
 				"uniquecode": uniqueCode,
 			},

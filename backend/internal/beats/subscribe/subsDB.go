@@ -6,8 +6,6 @@ import (
 	"log"
 	"scav/config"
 	"scav/infra"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var subscribersCollection = config.Collections.SubscribersCollection
@@ -32,25 +30,25 @@ func UpdateEntitySubscription(
 	var entityUpdate any
 
 	if action == "subscribe" {
-		userUpdate = bson.M{
-			"$addToSet": bson.M{"subscribed": entityID},
+		userUpdate = map[string]any{
+			"$addToSet": map[string]any{"subscribed": entityID},
 		}
-		entityUpdate = bson.M{
-			"$addToSet": bson.M{"subscribers": userID},
+		entityUpdate = map[string]any{
+			"$addToSet": map[string]any{"subscribers": userID},
 		}
 	} else {
-		userUpdate = bson.M{
-			"$pull": bson.M{"subscribed": entityID},
+		userUpdate = map[string]any{
+			"$pull": map[string]any{"subscribed": entityID},
 		}
-		entityUpdate = bson.M{
-			"$pull": bson.M{"subscribers": userID},
+		entityUpdate = map[string]any{
+			"$pull": map[string]any{"subscribers": userID},
 		}
 	}
 
 	if _, err := app.DB.UpdateOne(
 		ctx,
 		subscribersCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 		userUpdate,
 	); err != nil {
 		return fmt.Errorf("failed to update user subscriptions: %w", err)
@@ -59,7 +57,7 @@ func UpdateEntitySubscription(
 	if _, err := app.DB.UpdateOne(
 		ctx,
 		subscribersCollection,
-		bson.M{"userid": entityID},
+		map[string]any{"userid": entityID},
 		entityUpdate,
 	); err != nil {
 		return fmt.Errorf("failed to update entity subscribers: %w", err)
@@ -69,7 +67,7 @@ func UpdateEntitySubscription(
 }
 
 func EnsureSubscriptionEntry(ctx context.Context, userID string, app *infra.Deps) {
-	doc := bson.M{
+	doc := map[string]any{
 		"userid":      userID,
 		"subscribed":  []string{},
 		"subscribers": []string{},
@@ -78,8 +76,8 @@ func EnsureSubscriptionEntry(ctx context.Context, userID string, app *infra.Deps
 	err := app.DB.Upsert(
 		ctx,
 		subscribersCollection,
-		bson.M{"userid": userID},
-		bson.M{"$setOnInsert": doc},
+		map[string]any{"userid": userID},
+		map[string]any{"$setOnInsert": doc},
 	)
 
 	if err != nil {

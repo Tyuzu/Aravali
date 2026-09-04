@@ -3,11 +3,9 @@ package filemgr
 import (
 	"context"
 	"fmt"
-	log "scav/utils/logger"
 	"net/http"
+	log "scav/utils/logger"
 	"strings"
-
-	"go.mongodb.org/mongo-driver/bson"
 
 	"scav/config"
 	"scav/infra"
@@ -104,8 +102,8 @@ func updateEntityMedia(app *infra.Deps, entityType string, entityId string, atta
 		return nil, fmt.Errorf("unsupported entity type: %s", entityType)
 	}
 
-	filter := bson.M{meta.IDField: entityId}
-	setFields := bson.M{}
+	filter := map[string]any{meta.IDField: entityId}
+	setFields := map[string]any{}
 	var images []string
 
 	for _, attachment := range attachments {
@@ -138,12 +136,12 @@ func updateEntityMedia(app *infra.Deps, entityType string, entityId string, atta
 		}
 	}
 
-	update := bson.M{}
+	update := map[string]any{}
 	if len(setFields) > 0 {
 		update["$set"] = setFields
 	}
 	if len(images) > 0 {
-		update["$push"] = bson.M{"images": bson.M{"$each": images}}
+		update["$push"] = map[string]any{"images": map[string]any{"$each": images}}
 	}
 	if len(update) == 0 {
 		return nil, nil

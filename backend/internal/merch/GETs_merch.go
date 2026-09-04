@@ -7,8 +7,6 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetMerch(app *infra.Deps) http.HandlerFunc {
@@ -29,11 +27,11 @@ func GetMerch(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOne(
 			r.Context(),
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"entity_type": entityType,
 				"entity_id":   eventID,
 				"merchid":     merchID,
-				"deletedAt":   bson.M{"$exists": false},
+				"deletedAt":   map[string]any{"$exists": false},
 			},
 			&merch,
 		)
@@ -72,10 +70,10 @@ func GetMerchs(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindMany(
 			ctx,
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"entity_type": entityType,
 				"entity_id":   eventID,
-				"deletedAt":   bson.M{"$exists": false},
+				"deletedAt":   map[string]any{"$exists": false},
 			},
 			&list,
 		)
@@ -106,9 +104,9 @@ func GetMerchPage(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOne(
 			r.Context(),
 			merchCollection,
-			bson.M{
+			map[string]any{
 				"merchid":   merchID,
-				"deletedAt": bson.M{"$exists": false},
+				"deletedAt": map[string]any{"$exists": false},
 			},
 			&merch,
 		)

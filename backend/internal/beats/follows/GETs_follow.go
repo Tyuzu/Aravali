@@ -3,8 +3,6 @@ package follows
 import (
 	"net/http"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/internal/auth"
 	"scav/utils"
@@ -29,9 +27,9 @@ func DoesFollow(app *infra.Deps) http.HandlerFunc {
 		count, err := app.DB.CountDocuments(
 			r.Context(),
 			followingsCollection,
-			bson.M{
+			map[string]any{
 				"userid": userID,
-				"follows": bson.M{
+				"follows": map[string]any{
 					"$in": []string{followedUserID},
 				},
 			},
@@ -62,7 +60,7 @@ func GetFollowers(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOne(
 			r.Context(),
 			followingsCollection,
-			bson.M{"userid": userID},
+			map[string]any{"userid": userID},
 			&userFollow,
 		)
 		if err != nil || len(userFollow.Followers) == 0 {
@@ -74,8 +72,8 @@ func GetFollowers(app *infra.Deps) http.HandlerFunc {
 		err = app.DB.FindMany(
 			r.Context(),
 			usersCollection,
-			bson.M{
-				"userid": bson.M{
+			map[string]any{
+				"userid": map[string]any{
 					"$in": userFollow.Followers,
 				},
 			},
@@ -103,7 +101,7 @@ func GetFollowing(app *infra.Deps) http.HandlerFunc {
 		err := app.DB.FindOne(
 			r.Context(),
 			followingsCollection,
-			bson.M{"userid": userID},
+			map[string]any{"userid": userID},
 			&userFollow,
 		)
 		if err != nil || len(userFollow.Follows) == 0 {
@@ -115,8 +113,8 @@ func GetFollowing(app *infra.Deps) http.HandlerFunc {
 		err = app.DB.FindMany(
 			r.Context(),
 			usersCollection,
-			bson.M{
-				"userid": bson.M{
+			map[string]any{
+				"userid": map[string]any{
 					"$in": userFollow.Follows,
 				},
 			},

@@ -9,8 +9,6 @@ import (
 	"scav/config"
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const roleApplicationsCollection = "role_applications"
@@ -102,7 +100,7 @@ func ApplyForRole(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing RoleApplication
-		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"userid": userID, "role": payload.Role, "status": "pending"}, &existing); err == nil {
+		if err := app.DB.FindOne(ctx, roleApplicationsCollection, map[string]any{"userid": userID, "role": payload.Role, "status": "pending"}, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You already submitted a pending request for this role")
 			return
 		}
@@ -139,7 +137,7 @@ func GetMyRoleRequests(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var applications []RoleApplication
-		if err := app.DB.FindMany(ctx, roleApplicationsCollection, bson.M{"userid": userID}, &applications); err != nil {
+		if err := app.DB.FindMany(ctx, roleApplicationsCollection, map[string]any{"userid": userID}, &applications); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to load your role requests")
 			return
 		}
@@ -151,7 +149,7 @@ func ListRoleRequests(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		var applications []RoleApplication
-		filter := bson.M{}
+		filter := map[string]any{}
 		if status := normalizeRoleRequestStatus(r.URL.Query().Get("status")); status != "" {
 			filter["status"] = status
 		}
@@ -173,7 +171,7 @@ func ApproveRoleRequest(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var application RoleApplication
-		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"id": appID}, &application); err != nil {
+		if err := app.DB.FindOne(ctx, roleApplicationsCollection, map[string]any{"id": appID}, &application); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Application not found")
 			return
 		}
@@ -185,18 +183,18 @@ func ApproveRoleRequest(app *infra.Deps) http.HandlerFunc {
 		var user struct {
 			Role []string `json:"role" bson:"role"`
 		}
-		if err := app.DB.FindOne(ctx, usersCollection, bson.M{"userid": application.UserID}, &user); err != nil {
+		if err := app.DB.FindOne(ctx, usersCollection, map[string]any{"userid": application.UserID}, &user); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "User not found")
 			return
 		}
 
 		user.Role = MergeRoleList(user.Role, application.Role)
-		if _, err := app.DB.UpdateOne(ctx, usersCollection, bson.M{"userid": application.UserID}, bson.M{"$set": bson.M{"role": user.Role, "updated_at": time.Now().UTC()}}); err != nil {
+		if _, err := app.DB.UpdateOne(ctx, usersCollection, map[string]any{"userid": application.UserID}, map[string]any{"$set": map[string]any{"role": user.Role, "updated_at": time.Now().UTC()}}); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update user role")
 			return
 		}
 
-		if _, err := app.DB.UpdateOne(ctx, roleApplicationsCollection, bson.M{"id": appID}, bson.M{"$set": bson.M{"status": "approved", "updated_at": time.Now().UTC()}}); err != nil {
+		if _, err := app.DB.UpdateOne(ctx, roleApplicationsCollection, map[string]any{"id": appID}, map[string]any{"$set": map[string]any{"status": "approved", "updated_at": time.Now().UTC()}}); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update role application")
 			return
 		}
@@ -215,7 +213,7 @@ func RejectRoleRequest(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var application RoleApplication
-		if err := app.DB.FindOne(ctx, roleApplicationsCollection, bson.M{"id": appID}, &application); err != nil {
+		if err := app.DB.FindOne(ctx, roleApplicationsCollection, map[string]any{"id": appID}, &application); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Application not found")
 			return
 		}
@@ -224,7 +222,7 @@ func RejectRoleRequest(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.UpdateOne(ctx, roleApplicationsCollection, bson.M{"id": appID}, bson.M{"$set": bson.M{"status": "rejected", "updated_at": time.Now().UTC()}}); err != nil {
+		if _, err := app.DB.UpdateOne(ctx, roleApplicationsCollection, map[string]any{"id": appID}, map[string]any{"$set": map[string]any{"status": "rejected", "updated_at": time.Now().UTC()}}); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Application not found or update failed")
 			return
 		}

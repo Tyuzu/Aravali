@@ -12,8 +12,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func ListAvailabilityHandler(app *infra.Deps) http.HandlerFunc {
@@ -27,7 +25,7 @@ func ListAvailabilityHandler(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := bson.M{"vendorid": vendorID}
+		filter := map[string]any{"vendorid": vendorID}
 		var slots []AvailabilitySlot
 		if err := app.DB.FindMany(ctx, config.Collections.VendorAvailabilityCollection, filter, &slots); err != nil {
 			http.Error(w, "db error", http.StatusInternalServerError)
@@ -67,7 +65,7 @@ func CreateAvailabilityHandler(app *infra.Deps) http.HandlerFunc {
 
 		// Verify caller owns the vendor profile
 		var vendor Vendor
-		if err := app.DB.FindOne(ctx, config.Collections.VendorCollection, bson.M{"vendorid": vendorID}, &vendor); err != nil {
+		if err := app.DB.FindOne(ctx, config.Collections.VendorCollection, map[string]any{"vendorid": vendorID}, &vendor); err != nil {
 			http.Error(w, "vendor not found", http.StatusNotFound)
 			return
 		}
@@ -77,7 +75,7 @@ func CreateAvailabilityHandler(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing []AvailabilitySlot
-		_ = app.DB.FindMany(ctx, config.Collections.VendorAvailabilityCollection, bson.M{"vendorid": vendorID}, &existing)
+		_ = app.DB.FindMany(ctx, config.Collections.VendorAvailabilityCollection, map[string]any{"vendorid": vendorID}, &existing)
 		// simple in-app overlap check
 		for _, ex := range existing {
 			if !(ex.EndDate < slot.StartDate || ex.StartDate > slot.EndDate) {
@@ -118,14 +116,14 @@ func DeleteAvailabilityHandler(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var slot AvailabilitySlot
-		if err := app.DB.FindOne(ctx, config.Collections.VendorAvailabilityCollection, bson.M{"slotid": slotID, "vendorid": vendorID}, &slot); err != nil {
+		if err := app.DB.FindOne(ctx, config.Collections.VendorAvailabilityCollection, map[string]any{"slotid": slotID, "vendorid": vendorID}, &slot); err != nil {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
 
 		// verify ownership
 		var vendor Vendor
-		if err := app.DB.FindOne(ctx, config.Collections.VendorCollection, bson.M{"vendorid": vendorID}, &vendor); err != nil {
+		if err := app.DB.FindOne(ctx, config.Collections.VendorCollection, map[string]any{"vendorid": vendorID}, &vendor); err != nil {
 			http.Error(w, "vendor not found", http.StatusNotFound)
 			return
 		}
@@ -134,7 +132,7 @@ func DeleteAvailabilityHandler(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.DeleteOne(ctx, config.Collections.VendorAvailabilityCollection, bson.M{"slotid": slotID}); err != nil {
+		if _, err := app.DB.DeleteOne(ctx, config.Collections.VendorAvailabilityCollection, map[string]any{"slotid": slotID}); err != nil {
 			http.Error(w, "db error", http.StatusInternalServerError)
 			return
 		}

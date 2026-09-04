@@ -3,14 +3,13 @@ package reports
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func EnsureReportIndexes(coll *mongo.Collection) error {
 	indexModel := mongo.IndexModel{
-		Keys: bson.M{
+		Keys: map[string]any{
 			"reportedBy": 1,
 			"targetType": 1,
 			"targetId":   1,

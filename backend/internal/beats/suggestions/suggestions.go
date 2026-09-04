@@ -49,7 +49,7 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 		err = app.DB.FindOne(
 			ctx,
 			followingsCollection,
-			bson.M{"userid": currentUserID},
+			map[string]any{"userid": currentUserID},
 			&followData,
 		)
 		if err != nil {
@@ -58,8 +58,8 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 
 		excludedUserIDs := append(followData.Follows, currentUserID, userID)
 
-		filter := bson.M{
-			"userid": bson.M{"$nin": excludedUserIDs},
+		filter := map[string]any{
+			"userid": map[string]any{"$nin": excludedUserIDs},
 		}
 
 		var users []UserSuggest
@@ -106,7 +106,7 @@ func GetNearbyPlaces(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindMany(
 			ctx,
 			placesCollection,
-			bson.M{},
+			map[string]any{},
 			&nearbyplaces,
 		); err != nil {
 			http.Error(w, "Failed to fetch places", http.StatusInternalServerError)

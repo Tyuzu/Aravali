@@ -11,8 +11,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -302,8 +300,8 @@ func validateSetting(key string, value any) error {
 	return errors.New("invalid setting type")
 }
 
-func settingsToMap(s UserSettings) bson.M {
-	return bson.M{
+func settingsToMap(s UserSettings) map[string]any {
+	return map[string]any{
 		"userID":              s.UserID,
 		"theme":               s.Theme,
 		"notifications":       s.Notifications,

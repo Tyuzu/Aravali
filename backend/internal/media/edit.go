@@ -10,8 +10,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func EditMedia(app *infra.Deps) http.HandlerFunc {
@@ -54,7 +52,7 @@ func EditMedia(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Build update document
-		updateFields := bson.M{
+		updateFields := map[string]any{
 			"updatedAt": time.Now(),
 		}
 

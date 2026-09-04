@@ -7,7 +7,6 @@ import (
 	"scav/infra"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -16,7 +15,7 @@ var UsersCollection = config.Collections.UserCollection
 
 func findWorkerByIDFromDB(ctx context.Context, app *infra.Deps, workerID string) (BaitoWorker, error) {
 	var worker BaitoWorker
-	err := app.DB.FindOne(ctx, BaitoWorkersCollection, bson.M{"baitoWorkerId": workerID}, &worker)
+	err := app.DB.FindOne(ctx, BaitoWorkersCollection, map[string]any{"baitoWorkerId": workerID}, &worker)
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return BaitoWorker{}, nil
 	}
@@ -26,11 +25,11 @@ func findWorkerByIDFromDB(ctx context.Context, app *infra.Deps, workerID string)
 func getUniqueWorkerSkillsFromDB(ctx context.Context, app *infra.Deps) ([]string, error) {
 	pipeline := mongo.Pipeline{
 		{{Key: "$unwind", Value: "$preferredRoles"}},
-		{{Key: "$group", Value: bson.M{"_id": "$preferredRoles"}}},
-		{{Key: "$project", Value: bson.M{"_id": 0, "skill": "$_id"}}},
+		{{Key: "$group", Value: map[string]any{"_id": "$preferredRoles"}}},
+		{{Key: "$project", Value: map[string]any{"_id": 0, "skill": "$_id"}}},
 	}
 
-	var results []bson.M
+	var results []map[string]any
 	err := app.DB.Aggregate(ctx, BaitoWorkersCollection, pipeline, &results)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
@@ -50,7 +49,7 @@ func getUniqueWorkerSkillsFromDB(ctx context.Context, app *infra.Deps) ([]string
 }
 
 func findExistingWorkerProfile(ctx context.Context, app *infra.Deps, userID string, result any) error {
-	err := app.DB.FindOne(ctx, BaitoWorkersCollection, bson.M{"userid": userID}, result)
+	err := app.DB.FindOne(ctx, BaitoWorkersCollection, map[string]any{"userid": userID}, result)
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil
 	}
@@ -61,8 +60,8 @@ func createWorkerProfileRecord(ctx context.Context, app *infra.Deps, worker Bait
 	return app.DB.Insert(ctx, BaitoWorkersCollection, worker)
 }
 
-func updateWorkerProfileRecord(ctx context.Context, app *infra.Deps, workerID, userID string, update bson.M) error {
-	_, err := app.DB.UpdateOne(ctx, BaitoWorkersCollection, bson.M{
+func updateWorkerProfileRecord(ctx context.Context, app *infra.Deps, workerID, userID string, update map[string]any) error {
+	_, err := app.DB.UpdateOne(ctx, BaitoWorkersCollection, map[string]any{
 		"baitoWorkerId": workerID,
 		"userid":        userID,
 	}, update)
@@ -73,7 +72,7 @@ func updateWorkerProfileRecord(ctx context.Context, app *infra.Deps, workerID, u
 }
 
 func addWorkerRoleToUser(ctx context.Context, app *infra.Deps, userID string) error {
-	err := app.DB.AddToSet(ctx, UsersCollection, bson.M{"userid": userID}, "role", "worker")
+	err := app.DB.AddToSet(ctx, UsersCollection, map[string]any{"userid": userID}, "role", "worker")
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil
 	}
@@ -81,7 +80,7 @@ func addWorkerRoleToUser(ctx context.Context, app *infra.Deps, userID string) er
 }
 
 func touchUserUpdatedAt(ctx context.Context, app *infra.Deps, userID string) error {
-	_, err := app.DB.UpdateOne(ctx, UsersCollection, bson.M{"userid": userID}, bson.M{"updated_at": time.Now()})
+	_, err := app.DB.UpdateOne(ctx, UsersCollection, map[string]any{"userid": userID}, map[string]any{"updated_at": time.Now()})
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil
 	}

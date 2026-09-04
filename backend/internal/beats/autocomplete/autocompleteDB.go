@@ -7,8 +7,6 @@ import (
 	db "scav/infra/db"
 	"scav/internal/auth"
 	"scav/internal/places"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
@@ -16,8 +14,8 @@ var (
 )
 
 func findPlacesByQuery(ctx context.Context, database db.Database, query string, places *[]places.Place) error {
-	filter := bson.M{
-		"name": bson.M{
+	filter := map[string]any{
+		"name": map[string]any{
 			"$regex":   "^" + query,
 			"$options": "i",
 		},
@@ -26,8 +24,8 @@ func findPlacesByQuery(ctx context.Context, database db.Database, query string, 
 }
 
 func findUsersByQuery(ctx context.Context, database db.Database, query string, users *[]auth.User) error {
-	filter := bson.M{
-		"username": bson.M{
+	filter := map[string]any{
+		"username": map[string]any{
 			"$regex":   "^" + query,
 			"$options": "i",
 		},

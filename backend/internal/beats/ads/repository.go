@@ -8,7 +8,6 @@ import (
 	"scav/config"
 	"scav/infra"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -23,7 +22,7 @@ func FetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	}
 
 	var dbAds []Ad
-	filter := bson.M{"status": "active"}
+	filter := map[string]any{"status": "active"}
 
 	err := app.DB.FindMany(ctx, adsCollection, filter, &dbAds)
 	if err != nil {
@@ -63,7 +62,7 @@ func PromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, positio
 		Category string `bson:"category"`
 	}
 
-	err = app.DB.FindOne(ctx, postsCollection, bson.M{"_id": objID}, &post)
+	err = app.DB.FindOne(ctx, postsCollection, map[string]any{"_id": objID}, &post)
 	if err != nil {
 		return nil, fmt.Errorf("post not found: %w", err)
 	}
@@ -102,7 +101,7 @@ func GetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, erro
 		return nil, err
 	}
 
-	err = app.DB.FindOne(ctx, adsCollection, bson.M{"_id": objID}, &ad)
+	err = app.DB.FindOne(ctx, adsCollection, map[string]any{"_id": objID}, &ad)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +116,8 @@ func UpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData ma
 	}
 
 	updateData["updatedAt"] = time.Now()
-	update := bson.M{"$set": updateData}
-	_, err = app.DB.UpdateOne(ctx, adsCollection, bson.M{"_id": objID}, update)
+	update := map[string]any{"$set": updateData}
+	_, err = app.DB.UpdateOne(ctx, adsCollection, map[string]any{"_id": objID}, update)
 	return err
 }
 
@@ -128,7 +127,7 @@ func DeleteAdInDB(ctx context.Context, app *infra.Deps, id string) error {
 		return err
 	}
 
-	_, err = app.DB.DeleteOne(ctx, adsCollection, bson.M{"_id": objID})
+	_, err = app.DB.DeleteOne(ctx, adsCollection, map[string]any{"_id": objID})
 
 	return err
 }

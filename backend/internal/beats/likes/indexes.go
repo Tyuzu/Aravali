@@ -3,7 +3,6 @@ package likes
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -17,7 +16,7 @@ func EnsureIndexes(
 		ctx,
 		[]mongo.IndexModel{
 			{
-				Keys: bson.M{
+				Keys: map[string]any{
 					"userid":      1,
 					"entity_type": 1,
 					"entity_id":   1,
@@ -27,7 +26,7 @@ func EnsureIndexes(
 					SetName("unique_user_entity_like"),
 			},
 			{
-				Keys: bson.M{
+				Keys: map[string]any{
 					"entity_type": 1,
 					"entity_id":   1,
 					"created_at":  -1,

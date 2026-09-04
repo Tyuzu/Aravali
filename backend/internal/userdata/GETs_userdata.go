@@ -10,8 +10,6 @@ import (
 	"scav/utils"
 	log "scav/utils/logger"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GetUserProfileData fetches user-specific entity data
@@ -109,8 +107,8 @@ func GetOtherUserProfileData(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var posts []postDoc
-		filter := bson.M{
-			"$or": []bson.M{
+		filter := map[string]any{
+			"$or": []map[string]any{
 				{"createdBy": username},
 				{"username": username},
 			},

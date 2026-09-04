@@ -39,7 +39,7 @@ func findNotificationsByUser(
 	opts db.FindManyOptions,
 	notifs *[]Notification,
 ) error {
-	filter := bson.M{"userid": userID}
+	filter := map[string]any{"userid": userID}
 	return database.FindManyWithOptions(ctx, notifsCollection, filter, opts, notifs)
 }
 
@@ -48,7 +48,7 @@ func countUnreadNotifications(
 	database db.Database,
 	userID string,
 ) (int64, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"userid":  userID,
 		"is_read": false,
 	}
@@ -60,12 +60,12 @@ func updateMarkAsRead(
 	database db.Database,
 	notificationID string,
 ) (any, error) {
-	filter := bson.M{"notificationid": notificationID}
-	update := bson.M{
-		"$set": bson.M{
+	filter := map[string]any{"notificationid": notificationID}
+	update := map[string]any{
+		"$set": map[string]any{
 			"is_read": true,
 		},
-		"$currentDate": bson.M{
+		"$currentDate": map[string]any{
 			"updated_at": true,
 		},
 	}
@@ -77,15 +77,15 @@ func updateMarkAllAsRead(
 	database db.Database,
 	userID string,
 ) (any, error) {
-	filter := bson.M{
+	filter := map[string]any{
 		"userid":  userID,
 		"is_read": false,
 	}
-	update := bson.M{
-		"$set": bson.M{
+	update := map[string]any{
+		"$set": map[string]any{
 			"is_read": true,
 		},
-		"$currentDate": bson.M{
+		"$currentDate": map[string]any{
 			"updated_at": true,
 		},
 	}
@@ -100,7 +100,7 @@ func deleteNotificationByID(
 	return database.Delete(
 		ctx,
 		notifsCollection,
-		bson.M{"notificationid": notificationID},
+		map[string]any{"notificationid": notificationID},
 	)
 }
 
@@ -112,7 +112,7 @@ func deleteAllNotificationsByUser(
 	return database.DeleteMany(
 		ctx,
 		notifsCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 	)
 }
 
@@ -125,7 +125,7 @@ func findPreferencesByUser(
 	return database.FindOne(
 		ctx,
 		preferencesCollection,
-		bson.M{"userid": userID},
+		map[string]any{"userid": userID},
 		pref,
 	)
 }
@@ -135,8 +135,8 @@ func upsertPreferences(
 	database db.Database,
 	pref NotificationPreferences,
 ) (any, error) {
-	filter := bson.M{"userid": pref.UserID}
-	update := bson.M{"$set": pref}
+	filter := map[string]any{"userid": pref.UserID}
+	update := map[string]any{"$set": pref}
 	return database.UpdateOne(ctx, preferencesCollection, filter, update)
 }
 

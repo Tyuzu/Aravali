@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"scav/infra"
 	"scav/internal/deliveries"
 	"scav/utils"
@@ -19,8 +17,8 @@ func GetDeliveryTracking(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var result bson.M
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		var result map[string]any
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		proj := []string{"status", "status_history", "current_location"}
 
 		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, proj, &result); err != nil {
@@ -54,15 +52,15 @@ func GetDeliveryEvents(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var events []bson.M
-		filter := bson.M{"deliveryid": deliveryID, "tenantid": tenantID}
+		var events []map[string]any
+		filter := map[string]any{"deliveryid": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindMany(ctx, "delivery_events", filter, &events); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve events")
 			return
 		}
 
 		if len(events) == 0 {
-			events = []bson.M{}
+			events = []map[string]any{}
 		}
 		utils.RespondWithJSON(w, http.StatusOK, events)
 	}
@@ -77,7 +75,7 @@ func GetStatusHistory(app *infra.Deps) http.HandlerFunc {
 		var res struct {
 			StatusHistory []deliveries.StatusHistoryItem `bson:"status_history" json:"status_history"`
 		}
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, []string{"status_history"}, &res); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "History not found")
 			return
@@ -108,7 +106,7 @@ func AddProof(app *infra.Deps) http.HandlerFunc {
 			CreatedAt: time.Now(),
 		}
 
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.AddToSet(ctx, "deliveries", filter, "proofs", proof); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to add proof")
 			return
@@ -126,7 +124,7 @@ func GetProof(app *infra.Deps) http.HandlerFunc {
 		var res struct {
 			Proofs []deliveries.Proof `bson:"proofs" json:"proofs"`
 		}
-		filter := bson.M{"id": deliveryID, "tenantid": tenantID}
+		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
 		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, []string{"proofs"}, &res); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Proof not found")
 			return
@@ -140,8 +138,8 @@ func GetPublicTracking(app *infra.Deps) http.HandlerFunc {
 		token := utils.GetParam(r, "token")
 		ctx := r.Context()
 
-		var res bson.M
-		filter := bson.M{"public_tracking_token": token}
+		var res map[string]any
+		filter := map[string]any{"public_tracking_token": token}
 		proj := []string{"status", "pickup_loc", "dropoff_loc", "estimated_arrival"}
 
 		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, proj, &res); err != nil {

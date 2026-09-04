@@ -13,8 +13,6 @@ import (
 	"scav/internal/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TransferTicket(app *infra.Deps) http.HandlerFunc {
@@ -45,7 +43,7 @@ func TransferTicket(app *infra.Deps) http.HandlerFunc {
 		if err := app.DB.FindOne(
 			ctx,
 			purchasedTicketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid":    eventID,
 				"uniquecode": payload.UniqueCode,
 			},
@@ -65,12 +63,12 @@ func TransferTicket(app *infra.Deps) http.HandlerFunc {
 		if _, err := app.DB.UpdateOne(
 			ctx,
 			purchasedTicketsCollection,
-			bson.M{
+			map[string]any{
 				"eventid":    eventID,
 				"uniquecode": payload.UniqueCode,
 			},
-			bson.M{
-				"$set": bson.M{
+			map[string]any{
+				"$set": map[string]any{
 					"userid":        payload.Recipient,
 					"transferred":   true,
 					"transferredto": payload.Recipient,
