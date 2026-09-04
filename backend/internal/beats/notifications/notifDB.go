@@ -148,8 +148,8 @@ func isNoDocumentsError(err error) bool {
 	return errors.Is(err, mongo.ErrNoDocuments)
 }
 
-func notificationSort() bson.D {
-	return bson.D{
+func notificationSort() []bson.E {
+	return []bson.E{
 		{Key: "created_at", Value: -1},
 		{Key: "notificationid", Value: -1},
 	}

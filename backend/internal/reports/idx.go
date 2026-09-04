@@ -10,10 +10,10 @@ import (
 
 func EnsureReportIndexes(coll *mongo.Collection) error {
 	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "reportedBy", Value: 1},
-			{Key: "targetType", Value: 1},
-			{Key: "targetId", Value: 1},
+		Keys: bson.M{
+			"reportedBy": 1,
+			"targetType": 1,
+			"targetId":   1,
 		},
 		Options: options.Index().SetUnique(true),
 	}

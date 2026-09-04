@@ -368,16 +368,17 @@ func GetSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var settings UserSettings
-		err := app.DB.FindOne(
+		err := app.SQLDB.FindOne(
 			ctx,
 			settingsCollection,
-			bson.M{"userID": userID},
+			"userID = $1",
+			[]any{userID},
 			&settings,
 		)
 
 		if err != nil {
 			settings = DefaultSettings(userID)
-			_ = app.DB.Insert(ctx, settingsCollection, settings)
+			_ = app.SQLDB.Insert(ctx, settingsCollection, settings)
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, settings)
@@ -425,8 +426,9 @@ func UpdateSettings(app *infra.Deps) http.HandlerFunc {
 			"daily_reminder":      true,
 		}
 
-		filter := bson.M{"userID": userID}
-		updateFields := bson.M{}
+		whereClause := "userID = $1"
+		whereArgs := []any{userID}
+		updateFields := map[string]any{}
 
 		for key, value := range payload {
 			if !allowed[key] {
@@ -453,16 +455,14 @@ func UpdateSettings(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.Update(ctx, settingsCollection, filter, updateFields); err != nil {
+		if _, err := app.SQLDB.Update(ctx, settingsCollection, whereClause, whereArgs, updateFields); err != nil {
 			settings := DefaultSettings(userID)
-			doc := settingsToMap(settings)
 
 			for k, v := range updateFields {
-				doc[k] = v
 				applyPatch(&settings, k, v)
 			}
 
-			_ = app.DB.Insert(ctx, settingsCollection, doc)
+			_ = app.SQLDB.Insert(ctx, settingsCollection, settings)
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsUpdatedPayload{})
@@ -489,11 +489,12 @@ func ResetSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		defaults := DefaultSettings(userID)
-		filter := bson.M{"userID": userID}
+		whereClause := "userID = $1"
+		whereArgs := []any{userID}
 		update := settingsToMap(defaults)
 
-		if _, err := app.DB.Update(ctx, settingsCollection, filter, update); err != nil {
-			_ = app.DB.Insert(ctx, settingsCollection, update)
+		if _, err := app.SQLDB.Update(ctx, settingsCollection, whereClause, whereArgs, update); err != nil {
+			_ = app.SQLDB.Insert(ctx, settingsCollection, defaults)
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsResetPayload{})
@@ -519,10 +520,11 @@ func InitUserSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing UserSettings
-		err := app.DB.FindOne(
+		err := app.SQLDB.FindOne(
 			ctx,
 			settingsCollection,
-			bson.M{"userID": userID},
+			"userID = $1",
+			[]any{userID},
 			&existing,
 		)
 
@@ -532,7 +534,7 @@ func InitUserSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		defaults := DefaultSettings(userID)
-		if err := app.DB.Insert(ctx, settingsCollection, defaults); err != nil {
+		if err := app.SQLDB.Insert(ctx, settingsCollection, defaults); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "failed to initialize settings",
 			})

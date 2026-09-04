@@ -63,8 +63,8 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 		skip, limit := utils.ParsePagination(r, 10, 100)
 		sort := utils.ParseSort(
 			r.URL.Query().Get("sort"),
-			bson.D{{Key: "createdAt", Value: -1}},
-			map[string]bson.D{
+			[]bson.E{{Key: "createdAt", Value: -1}},
+			map[string][]bson.E{
 				"newest":   {{Key: "createdAt", Value: -1}},
 				"oldest":   {{Key: "createdAt", Value: 1}},
 				"views":    {{Key: "views", Value: -1}},

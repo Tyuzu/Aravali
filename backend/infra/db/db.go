@@ -10,7 +10,7 @@ import (
 type FindManyOptions struct {
 	Limit      int
 	Skip       int
-	Sort       bson.D
+	Sort       []bson.E
 	Projection []string
 }
 

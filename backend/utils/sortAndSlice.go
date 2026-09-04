@@ -10,7 +10,7 @@ import (
 
 func SortAndSlice[T any](
 	items *[]T,
-	sortDef bson.D,
+	sortDef []bson.E,
 	skip int64,
 	limit int64,
 ) {
@@ -54,7 +54,7 @@ func SortAndSlice[T any](
 	*items = (*items)[start:end]
 }
 
-func parseSort(sortDef bson.D) (string, int) {
+func parseSort(sortDef []bson.E) (string, int) {
 	if len(sortDef) == 0 {
 		return "", 1
 	}

@@ -3,11 +3,11 @@ package products
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"scav/infra"
 	"scav/infra/db"
 	"scav/internal/farms"
 	"scav/utils"
-	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -35,20 +35,20 @@ func GetItems(app *infra.Deps) http.HandlerFunc {
 		}
 
 		skip, limit := utils.ParsePagination(r, 10, 100)
-		var sortMap bson.D
+		var sortMap []bson.E
 
 		switch r.URL.Query().Get("sort") {
 		case "price_asc":
-			sortMap = bson.D{{Key: "price", Value: 1}}
+			sortMap = []bson.E{{Key: "price", Value: 1}}
 
 		case "price_desc":
-			sortMap = bson.D{{Key: "price", Value: -1}}
+			sortMap = []bson.E{{Key: "price", Value: -1}}
 
 		case "name_desc":
-			sortMap = bson.D{{Key: "name", Value: -1}}
+			sortMap = []bson.E{{Key: "name", Value: -1}}
 
 		default:
-			sortMap = bson.D{{Key: "name", Value: 1}}
+			sortMap = []bson.E{{Key: "name", Value: 1}}
 		}
 
 		opts := db.FindManyOptions{

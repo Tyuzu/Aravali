@@ -83,7 +83,7 @@ func GetWorkers(app *infra.Deps) http.HandlerFunc {
 		opts := db.FindManyOptions{
 			Skip:  skip,
 			Limit: limit,
-			Sort:  bson.D{{Key: "createdAt", Value: -1}},
+			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 		}
 
 		var workers []BaitoWorkersResponse

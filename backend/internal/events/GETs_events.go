@@ -2,11 +2,11 @@ package events
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/infra/db"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -60,7 +60,7 @@ func GetEvents(app *infra.Deps) http.HandlerFunc {
 		opts := db.FindManyOptions{
 			Limit: limit,
 			Skip:  skip,
-			Sort:  bson.D{{Key: "createdAt", Value: -1}},
+			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 		}
 
 		var rawEvents []Event

@@ -208,7 +208,7 @@ func dbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string,
 	opts := db.FindManyOptions{
 		Limit: limit,
 		Skip:  skip,
-		Sort:  bson.D{{Key: "createdAt", Value: -1}},
+		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 	}
 
 	var msgs []Message

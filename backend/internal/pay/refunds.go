@@ -194,7 +194,7 @@ func GetMyRefundRequests(app *infra.Deps) http.HandlerFunc {
 		opts := options.Find().
 			SetSkip(int64(skip)).
 			SetLimit(int64(limit)).
-			SetSort(bson.D{{Key: "created_at", Value: -1}})
+			SetSort(bson.M{"created_at": -1})
 
 		// Fetch refunds
 		var refunds []tickets.RefundRequest
@@ -279,7 +279,7 @@ func GetAllRefundRequests(app *infra.Deps) http.HandlerFunc {
 		opts := options.Find().
 			SetSkip(int64(skip)).
 			SetLimit(int64(limit)).
-			SetSort(bson.D{{Key: "created_at", Value: -1}})
+			SetSort(bson.M{"created_at": -1})
 
 		// Fetch refunds
 		var refunds []tickets.RefundRequest

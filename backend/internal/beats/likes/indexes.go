@@ -17,20 +17,20 @@ func EnsureIndexes(
 		ctx,
 		[]mongo.IndexModel{
 			{
-				Keys: bson.D{
-					{Key: "userid", Value: 1},
-					{Key: "entity_type", Value: 1},
-					{Key: "entity_id", Value: 1},
+				Keys: bson.M{
+					"userid":      1,
+					"entity_type": 1,
+					"entity_id":   1,
 				},
 				Options: options.Index().
 					SetUnique(true).
 					SetName("unique_user_entity_like"),
 			},
 			{
-				Keys: bson.D{
-					{Key: "entity_type", Value: 1},
-					{Key: "entity_id", Value: 1},
-					{Key: "created_at", Value: -1},
+				Keys: bson.M{
+					"entity_type": 1,
+					"entity_id":   1,
+					"created_at":  -1,
 				},
 				Options: options.Index().
 					SetName("entity_likes_created_at"),

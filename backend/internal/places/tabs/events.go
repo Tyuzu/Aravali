@@ -94,7 +94,7 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 		opts := db.FindManyOptions{
 			Limit: limit,
 			Skip:  skip,
-			Sort:  bson.D{{Key: "date", Value: 1}},
+			Sort:  []bson.E{{Key: "date", Value: 1}},
 			Projection: []string{
 				"eventid",
 				"title",

@@ -2,9 +2,9 @@ package musicon
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/infra/db"
-	"net/http"
 	"strings"
 	"time"
 
@@ -40,7 +40,7 @@ func GetRecommendedSongs(app *infra.Deps) http.HandlerFunc {
 		opts := db.FindManyOptions{
 			Limit: limit,
 			Skip:  (page - 1) * limit,
-			Sort:  bson.D{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}},
+			Sort:  []bson.E{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}},
 		}
 
 		filter := bson.M{"published": true}
@@ -67,7 +67,7 @@ func GetRecommendedAlbums(app *infra.Deps) http.HandlerFunc {
 		opts := db.FindManyOptions{
 			Limit: limit,
 			Skip:  (page - 1) * limit,
-			Sort:  bson.D{{Key: "release_date", Value: -1}, {Key: "_id", Value: -1}},
+			Sort:  []bson.E{{Key: "release_date", Value: -1}, {Key: "_id", Value: -1}},
 		}
 
 		filter := bson.M{"published": true}
@@ -91,13 +91,13 @@ func GetRecommendations(app *infra.Deps) http.HandlerFunc {
 		basedOn := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("based_on")))
 
 		filter := bson.M{"published": true}
-		sort := bson.D{{Key: "_id", Value: -1}} // default stable sort
+		sort := []bson.E{{Key: "_id", Value: -1}} // default stable sort
 
 		switch basedOn {
 
 		case "recently_played":
 			filter["plays"] = bson.M{"$gt": 0}
-			sort = bson.D{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}}
+			sort = []bson.E{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}}
 
 		case "language_en":
 			filter["language"] = "en"

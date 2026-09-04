@@ -56,7 +56,7 @@ func getActivities(
 
 	opts := db.FindManyOptions{
 		Limit: limit,
-		Sort:  bson.D{{Key: "timestamp", Value: -1}},
+		Sort:  []bson.E{{Key: "timestamp", Value: -1}},
 	}
 
 	var activities []Activity

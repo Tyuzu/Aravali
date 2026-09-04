@@ -2,9 +2,9 @@ package posts
 
 import (
 	"context"
+	"net/http"
 	"scav/infra"
 	"scav/utils"
-	"net/http"
 	"time"
 
 	"scav/infra/db"
@@ -51,7 +51,7 @@ func GetRelatedPosts(app *infra.Deps) http.HandlerFunc {
 
 		opts := db.FindManyOptions{
 			Limit: 10,
-			Sort:  bson.D{{Key: "createdAt", Value: -1}},
+			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 		}
 
 		var related []Post

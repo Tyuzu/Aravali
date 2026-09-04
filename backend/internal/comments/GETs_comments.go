@@ -83,19 +83,19 @@ func GetComments(app *infra.Deps) http.HandlerFunc {
 		sortBy := r.URL.Query().Get("sort") // new | old | likes
 
 		/* ---------- Sorting (ORDERED) ---------- */
-		sort := bson.D{
+		sort := []bson.E{
 			{Key: "created_at", Value: -1},
 			{Key: "commentid", Value: -1},
 		}
 
 		switch sortBy {
 		case "old":
-			sort = bson.D{
+			sort = []bson.E{
 				{Key: "created_at", Value: 1},
 				{Key: "commentid", Value: 1},
 			}
 		case "likes":
-			sort = bson.D{
+			sort = []bson.E{
 				{Key: "likes", Value: -1},
 				{Key: "created_at", Value: -1},
 			}

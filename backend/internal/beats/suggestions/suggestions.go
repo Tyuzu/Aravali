@@ -2,10 +2,10 @@ package suggestions
 
 import (
 	"context"
+	"net/http"
 	"scav/internal/beats/follows"
 	"scav/internal/places"
 	log "scav/utils/logger"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -79,7 +79,7 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 
 		utils.SortAndSlice(
 			&users,
-			bson.D{{Key: "userid", Value: 1}},
+			[]bson.E{{Key: "userid", Value: 1}},
 			offset,
 			int64(limit),
 		)

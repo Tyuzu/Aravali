@@ -433,7 +433,7 @@ func normalizeUpdateDocument(update any) any {
 		}
 		return bson.M{"$set": bson.M(u)}
 
-	case bson.D:
+	case []bson.E:
 		if len(u) > 0 && strings.HasPrefix(u[0].Key, "$") {
 			return u
 		}

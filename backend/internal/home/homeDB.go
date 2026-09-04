@@ -18,7 +18,7 @@ func fetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string,
 	opts := db.FindManyOptions{
 		Skip:  skip,
 		Limit: limit,
-		Sort:  bson.D{{Key: "createdAt", Value: -1}},
+		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 	}
 
 	var docs []bson.M

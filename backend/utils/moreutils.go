@@ -142,9 +142,9 @@ func RegexFilter(field, value string) map[string]any {
 // ParseSort returns a sort map usable in db.FindManyOptions
 func ParseSort(
 	param string,
-	defaultSort bson.D,
-	sortMap map[string]bson.D,
-) bson.D {
+	defaultSort []bson.E,
+	sortMap map[string][]bson.E,
+) []bson.E {
 
 	if s, ok := sortMap[param]; ok {
 		return s

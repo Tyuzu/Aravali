@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"html"
+	"net/http"
 	"scav/middleware"
 	log "scav/utils/logger"
-	"net/http"
 	"strings"
 	"time"
 
@@ -182,7 +182,7 @@ func WebSocketHandler(hub *Hub, app *infra.Deps) http.HandlerFunc {
 		// send history
 		go func() {
 			opts := db.FindManyOptions{
-				Sort:  bson.D{{Key: "timestamp", Value: -1}},
+				Sort:  []bson.E{{Key: "timestamp", Value: -1}},
 				Limit: 20,
 			}
 

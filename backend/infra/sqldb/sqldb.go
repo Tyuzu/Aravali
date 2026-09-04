@@ -15,7 +15,7 @@ type OrderBy struct {
 type FindManyOptions struct {
 	Limit   int
 	Offset  int       // Replaces MongoDB's Skip
-	Sort    []OrderBy // Replaces bson.D sorting
+	Sort    []OrderBy // Replaces ordered MongoDB sorting
 	Columns []string  // Replaces MongoDB Projection
 }
 

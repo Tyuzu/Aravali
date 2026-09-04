@@ -3,11 +3,11 @@ package musicon
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"scav/infra"
 	"scav/infra/db"
 	"scav/utils"
 	log "scav/utils/logger"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -160,7 +160,7 @@ func GetArtistsSongs(app *infra.Deps) http.HandlerFunc {
 		opts := db.FindManyOptions{
 			Limit: limit,
 			Skip:  skip,
-			Sort: bson.D{{
+			Sort: []bson.E{{
 				Key: "uploadedAt", Value: -1,
 			}},
 		}

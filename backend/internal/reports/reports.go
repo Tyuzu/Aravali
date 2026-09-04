@@ -175,7 +175,7 @@ func GetReports(app *infra.Deps) http.HandlerFunc {
 
 		utils.SortAndSlice(
 			&reports,
-			bson.D{{Key: "createdAt", Value: -1}},
+			[]bson.E{{Key: "createdAt", Value: -1}},
 			offset,
 			limit,
 		)
