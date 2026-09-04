@@ -12,7 +12,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/internal/baito/vendors"
+	"scav/internal/vendors"
 	"scav/utils"
 )
 

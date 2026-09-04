@@ -5,10 +5,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scav/config"
 	"scav/infra/cache"
@@ -28,17 +27,19 @@ type Deps struct {
 /* -------------------- Constructor -------------------- */
 
 func New(cfg *config.Config) (*Deps, error) {
-	/* -------- Mongo -------- */
+	/* -------- Postgres -------- */
 
-	mongoURI := env("MONGO_URI", "mongodb://localhost:27017")
-	mongoDB := env("MONGO_DB", "eventdb")
+	postgresURL := cfg.DatabaseURL
+	if postgresURL == "" {
+		postgresURL = env("POSTGRES_URL", env("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/scav"))
+	}
 
-	client, database, err := NewMongo(mongoURI, mongoDB)
+	pool, err := NewPostgres(postgresURL)
 	if err != nil {
 		return nil, err
 	}
 
-	dbLayer := db.NewMongoDatabase(database, client, 100)
+	dbLayer := db.NewPostgresDatabase(pool, 100)
 
 	/* -------- Redis -------- */
 
@@ -88,29 +89,23 @@ func env(key string, fallback string) string {
 	return fallback
 }
 
-/* -------------------- Mongo -------------------- */
+/* -------------------- Postgres -------------------- */
 
-func NewMongo(uri string, dbName string) (*mongo.Client, *mongo.Database, error) {
+func NewPostgres(uri string) (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(
-		ctx,
-		options.Client().
-			ApplyURI(uri).
-			SetMaxPoolSize(100).
-			SetMinPoolSize(10).
-			SetRetryWrites(true),
-	)
+	pool, err := pgxpool.New(ctx, uri)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if err := client.Ping(ctx, nil); err != nil {
-		return nil, nil, err
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, err
 	}
 
-	return client, client.Database(dbName), nil
+	return pool, nil
 }
 
 /* -------------------- Redis -------------------- */

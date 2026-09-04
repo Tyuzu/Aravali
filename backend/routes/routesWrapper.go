@@ -7,8 +7,6 @@ import (
 	"scav/internal/auth"
 	"scav/internal/baito"
 	"scav/internal/baito/jobs"
-	"scav/internal/baito/vendors"
-	"scav/internal/baito/workers"
 	"scav/internal/beats/activity"
 	"scav/internal/beats/ads"
 	"scav/internal/beats/analytics"
@@ -53,6 +51,8 @@ import (
 	"scav/internal/songs"
 	"scav/internal/tickets"
 	"scav/internal/userdata"
+	"scav/internal/vendors"
+	"scav/internal/workers"
 	"scav/middleware"
 
 	"github.com/julienschmidt/httprouter"

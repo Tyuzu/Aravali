@@ -11,8 +11,6 @@ import (
 	"scav/infra/mq"
 	"scav/utils"
 	"scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func parseTags(raw string) []string {
@@ -128,8 +126,8 @@ func (r BaitoRequest) ToModel(userID string) Baito {
 	}
 }
 
-func (r BaitoRequest) BuildUpdate() bson.M {
-	set := bson.M{}
+func (r BaitoRequest) BuildUpdate() map[string]any {
+	set := map[string]any{}
 
 	if r.Title != "" {
 		set["title"] = r.Title
@@ -189,9 +187,9 @@ func (r BaitoRequest) BuildUpdate() bson.M {
 
 	set["updatedAt"] = time.Now()
 
-	return bson.M{
-		"$set": set,
-	}
+	// Return update in a Mongo-like shape (with $set) so repository helpers
+	// that expect either a raw document or a $set operator can handle it.
+	return map[string]any{"$set": set}
 }
 
 func CreateBaito(app *infra.Deps) http.HandlerFunc {

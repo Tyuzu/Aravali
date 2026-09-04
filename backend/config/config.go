@@ -12,6 +12,7 @@ import (
 
 type Config struct {
 	Env                   string
+	DatabaseURL           string
 	STRIPE_WEBHOOK_SECRET string
 	HTTPPort              string
 	AllowedOrigins        []string
@@ -61,6 +62,7 @@ func InitConfig() (*Config, error) {
 
 	cfg := &Config{
 		Env:                   env,
+		DatabaseURL:           envOrDefault("POSTGRES_URL", envOrDefault("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/scav")),
 		HTTPPort:              port,
 		AllowedOrigins:        allowedOrigins,
 		STRIPE_WEBHOOK_SECRET: os.Getenv("STRIPE_WEBHOOK_SECRET"),
@@ -80,8 +82,8 @@ func InitConfig() (*Config, error) {
 
 	if cfg.Env == "production" {
 		// ensure essential services are configured in production
-		if os.Getenv("MONGO_URI") == "" {
-			return nil, fmt.Errorf("MONGO_URI must be set in production")
+		if cfg.DatabaseURL == "" || cfg.DatabaseURL == "postgres://postgres:postgres@localhost:5432/scav" {
+			return nil, fmt.Errorf("POSTGRES_URL must be set in production")
 		}
 		if os.Getenv("REDIS_URL") == "" {
 			return nil, fmt.Errorf("REDIS_URL must be set in production")
@@ -120,4 +122,11 @@ func parseAllowedOrigins(env string) []string {
 		}
 	}
 	return out
+}
+
+func envOrDefault(key string, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

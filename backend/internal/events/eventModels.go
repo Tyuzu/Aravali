@@ -1,7 +1,7 @@
 package events
 
 import (
-	"scav/internal/baito/vendors"
+	"scav/internal/vendors"
 	"time"
 )
 

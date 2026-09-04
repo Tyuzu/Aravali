@@ -8,14 +8,12 @@ import (
 	"scav/utils"
 	"scav/utils/logger"
 	log "scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------- Helpers -------------------- */
 
 func enrichBaitoApplicationCount(ctx *context.Context, app *infra.Deps, baito *Baito) error {
-	count, err := app.DB.CountDocuments(*ctx, BaitoAppCollection, bson.M{"baitoid": baito.BaitoId})
+	count, err := app.DB.CountDocuments(*ctx, BaitoAppCollection, map[string]any{"baitoid": baito.BaitoId})
 	if err != nil {
 		return err
 	}
@@ -37,7 +35,7 @@ func GetLatestBaitos(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		baitos, err := findLatestBaitosFromDB(ctx, app, bson.M{}, 20)
+		baitos, err := findLatestBaitosFromDB(ctx, app, map[string]any{}, 20)
 		if err != nil {
 			logger.Printf("DB error: %v", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
