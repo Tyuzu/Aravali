@@ -2,66 +2,73 @@ package sqldb
 
 import (
 	"context"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"database/sql"
 )
 
-type FindManyOptions struct {
-	Limit      int
-	Skip       int
-	Sort       bson.D
-	Projection []string
+// OrderBy defines sorting criteria for queries.
+type OrderBy struct {
+	Column     string
+	Descending bool
 }
 
+// FindManyOptions provides pagination, sorting, and field selection.
+type FindManyOptions struct {
+	Limit   int
+	Offset  int       // Replaces MongoDB's Skip
+	Sort    []OrderBy // Replaces bson.D sorting
+	Columns []string  // Replaces MongoDB Projection
+}
+
+// Database defines a standard PostgreSQL database abstraction layer.
 type Database interface {
 	/* Lifecycle */
 	Ping(ctx context.Context) error
 	WithDB(ctx context.Context, op func(ctx context.Context) error) error
-	RunTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+	RunTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error
 
 	/* Create */
-	Insert(ctx context.Context, collection string, document any) error
-	InsertOne(ctx context.Context, collection string, document any) error
-	InsertMany(ctx context.Context, collection string, documents []any) error
-	BulkWrite(ctx context.Context, collection string, operations []any) error
+	Insert(ctx context.Context, table string, record any) error
+	InsertOne(ctx context.Context, table string, record any) error
+	InsertMany(ctx context.Context, table string, records []any) error
+	BulkWrite(ctx context.Context, table string, operations []any) error
 
 	/* Read */
-	FindOne(ctx context.Context, collection string, filter any, result any) error
-	FindOneWithProjection(ctx context.Context, collection string, filter any, projection []string, result any) error
+	FindOne(ctx context.Context, table string, query string, args []any, result any) error
+	FindOneWithProjection(ctx context.Context, table string, columns []string, query string, args []any, result any) error
 
-	FindMany(ctx context.Context, collection string, filter any, result any, opts ...*options.FindOptions) error
-	FindManyWithOptions(ctx context.Context, collection string, filter any, opts FindManyOptions, result any) error
+	FindMany(ctx context.Context, table string, query string, args []any, result any) error
+	FindManyWithOptions(ctx context.Context, table string, query string, args []any, opts FindManyOptions, result any) error
 	FindManyWithProjection(
 		ctx context.Context,
-		collection string,
-		filter any,
-		projection []string,
+		table string,
+		query string,
+		args []any,
+		columns []string,
 		opts FindManyOptions,
 		result any,
 	) error
 
-	Distinct(ctx context.Context, collection string, field string, filter any, result any) error
+	Distinct(ctx context.Context, table string, column string, query string, args []any, result any) error
 
 	/* Update */
-	Update(ctx context.Context, collection string, filter any, update any) (any, error)
-	UpdateOne(ctx context.Context, collection string, filter any, update any) (any, error)
-	UpdateMany(ctx context.Context, collection string, filter any, update any) (any, error)
-	Upsert(ctx context.Context, collection string, filter any, document any) error
-	Inc(ctx context.Context, collection string, filter any, field string, value int64) error
-	AddToSet(ctx context.Context, collection string, filter any, field string, value any) error
+	Update(ctx context.Context, table string, query string, args []any, updateValues map[string]any) (int64, error)
+	UpdateOne(ctx context.Context, table string, query string, args []any, updateValues map[string]any) (int64, error)
+	UpdateMany(ctx context.Context, table string, query string, args []any, updateValues map[string]any) (int64, error)
+	Upsert(ctx context.Context, table string, conflictColumn string, record any) error
+	Inc(ctx context.Context, table string, query string, args []any, column string, value int64) error
+	AddToSet(ctx context.Context, table string, query string, args []any, arrayColumn string, value any) error
 
 	/* Delete */
-	Delete(ctx context.Context, collection string, filter any) (int64, error)
-	DeleteOne(ctx context.Context, collection string, filter any) (int64, error)
-	DeleteMany(ctx context.Context, collection string, filter any) error
+	Delete(ctx context.Context, table string, query string, args []any) (int64, error)
+	DeleteOne(ctx context.Context, table string, query string, args []any) (int64, error)
+	DeleteMany(ctx context.Context, table string, query string, args []any) (int64, error)
 
 	/* Atomic */
-	FindOneAndUpdate(ctx context.Context, collection string, filter any, update any, result any) error
+	FindOneAndUpdate(ctx context.Context, table string, query string, args []any, updateValues map[string]any, result any) error
 
 	/* Aggregate / Count */
-	Aggregate(ctx context.Context, collection string, pipeline any, result any) error
-	Count(ctx context.Context, collection string, filter any) (int64, error)
-	CountDocuments(ctx context.Context, collection string, filter any) (int64, error)
-	EstimatedDocumentCount(ctx context.Context, collection string) (int64, error)
+	QueryRaw(ctx context.Context, sqlQuery string, args []any, result any) error
+	Count(ctx context.Context, table string, query string, args []any) (int64, error)
+	CountDocuments(ctx context.Context, table string, query string, args []any) (int64, error)
+	EstimatedDocumentCount(ctx context.Context, table string) (int64, error)
 }

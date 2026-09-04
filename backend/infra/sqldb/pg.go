@@ -2,26 +2,20 @@ package sqldb
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var errNotImplemented = errors.New("postgres database adapter: operation not implemented for the current document schema")
+var errNotImplemented = errors.New("postgres database adapter: operation not implemented for the current relational schema")
 
-// PostgresDatabase is a lightweight compatibility layer that stores each Mongo-like
-// collection as a JSONB table so the application can run against PostgreSQL without
-// rewriting every repository. It is intentionally conservative and focused on the
-// interface used across the codebase.
+// PostgresDatabase provides a pure PostgreSQL driver implementation using pgxpool.
 type PostgresDatabase struct {
 	db      *pgxpool.Pool
 	limiter chan struct{}
@@ -58,588 +52,612 @@ func (p *PostgresDatabase) WithDB(ctx context.Context, op func(ctx context.Conte
 	return errNotImplemented
 }
 
-func (p *PostgresDatabase) RunTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+func (p *PostgresDatabase) RunTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	tx, err := p.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 
-	if err := fn(ctx); err != nil {
+	if err := fn(tx); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
 }
 
-func (p *PostgresDatabase) Insert(ctx context.Context, collection string, document any) error {
-	return p.InsertOne(ctx, collection, document)
+/* ---------------- Create ---------------- */
+
+func (p *PostgresDatabase) Insert(ctx context.Context, table string, record any) error {
+	return p.InsertOne(ctx, table, record)
 }
 
-func (p *PostgresDatabase) InsertOne(ctx context.Context, collection string, document any) error {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return err
-	}
-	jsonDoc, err := marshalDocument(document)
+func (p *PostgresDatabase) InsertOne(ctx context.Context, table string, record any) error {
+	cols, vals, placeholders, err := extractColumnsAndValues(record)
 	if err != nil {
 		return err
 	}
-	id := documentID(document)
-	_, err = p.db.Exec(ctx, "INSERT INTO "+quoteIdent(collection)+" (id, payload) VALUES ($1, $2::jsonb) ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload",
-		id, string(jsonDoc),
+	if len(cols) == 0 {
+		return fmt.Errorf("no columns found to insert into %s", table)
+	}
+
+	query := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES (%s)",
+		quoteIdent(table),
+		strings.Join(cols, ", "),
+		strings.Join(placeholders, ", "),
 	)
+
+	_, err = p.db.Exec(ctx, query, vals...)
 	return err
 }
 
-func (p *PostgresDatabase) InsertMany(ctx context.Context, collection string, documents []any) error {
-	if len(documents) == 0 {
+func (p *PostgresDatabase) InsertMany(ctx context.Context, table string, records []any) error {
+	if len(records) == 0 {
 		return nil
 	}
-	for _, doc := range documents {
-		if err := p.InsertOne(ctx, collection, doc); err != nil {
+	for _, rec := range records {
+		if err := p.InsertOne(ctx, table, rec); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (p *PostgresDatabase) BulkWrite(ctx context.Context, collection string, operations []any) error {
+func (p *PostgresDatabase) BulkWrite(ctx context.Context, table string, operations []any) error {
 	return errNotImplemented
 }
 
-func (p *PostgresDatabase) FindOne(ctx context.Context, collection string, filter any, result any) error {
-	return p.findOneBase(ctx, collection, filter, nil, result)
+/* ---------------- Read ---------------- */
+
+func (p *PostgresDatabase) FindOne(ctx context.Context, table string, whereClause string, args []any, result any) error {
+	return p.FindOneWithProjection(ctx, table, nil, whereClause, args, result)
 }
 
-func (p *PostgresDatabase) FindOneWithProjection(ctx context.Context, collection string, filter any, projection []string, result any) error {
-	return p.findOneBase(ctx, collection, filter, projection, result)
-}
+func (p *PostgresDatabase) FindOneWithProjection(ctx context.Context, table string, columns []string, whereClause string, args []any, result any) error {
+	cols := "*"
+	if len(columns) > 0 {
+		cols = strings.Join(quoteIdents(columns), ", ")
+	}
 
-func buildFilterQuery(filter any) (string, []any, error) {
-	where, args, err := buildFilterPredicate(filter)
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s LIMIT 1", cols, quoteIdent(table), where)
+	rows, err := p.db.Query(ctx, query, args...)
 	if err != nil {
-		return "", nil, err
+		return err
 	}
-	if where == "" {
-		where = "TRUE"
-	}
-	return where, args, nil
-}
+	defer rows.Close()
 
-func buildFilterPredicate(filter any) (string, []any, error) {
-	if filter == nil {
-		return "TRUE", nil, nil
-	}
-
-	switch v := filter.(type) {
-	case bson.M:
-		return buildMapPredicate(v)
-	case map[string]any:
-		return buildMapPredicate(v)
-	case []any:
-		return buildListPredicate(v, "OR")
-	default:
-		jsonFilter, err := toJSONFilter(filter)
-		if err != nil {
-			return "", nil, err
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return rows.Err()
 		}
-		return "payload @> $1::jsonb", []any{string(jsonFilter)}, nil
+		return pgx.ErrNoRows
 	}
+
+	vals, err := rows.Values()
+	if err != nil {
+		return err
+	}
+
+	// collect column names
+	fds := rows.FieldDescriptions()
+	colsNames := make([]string, len(fds))
+	for i, fd := range fds {
+		colsNames[i] = string(fd.Name)
+	}
+
+	return mapRowToDest(result, colsNames, vals)
 }
 
-func buildMapPredicate(m map[string]any) (string, []any, error) {
-	clauses := make([]string, 0, len(m))
-	args := make([]any, 0, len(m))
-
-	for key, value := range m {
-		switch strings.ToLower(key) {
-		case "$and":
-			clause, clauseArgs, err := buildListPredicate(value, "AND")
-			if err != nil {
-				return "", nil, err
-			}
-			if clause != "" && clause != "TRUE" {
-				clauses = append(clauses, clause)
-				args = append(args, clauseArgs...)
-			}
-		case "$or":
-			clause, clauseArgs, err := buildListPredicate(value, "OR")
-			if err != nil {
-				return "", nil, err
-			}
-			if clause != "" && clause != "TRUE" {
-				clauses = append(clauses, clause)
-				args = append(args, clauseArgs...)
-			}
-		default:
-			clause, clauseArgs, err := buildFieldPredicate(key, value)
-			if err != nil {
-				return "", nil, err
-			}
-			if clause != "" && clause != "TRUE" {
-				clauses = append(clauses, clause)
-				args = append(args, clauseArgs...)
-			}
-		}
-	}
-	if len(clauses) == 0 {
-		return "TRUE", nil, nil
-	}
-	return strings.Join(clauses, " AND "), args, nil
+func (p *PostgresDatabase) FindMany(ctx context.Context, table string, whereClause string, args []any, result any) error {
+	return p.FindManyWithOptions(ctx, table, whereClause, args, FindManyOptions{}, result)
 }
 
-func buildListPredicate(items any, op string) (string, []any, error) {
-	list, ok := items.([]any)
-	if !ok {
-		return "TRUE", nil, nil
-	}
-	if len(list) == 0 {
-		return "TRUE", nil, nil
-	}
-
-	parts := make([]string, 0, len(list))
-	args := make([]any, 0, len(list))
-	for _, item := range list {
-		clause, clauseArgs, err := buildFilterPredicate(item)
-		if err != nil {
-			return "", nil, err
-		}
-		if clause == "" || clause == "TRUE" {
-			continue
-		}
-		parts = append(parts, "("+clause+")")
-		args = append(args, clauseArgs...)
-	}
-	if len(parts) == 0 {
-		return "TRUE", nil, nil
-	}
-	return strings.Join(parts, " "+op+" "), args, nil
-}
-
-func buildFieldPredicate(field string, value any) (string, []any, error) {
-	if field == "" {
-		return "TRUE", nil, nil
-	}
-
-	switch v := value.(type) {
-	case bson.M:
-		return buildOperatorPredicate(field, v)
-	case map[string]any:
-		return buildOperatorPredicate(field, v)
-	default:
-		jsonFilter, err := json.Marshal(map[string]any{field: value})
-		if err != nil {
-			return "", nil, err
-		}
-		return "payload @> $1::jsonb", []any{string(jsonFilter)}, nil
-	}
-}
-
-func buildOperatorPredicate(field string, ops map[string]any) (string, []any, error) {
-	if len(ops) == 0 {
-		return "TRUE", nil, nil
-	}
-	if len(ops) > 1 {
-		jsonFilter, err := json.Marshal(map[string]any{field: ops})
-		if err != nil {
-			return "", nil, err
-		}
-		return "payload @> $1::jsonb", []any{string(jsonFilter)}, nil
-	}
-
-	for op, operand := range ops {
-		switch strings.ToLower(op) {
-		case "$in":
-			values, err := asStringSlice(operand)
-			if err != nil {
-				return "", nil, err
-			}
-			return "COALESCE(" + jsonTextPath(field) + ", '') = ANY($1)", []any{values}, nil
-		case "$nin":
-			values, err := asStringSlice(operand)
-			if err != nil {
-				return "", nil, err
-			}
-			return "NOT (COALESCE(" + jsonTextPath(field) + ", '') = ANY($1))", []any{values}, nil
-		case "$eq":
-			jsonFilter, err := json.Marshal(map[string]any{field: operand})
-			if err != nil {
-				return "", nil, err
-			}
-			return "payload @> $1::jsonb", []any{string(jsonFilter)}, nil
-		case "$ne":
-			jsonFilter, err := json.Marshal(map[string]any{field: operand})
-			if err != nil {
-				return "", nil, err
-			}
-			return "NOT (payload @> $1::jsonb)", []any{string(jsonFilter)}, nil
-		default:
-			jsonFilter, err := json.Marshal(map[string]any{field: map[string]any{op: operand}})
-			if err != nil {
-				return "", nil, err
-			}
-			return "payload @> $1::jsonb", []any{string(jsonFilter)}, nil
-		}
-	}
-	return "TRUE", nil, nil
-}
-
-func jsonTextPath(field string) string {
-	parts := strings.Split(field, ".")
-	quoted := make([]string, 0, len(parts))
-	for _, part := range parts {
-		quoted = append(quoted, "'"+strings.ReplaceAll(part, "'", "''")+"'")
-	}
-	if len(quoted) == 0 {
-		return "''"
-	}
-	return "payload #>> ARRAY[" + strings.Join(quoted, ",") + "]"
-}
-
-func asStringSlice(v any) ([]string, error) {
-	switch value := v.(type) {
-	case []string:
-		return value, nil
-	case []any:
-		out := make([]string, 0, len(value))
-		for _, item := range value {
-			out = append(out, fmt.Sprintf("%v", item))
-		}
-		return out, nil
-	default:
-		return nil, fmt.Errorf("unsupported $in value type %T", v)
-	}
-}
-
-func (p *PostgresDatabase) FindMany(
-	ctx context.Context,
-	collection string,
-	filter any,
-	result any,
-	opts ...*options.FindOptions,
-) error {
-	return p.findManyBase(ctx, collection, filter, nil, result)
-}
-
-func (p *PostgresDatabase) FindManyWithOptions(
-	ctx context.Context,
-	collection string,
-	filter any,
-	opts FindManyOptions,
-	result any,
-) error {
-	return p.findManyBase(ctx, collection, filter, nil, result)
+func (p *PostgresDatabase) FindManyWithOptions(ctx context.Context, table string, whereClause string, args []any, opts FindManyOptions, result any) error {
+	return p.FindManyWithProjection(ctx, table, whereClause, args, opts.Columns, opts, result)
 }
 
 func (p *PostgresDatabase) FindManyWithProjection(
 	ctx context.Context,
-	collection string,
-	filter any,
-	projection []string,
+	table string,
+	whereClause string,
+	args []any,
+	columns []string,
 	opts FindManyOptions,
 	result any,
 ) error {
-	return p.findManyBase(ctx, collection, filter, projection, result)
-}
-
-func (p *PostgresDatabase) Distinct(ctx context.Context, collection string, field string, filter any, result any) error {
-	return errNotImplemented
-}
-
-func (p *PostgresDatabase) Update(ctx context.Context, collection string, filter any, update any) (any, error) {
-	return p.UpdateOne(ctx, collection, filter, update)
-}
-
-func (p *PostgresDatabase) UpdateOne(ctx context.Context, collection string, filter any, update any) (any, error) {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return nil, err
+	cols := "*"
+	if len(columns) > 0 {
+		cols = strings.Join(quoteIdents(columns), ", ")
 	}
-	merged, err := p.mergeUpdate(ctx, collection, filter, update)
+
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE %s", cols, quoteIdent(table), where)
+
+	if len(opts.Sort) > 0 {
+		var sortParts []string
+		for _, s := range opts.Sort {
+			dir := "ASC"
+			if s.Descending {
+				dir = "DESC"
+			}
+			sortParts = append(sortParts, fmt.Sprintf("%s %s", quoteIdent(s.Column), dir))
+		}
+		query += " ORDER BY " + strings.Join(sortParts, ", ")
+	}
+
+	if opts.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", opts.Limit)
+	}
+	if opts.Offset > 0 {
+		query += fmt.Sprintf(" OFFSET %d", opts.Offset)
+	}
+
+	rows, err := p.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
-	}
-	return merged, nil
-}
-
-func (p *PostgresDatabase) UpdateMany(ctx context.Context, collection string, filter any, update any) (any, error) {
-	return p.UpdateOne(ctx, collection, filter, update)
-}
-
-func (p *PostgresDatabase) Upsert(ctx context.Context, collection string, filter any, document any) error {
-	if err := p.ensureTable(ctx, collection); err != nil {
 		return err
 	}
-	if count, err := p.CountDocuments(ctx, collection, filter); err == nil && count == 0 {
-		return p.InsertOne(ctx, collection, document)
+	defer rows.Close()
+
+	// prepare column names
+	fds := rows.FieldDescriptions()
+	colsNames := make([]string, len(fds))
+	for i, fd := range fds {
+		colsNames[i] = string(fd.Name)
 	}
-	_, err := p.UpdateOne(ctx, collection, filter, document)
-	return err
-}
 
-func (p *PostgresDatabase) Inc(ctx context.Context, collection string, filter any, field string, value int64) error {
-	return errNotImplemented
-}
-
-func (p *PostgresDatabase) AddToSet(ctx context.Context, collection string, filter any, field string, value any) error {
-	return errNotImplemented
-}
-
-func (p *PostgresDatabase) Delete(ctx context.Context, collection string, filter any) (int64, error) {
-	return p.DeleteOne(ctx, collection, filter)
-}
-
-func (p *PostgresDatabase) DeleteOne(ctx context.Context, collection string, filter any) (int64, error) {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return 0, err
+	// result must be pointer to slice
+	rv := reflect.ValueOf(result)
+	if rv.Kind() != reflect.Ptr {
+		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
 	}
-	where, args, err := buildFilterQuery(filter)
+	sv := rv.Elem()
+	if sv.Kind() != reflect.Slice {
+		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
+	}
+
+	elemType := sv.Type().Elem()
+
+	for rows.Next() {
+		vals, err := rows.Values()
+		if err != nil {
+			return err
+		}
+
+		// create new element
+		newElem := reflect.New(elemType).Interface()
+		if err := mapRowToDest(newElem, colsNames, vals); err != nil {
+			return err
+		}
+
+		// append dereferenced element if slice element is not a pointer
+		var toAppend reflect.Value
+		if elemType.Kind() == reflect.Ptr {
+			toAppend = reflect.ValueOf(newElem)
+		} else {
+			toAppend = reflect.ValueOf(newElem).Elem()
+		}
+		sv.Set(reflect.Append(sv, toAppend))
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *PostgresDatabase) Distinct(ctx context.Context, table string, column string, whereClause string, args []any, result any) error {
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	query := fmt.Sprintf("SELECT DISTINCT %s FROM %s WHERE %s", quoteIdent(column), quoteIdent(table), where)
+	rows, err := p.db.Query(ctx, query, args...)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	cmd := "DELETE FROM " + quoteIdent(collection) + " WHERE " + where
-	res, err := p.db.Exec(ctx, cmd, args...)
+	defer rows.Close()
+
+	// result must be pointer to slice
+	rv := reflect.ValueOf(result)
+	if rv.Kind() != reflect.Ptr {
+		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
+	}
+	sv := rv.Elem()
+	if sv.Kind() != reflect.Slice {
+		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
+	}
+
+	for rows.Next() {
+		vals, err := rows.Values()
+		if err != nil {
+			return err
+		}
+		if len(vals) == 0 {
+			continue
+		}
+
+		// append first column value
+		v := vals[0]
+		valrv := reflect.ValueOf(v)
+		// create convertible value for slice element
+		elemType := sv.Type().Elem()
+		var toAppend reflect.Value
+		if v == nil {
+			toAppend = reflect.Zero(elemType)
+		} else if valrv.Type().AssignableTo(elemType) {
+			toAppend = valrv
+		} else if valrv.Type().ConvertibleTo(elemType) {
+			toAppend = valrv.Convert(elemType)
+		} else if b, ok := v.([]byte); ok && elemType.Kind() == reflect.String {
+			toAppend = reflect.ValueOf(string(b))
+		} else {
+			toAppend = reflect.Zero(elemType)
+		}
+		sv.Set(reflect.Append(sv, toAppend))
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+/* ---------------- Update ---------------- */
+
+func (p *PostgresDatabase) Update(ctx context.Context, table string, whereClause string, args []any, updateValues map[string]any) (int64, error) {
+	return p.UpdateMany(ctx, table, whereClause, args, updateValues)
+}
+
+func (p *PostgresDatabase) UpdateOne(ctx context.Context, table string, whereClause string, args []any, updateValues map[string]any) (int64, error) {
+	return p.UpdateMany(ctx, table, whereClause, args, updateValues)
+}
+
+func (p *PostgresDatabase) UpdateMany(ctx context.Context, table string, whereClause string, args []any, updateValues map[string]any) (int64, error) {
+	if len(updateValues) == 0 {
+		return 0, nil
+	}
+
+	setClauses := make([]string, 0, len(updateValues))
+	queryArgs := make([]any, 0, len(args)+len(updateValues))
+
+	argIdx := 1
+	for col, val := range updateValues {
+		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", quoteIdent(col), argIdx))
+		queryArgs = append(queryArgs, val)
+		argIdx++
+	}
+
+	// Adjust parameter indices for WHERE clause args
+	adjustedWhere := whereClause
+	for i := range args {
+		adjustedWhere = strings.ReplaceAll(adjustedWhere, fmt.Sprintf("$%d", i+1), fmt.Sprintf("$%d", argIdx))
+		queryArgs = append(queryArgs, args[i])
+		argIdx++
+	}
+
+	where := "TRUE"
+	if strings.TrimSpace(adjustedWhere) != "" {
+		where = adjustedWhere
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", quoteIdent(table), strings.Join(setClauses, ", "), where)
+	res, err := p.db.Exec(ctx, query, queryArgs...)
 	if err != nil {
 		return 0, err
 	}
 	return res.RowsAffected(), nil
 }
 
-func (p *PostgresDatabase) DeleteMany(ctx context.Context, collection string, filter any) error {
-	_, err := p.DeleteOne(ctx, collection, filter)
-	return err
-}
-
-func (p *PostgresDatabase) FindOneAndUpdate(ctx context.Context, collection string, filter any, update any, result any) error {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return err
-	}
-	if err := p.FindOne(ctx, collection, filter, result); err != nil {
-		return err
-	}
-	_, err := p.UpdateOne(ctx, collection, filter, update)
-	return err
-}
-
-func (p *PostgresDatabase) Aggregate(ctx context.Context, collection string, pipeline any, result any) error {
-	return errNotImplemented
-}
-
-func (p *PostgresDatabase) Count(ctx context.Context, collection string, filter any) (int64, error) {
-	return p.CountDocuments(ctx, collection, filter)
-}
-
-func (p *PostgresDatabase) CountDocuments(ctx context.Context, collection string, filter any) (int64, error) {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return 0, err
-	}
-	where, args, err := buildFilterQuery(filter)
-	if err != nil {
-		return 0, err
-	}
-	var count int64
-	err = p.db.QueryRow(ctx, "SELECT COUNT(*) FROM "+quoteIdent(collection)+" WHERE "+where, args...).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func (p *PostgresDatabase) EstimatedDocumentCount(ctx context.Context, collection string) (int64, error) {
-	var count int64
-	err := p.db.QueryRow(ctx, "SELECT COUNT(*) FROM "+quoteIdent(collection)).Scan(&count)
-	return count, err
-}
-
-func (p *PostgresDatabase) ensureTable(ctx context.Context, collection string) error {
-	name := quoteIdent(collection)
-	_, err := p.db.Exec(ctx, "CREATE TABLE IF NOT EXISTS "+name+" (id TEXT PRIMARY KEY, payload JSONB NOT NULL)")
-	return err
-}
-
-func (p *PostgresDatabase) findOneBase(ctx context.Context, collection string, filter any, projection []string, result any) error {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return err
-	}
-	where, args, err := buildFilterQuery(filter)
+func (p *PostgresDatabase) Upsert(ctx context.Context, table string, conflictColumn string, record any) error {
+	cols, vals, placeholders, err := extractColumnsAndValues(record)
 	if err != nil {
 		return err
 	}
-	query := "SELECT payload FROM " + quoteIdent(collection) + " WHERE " + where + " LIMIT 1"
-	var payload []byte
-	argsList := make([]any, len(args))
-	copy(argsList, args)
-	err = p.db.QueryRow(ctx, query, argsList...).Scan(&payload)
-	if err != nil {
-		return err
-	}
-	if len(projection) > 0 {
-		var doc map[string]any
-		if err := json.Unmarshal(payload, &doc); err != nil {
-			return err
+
+	updates := make([]string, 0, len(cols))
+	for _, col := range cols {
+		if col == quoteIdent(conflictColumn) {
+			continue
 		}
-		filtered := map[string]any{}
-		for _, field := range projection {
-			if val, ok := doc[field]; ok {
-				filtered[field] = val
-			}
-		}
-		payload, err = json.Marshal(filtered)
+		updates = append(updates, fmt.Sprintf("%s = EXCLUDED.%s", col, col))
+	}
+
+	query := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES (%s) ON CONFLICT (%s) DO UPDATE SET %s",
+		quoteIdent(table),
+		strings.Join(cols, ", "),
+		strings.Join(placeholders, ", "),
+		quoteIdent(conflictColumn),
+		strings.Join(updates, ", "),
+	)
+
+	_, err = p.db.Exec(ctx, query, vals...)
+	return err
+}
+
+func (p *PostgresDatabase) Inc(ctx context.Context, table string, whereClause string, args []any, column string, value int64) error {
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s", quoteIdent(table), quoteIdent(column), quoteIdent(column), where)
+	queryArgs := append([]any{value}, args...)
+	_, err := p.db.Exec(ctx, query, queryArgs...)
+	return err
+}
+
+func (p *PostgresDatabase) AddToSet(ctx context.Context, table string, whereClause string, args []any, arrayColumn string, value any) error {
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	// Appends to a PostgreSQL array column if the element does not already exist
+	col := quoteIdent(arrayColumn)
+	query := fmt.Sprintf(
+		"UPDATE %s SET %s = CASE WHEN $1 = ANY(%s) THEN %s ELSE array_append(%s, $1) END WHERE %s",
+		quoteIdent(table), col, col, col, col, where,
+	)
+	queryArgs := append([]any{value}, args...)
+	_, err := p.db.Exec(ctx, query, queryArgs...)
+	return err
+}
+
+/* ---------------- Delete ---------------- */
+
+func (p *PostgresDatabase) Delete(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	return p.DeleteMany(ctx, table, whereClause, args)
+}
+
+func (p *PostgresDatabase) DeleteOne(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	return p.DeleteMany(ctx, table, whereClause, args)
+}
+
+func (p *PostgresDatabase) DeleteMany(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s", quoteIdent(table), where)
+	res, err := p.db.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected(), nil
+}
+
+/* ---------------- Atomic & Aggregations ---------------- */
+
+func (p *PostgresDatabase) FindOneAndUpdate(ctx context.Context, table string, whereClause string, args []any, updateValues map[string]any, result any) error {
+	var rowCount int64
+	err := p.RunTransaction(ctx, func(tx pgx.Tx) error {
+		var err error
+		rowCount, err = p.UpdateOne(ctx, table, whereClause, args, updateValues)
 		if err != nil {
 			return err
 		}
-	}
-	return json.Unmarshal(payload, result)
+		if rowCount == 0 {
+			return pgx.ErrNoRows
+		}
+		return p.FindOne(ctx, table, whereClause, args, result)
+	})
+	return err
 }
 
-func (p *PostgresDatabase) findManyBase(ctx context.Context, collection string, filter any, projection []string, result any) error {
-	if err := p.ensureTable(ctx, collection); err != nil {
-		return err
-	}
-	where, args, err := buildFilterQuery(filter)
-	if err != nil {
-		return err
-	}
-	query := "SELECT payload FROM " + quoteIdent(collection) + " WHERE " + where + " ORDER BY id"
-	argsList := make([]any, len(args))
-	copy(argsList, args)
-	rows, err := p.db.Query(ctx, query, argsList...)
+func (p *PostgresDatabase) QueryRaw(ctx context.Context, sqlQuery string, args []any, result any) error {
+	rows, err := p.db.Query(ctx, sqlQuery, args...)
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
-	items := make([]json.RawMessage, 0)
-	for rows.Next() {
-		var payload []byte
-		if err := rows.Scan(&payload); err != nil {
-			return err
-		}
-		items = append(items, payload)
+	// prepare column names
+	fds := rows.FieldDescriptions()
+	colsNames := make([]string, len(fds))
+	for i, fd := range fds {
+		colsNames[i] = string(fd.Name)
 	}
-	if err := rows.Err(); err != nil {
-		return err
+
+	// if result is pointer to slice -> behave like FindMany
+	rv := reflect.ValueOf(result)
+	if rv.Kind() != reflect.Ptr {
+		return fmt.Errorf("result must be a pointer, got %T", result)
 	}
-	if len(items) == 0 {
-		return nil
-	}
-	if len(projection) > 0 {
-		filtered := make([]map[string]any, 0, len(items))
-		for _, item := range items {
-			var doc map[string]any
-			if err := json.Unmarshal(item, &doc); err != nil {
+	ev := rv.Elem()
+	if ev.Kind() == reflect.Slice {
+		elemType := ev.Type().Elem()
+		for rows.Next() {
+			vals, err := rows.Values()
+			if err != nil {
 				return err
 			}
-			out := map[string]any{}
-			for _, field := range projection {
-				if val, ok := doc[field]; ok {
-					out[field] = val
-				}
+			newElem := reflect.New(elemType).Interface()
+			if err := mapRowToDest(newElem, colsNames, vals); err != nil {
+				return err
 			}
-			filtered = append(filtered, out)
+			var toAppend reflect.Value
+			if elemType.Kind() == reflect.Ptr {
+				toAppend = reflect.ValueOf(newElem)
+			} else {
+				toAppend = reflect.ValueOf(newElem).Elem()
+			}
+			ev.Set(reflect.Append(ev, toAppend))
 		}
-		payload, err := json.Marshal(filtered)
-		if err != nil {
+		if err := rows.Err(); err != nil {
 			return err
 		}
-		return json.Unmarshal(payload, result)
+		return nil
 	}
-	payload, err := json.Marshal(items)
+
+	// otherwise behave like FindOne
+	if !rows.Next() {
+		if rows.Err() != nil {
+			return rows.Err()
+		}
+		return pgx.ErrNoRows
+	}
+	vals, err := rows.Values()
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(payload, result)
+	return mapRowToDest(result, colsNames, vals)
 }
 
-func (p *PostgresDatabase) mergeUpdate(ctx context.Context, collection string, filter any, update any) (any, error) {
-	var current any
-	if err := p.FindOne(ctx, collection, filter, &current); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			if err := p.InsertOne(ctx, collection, update); err != nil {
-				return nil, err
+func mapRowToDest(dest any, cols []string, vals []any) error {
+	if dest == nil {
+		return fmt.Errorf("nil destination")
+	}
+	rv := reflect.ValueOf(dest)
+	if rv.Kind() != reflect.Ptr {
+		return fmt.Errorf("destination must be a pointer, got %T", dest)
+	}
+	ev := rv.Elem()
+
+	// map into map[string]any
+	if ev.Kind() == reflect.Map {
+		if ev.IsNil() {
+			ev.Set(reflect.MakeMap(ev.Type()))
+		}
+		for i, c := range cols {
+			key := reflect.ValueOf(c)
+			ev.SetMapIndex(key, reflect.ValueOf(vals[i]))
+		}
+		return nil
+	}
+
+	// single column into non-struct
+	if ev.Kind() != reflect.Struct {
+		if len(vals) == 0 {
+			return nil
+		}
+		v := vals[0]
+		if v == nil {
+			ev.Set(reflect.Zero(ev.Type()))
+			return nil
+		}
+		valrv := reflect.ValueOf(v)
+		if valrv.Type().AssignableTo(ev.Type()) {
+			ev.Set(valrv)
+			return nil
+		}
+		if valrv.Type().ConvertibleTo(ev.Type()) {
+			ev.Set(valrv.Convert(ev.Type()))
+			return nil
+		}
+		if b, ok := v.([]byte); ok && ev.Kind() == reflect.String {
+			ev.SetString(string(b))
+			return nil
+		}
+		return fmt.Errorf("cannot assign %T to %T", v, dest)
+	}
+
+	// map into struct fields by `db` tag or field name (case-insensitive)
+	typ := ev.Type()
+	for i, c := range cols {
+		for j := 0; j < ev.NumField(); j++ {
+			field := typ.Field(j)
+			dbTag := field.Tag.Get("db")
+			if dbTag == "" {
+				dbTag = strings.ToLower(field.Name)
 			}
-			return update, nil
+			if dbTag == c || strings.EqualFold(field.Name, c) {
+				fv := ev.Field(j)
+				if !fv.CanSet() {
+					break
+				}
+				v := vals[i]
+				if v == nil {
+					fv.Set(reflect.Zero(fv.Type()))
+					break
+				}
+				valrv := reflect.ValueOf(v)
+				if valrv.Type().AssignableTo(fv.Type()) {
+					fv.Set(valrv)
+					break
+				}
+				if valrv.Type().ConvertibleTo(fv.Type()) {
+					fv.Set(valrv.Convert(fv.Type()))
+					break
+				}
+				if b, ok := v.([]byte); ok && fv.Kind() == reflect.String {
+					fv.SetString(string(b))
+					break
+				}
+			}
 		}
-		return nil, err
 	}
-	baseMap, err := asMap(current)
-	if err != nil {
-		return nil, err
-	}
-	incoming, err := asMap(update)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range incoming {
-		baseMap[k] = v
-	}
-	jsonDoc, err := json.Marshal(baseMap)
-	if err != nil {
-		return nil, err
-	}
-	id := documentID(current)
-	_, err = p.db.Exec(ctx, "UPDATE "+quoteIdent(collection)+" SET payload = $2::jsonb WHERE id = $1", id, string(jsonDoc))
-	if err != nil {
-		return nil, err
-	}
-	return baseMap, nil
+	return nil
 }
 
-func marshalDocument(document any) ([]byte, error) {
-	if document == nil {
-		return []byte("{}"), nil
-	}
-	return json.Marshal(document)
+func (p *PostgresDatabase) Count(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	return p.CountDocuments(ctx, table, whereClause, args)
 }
 
-func toJSONFilter(filter any) ([]byte, error) {
-	if filter == nil {
-		return []byte("{}"), nil
+func (p *PostgresDatabase) CountDocuments(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
 	}
-	if f, ok := filter.(bson.M); ok {
-		return json.Marshal(map[string]any(f))
-	}
-	if f, ok := filter.(map[string]any); ok {
-		return json.Marshal(f)
-	}
-	return json.Marshal(filter)
+
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", quoteIdent(table), where)
+	var count int64
+	err := p.db.QueryRow(ctx, query, args...).Scan(&count)
+	return count, err
 }
 
-func asMap(v any) (map[string]any, error) {
-	switch x := v.(type) {
-	case map[string]any:
-		return x, nil
-	case bson.M:
-		return map[string]any(x), nil
-	default:
-		b, err := json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
-		out := map[string]any{}
-		if err := json.Unmarshal(b, &out); err != nil {
-			return nil, err
-		}
-		return out, nil
-	}
+func (p *PostgresDatabase) EstimatedDocumentCount(ctx context.Context, table string) (int64, error) {
+	var count int64
+	query := "SELECT reltuples::bigint FROM pg_class WHERE relname = $1"
+	err := p.db.QueryRow(ctx, query, table).Scan(&count)
+	return count, err
 }
 
-func documentID(document any) string {
-	switch v := document.(type) {
-	case map[string]any:
-		if val, ok := v["_id"]; ok {
-			return fmt.Sprintf("%v", val)
-		}
-		if val, ok := v["id"]; ok {
-			return fmt.Sprintf("%v", val)
-		}
-	case bson.M:
-		if val, ok := v["_id"]; ok {
-			return fmt.Sprintf("%v", val)
-		}
-		if val, ok := v["id"]; ok {
-			return fmt.Sprintf("%v", val)
-		}
+/* ---------------- Helpers ---------------- */
+
+func extractColumnsAndValues(record any) ([]string, []any, []string, error) {
+	val := reflect.ValueOf(record)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
 	}
-	return uuid.NewString()
+	if val.Kind() != reflect.Struct {
+		return nil, nil, nil, fmt.Errorf("expected struct or struct pointer, got %T", record)
+	}
+
+	typ := val.Type()
+	cols := make([]string, 0, val.NumField())
+	vals := make([]any, 0, val.NumField())
+	placeholders := make([]string, 0, val.NumField())
+
+	argIdx := 1
+	for i := 0; i < val.NumField(); i++ {
+		field := typ.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "-" {
+			continue
+		}
+		if dbTag == "" {
+			dbTag = strings.ToLower(field.Name)
+		}
+
+		cols = append(cols, quoteIdent(dbTag))
+		vals = append(vals, val.Field(i).Interface())
+		placeholders = append(placeholders, fmt.Sprintf("$%d", argIdx))
+		argIdx++
+	}
+
+	return cols, vals, placeholders, nil
 }
 
 func quoteIdent(name string) string {
@@ -647,9 +665,19 @@ func quoteIdent(name string) string {
 	return `"` + re.ReplaceAllString(name, "_") + `"`
 }
 
+func quoteIdents(names []string) []string {
+	out := make([]string, len(names))
+	for i, n := range names {
+		out[i] = quoteIdent(n)
+	}
+	return out
+}
+
 func isRetryablePostgres(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "timeout") || strings.Contains(err.Error(), "too many clients")
+	return strings.Contains(err.Error(), "connection refused") ||
+		strings.Contains(err.Error(), "timeout") ||
+		strings.Contains(err.Error(), "too many clients")
 }
