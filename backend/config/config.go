@@ -13,6 +13,11 @@ import (
 type Config struct {
 	Env                   string
 	DatabaseURL           string
+	PostgresUser          string
+	PostgresPassword      string
+	PostgresHost          string
+	PostgresPort          string
+	PostgresDB            string
 	STRIPE_WEBHOOK_SECRET string
 	HTTPPort              string
 	AllowedOrigins        []string
@@ -60,9 +65,32 @@ func InitConfig() (*Config, error) {
 		}
 	}
 
+	// Load Postgres discrete parameters with defaults
+	pgUser := envOrDefault("POSTGRES_USER", "apeman")
+	pgPass := envOrDefault("POSTGRES_PASSWORD", "ningning")
+	pgHost := envOrDefault("POSTGRES_HOST", "localhost")
+	pgPort := envOrDefault("POSTGRES_PORT", "5432")
+	pgDB := envOrDefault("POSTGRES_DB", "eventdb")
+
+	// Fallback to explicit connection URLs if available
+	dbURL := os.Getenv("POSTGRES_URL")
+	if dbURL == "" {
+		dbURL = os.Getenv("DATABASE_URL")
+	}
+
+	// Construct connection string if no full URL is provided explicitly
+	if dbURL == "" {
+		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", pgUser, pgPass, pgHost, pgPort, pgDB)
+	}
+
 	cfg := &Config{
 		Env:                   env,
-		DatabaseURL:           envOrDefault("POSTGRES_URL", envOrDefault("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/scav")),
+		DatabaseURL:           dbURL,
+		PostgresUser:          pgUser,
+		PostgresPassword:      pgPass,
+		PostgresHost:          pgHost,
+		PostgresPort:          pgPort,
+		PostgresDB:            pgDB,
 		HTTPPort:              port,
 		AllowedOrigins:        allowedOrigins,
 		STRIPE_WEBHOOK_SECRET: os.Getenv("STRIPE_WEBHOOK_SECRET"),
@@ -82,11 +110,11 @@ func InitConfig() (*Config, error) {
 
 	if cfg.Env == "production" {
 		// ensure essential services are configured in production
-		if cfg.DatabaseURL == "" || cfg.DatabaseURL == "postgres://postgres:postgres@localhost:5432/scav" {
-			return nil, fmt.Errorf("POSTGRES_URL must be set in production")
+		if cfg.DatabaseURL == "" {
+			return nil, fmt.Errorf("POSTGRES_URL or discrete POSTGRES_* environment variables must be set in production")
 		}
-		if os.Getenv("REDIS_URL") == "" {
-			return nil, fmt.Errorf("REDIS_URL must be set in production")
+		if os.Getenv("REDIS_URL") == "" && os.Getenv("REDIS_ADDR") == "" {
+			return nil, fmt.Errorf("REDIS_URL or REDIS_ADDR must be set in production")
 		}
 
 		// Only enforce internal TLS if we aren't terminating it upstream at a load balancer

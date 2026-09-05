@@ -85,7 +85,18 @@ func New(cfg *config.Config) (*Deps, error) {
 
 	postgresURL := cfg.DatabaseURL
 	if postgresURL == "" {
-		postgresURL = env("POSTGRES_URL", env("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/scav"))
+		postgresURL = env("POSTGRES_URL", env("DATABASE_URL", ""))
+	}
+
+	// Construct connection string from discrete env vars if no full URL is provided
+	if postgresURL == "" {
+		user := env("POSTGRES_USER", "apeman")
+		pass := env("POSTGRES_PASSWORD", "ningning")
+		host := env("POSTGRES_HOST", "localhost")
+		port := env("POSTGRES_PORT", "5432")
+		dbname := env("POSTGRES_DB", "eventdb")
+
+		postgresURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, pass, host, port, dbname)
 	}
 
 	pool, err := NewPostgres(postgresURL)
