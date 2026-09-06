@@ -60,7 +60,7 @@ func CreateMenu(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt: time.Now().UTC(),
 		}
 
-		if err := app.DB.Insert(ctx, menuCollection, menu); err != nil {
+		if err := insertMenu(ctx, app, menu); err != nil {
 			http.Error(w, "Failed to insert menu: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -109,8 +109,7 @@ func EditMenu(app *infra.Deps) http.HandlerFunc {
 			updateFields["stock"] = menu.Stock
 		}
 
-		// Update using Database interface
-		if _, err := app.DB.UpdateOne(ctx, menuCollection, map[string]string{"placeid": placeID, "menuid": menuID}, map[string]any{"$set": updateFields}); err != nil {
+		if err := updateMenuFields(ctx, app, placeID, menuID, updateFields); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to update menu: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -139,7 +138,7 @@ func DeleteMenu(app *infra.Deps) http.HandlerFunc {
 		placeID := utils.GetParam(r, "placeid")
 		menuID := utils.GetParam(r, "menuid")
 
-		if _, err := app.DB.DeleteOne(ctx, "menu", map[string]string{"placeid": placeID, "menuid": menuID}); err != nil {
+		if err := deleteMenuByID(ctx, app, placeID, menuID); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to delete menu: %v", err), http.StatusInternalServerError)
 			return
 		}

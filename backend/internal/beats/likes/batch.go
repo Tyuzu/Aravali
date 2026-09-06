@@ -74,21 +74,7 @@ func BatchUserLikes(app *infra.Deps) http.HandlerFunc {
 		)
 		defer cancel()
 
-		var likes []Like
-
-		err := app.DB.FindMany(
-			ctx,
-			likesCollection,
-			map[string]any{
-				"userid":      userID,
-				"entity_type": entityType,
-				"entity_id": map[string]any{
-					"$in": req.EntityIDs,
-				},
-			},
-			&likes,
-		)
-
+		likes, err := FindUserLikesByEntityIDs(ctx, app, userID, entityType, req.EntityIDs)
 		if err != nil {
 			http.Error(
 				w,

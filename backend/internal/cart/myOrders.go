@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/internal/auth"
 	"scav/internal/pay"
 	"scav/utils"
 	"scav/utils/logger"
@@ -139,56 +138,6 @@ func extractFarmOrderMetadata(farmOrders []FarmOrder) ([]string, map[string]stru
 		}
 	}
 	return orderIDs, approverIDSet
-}
-
-func fetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderIDs []string) map[string]pay.Transaction {
-	txnMap := make(map[string]pay.Transaction)
-	if len(orderIDs) == 0 {
-		return txnMap
-	}
-
-	var txns []pay.Transaction
-	err := app.DB.FindMany(ctx, "transactions", map[string]any{
-		"entity_type": "order",
-		"entity_id":   map[string]any{"$in": orderIDs},
-	}, &txns)
-	if err != nil {
-		logger.Printf("Warning: failed to fetch transactions: %v", err)
-		return txnMap
-	}
-
-	for _, t := range txns {
-		if t.EntityID != "" {
-			txnMap[t.EntityID] = t
-		}
-	}
-	return txnMap
-}
-
-func fetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[string]struct{}) map[string]string {
-	nameMap := make(map[string]string)
-	if len(userIDs) == 0 {
-		return nameMap
-	}
-
-	ids := make([]string, 0, len(userIDs))
-	for id := range userIDs {
-		ids = append(ids, id)
-	}
-
-	var users []auth.User
-	err := app.DB.FindMany(ctx, "users", map[string]any{"userid": map[string]any{"$in": ids}}, &users)
-	if err != nil {
-		logger.Printf("Warning: failed to batch fetch users: %v", err)
-		return nameMap
-	}
-
-	for _, u := range users {
-		if u.Name != "" {
-			nameMap[u.UserID] = u.Name
-		}
-	}
-	return nameMap
 }
 
 func parseQueryInt(r *http.Request, key string, defaultVal, minVal, maxVal int) int {

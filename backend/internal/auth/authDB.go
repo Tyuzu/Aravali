@@ -122,3 +122,8 @@ func VerifyUserEmail(ctx context.Context, app *infra.Deps, email string) (any, e
 	update := map[string]any{"email_verified": true}
 	return app.DB.Update(ctx, UsersCollection, map[string]any{"email": email}, update)
 }
+
+func MigrateUserPasswordHash(ctx context.Context, app *infra.Deps, userID, passwordHash string) (any, error) {
+	update := map[string]any{"$set": map[string]any{"password_hash": passwordHash}}
+	return app.DB.Update(ctx, UsersCollection, map[string]any{"userid": userID}, update)
+}

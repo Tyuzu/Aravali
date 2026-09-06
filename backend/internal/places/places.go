@@ -9,6 +9,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
+	placedb "scav/internal/places/placedb"
 	"scav/internal/userdata"
 	"scav/utils"
 	"strconv"
@@ -153,7 +154,7 @@ func CreatePlace(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if err := app.DB.Insert(ctx, placesCollection, place); err != nil {
+		if err := placedb.InsertPlace(ctx, app, place); err != nil {
 			http.Error(w, "Error creating place", http.StatusInternalServerError)
 			return
 		}

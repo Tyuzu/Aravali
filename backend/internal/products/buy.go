@@ -90,9 +90,9 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 
 		// Atomic decrement to prevent concurrent overselling.
 		var updatedCrop map[string]any
-		err := app.DB.FindOneAndUpdate(
+		err := FindOneAndUpdateCrop(
 			ctx,
-			cropsCollection,
+			app,
 			map[string]any{
 				"farmid":     farmID,
 				"cropid":     cropID,
@@ -116,9 +116,9 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 		}
 
 		if quantity, ok := toInt(updatedCrop["quantity"]); ok && quantity == 0 {
-			_, _ = app.DB.UpdateOne(
+			_, _ = UpdateCropByFilter(
 				ctx,
-				cropsCollection,
+				app,
 				map[string]any{"farmid": farmID, "cropid": cropID},
 				map[string]any{"$set": map[string]any{"outOfStock": true, "updatedAt": time.Now()}},
 			)
@@ -156,7 +156,7 @@ func updateOrderStatus(
 	}
 
 	var order cart.FarmOrder
-	if err := app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": orderID}, &order); err != nil {
+	if err := GetFarmOrderByID(ctx, app, orderID, &order); err != nil {
 		utils.RespondWithJSON(
 			w,
 			http.StatusNotFound,
@@ -166,7 +166,7 @@ func updateOrderStatus(
 	}
 
 	var farm farms.Farm
-	if err := app.DB.FindOne(ctx, farmsCollection, map[string]any{"farmid": order.FarmID}, &farm); err != nil {
+	if err := GetFarmByID(ctx, app, order.FarmID, &farm); err != nil {
 		utils.RespondWithJSON(
 			w,
 			http.StatusNotFound,
@@ -197,10 +197,10 @@ func updateOrderStatus(
 		return
 	}
 
-	_, err := app.DB.UpdateOne(
+	_, err := UpdateFarmOrderByID(
 		ctx,
-		farmOrdersCollection,
-		map[string]any{"orderid": orderID},
+		app,
+		orderID,
 		map[string]any{"$set": map[string]any{"status": newStatus, "updatedAt": time.Now()}},
 	)
 	if err != nil {
@@ -319,7 +319,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 	}
 
 	var ownedFarms []farms.Farm
-	if err := app.DB.FindMany(ctx, farmsCollection, map[string]any{"createdBy": userID}, &ownedFarms); err != nil {
+	if err := FindFarmsByFilter(ctx, app, map[string]any{"createdBy": userID}, &ownedFarms); err != nil {
 		utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 			"success": false,
 			"message": "Failed to fetch farms",
@@ -337,7 +337,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 
 	for _, orderID := range req.OrderIDs {
 		var order cart.FarmOrder
-		if err := app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": orderID}, &order); err != nil {
+		if err := GetFarmOrderByID(ctx, app, orderID, &order); err != nil {
 			response.Failed++
 			errorsList = append(errorsList, fmt.Sprintf("Order %s not found", orderID))
 			continue
@@ -363,10 +363,10 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 			continue
 		}
 
-		if _, err := app.DB.UpdateOne(
+		if _, err := UpdateFarmOrderByID(
 			ctx,
-			farmOrdersCollection,
-			map[string]any{"orderid": orderID},
+			app,
+			orderID,
 			map[string]any{"$set": map[string]any{"status": newStatus, "updatedAt": time.Now()}},
 		); err != nil {
 			response.Failed++
@@ -425,7 +425,7 @@ func DownloadReceipt(app *infra.Deps) http.HandlerFunc {
 		orderID := utils.GetParam(r, "id")
 
 		var order cart.FarmOrder
-		if err := app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": orderID}, &order); err != nil {
+		if err := GetFarmOrderByID(ctx, app, orderID, &order); err != nil {
 			utils.RespondWithJSON(
 				w,
 				http.StatusNotFound,

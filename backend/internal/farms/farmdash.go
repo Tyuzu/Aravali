@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/internal/cart"
 	"scav/utils"
 )
 
@@ -27,13 +26,8 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var farm Farm
-		if err := app.DB.FindOne(
-			ctx,
-			farmsCollection,
-			map[string]any{"createdBy": userID},
-			&farm,
-		); err != nil {
+		farm, err := getFarmByCreatedBy(ctx, app.DB, userID)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
 				"message": "Farm not found",
@@ -41,13 +35,8 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var crops []Crop
-		if err := app.DB.FindMany(
-			ctx,
-			cropsCollection,
-			map[string]any{"farmid": farm.FarmID},
-			&crops,
-		); err != nil {
+		crops, err := getCropsByFarmID(ctx, app.DB, farm.FarmID)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to load crops",
@@ -55,13 +44,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var orders []cart.FarmOrder
-		_ = app.DB.FindMany(
-			ctx,
-			farmOrdersCollection,
-			map[string]any{"farmid": farm.FarmID},
-			&orders,
-		)
+		orders, _ := getFarmOrdersByFarmID(ctx, app.DB, farm.FarmID)
 
 		for i := range crops {
 			crops[i].FarmName = farm.Name

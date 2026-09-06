@@ -29,11 +29,7 @@ func GetMenu(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var menu Menu
-		err = app.DB.FindOne(ctx, menuCollection, map[string]string{
-			"placeid": placeID,
-			"menuid":  menuID,
-		}, &menu)
+		menu, err := findMenuByPlaceAndID(ctx, app, placeID, menuID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Menu not found: %v", err), http.StatusNotFound)
 			return
@@ -54,11 +50,7 @@ func GetStock(app *infra.Deps) http.HandlerFunc {
 		placeID := utils.GetParam(r, "placeid")
 		menuID := utils.GetParam(r, "menuid")
 
-		var menu Menu
-		err := app.DB.FindOne(r.Context(), menuCollection, map[string]string{
-			"placeid": placeID,
-			"menuid":  menuID,
-		}, &menu)
+		menu, err := findMenuByPlaceAndID(r.Context(), app, placeID, menuID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Menu not found: %v", err), http.StatusNotFound)
 			return
@@ -74,18 +66,12 @@ func GetMenus(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var menus []Menu
-		err := app.DB.FindMany(ctx, menuCollection, map[string]string{
-			"placeid": utils.GetParam(r, "placeid"),
-		}, &menus)
+		menus, err := findMenusByPlace(ctx, app, utils.GetParam(r, "placeid"))
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch menus")
 			return
 		}
 
-		if menus == nil {
-			menus = []Menu{}
-		}
 		utils.RespondWithJSON(w, http.StatusOK, menus)
 	}
 }

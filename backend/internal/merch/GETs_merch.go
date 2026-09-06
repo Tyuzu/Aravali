@@ -23,18 +23,7 @@ func GetMerch(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var merch Merch
-		err := app.DB.FindOne(
-			r.Context(),
-			merchCollection,
-			map[string]any{
-				"entity_type": entityType,
-				"entity_id":   eventID,
-				"merchid":     merchID,
-				"deletedAt":   map[string]any{"$exists": false},
-			},
-			&merch,
-		)
+		merch, err := findMerchByEntity(r.Context(), app, entityType, eventID, merchID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]any{
 				"success": false,
@@ -66,17 +55,7 @@ func GetMerchs(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var list []Merch
-		err := app.DB.FindMany(
-			ctx,
-			merchCollection,
-			map[string]any{
-				"entity_type": entityType,
-				"entity_id":   eventID,
-				"deletedAt":   map[string]any{"$exists": false},
-			},
-			&list,
-		)
+		list, err := findMerchsByEntity(ctx, app, entityType, eventID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]any{
 				"success": false,
@@ -100,16 +79,7 @@ func GetMerchPage(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		merchID := utils.GetParam(r, "entityType") // route constraint
 
-		var merch Merch
-		err := app.DB.FindOne(
-			r.Context(),
-			merchCollection,
-			map[string]any{
-				"merchid":   merchID,
-				"deletedAt": map[string]any{"$exists": false},
-			},
-			&merch,
-		)
+		merch, err := findMerchByMerchID(r.Context(), app, merchID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]any{
 				"success": false,

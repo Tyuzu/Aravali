@@ -77,17 +77,8 @@ func ConfirmMerchPurchase(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// SECURITY: First lookup current merch details to verify price
-		var currentMerch Merch
-		if err := app.DB.FindOne(
-			ctx,
-			merchCollection,
-			map[string]any{
-				"entity_id": eventID,
-				"merchid":   merchID,
-			},
-			&currentMerch,
-		); err != nil {
+		currentMerch, err := findMerchForPurchase(ctx, app, eventID, merchID)
+		if err != nil {
 			http.Error(w, "Merch not found", http.StatusNotFound)
 			return
 		}
@@ -107,21 +98,7 @@ func ConfirmMerchPurchase(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// Atomically decrement stock and return updated document
-		var updatedMerch Merch
-		err := app.DB.FindOneAndUpdate(
-			ctx,
-			merchCollection,
-			map[string]any{
-				"entity_id": eventID,
-				"merchid":   merchID,
-				"stock":     map[string]any{"$gte": body.Quantity},
-			},
-			map[string]any{
-				"$inc": map[string]any{"stock": -body.Quantity},
-			},
-			&updatedMerch,
-		)
+		updatedMerch, err := confirmMerchPurchase(ctx, app, eventID, merchID, body.Quantity)
 		if err != nil {
 			http.Error(w, "Not enough merch available", http.StatusBadRequest)
 			return

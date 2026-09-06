@@ -10,6 +10,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
+	placedb "scav/internal/places/placedb"
 	"scav/utils"
 )
 
@@ -33,9 +34,9 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 		var existing struct {
 			CreatedBy string `bson:"createdBy"`
 		}
-		if err := app.DB.FindOne(
+		if err := placedb.FindOnePlace(
 			ctx,
-			placesCollection,
+			app,
 			map[string]any{"placeid": placeID},
 			&existing,
 		); err != nil {
@@ -64,9 +65,9 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 		updateFields["updatedBy"] = requestingUserID
 
 		// ✅ Update using placeid and plain fields
-		if _, err := app.DB.Update(
+		if _, err := placedb.UpdatePlace(
 			ctx,
-			placesCollection,
+			app,
 			map[string]any{"placeid": placeID},
 			updateFields,
 		); err != nil {
@@ -85,6 +86,38 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 // --- DeletePlace endpoint ---
 func DeletePlace(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Delegate to your dels.DeletePlace logic, which should handle DB + cache
+		ctx := r.Context()
+		placeID := strings.TrimSpace(utils.GetParam(r, "placeid"))
+		if placeID == "" {
+			http.Error(w, "Place ID required", http.StatusBadRequest)
+			return
+		}
+
+		userID, ok := ctx.Value(config.UserIDKey).(string)
+		if !ok {
+			http.Error(w, "Invalid user", http.StatusUnauthorized)
+			return
+		}
+
+		var existing struct{ CreatedBy string `bson:"createdBy"` }
+		if err := placedb.FindOnePlace(ctx, app, map[string]any{"placeid": placeID}, &existing); err != nil {
+			http.Error(w, "Place not found", http.StatusNotFound)
+			return
+		}
+
+		if existing.CreatedBy != userID {
+			http.Error(w, "Not authorized", http.StatusForbidden)
+			return
+		}
+
+		if _, err := placedb.DeletePlace(ctx, app, map[string]any{"placeid": placeID}); err != nil {
+			http.Error(w, "Failed to delete place", http.StatusInternalServerError)
+			return
+		}
+
+		mqpayload, _ := json.Marshal(mqevent.PlaceDeletedPayload{})
+		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.PlaceDeletedEvent, mqpayload)
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{"placeid": placeID, "deleted": true})
 	}
 }

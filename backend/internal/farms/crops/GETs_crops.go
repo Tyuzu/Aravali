@@ -49,8 +49,8 @@ func GetFilteredCrops(app *infra.Deps) http.HandlerFunc {
 			filter["price"] = price
 		}
 
-		var crops []farms.Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, filter, &crops); err != nil {
+		crops, err := findFilteredCrops(ctx, app.DB, filter)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch crops")
 			return
 		}
@@ -92,7 +92,8 @@ func GetPreCropCatalogue(app *infra.Deps) http.HandlerFunc {
 		/* 2. Database                                      */
 		/* ------------------------------------------------ */
 
-		if err := app.DB.FindMany(ctx, catalogueCollection, map[string]any{}, &crops); err == nil && len(crops) > 0 {
+		if items, err := findCatalogueItems(ctx, app.DB, map[string]any{}); err == nil && len(items) > 0 {
+			crops = items
 			if jsonBytes, err := json.Marshal(crops); err == nil {
 				_ = app.Cache.Set(ctx, cacheKey, jsonBytes, 2*time.Hour)
 			}
@@ -185,8 +186,8 @@ func GetCropCatalogue(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		var allCrops []farms.Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, map[string]any{}, &allCrops); err != nil {
+		allCrops, err := getAllCrops(ctx, app.DB)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch crop catalogue",
@@ -221,8 +222,8 @@ func GetCropTypes(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		var crops []farms.Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, map[string]any{}, &crops); err != nil {
+		crops, err := getAllCrops(ctx, app.DB)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch crops",

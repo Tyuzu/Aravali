@@ -38,7 +38,7 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var appeals []map[string]any
-		if err := app.DB.FindMany(ctx, appealsCollection, filter, &appeals); err != nil {
+		if err := FindAppeals(ctx, app, filter, &appeals); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch appeals",
 			})
@@ -75,7 +75,7 @@ func GetMyAppeals(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var appeals []map[string]any
-		if err := app.DB.FindMany(ctx, appealsCollection, filter, &appeals); err != nil {
+		if err := FindAppeals(ctx, app, filter, &appeals); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch your appeals",
 			})

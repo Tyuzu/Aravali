@@ -32,6 +32,17 @@ func FetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	return dbAds, nil
 }
 
+func ListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
+	var ads []Ad
+	if err := app.DB.FindMany(ctx, adsCollection, map[string]any{}, &ads); err != nil {
+		return nil, err
+	}
+	if ads == nil {
+		ads = []Ad{}
+	}
+	return ads, nil
+}
+
 func CreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
 	ad.CreatedAt = time.Now()
 	ad.UpdatedAt = time.Now()

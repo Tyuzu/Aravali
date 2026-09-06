@@ -23,9 +23,6 @@ func GetUsersMeta(app *infra.Deps) http.HandlerFunc {
 		}
 
 		ids := strings.Split(idsParam, ",")
-		filter := map[string]any{
-			"userid": map[string]any{"$in": ids},
-		}
 
 		// Fetch full user documents (projection not supported by interface)
 		var users []struct {
@@ -35,8 +32,7 @@ func GetUsersMeta(app *infra.Deps) http.HandlerFunc {
 			Avatar   string `bson:"avatar"`
 		}
 
-		err := app.DB.FindMany(ctx, usersCollection, filter, &users)
-		if err != nil {
+		if err := FindUsersByIDs(ctx, app, ids, &users); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB query failed")
 			return
 		}

@@ -42,16 +42,8 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 		   Fetch purchased ticket
 		-------------------- */
 
-		var ticket PurchasedTicket
-		if err := app.DB.FindOne(
-			ctx,
-			purchasedTicketsCollection,
-			map[string]any{
-				"eventid":    eventID,
-				"uniquecode": payload.UniqueCode,
-			},
-			&ticket,
-		); err != nil {
+		ticket, err := FindPurchasedTicketByUnique(ctx, app, eventID, payload.UniqueCode)
+		if err != nil {
 			http.Error(w, fmt.Sprintf("Ticket not found: %v", err), http.StatusNotFound)
 			return
 		}
@@ -82,21 +74,7 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 		if ticket.Price <= 0 {
 			// Free ticket - no refund needed
 			// Mark as canceled without refund
-			if _, err := app.DB.Update(
-				ctx,
-				purchasedTicketsCollection,
-				map[string]any{
-					"eventid":    eventID,
-					"uniquecode": payload.UniqueCode,
-				},
-				map[string]any{
-					"$set": map[string]any{
-						"canceled":        true,
-						"canceledat":      time.Now().UTC(),
-						"cancelledreason": "user_requested",
-					},
-				},
-			); err != nil {
+			if _, err := UpdatePurchasedTicket(ctx, app, map[string]any{"eventid": eventID, "uniquecode": payload.UniqueCode}, map[string]any{"$set": map[string]any{"canceled": true, "canceledat": time.Now().UTC(), "cancelledreason": "user_requested"}}); err != nil {
 				http.Error(w, "Failed to cancel ticket", http.StatusInternalServerError)
 				return
 			}
@@ -137,15 +115,7 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 			},
 		}
 
-		if _, err := app.DB.Update(
-			ctx,
-			purchasedTicketsCollection,
-			map[string]any{
-				"eventid":    eventID,
-				"uniquecode": payload.UniqueCode,
-			},
-			update,
-		); err != nil {
+		if _, err := UpdatePurchasedTicket(ctx, app, map[string]any{"eventid": eventID, "uniquecode": payload.UniqueCode}, update); err != nil {
 			log.Printf("error canceling ticket: %v", err)
 			http.Error(w, "Failed to cancel ticket", http.StatusInternalServerError)
 			return
@@ -167,11 +137,7 @@ func CancelTicket(app *infra.Deps) http.HandlerFunc {
 			RefundedAt:  nil,
 		}
 
-		if err := app.DB.Insert(
-			ctx,
-			refundsCollection,
-			refund,
-		); err != nil {
+		if err := InsertRefund(ctx, app, refund); err != nil {
 			log.Printf("error creating refund record: %v", err)
 			http.Error(w, "Ticket canceled, but failed to create refund record", http.StatusInternalServerError)
 			return

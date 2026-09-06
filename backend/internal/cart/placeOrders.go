@@ -11,7 +11,6 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/internal/auth"
 	"scav/utils"
 	log "scav/utils/logger"
 )
@@ -185,9 +184,8 @@ func processFarmOrders(
 	}
 
 	// Fetch buyer info once up front rather than inside the per-farm loop
-	var user auth.User
 	var userName, userPhone string
-	if err := app.DB.FindOne(ctx, "users", map[string]any{"userid": checkout.UserID}, &user); err == nil {
+	if user, ok := findUserByID(ctx, app, checkout.UserID); ok {
 		userName = user.Name
 		if user.PhoneNumber != "" {
 			userPhone = user.PhoneNumber
@@ -246,7 +244,7 @@ func processFarmOrders(
 			order.CropID = items[0].ItemID
 		}
 
-		if err := app.DB.Insert(ctx, farmOrdersCollection, order); err != nil {
+		if err := insertFarmOrderRecord(ctx, app, order); err != nil {
 			log.Printf("processFarmOrders: DB insert error for farm %s: %v", farmID, err)
 			return nil, fmt.Errorf("failed to insert farm order: %w", err)
 		}
@@ -262,9 +260,8 @@ func processGeneralOrders(
 	checkout CheckoutSession,
 	app *infra.Deps,
 ) ([]Order, error) {
-	var user auth.User
 	var userName, userPhone string
-	if err := app.DB.FindOne(ctx, "users", map[string]any{"userid": checkout.UserID}, &user); err == nil {
+	if user, ok := findUserByID(ctx, app, checkout.UserID); ok {
 		userName = user.Name
 		if user.PhoneNumber != "" {
 			userPhone = user.PhoneNumber
@@ -348,7 +345,7 @@ func processGeneralOrders(
 			Phone:         userPhone,
 		}
 
-		if err := app.DB.Insert(ctx, ordersCollection, order); err != nil {
+		if err := insertGeneralOrderRecord(ctx, app, order); err != nil {
 			log.Printf("processGeneralOrders: DB insert error for entity %s/%s: %v", g.EntityType, g.EntityID, err)
 			return nil, fmt.Errorf("failed to insert general order: %w", err)
 		}

@@ -51,7 +51,7 @@ func AddCrop(app *infra.Deps) http.HandlerFunc {
 		crop.FarmID = farmID
 		crop.CreatedBy = userID
 
-		if err := app.DB.InsertOne(ctx, cropsCollection, crop); err != nil {
+		if err := insertCrop(ctx, app.DB, crop); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to create crop",
@@ -150,12 +150,7 @@ func EditCrop(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.UpdateOne(
-			ctx,
-			cropsCollection,
-			map[string]any{"cropid": cropID},
-			map[string]any{"$set": update},
-		); err != nil {
+		if err := updateCrop(ctx, app.DB, cropID, update); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Update failed",

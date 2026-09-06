@@ -3,7 +3,6 @@ package newchat
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"scav/infra/mq"
 	log "scav/utils/logger"
@@ -14,61 +13,6 @@ import (
 	"scav/infra"
 	"scav/utils"
 )
-
-// ------------------------- DB helpers -------------------------
-
-func UpdatexMessage(userID string, id string, newContent string, app *infra.Deps) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	filter := map[string]any{
-		"messageid": id,
-		"senderid":  userID,
-	}
-	update := map[string]any{
-		"$set": map[string]any{"content": newContent},
-	}
-
-	_, err := app.DB.UpdateOne(ctx, messagesCollection, filter, update)
-	if err != nil {
-		if strings.Contains(err.Error(), "no documents") {
-			return errors.New("message not found or unauthorized")
-		}
-		return err
-	}
-	return nil
-}
-
-func DeletexMessage(userID string, id string, app *infra.Deps) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	filter := map[string]any{
-		"messageid": id,
-		"senderid":  userID,
-	}
-
-	_, err := app.DB.DeleteOne(ctx, messagesCollection, filter)
-	if err != nil {
-		if strings.Contains(err.Error(), "no documents") {
-			return errors.New("message not found or unauthorized")
-		}
-		return err
-	}
-	return nil
-}
-
-func findMessageRoom(id string, app *infra.Deps) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var msg Message
-	err := app.DB.FindOne(ctx, messagesCollection, map[string]any{"messageid": id}, &msg)
-	if err != nil {
-		return "", err
-	}
-	return msg.Room, nil
-}
 
 // ------------------------- HTTP handlers -------------------------
 
@@ -197,24 +141,15 @@ func UploadHandler(hub *Hub, app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if err := app.DB.InsertOne(ctx, messagesCollection, msg); err != nil {
+		if err := insertMessage(ctx, app, msg); err != nil {
 			log.Println("db error:", err)
 			http.Error(w, "db error", http.StatusInternalServerError)
 			return
 		}
 
 		previewText := buildLastMessagePreview(msg.Content, "", nil, len(msg.Files))
-		if previewText != "" {
-			_, _ = app.DB.UpdateOne(ctx, chatsCollection, map[string]any{"chatid": payload.Chat}, map[string]any{
-				"$set": map[string]any{
-					"lastMessage": MessagePreview{
-						Text:      previewText,
-						UserID:    userID,
-						Timestamp: time.Unix(msg.Timestamp, 0),
-					},
-					"updatedAt": time.Now(),
-				},
-			})
+		if err := updateChatLastMessage(ctx, app, payload.Chat, userID, time.Unix(msg.Timestamp, 0), previewText); err != nil {
+			log.Println("db error updating chat preview:", err)
 		}
 
 		out := outboundPayload{

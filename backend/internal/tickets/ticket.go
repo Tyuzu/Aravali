@@ -36,7 +36,7 @@ func CreateTicket(app *infra.Deps) http.HandlerFunc {
 		var event struct {
 			CreatorID string `bson:"creatorid" json:"creatorid"`
 		}
-		if err := app.DB.FindOne(r.Context(), "events", map[string]interface{}{"eventid": eventID}, &event); err != nil {
+		if err := FindEventByID(r.Context(), app, eventID, &event); err != nil {
 			http.Error(w, "Event not found", http.StatusNotFound)
 			return
 		}
@@ -92,7 +92,7 @@ func CreateTicket(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  time.Now(),
 		}
 
-		if err := app.DB.Insert(r.Context(), ticketsCollection, tick); err != nil {
+		if err := InsertTicketDB(r.Context(), app, tick); err != nil {
 			http.Error(w, "Failed to create ticket", http.StatusInternalServerError)
 			return
 		}
@@ -120,8 +120,8 @@ func EditTicket(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var existing Ticket
-		if err := app.DB.FindOne(ctx, ticketsCollection, map[string]any{"eventid": eventID, "ticketid": ticketID}, &existing); err != nil {
+		existing, err := FindTicketByID(ctx, app, eventID, ticketID)
+		if err != nil || existing == nil {
 			http.Error(w, "Ticket not found or DB error", http.StatusNotFound)
 			return
 		}
@@ -161,7 +161,7 @@ func EditTicket(app *infra.Deps) http.HandlerFunc {
 
 		updateFields["updated_at"] = time.Now()
 
-		if _, err := app.DB.UpdateOne(ctx, ticketsCollection, map[string]any{"eventid": eventID, "ticketid": ticketID}, map[string]any{"$set": updateFields}); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, map[string]any{"eventid": eventID, "ticketid": ticketID}, map[string]any{"$set": updateFields}); err != nil {
 			http.Error(w, "Failed to update ticket: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -200,7 +200,7 @@ func DeleteTicket(app *infra.Deps) http.HandlerFunc {
 		var event struct {
 			CreatorID string `bson:"creatorid" json:"creatorid"`
 		}
-		if err := app.DB.FindOne(ctx, "events", map[string]interface{}{"eventid": eventID}, &event); err != nil {
+		if err := FindEventByID(ctx, app, eventID, &event); err != nil {
 			http.Error(w, "Event not found", http.StatusNotFound)
 			return
 		}
@@ -211,14 +211,14 @@ func DeleteTicket(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Ensure ticket exists before deleting
-		var existing Ticket
-		if err := app.DB.FindOne(ctx, ticketsCollection, map[string]interface{}{"eventid": eventID, "ticketid": ticketID}, &existing); err != nil {
+		existing, err := FindTicketByID(ctx, app, eventID, ticketID)
+		if err != nil || existing == nil {
 			http.Error(w, "Ticket not found or DB error", http.StatusNotFound)
 			return
 		}
 
 		// Perform deletion (using hard delete; replace DeleteOne with app.DB.SoftDelete if applicable)
-		if _, err := app.DB.DeleteOne(ctx, ticketsCollection, map[string]interface{}{"eventid": eventID, "ticketid": ticketID}); err != nil {
+		if _, err := DeleteTicketDB(ctx, app, map[string]any{"eventid": eventID, "ticketid": ticketID}); err != nil {
 			http.Error(w, "Failed to delete ticket", http.StatusInternalServerError)
 			return
 		}
@@ -262,21 +262,19 @@ func BuyTicket(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if err := app.DB.FindOne(ctx, ticketsCollection, map[string]any{"eventid": eventID, "ticketid": ticketID}, &ticket); err != nil {
+		ticketPtr, err := FindTicketByID(ctx, app, eventID, ticketID)
+		if err != nil || ticketPtr == nil {
 			http.Error(w, "Ticket not found", http.StatusNotFound)
 			return
 		}
+		ticket = *ticketPtr
 
 		if ticket.Quantity < body.Quantity {
 			http.Error(w, "Not enough tickets available", http.StatusBadRequest)
 			return
 		}
 
-		if _, err := app.DB.UpdateOne(ctx,
-			ticketsCollection,
-			map[string]any{"eventid": eventID, "ticketid": ticketID},
-			map[string]any{"$inc": map[string]any{"quantity": -body.Quantity, "available": -body.Quantity}},
-		); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, map[string]any{"eventid": eventID, "ticketid": ticketID}, map[string]any{"$inc": map[string]any{"quantity": -body.Quantity, "available": -body.Quantity}}); err != nil {
 			http.Error(w, "Failed to update ticket quantity", http.StatusInternalServerError)
 			return
 		}

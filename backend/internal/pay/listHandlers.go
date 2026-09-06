@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"scav/utils"
 	"strconv"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (p *PaymentService) ListTransactions(w http.ResponseWriter, r *http.Request) {
@@ -19,25 +17,7 @@ func (p *PaymentService) ListTransactions(w http.ResponseWriter, r *http.Request
 		limit = 10
 	}
 
-	var txns []Transaction
-
-	filter := map[string]any{
-		"$or": []map[string]any{
-			{"userid": userID},
-			{"meta.recipient": userID},
-		},
-	}
-
-	err := p.app.DB.FindMany(
-		ctx,
-		transactionsCollection,
-		filter,
-		&txns,
-		options.Find().
-			SetSort(map[string]int{"created_at": -1}).
-			SetSkip(skip).
-			SetLimit(limit),
-	)
+	txns, err := p.listUserTransactions(ctx, userID, skip, limit)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
@@ -50,8 +30,8 @@ func (p *PaymentService) GetBalance(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := utils.GetUserIDFromRequest(r)
 
-	var acc Account
-	if err := p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"userid": userID}, &acc); err != nil {
+	acc, err := p.getAccountByUserID(ctx, userID)
+	if err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "account not found")
 		return
 	}

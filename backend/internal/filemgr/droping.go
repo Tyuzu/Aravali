@@ -94,6 +94,10 @@ func convertToAttachments(serviceAttachments []Attachment) []Attachment {
 	return append([]Attachment(nil), serviceAttachments...)
 }
 
+func updateEntityMediaInDB(app *infra.Deps, collection, idField, entityID string, update map[string]any) (any, error) {
+	return app.DB.UpdateOne(context.Background(), collection, map[string]any{idField: entityID}, update)
+}
+
 func updateEntityMedia(app *infra.Deps, entityType string, entityId string, attachments []Attachment) (any, error) {
 	log.Println("updateEntityMedia:", entityType, entityId) // #nosec G706
 	log.Println("updateEntityMedia:", attachments)          // #nosec G706
@@ -102,7 +106,6 @@ func updateEntityMedia(app *infra.Deps, entityType string, entityId string, atta
 		return nil, fmt.Errorf("unsupported entity type: %s", entityType)
 	}
 
-	filter := map[string]any{meta.IDField: entityId}
 	setFields := map[string]any{}
 	var images []string
 
@@ -147,5 +150,5 @@ func updateEntityMedia(app *infra.Deps, entityType string, entityId string, atta
 		return nil, nil
 	}
 
-	return app.DB.UpdateOne(context.Background(), meta.Collection, filter, update)
+	return updateEntityMediaInDB(app, meta.Collection, meta.IDField, entityId, update)
 }

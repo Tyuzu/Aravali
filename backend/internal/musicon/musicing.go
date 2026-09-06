@@ -5,35 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"scav/infra"
-	"scav/infra/db"
 	"scav/utils"
 	log "scav/utils/logger"
 	"strconv"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --------------------------- Helpers ---------------------------
-
-// fetchSongsByIDs retrieves published songs by IDs
-func fetchSongsByIDs(ctx context.Context, ids []string, app *infra.Deps) ([]Song, error) {
-	if len(ids) == 0 {
-		return []Song{}, nil
-	}
-
-	filter := map[string]any{
-		"songid":    map[string]any{"$in": ids},
-		"published": true,
-	}
-
-	var songs []Song
-	if err := app.DB.FindMany(ctx, songsCollection, filter, &songs); err != nil {
-		return nil, err
-	}
-
-	return songs, nil
-}
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}, message string) {
 	utils.RespondWithJSON(w, status, map[string]interface{}{
@@ -78,8 +56,8 @@ func GetAlbums(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var albums []Album
-		if err := app.DB.FindMany(ctx, albumsCollection, map[string]any{"published": true}, &albums); err != nil {
+		albums, err := getPublishedAlbums(ctx, app)
+		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch albums")
 			return
 		}
@@ -96,8 +74,8 @@ func GetAlbumSongs(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var album Album
-		if err := app.DB.FindOne(ctx, albumsCollection, map[string]any{"albumid": albumID}, &album); err != nil {
+		album, err := findAlbumByID(ctx, app, albumID)
+		if err != nil {
 			respondJSON(w, http.StatusOK, []Song{}, "No songs found for album")
 			return
 		}
@@ -120,8 +98,8 @@ func GetPlaylistSongs(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var playlist Playlist
-		if err := app.DB.FindOne(ctx, playlistsCollection, map[string]any{"playlistid": playlistID}, &playlist); err != nil {
+		playlist, err := findPlaylistByID(ctx, app, playlistID)
+		if err != nil {
 			respondJSON(w, http.StatusOK, []Song{}, "Playlist not found")
 			return
 		}
@@ -150,23 +128,8 @@ func GetArtistsSongs(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		limit, page := getPaginationParams(r)
-		skip := (page - 1) * limit
-
-		filter := map[string]any{
-			"artistid":  artistID,
-			"published": true,
-		}
-
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort: []bson.E{{
-				Key: "uploadedAt", Value: -1,
-			}},
-		}
-
-		var songs []Song
-		if err := app.DB.FindManyWithOptions(ctx, songsCollection, filter, opts, &songs); err != nil {
+		songs, err := findArtistSongs(ctx, app, artistID, limit, page)
+		if err != nil {
 			log.Printf("GetArtistsSongs error: %v", err)
 			respondError(w, http.StatusInternalServerError, "Failed to fetch artist songs")
 			return

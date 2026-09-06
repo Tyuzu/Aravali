@@ -35,6 +35,14 @@ func FindArtistEvents(ctx context.Context, db db.Database, artistID string, resu
 	return db.FindMany(ctx, ArtistEventsCollection, map[string]any{"artistid": artistID}, result)
 }
 
+func FindArtistAlbumsByArtistID(ctx context.Context, db db.Database, artistID string, result *[]ArtistAlbum) error {
+	return db.FindMany(ctx, ArtistAlbumsCollection, map[string]any{"artistid": artistID}, result)
+}
+
+func DeleteArtistRecordByID(ctx context.Context, db db.Database, artistID string) (any, error) {
+	return db.DeleteOne(ctx, ArtistsCollection, map[string]any{"artistid": artistID})
+}
+
 // FindSubscribersForArtist checks if a specific user is subscribed to an artist.
 func FindSubscribersForArtist(ctx context.Context, db db.Database, userID, artistID string) (bool, error) {
 	var results []map[string]any

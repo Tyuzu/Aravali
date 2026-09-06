@@ -93,7 +93,7 @@ func ReportContent(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing Report
-		if err := app.DB.FindOne(ctx, reportsCollection, filter, &existing); err == nil {
+		if err := FindReportByFilter(ctx, app, filter, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You have already reported this item")
 			return
 		}
@@ -105,7 +105,7 @@ func ReportContent(app *infra.Deps) http.HandlerFunc {
 		payload.UpdatedAt = now
 		payload.Notified = false
 
-		if err := app.DB.Insert(ctx, reportsCollection, payload); err != nil {
+		if err := InsertReport(ctx, app, payload); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to save report")
 			return
 		}
@@ -168,7 +168,7 @@ func GetReports(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var reports []Report
-		if err := app.DB.FindMany(ctx, reportsCollection, filter, &reports); err != nil {
+		if err := FindReports(ctx, app, filter, &reports); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch reports")
 			return
 		}
@@ -215,10 +215,10 @@ func UpdateReport(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		_, err := app.DB.Update(
+		_, err := UpdateReportByID(
 			ctx,
-			reportsCollection,
-			map[string]any{"reportid": reportID},
+			app,
+			reportID,
 			map[string]any{
 				"status":      payload.Status,
 				"reviewedBy":  getActorID(r),
@@ -271,7 +271,7 @@ func CreateAppeal(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing map[string]any
-		if err := app.DB.FindOne(ctx, appealsCollection, filter, &existing); err == nil {
+		if err := FindAppealByFilter(ctx, app, filter, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You already have a pending appeal for this content")
 			return
 		}
@@ -292,7 +292,7 @@ func CreateAppeal(app *infra.Deps) http.HandlerFunc {
 			"updatedAt":   now,
 		}
 
-		if err := app.DB.Insert(ctx, appealsCollection, appeal); err != nil {
+		if err := InsertAppeal(ctx, app, appeal); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create appeal")
 			return
 		}
@@ -331,15 +331,15 @@ func UpdateAppeal(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var appeal map[string]any
-		if err := app.DB.FindOne(ctx, appealsCollection, map[string]any{"appealid": appealID}, &appeal); err != nil {
+		if err := GetAppealByID(ctx, app, appealID, &appeal); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Appeal not found")
 			return
 		}
 
-		if _, err := app.DB.Update(
+		if _, err := UpdateAppealByID(
 			ctx,
-			appealsCollection,
-			map[string]any{"appealid": appealID},
+			app,
+			appealID,
 			map[string]any{
 				"status":      payload.Status,
 				"reviewedBy":  getActorID(r),
@@ -383,8 +383,6 @@ func setEntityDeletedFlag(
 	by string,
 	app *infra.Deps,
 ) error {
-	now := time.Now().UTC()
-
 	var collection string
 	var idField string
 
@@ -417,26 +415,7 @@ func setEntityDeletedFlag(
 		return errors.New("unsupported entity type")
 	}
 
-	deletedAtVal := interface{}("")
-	if deleted {
-		deletedAtVal = now
-	}
-
-	_, err := app.DB.Update(
-		ctx,
-		collection,
-		map[string]any{idField: id},
-		map[string]any{
-			"deleted":   deleted,
-			"deletedBy": by,
-			"deletedAt": deletedAtVal,
-		},
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return setEntityDeletedFlagInDB(ctx, app, collection, idField, id, deleted, by)
 }
 
 /* -------------------------

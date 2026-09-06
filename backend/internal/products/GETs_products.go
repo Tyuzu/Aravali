@@ -58,12 +58,12 @@ func GetItems(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var items []farms.Product
-		if err := app.DB.FindManyWithOptions(ctx, productsCollection, filter, opts, &items); err != nil {
+		if err := FindProductsWithOptions(ctx, app, filter, opts, &items); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch items")
 			return
 		}
 
-		total, err := app.DB.CountDocuments(ctx, productsCollection, filter)
+		total, err := CountProducts(ctx, app, filter)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count items")
 			return

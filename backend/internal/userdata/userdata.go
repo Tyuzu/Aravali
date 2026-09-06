@@ -49,7 +49,7 @@ func AddUserData(entityType, entityId, userId, itemType, itemId string, app *inf
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 
-	if err := app.DB.InsertOne(ctx, userdataCollection, content); err != nil {
+	if err := InsertUserData(ctx, app, content); err != nil {
 		log.Printf("Error inserting user data: %v", err)
 	}
 }
@@ -64,7 +64,7 @@ func RemUserData(entityType, entityId, userId string, app *infra.Deps) {
 		"userid":      userId,
 	}
 
-	if err := app.DB.DeleteMany(ctx, userdataCollection, filter); err != nil {
+	if err := DeleteUserData(ctx, app, filter); err != nil {
 		log.Printf("Error deleting user data: %v", err)
 	}
 }
@@ -82,7 +82,7 @@ func AddUserDataBatch(docs []UserData, app *infra.Deps) {
 		toInsert = append(toInsert, doc)
 	}
 
-	if err := app.DB.InsertMany(ctx, userdataCollection, toInsert); err != nil {
+	if err := InsertUserDataMany(ctx, app, toInsert); err != nil {
 		log.Printf("Error inserting batch user data: %v", err)
 	}
 }

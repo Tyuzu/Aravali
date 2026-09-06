@@ -98,11 +98,7 @@ func (p *PaymentService) HandlePaymentWebhook(w http.ResponseWriter, r *http.Req
 	}
 
 	// Check if webhook already processed (idempotency)
-	var existingWebhook map[string]any
-	if err := p.app.DB.FindOne(ctx, webhookCollection, map[string]any{
-		"transactionId": payload.TransactionID,
-	}, &existingWebhook); err == nil {
-		// Webhook already processed, return success
+	if processed, err := p.hasWebhookBeenProcessed(ctx, payload.TransactionID); processed && err == nil {
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
 			"status": "already_processed",
 		})
@@ -131,14 +127,7 @@ func (p *PaymentService) HandlePaymentWebhook(w http.ResponseWriter, r *http.Req
 	}
 
 	// Record successful webhook processing
-	if err := p.app.DB.InsertOne(ctx, webhookCollection, map[string]any{
-		"transactionId": payload.TransactionID,
-		"orderId":       payload.OrderID,
-		"userid":        payload.UserID,
-		"status":        payload.Status,
-		"amount":        payload.Amount,
-		"processedAt":   time.Now(),
-	}); err != nil {
+	if err := p.recordWebhookProcessing(ctx, &payload); err != nil {
 		log.Printf("Failed to record webhook: %v", err)
 	}
 
@@ -156,59 +145,23 @@ func (p *PaymentService) HandlePaymentWebhook(w http.ResponseWriter, r *http.Req
 // processSuccessfulPayment updates transaction status and applies balance changes
 func (p *PaymentService) processSuccessfulPayment(ctx context.Context, payload *PaymentWebhookPayload) error {
 	// Fetch the original transaction to determine its type
-	var txn Transaction
-	if err := p.app.DB.FindOne(ctx, transactionsCollection, map[string]any{
-		"_id": payload.TransactionID,
-	}, &txn); err != nil {
+	txn, err := p.findTransactionByID(ctx, payload.TransactionID)
+	if err != nil {
 		return fmt.Errorf("transaction not found: %w", err)
 	}
 
-	// For topup transactions, increment the account balance
-	// For other transaction types, balance should already be updated
 	if txn.Type == "topup" {
-		if _, err := p.app.DB.UpdateOne(ctx, accountsCollection, map[string]any{
-			"userid": payload.UserID,
-		}, map[string]any{
-			"$inc": map[string]any{
-				"cached_balance": int64(payload.Amount),
-			},
-			"$set": map[string]any{
-				"updated_at": time.Now(),
-			},
-		}); err != nil {
+		if err := p.incrementTopupBalanceByUser(ctx, payload.UserID, payload.Amount, time.Now()); err != nil {
 			return err
 		}
 	}
 
-	// Update transaction status to success
-	if _, err := p.app.DB.UpdateOne(ctx, transactionsCollection, map[string]any{
-		"_id": payload.TransactionID,
-	}, map[string]any{
-		"$set": map[string]any{
-			"status":     "success",
-			"updated_at": time.Now(),
-		},
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	return p.setTransactionStatusByID(ctx, payload.TransactionID, "success", time.Now())
 }
 
 // processFailedPayment marks transaction as failed
 func (p *PaymentService) processFailedPayment(ctx context.Context, payload *PaymentWebhookPayload) error {
-	if _, err := p.app.DB.UpdateOne(ctx, transactionsCollection, map[string]any{
-		"_id": payload.TransactionID,
-	}, map[string]any{
-		"$set": map[string]any{
-			"status":     "failed",
-			"updated_at": time.Now(),
-		},
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	return p.setTransactionStatusByID(ctx, payload.TransactionID, "failed", time.Now())
 }
 
 // validateWebhookPayload checks required fields

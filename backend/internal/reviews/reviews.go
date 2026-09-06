@@ -59,7 +59,7 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 
 		var existing Review
 		// check duplicate via SQL
-		if err := app.SQLDB.FindOne(r.Context(), reviewsCollection, "userid = $1 AND entityType = $2 AND entityId = $3", []any{userId, entityType, entityId}, &existing); err == nil {
+		if err := FindReviewByUserEntity(r.Context(), app, userId, entityType, entityId, &existing); err == nil {
 			utils.RespondWithJSON(w, http.StatusConflict, map[string]string{"error": "Already reviewed"})
 			return
 		}
@@ -87,7 +87,7 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  now,
 		}
 
-		if err := app.SQLDB.Insert(r.Context(), reviewsCollection, review); err != nil {
+		if err := InsertReview(r.Context(), app, review); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create review"})
 			return
 		}
@@ -115,13 +115,7 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 		reviewId := utils.GetParam(r, "reviewId")
 
 		var existing Review
-		if err := app.SQLDB.FindOne(
-			r.Context(),
-			reviewsCollection,
-			"reviewid = $1",
-			[]any{reviewId},
-			&existing,
-		); err != nil {
+		if err := GetReviewByID(r.Context(), app, reviewId, &existing); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}
@@ -158,11 +152,10 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.SQLDB.Update(
+		if _, err := UpdateReviewByID(
 			r.Context(),
-			reviewsCollection,
-			"reviewid = $1",
-			[]any{reviewId},
+			app,
+			reviewId,
 			update,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update review"})
@@ -192,13 +185,7 @@ func DeleteReview(app *infra.Deps) http.HandlerFunc {
 		reviewId := utils.GetParam(r, "reviewId")
 
 		var review Review
-		if err := app.SQLDB.FindOne(
-			r.Context(),
-			reviewsCollection,
-			"reviewid = $1",
-			[]any{reviewId},
-			&review,
-		); err != nil {
+		if err := GetReviewByID(r.Context(), app, reviewId, &review); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}
@@ -208,11 +195,10 @@ func DeleteReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.SQLDB.Delete(
+		if _, err := DeleteReviewByID(
 			r.Context(),
-			reviewsCollection,
-			"reviewid = $1",
-			[]any{reviewId},
+			app,
+			reviewId,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to delete review"})
 			return

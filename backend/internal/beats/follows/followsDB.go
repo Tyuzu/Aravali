@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"scav/config"
 	"scav/infra"
+	"scav/internal/auth"
 	log "scav/utils/logger"
 	"time"
 )
@@ -81,4 +82,37 @@ func CreateFollowEntry(userid string, app *infra.Deps) {
 	if err != nil {
 		log.Printf("Error inserting follow entry for %s: %v", userid, err)
 	}
+}
+
+func CountFollowRelationship(ctx context.Context, app *infra.Deps, userID, followedUserID string) (int64, error) {
+	return app.DB.CountDocuments(
+		ctx,
+		followingsCollection,
+		map[string]any{
+			"userid": userID,
+			"follows": map[string]any{
+				"$in": []string{followedUserID},
+			},
+		},
+	)
+}
+
+func FindFollowEntryByUserID(ctx context.Context, app *infra.Deps, userID string, out *UserFollow) error {
+	return app.DB.FindOne(
+		ctx,
+		followingsCollection,
+		map[string]any{"userid": userID},
+		out,
+	)
+}
+
+func FindUsersByIDsForFollow(ctx context.Context, app *infra.Deps, userIDs []string, out *[]auth.User) error {
+	return app.DB.FindMany(
+		ctx,
+		usersCollection,
+		map[string]any{
+			"userid": map[string]any{"$in": userIDs},
+		},
+		out,
+	)
 }

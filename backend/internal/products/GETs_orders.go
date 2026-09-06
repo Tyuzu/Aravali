@@ -41,9 +41,9 @@ func GetMyFarmOrders(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var orders []cart.FarmOrder
-		if err := app.DB.FindMany(
+		if err := FindFarmOrders(
 			ctx,
-			farmOrdersCollection,
+			app,
 			map[string]any{"userid": userID},
 			&orders,
 		); err != nil {
@@ -163,9 +163,9 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 
 		// 1. Fetch farms owned by this user
 		var myfarms []farms.Farm
-		if err := app.DB.FindMany(
+		if err := FindFarmsByFilter(
 			ctx,
-			farmsCollection,
+			app,
 			map[string]any{"createdBy": userID},
 			&myfarms,
 		); err != nil {
@@ -222,12 +222,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 
 		// 2. Fetch orders for those farms
 		var orders []cart.FarmOrder
-		if err := app.DB.FindMany(
-			ctx,
-			farmOrdersCollection,
-			filter,
-			&orders,
-		); err != nil {
+		if err := FindFarmOrders(ctx, app, filter, &orders); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch orders",
@@ -249,7 +244,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		txnByOrder := map[string]pay.Transaction{}
 		if len(orderIDs) > 0 {
 			var txns []pay.Transaction
-			_ = app.DB.FindMany(ctx, "transactions", map[string]any{
+			_ = FindTransactions(ctx, app, map[string]any{
 				"entity_type": "order",
 				"entity_id":   map[string]any{"$in": orderIDs},
 			}, &txns)
@@ -321,10 +316,10 @@ func fetchFarmByID(ctx context.Context, id string, app *infra.Deps) farms.Farm {
 		return farm
 	}
 
-	err := app.DB.FindOne(
+	err := GetFarmByID(
 		ctx,
-		farmsCollection,
-		map[string]any{"farmid": id},
+		app,
+		id,
 		&farm,
 	)
 	if err != nil {
@@ -341,10 +336,10 @@ func fetchUserByID(ctx context.Context, id string, app *infra.Deps) auth.User {
 		return user
 	}
 
-	err := app.DB.FindOne(
+	err := GetUserByID(
 		ctx,
-		usersCollection,
-		map[string]any{"userid": id},
+		app,
+		id,
 		&user,
 	)
 	if err != nil {
@@ -394,10 +389,10 @@ func fetchCropByID(ctx context.Context, id string, app *infra.Deps) farms.Crop {
 		return crop
 	}
 
-	err := app.DB.FindOne(
+	err := GetCropByID(
 		ctx,
-		cropsCollection,
-		map[string]any{"cropid": id},
+		app,
+		id,
 		&crop,
 	)
 	if err != nil {

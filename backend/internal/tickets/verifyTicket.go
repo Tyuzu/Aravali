@@ -22,16 +22,8 @@ func VerifyTicket(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var ticket PurchasedTicket
-		if err := app.DB.FindOne(
-			ctx,
-			purchasedTicketsCollection,
-			map[string]any{
-				"eventid":    eventID,
-				"uniquecode": uniqueCode,
-			},
-			&ticket,
-		); err != nil {
+		ticket, err := FindPurchasedTicketByUnique(ctx, app, eventID, uniqueCode)
+		if err != nil {
 			http.Error(w, fmt.Sprintf("Ticket verification failed: %v", err), http.StatusNotFound)
 			return
 		}

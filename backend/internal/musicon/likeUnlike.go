@@ -2,7 +2,6 @@ package musicon
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"scav/infra"
 	"scav/utils"
@@ -28,33 +27,7 @@ func LikeSong(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		playlistID := "likes_" + userID
-		now := time.Now()
-
-		filter := map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}
-
-		update := map[string]any{
-			"$setOnInsert": map[string]any{
-				"playlistid":  playlistID,
-				"userid":      userID,
-				"name":        "Liked Songs",
-				"description": "Auto-generated liked songs playlist",
-				"songs":       []string{},
-				"duration":    0,
-				"createdAt":   now,
-			},
-			"$addToSet": map[string]any{
-				"songs": songID,
-			},
-			"$set": map[string]any{
-				"updatedAt": now,
-			},
-		}
-
-		err := app.DB.Upsert(ctx, playlistsCollection, filter, update)
+		err := upsertLikedSongsPlaylist(ctx, app, userID, songID)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to like song")
 			return
@@ -84,24 +57,7 @@ func UnlikeSong(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		playlistID := "likes_" + userID
-		now := time.Now()
-
-		filter := map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}
-
-		update := map[string]any{
-			"$pull": map[string]any{
-				"songs": songID,
-			},
-			"$set": map[string]any{
-				"updatedAt": now,
-			},
-		}
-
-		_, err := app.DB.UpdateOne(ctx, playlistsCollection, filter, update)
+		err := unlikeSongFromLikes(ctx, app, userID, songID)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to unlike song")
 			return
@@ -125,17 +81,10 @@ func GetUserLikes(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		playlistID := fmt.Sprintf("likes_%s", userID)
-
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var playlist Playlist
-		err := app.DB.FindOne(ctx, playlistsCollection, map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}, &playlist)
-
+		playlist, err := getUserLikedSongs(ctx, app, userID)
 		if err != nil || len(playlist.Songs) == 0 {
 			respondJSON(w, http.StatusOK, []Song{}, "No liked songs found")
 			return

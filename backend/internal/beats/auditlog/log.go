@@ -49,7 +49,7 @@ func LogAction(
 		CreatedAt:  time.Now(),
 	}
 
-	if err := app.DB.InsertOne(ctx, auditCollection, log); err != nil {
+	if err := InsertAuditLog(ctx, app, log); err != nil {
 		return // Failed to write audit log, continue without error
 	}
 }
@@ -91,7 +91,7 @@ func LogActionWithReason(
 		CreatedAt:  time.Now(),
 	}
 
-	if err := app.DB.InsertOne(ctx, auditCollection, audit); err != nil {
+	if err := InsertAuditLog(ctx, app, audit); err != nil {
 		return // Failed to write audit log, continue without error
 	}
 }

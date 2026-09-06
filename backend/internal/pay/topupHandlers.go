@@ -87,7 +87,7 @@ func (p *PaymentService) TopUp(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:   now,
 	}
 
-	if err := p.app.DB.InsertOne(ctx, transactionsCollection, txn); err != nil {
+	if err := p.createTransactionRecord(ctx, txn); err != nil {
 		http.Error(w, "failed", http.StatusInternalServerError)
 		return
 	}
@@ -102,7 +102,7 @@ func (p *PaymentService) TopUp(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:     now,
 	}
 
-	if err := p.app.DB.InsertOne(ctx, journalCollection, j); err != nil {
+	if err := p.createJournalEntryRecord(ctx, j); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
@@ -119,28 +119,12 @@ func (p *PaymentService) TopUp(w http.ResponseWriter, r *http.Request) {
 		userID,
 	)
 
-	if err := p.app.DB.Inc(
-		ctx,
-		accountsCollection,
-		map[string]any{"_id": accID},
-		"cached_balance",
-		req.Amount,
-	); err != nil {
+	if err := p.applyBalanceDelta(ctx, accID, req.Amount); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
 
-	_, _ = p.app.DB.UpdateOne(
-		ctx,
-		transactionsCollection,
-		map[string]any{"_id": txnID},
-		map[string]any{
-			"$set": map[string]any{
-				"status":     "success",
-				"updated_at": now,
-			},
-		},
-	)
+	_ = p.updateTransactionStatus(ctx, txnID, "success", now)
 
 	// Log audit trail for topup transaction
 	auditlog.LogAction(

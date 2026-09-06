@@ -84,3 +84,33 @@ func EnsureSubscriptionEntry(ctx context.Context, userID string, app *infra.Deps
 		log.Printf("Failed to ensure subscription entry for %s: %v", userID, err)
 	}
 }
+
+func countUserSubscriptionsForEntity(ctx context.Context, app *infra.Deps, userID, entityID string) (int64, error) {
+	return app.DB.CountDocuments(
+		ctx,
+		subscribersCollection,
+		map[string]any{
+			"userid": userID,
+			"subscribed": map[string]any{
+				"$in": []string{entityID},
+			},
+		},
+	)
+}
+
+func findSubscriptionEntryByUserID(ctx context.Context, app *infra.Deps, userID string) (UserSubscribe, error) {
+	var sub UserSubscribe
+	err := app.DB.FindOne(ctx, subscribersCollection, map[string]any{"userid": userID}, &sub)
+	return sub, err
+}
+
+func findUsersByIDs(ctx context.Context, app *infra.Deps, userIDs []string) ([]map[string]any, error) {
+	var subscribers []map[string]any
+	err := app.DB.FindMany(
+		ctx,
+		usersCollection,
+		map[string]any{"userid": map[string]any{"$in": userIDs}},
+		&subscribers,
+	)
+	return subscribers, err
+}

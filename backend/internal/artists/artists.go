@@ -166,7 +166,7 @@ func DeleteArtistByID(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.DeleteOne(ctx, ArtistsCollection, map[string]any{"artistid": artistID}); err != nil {
+		if _, err := DeleteArtistRecordByID(ctx, app.DB, artistID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete artist")
 			return
 		}

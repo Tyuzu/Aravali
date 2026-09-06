@@ -69,3 +69,60 @@ func (r *mongoRepository) Count(ctx context.Context, entityType, entityID string
 		},
 	)
 }
+
+func FindLikesByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Like, error) {
+	var likes []Like
+	err := app.DB.FindMany(
+		ctx,
+		likesCollection,
+		map[string]any{
+			"entity_type": entityType,
+			"entity_id":   entityID,
+		},
+		&likes,
+	)
+	return likes, err
+}
+
+func FindUserLikesByEntityIDs(ctx context.Context, app *infra.Deps, userID, entityType string, entityIDs []string) ([]Like, error) {
+	var likes []Like
+	err := app.DB.FindMany(
+		ctx,
+		likesCollection,
+		map[string]any{
+			"userid":      userID,
+			"entity_type": entityType,
+			"entity_id": map[string]any{"$in": entityIDs},
+		},
+		&likes,
+	)
+	return likes, err
+}
+
+func FindUsersByIDs(ctx context.Context, app *infra.Deps, userIDs []string) ([]map[string]string, error) {
+	var users []struct {
+		UserID   string `bson:"userid"`
+		Username string `bson:"username"`
+		Avatar   string `bson:"avatar,omitempty"`
+	}
+
+	err := app.DB.FindMany(
+		ctx,
+		usersCollection,
+		map[string]any{"userid": map[string]any{"$in": userIDs}},
+		&users,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]string, 0, len(users))
+	for _, user := range users {
+		result = append(result, map[string]string{
+			"userid":   user.UserID,
+			"username": user.Username,
+			"avatar":   user.Avatar,
+		})
+	}
+	return result, nil
+}

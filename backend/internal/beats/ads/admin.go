@@ -105,17 +105,10 @@ func invalidateAdCache(ctx context.Context, app *infra.Deps) {
 // ListAds returns all advertisements (both active and inactive) for admin management.
 func ListAds(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var ads []Ad
-
-		// Fetch all ads without status filtering
-		err := app.DB.FindMany(r.Context(), adsCollection, map[string]interface{}{}, &ads)
+		ads, err := ListAdsFromDB(r.Context(), app)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch ads list")
 			return
-		}
-
-		if ads == nil {
-			ads = []Ad{}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, ads)

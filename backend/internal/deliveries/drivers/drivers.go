@@ -25,9 +25,8 @@ func GetProfile(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var driver deliveries.Driver
-		filter := map[string]any{"id": driverID, "tenantid": tenantID}
-		if err := app.DB.FindOne(ctx, "drivers", filter, &driver); err != nil {
+		driver, err := getDriverProfileByID(ctx, app, driverID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Driver profile not found")
 			return
 		}
@@ -51,8 +50,7 @@ func UpdateProfile(app *infra.Deps) http.HandlerFunc {
 		delete(updates, "tenantid")
 		updates["updated_at"] = time.Now()
 
-		filter := map[string]any{"id": driverID, "tenantid": tenantID}
-		if _, err := app.DB.UpdateOne(ctx, "drivers", filter, map[string]any{"$set": updates}); err != nil {
+		if err := updateDriverProfile(ctx, app, driverID, tenantID, updates); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update driver")
 			return
 		}
@@ -67,8 +65,7 @@ func GoOnline(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		_ = app.Cache.HSet(ctx, "drivers:online", driverID, []byte("true"))
-		filter := map[string]any{"id": driverID, "tenantid": tenantID}
-		_, _ = app.DB.UpdateOne(ctx, "drivers", filter, map[string]any{"$set": map[string]any{"is_online": true}})
+		_ = setDriverOnlineState(ctx, app, driverID, tenantID, true)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "online"})
 	}
@@ -81,8 +78,7 @@ func GoOffline(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		_, _ = app.Cache.HDel(ctx, "drivers:online", driverID)
-		filter := map[string]any{"id": driverID, "tenantid": tenantID}
-		_, _ = app.DB.UpdateOne(ctx, "drivers", filter, map[string]any{"$set": map[string]any{"is_online": false}})
+		_ = setDriverOnlineState(ctx, app, driverID, tenantID, false)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "offline"})
 	}
@@ -94,9 +90,8 @@ func GetStatus(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var status map[string]any
-		filter := map[string]any{"id": driverID, "tenantid": tenantID}
-		if err := app.DB.FindOneWithProjection(ctx, "drivers", filter, []string{"is_online", "current_state"}, &status); err != nil {
+		status, err := getDriverStatus(ctx, app, driverID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Driver status unavailable")
 			return
 		}
@@ -109,19 +104,10 @@ func GetAvailableJobs(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var jobs []deliveries.Delivery
-		filter := map[string]any{
-			"status":   deliveries.StatusCreated,
-			"driverid": nil,
-			"tenantid": tenantID,
-		}
-
-		if err := app.DB.FindMany(ctx, "deliveries", filter, &jobs); err != nil {
+		jobs, err := getAvailableJobsForTenant(ctx, app, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch available jobs")
 			return
-		}
-		if len(jobs) == 0 {
-			jobs = []deliveries.Delivery{}
 		}
 		utils.RespondWithJSON(w, http.StatusOK, jobs)
 	}
@@ -133,24 +119,10 @@ func GetActiveDeliveries(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var active []deliveries.Delivery
-		filter := map[string]any{
-			"driverid": driverID,
-			"tenantid": tenantID,
-			"status": map[string]any{"$in": []string{
-				deliveries.StatusAssigned,
-				deliveries.StatusAccepted,
-				deliveries.StatusPickedUp,
-				deliveries.StatusInTransit,
-			}},
-		}
-
-		if err := app.DB.FindMany(ctx, "deliveries", filter, &active); err != nil {
+		active, err := getActiveJobsForDriver(ctx, app, driverID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch active deliveries")
 			return
-		}
-		if len(active) == 0 {
-			active = []deliveries.Delivery{}
 		}
 		utils.RespondWithJSON(w, http.StatusOK, active)
 	}
@@ -164,41 +136,12 @@ func ClaimJob(app *infra.Deps) http.HandlerFunc {
 		deliveryID := utils.GetParam(r, "deliveryid")
 		ctx := r.Context()
 
-		var current deliveries.Delivery
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindOne(ctx, "deliveries", filter, &current); err != nil {
-			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
-			return
-		}
-
-		if current.DriverID != nil && *current.DriverID != "" {
-			utils.RespondWithError(w, http.StatusConflict, "Delivery is already assigned to another driver")
-			return
-		}
-
-		if err := deliveries.ValidateTransition(current.Status, deliveries.StatusAssigned); err != nil {
-			utils.RespondWithError(w, http.StatusConflict, err.Error())
-			return
-		}
-
-		now := time.Now()
-		update := map[string]any{
-			"$set": map[string]any{
-				"status":     deliveries.StatusAssigned,
-				"driverid":   driverID,
-				"updated_at": now,
-			},
-			"$push": map[string]any{
-				"status_history": deliveries.StatusHistoryItem{
-					Status:    deliveries.StatusAssigned,
-					Timestamp: now,
-					UpdatedBy: driverID,
-				},
-			},
-		}
-
-		var updated deliveries.Delivery
-		if err := app.DB.FindOneAndUpdate(ctx, "deliveries", filter, update, &updated); err != nil {
+		updated, err := claimDeliveryAssignment(ctx, app, deliveryID, tenantID, driverID)
+		if err != nil {
+			if err.Error() == "delivery is already assigned to another driver" {
+				utils.RespondWithError(w, http.StatusConflict, err.Error())
+				return
+			}
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to claim delivery")
 			return
 		}
@@ -215,36 +158,8 @@ func AcceptJob(app *infra.Deps) http.HandlerFunc {
 		deliveryID := utils.GetParam(r, "deliveryid")
 		ctx := r.Context()
 
-		var current deliveries.Delivery
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindOne(ctx, "deliveries", filter, &current); err != nil {
-			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
-			return
-		}
-
-		if err := deliveries.ValidateTransition(current.Status, deliveries.StatusAccepted); err != nil {
-			utils.RespondWithError(w, http.StatusConflict, err.Error())
-			return
-		}
-
-		now := time.Now()
-		update := map[string]any{
-			"$set": map[string]any{
-				"status":     deliveries.StatusAccepted,
-				"driverid":   driverID,
-				"updated_at": now,
-			},
-			"$push": map[string]any{
-				"status_history": deliveries.StatusHistoryItem{
-					Status:    deliveries.StatusAccepted,
-					Timestamp: now,
-					UpdatedBy: driverID,
-				},
-			},
-		}
-
-		var delivery deliveries.Delivery
-		if err := app.DB.FindOneAndUpdate(ctx, "deliveries", filter, update, &delivery); err != nil {
+		delivery, err := acceptDeliveryAssignment(ctx, app, deliveryID, tenantID, driverID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusConflict, "Job no longer available or invalid")
 			return
 		}
@@ -263,13 +178,7 @@ func RejectJob(app *infra.Deps) http.HandlerFunc {
 		deliveryID := utils.GetParam(r, "deliveryid")
 		ctx := r.Context()
 
-		_ = app.DB.InsertOne(ctx, "driver_job_rejections", map[string]any{
-			"rejectionid": utils.GenerateRandomString(18),
-			"tenantid":    tenantID,
-			"driverid":    driverID,
-			"deliveryid":  deliveryID,
-			"rejected_at": time.Now(),
-		})
+		_ = saveDriverRejection(ctx, app, tenantID, driverID, deliveryID)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "rejected"})
 	}

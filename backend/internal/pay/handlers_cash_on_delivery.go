@@ -69,21 +69,17 @@ func (p *PaymentService) handleCashOnDelivery(w http.ResponseWriter, r *http.Req
 		UpdatedAt:  now,
 		Meta:       Meta{"payment_type": req.PaymentType},
 	}
-	if err := p.app.DB.InsertOne(ctx, transactionsCollection, txn); err != nil {
+	if err := p.createTransactionRecord(ctx, txn); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed to create transaction")
 		return
 	}
 
 	if req.EntityType == "order" {
-		filter := map[string]any{"orderId": req.EntityID}
-		update := map[string]any{
-			"$set": map[string]any{
-				"paymentMethod": "cash_on_delivery",
-				"status":        "cod_pending",
-				"updatedAt":     now,
-			},
-		}
-		if _, err := p.app.DB.UpdateOne(ctx, "orders", filter, update); err != nil {
+		if err := p.updateOrderSet(ctx, ordersCollection, "orderId", req.EntityID, map[string]any{
+			"paymentMethod": "cash_on_delivery",
+			"status":        "cod_pending",
+			"updatedAt":     now,
+		}); err != nil {
 			auditlog.LogAction(
 				ctx, p.app, r, userID,
 				auditlog.AuditActionPayment,

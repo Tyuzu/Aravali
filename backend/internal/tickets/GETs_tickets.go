@@ -18,12 +18,7 @@ func GetTickets(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var tickets []Ticket
-		if err := app.DB.FindMany(
-			ctx,
-			ticketsCollection,
-			map[string]any{"eventid": eventID},
-			&tickets,
-		); err != nil {
+		if err := FindTicketsByEvent(ctx, app, eventID, &tickets); err != nil {
 			http.Error(w, "Failed to fetch tickets", http.StatusInternalServerError)
 			return
 		}
@@ -45,16 +40,8 @@ func GetTicket(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var ticket Ticket
-		if err := app.DB.FindOne(
-			ctx,
-			ticketsCollection,
-			map[string]any{
-				"eventid":  eventID,
-				"ticketid": ticketID,
-			},
-			&ticket,
-		); err != nil {
+		ticket, err := FindTicketByID(ctx, app, eventID, ticketID)
+		if err != nil {
 			http.Error(w, fmt.Sprintf("Ticket not found: %v", err), http.StatusNotFound)
 			return
 		}

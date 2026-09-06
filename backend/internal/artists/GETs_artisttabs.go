@@ -15,7 +15,7 @@ func GetArtistsAlbums(app *infra.Deps) http.HandlerFunc {
 		artistID := utils.GetParam(r, "id")
 
 		var albums []ArtistAlbum
-		err := app.DB.FindMany(ctx, ArtistAlbumsCollection, map[string]any{"artistid": artistID}, &albums)
+		err := FindArtistAlbumsByArtistID(ctx, app.DB, artistID, &albums)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve artist albums")
 			return

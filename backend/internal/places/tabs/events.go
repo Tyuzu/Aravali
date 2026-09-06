@@ -6,6 +6,7 @@ import (
 	"scav/infra"
 	"scav/infra/db"
 	"scav/internal/events"
+	placedb "scav/internal/places/placedb"
 	"scav/utils"
 	"strconv"
 	"time"
@@ -84,7 +85,7 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 		}
 
 		// Count total
-		total, err := app.DB.Count(ctx, eventsCollection, filter)
+		total, err := placedb.CountEvents(ctx, app, filter)
 		if err != nil {
 			http.Error(w, "Failed to count events", http.StatusInternalServerError)
 			return
@@ -108,7 +109,7 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 		}
 
 		var placeevents []events.Event
-		if err := app.DB.FindManyWithOptions(ctx, eventsCollection, filter, opts, &placeevents); err != nil {
+		if err := placedb.FindEventsWithOptions(ctx, app, filter, opts, &placeevents); err != nil {
 			http.Error(w, "Failed to fetch events", http.StatusInternalServerError)
 			return
 		}

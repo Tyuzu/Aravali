@@ -203,8 +203,8 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 
 	// ────────── BALANCE CHECK (WALLET ONLY) ──────────
 	if req.Method == "wallet" {
-		var acc Account
-		if err := p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"_id": userAcc}, &acc); err != nil {
+		acc, err := p.getAccountByID(ctx, userAcc)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "account error")
 			return
 		}
@@ -239,7 +239,7 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 		Meta:        Meta{"payment_type": req.PaymentType},
 	}
 
-	if err := p.app.DB.InsertOne(ctx, transactionsCollection, txn); err != nil {
+	if err := p.createTransactionRecord(ctx, txn); err != nil {
 		http.Error(w, "failed", http.StatusInternalServerError)
 		return
 	}
@@ -254,7 +254,7 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:     now,
 	}
 
-	if err := p.app.DB.InsertOne(ctx, journalCollection, j); err != nil {
+	if err := p.createJournalEntryRecord(ctx, j); err != nil {
 		p.failTxn(ctx, txnID)
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
@@ -262,13 +262,13 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 
 	// ────────── BALANCE UPDATES ──────────
 	if req.Method == "wallet" {
-		if err := p.app.DB.Inc(ctx, accountsCollection, map[string]any{"_id": userAcc}, "cached_balance", -price); err != nil {
+		if err := p.applyBalanceDelta(ctx, userAcc, -price); err != nil {
 			p.failTxn(ctx, txnID)
 			utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 			return
 		}
 
-		if err := p.app.DB.Inc(ctx, accountsCollection, map[string]any{"_id": destinationAcc}, "cached_balance", price); err != nil {
+		if err := p.applyBalanceDelta(ctx, destinationAcc, price); err != nil {
 			p.failTxn(ctx, txnID)
 			utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 			return
@@ -297,10 +297,9 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 
 	// If this payment is for an order, mark the order as paid and decrement inventory.
 	if req.EntityType == "order" {
-		// Try regular orders first (use generic map to avoid import cycles)
 		var ord map[string]any
-		if err := p.app.DB.FindOne(ctx, ordersCollection, map[string]any{"orderId": req.EntityID}, &ord); err == nil {
-			_, _ = p.app.DB.UpdateOne(ctx, ordersCollection, map[string]any{"orderId": req.EntityID}, map[string]any{"$set": map[string]any{"status": "paid"}})
+		if err := p.findOrderByID(ctx, ordersCollection, "orderId", req.EntityID, &ord); err == nil {
+			_ = p.updateOrderStatus(ctx, ordersCollection, "orderId", req.EntityID, "paid")
 
 			if itemsRaw, ok := ord["items"].(map[string]any); ok {
 				for category, raw := range itemsRaw {
@@ -314,7 +313,6 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 							continue
 						}
 						itemID, _ := itMap["itemId"].(string)
-						// quantity may decode as float64
 						qty := 0
 						if qf, ok := itMap["quantity"].(float64); ok {
 							qty = int(qf)
@@ -324,31 +322,21 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 
 						switch category {
 						case "crops":
-							if itemID != "" && qty > 0 {
-								_, _ = p.app.DB.UpdateOne(ctx, cropsCollection, map[string]any{"cropid": itemID}, map[string]any{"$inc": map[string]any{"quantity": -qty}})
-							}
+							_ = p.decrementInventory(ctx, cropsCollection, "cropid", itemID, "quantity", qty)
 						case "menu":
-							if itemID != "" && qty > 0 {
-								_, _ = p.app.DB.UpdateOne(ctx, menuCollection, map[string]any{"menuid": itemID}, map[string]any{"$inc": map[string]any{"stock": -qty}})
-							}
+							_ = p.decrementInventory(ctx, menuCollection, "menuid", itemID, "stock", qty)
 						case "merch":
-							if itemID != "" && qty > 0 {
-								_, _ = p.app.DB.UpdateOne(ctx, merchCollection, map[string]any{"merchid": itemID}, map[string]any{"$inc": map[string]any{"stock": -qty}})
-							}
+							_ = p.decrementInventory(ctx, merchCollection, "merchid", itemID, "stock", qty)
 						default:
-							if itemID != "" && qty > 0 {
-								_, _ = p.app.DB.UpdateOne(ctx, productCollection, map[string]any{"productid": itemID}, map[string]any{"$inc": map[string]any{"quantity": -qty}})
-							}
+							_ = p.decrementInventory(ctx, productCollection, "productid", itemID, "quantity", qty)
 						}
 					}
 				}
 			}
-
 		} else {
-			// Try farm orders with generic map
 			var ford map[string]any
-			if err := p.app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": req.EntityID}, &ford); err == nil {
-				_, _ = p.app.DB.UpdateOne(ctx, farmOrdersCollection, map[string]any{"orderid": req.EntityID}, map[string]any{"$set": map[string]any{"status": "paid"}})
+			if err := p.findOrderByID(ctx, farmOrdersCollection, "orderid", req.EntityID, &ford); err == nil {
+				_ = p.updateOrderStatus(ctx, farmOrdersCollection, "orderid", req.EntityID, "paid")
 				if itemsRaw, ok := ford["items"].(map[string]any); ok {
 					if cropsRaw, ok := itemsRaw["crops"].([]any); ok {
 						for _, it := range cropsRaw {
@@ -363,9 +351,7 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 							} else if qi, ok := itMap["quantity"].(int); ok {
 								qty = qi
 							}
-							if itemID != "" && qty > 0 {
-								_, _ = p.app.DB.UpdateOne(ctx, cropsCollection, map[string]any{"cropid": itemID}, map[string]any{"$inc": map[string]any{"quantity": -qty}})
-							}
+							_ = p.decrementInventory(ctx, cropsCollection, "cropid", itemID, "quantity", qty)
 						}
 					}
 				}

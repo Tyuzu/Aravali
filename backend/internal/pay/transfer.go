@@ -128,13 +128,8 @@ func (p *PaymentService) Transfer(w http.ResponseWriter, r *http.Request) {
 
 	// ────────── BALANCE CHECK ──────────
 
-	var sender Account
-	if err := p.app.DB.FindOne(
-		ctx,
-		accountsCollection,
-		map[string]any{"_id": senderAcc},
-		&sender,
-	); err != nil {
+	sender, err := p.getAccountByID(ctx, senderAcc)
+	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "account error")
 		return
 	}
@@ -166,7 +161,7 @@ func (p *PaymentService) Transfer(w http.ResponseWriter, r *http.Request) {
 		Meta:        Meta{"note": "user transfer"},
 	}
 
-	if err := p.app.DB.InsertOne(ctx, transactionsCollection, master); err != nil {
+	if err := p.createTransactionRecord(ctx, master); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
@@ -181,57 +176,26 @@ func (p *PaymentService) Transfer(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:     now,
 	}
 
-	if err := p.app.DB.InsertOne(ctx, journalCollection, j); err != nil {
+	if err := p.createJournalEntryRecord(ctx, j); err != nil {
 		p.failTxn(ctx, txnID)
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
 
-	if err := p.app.DB.Inc(
-		ctx,
-		accountsCollection,
-		map[string]any{"_id": senderAcc},
-		"cached_balance",
-		-req.Amount,
-	); err != nil {
+	if err := p.applyBalanceDelta(ctx, senderAcc, -req.Amount); err != nil {
 		p.failTxn(ctx, txnID)
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
 
-	if err := p.app.DB.Inc(
-		ctx,
-		accountsCollection,
-		map[string]any{"_id": recipientAcc},
-		"cached_balance",
-		req.Amount,
-	); err != nil {
+	if err := p.applyBalanceDelta(ctx, recipientAcc, req.Amount); err != nil {
 		p.failTxn(ctx, txnID)
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
 
 	// Derived per-user transaction views (best-effort)
-	_ = p.app.DB.InsertMany(ctx, transactionsCollection, []interface{}{
-		Transaction{
-			ID:        utils.GetUUID(),
-			ParentTxn: txnID,
-			UserID:    senderID,
-			Type:      "debit",
-			Amount:    req.Amount,
-			Status:    "success",
-			CreatedAt: now,
-		},
-		Transaction{
-			ID:        utils.GetUUID(),
-			ParentTxn: txnID,
-			UserID:    req.Recipient,
-			Type:      "credit",
-			Amount:    req.Amount,
-			Status:    "success",
-			CreatedAt: now,
-		},
-	})
+	_ = p.createTransferViews(ctx, txnID, senderID, req.Recipient, req.Amount, now)
 
 	p.successTxn(ctx, txnID)
 

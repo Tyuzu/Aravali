@@ -59,41 +59,15 @@ func AssignDriver(app *infra.Deps) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		var current Delivery
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindOne(ctx, "deliveries", filter, &current); err != nil {
-			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
-			return
-		}
-
-		if err := ValidateTransition(current.Status, StatusAssigned); err != nil {
+		updated, err := upsertDeliveryAssignment(ctx, app, deliveryID, tenantID, req.DriverID, utils.GetUserIDFromRequest(r))
+		if err != nil {
+			if err.Error() == "delivery not found" {
+				utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
+				return
+			}
 			utils.RespondWithError(w, http.StatusConflict, err.Error())
 			return
 		}
-
-		now := time.Now()
-		update := map[string]any{
-			"$set": map[string]any{
-				"driverid":   req.DriverID,
-				"status":     StatusAssigned,
-				"updated_at": now,
-			},
-			"$push": map[string]any{
-				"status_history": StatusHistoryItem{
-					Status:    StatusAssigned,
-					Timestamp: now,
-					UpdatedBy: utils.GetUserIDFromRequest(r),
-				},
-			},
-		}
-
-		var updated Delivery
-		if err := app.DB.FindOneAndUpdate(ctx, "deliveries", filter, update, &updated); err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to assign driver")
-			return
-		}
-
-		_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
 		utils.RespondWithJSON(w, http.StatusOK, updated)
 	}
 }
@@ -150,42 +124,7 @@ func updateDeliveryStatus(app *infra.Deps, r *http.Request, deliveryID string, n
 	ctx := r.Context()
 	userID := utils.GetUserIDFromRequest(r)
 	tenantID := GetTenantIDFromContext(ctx)
-
-	var currentDelivery Delivery
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindOne(ctx, "deliveries", filter, &currentDelivery); err != nil {
-		return nil, fmt.Errorf("delivery not found")
-	}
-
-	if err := ValidateTransition(currentDelivery.Status, newStatus); err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-	update := map[string]any{
-		"$set": map[string]any{
-			"status":     newStatus,
-			"updated_at": now,
-		},
-		"$push": map[string]any{
-			"status_history": StatusHistoryItem{
-				Status:    newStatus,
-				Timestamp: now,
-				UpdatedBy: userID,
-			},
-		},
-	}
-
-	var updatedDelivery Delivery
-	err := app.DB.FindOneAndUpdate(ctx, "deliveries", filter, update, &updatedDelivery)
-	if err != nil {
-		return nil, err
-	}
-
-	_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
-	_ = app.NatsConn.Publish(fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
-
-	return &updatedDelivery, nil
+	return updateDeliveryStatusRecord(ctx, app, deliveryID, tenantID, userID, newStatus)
 }
 
 func CreateDelivery(app *infra.Deps) http.HandlerFunc {
@@ -222,7 +161,7 @@ func CreateDelivery(app *infra.Deps) http.HandlerFunc {
 			},
 		}
 
-		if err := app.DB.InsertOne(ctx, "deliveries", delivery); err != nil {
+		if err := saveDelivery(ctx, app, delivery); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create delivery")
 			return
 		}
@@ -238,15 +177,10 @@ func GetMyDeliveries(app *infra.Deps) http.HandlerFunc {
 		userID := utils.GetUserIDFromRequest(r)
 		tenantID := GetTenantIDFromContext(ctx)
 
-		filter := map[string]any{"userid": userID, "tenantid": tenantID}
-		var myDeliveries []Delivery
-
-		if err := app.DB.FindMany(ctx, "deliveries", filter, &myDeliveries); err != nil {
+		myDeliveries, err := findMyDeliveries(ctx, app, userID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch deliveries")
 			return
-		}
-		if len(myDeliveries) == 0 {
-			myDeliveries = []Delivery{}
 		}
 		utils.RespondWithJSON(w, http.StatusOK, myDeliveries)
 	}
@@ -271,9 +205,8 @@ func GetDeliveryByID(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var delivery Delivery
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindOne(ctx, "deliveries", filter, &delivery); err != nil {
+		delivery, err := fetchDeliveryForRead(ctx, app, deliveryID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Delivery not found")
 			return
 		}

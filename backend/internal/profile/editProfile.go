@@ -49,13 +49,13 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 5. Apply updates in DB
-		if _, err := ApplyProfileUpdates(ctx, app.DB, claims.UserID, updates); err != nil {
+		if _, err := ApplyProfileUpdatesDeps(ctx, app, claims.UserID, updates); err != nil {
 			http.Error(w, "Failed to update profile", http.StatusInternalServerError)
 			return
 		}
 
 		// 6. Respond with updated profile
-		RespondWithUserProfile(w, claims.UserID, app.DB)
+		RespondWithUserProfileDeps(w, claims.UserID, app)
 		// if err := RespondWithUserProfile(w, claims.UserID, app.DB); err != nil {
 		// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
 		// }
@@ -81,7 +81,7 @@ func DeleteProfile(app *infra.Deps) http.HandlerFunc {
 		_ = UpdateCachedUsername(ctx, app.Cache, claims.UserID)
 
 		// Delete user in DB
-		if _, err := DeleteUserByID(ctx, app.DB, claims.UserID); err != nil {
+		if _, err := DeleteUserByIDDeps(ctx, app, claims.UserID); err != nil {
 			http.Error(w, "Failed to delete profile", http.StatusInternalServerError)
 			return
 		}

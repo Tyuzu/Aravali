@@ -3,7 +3,6 @@ package farms
 import (
 	"context"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -27,8 +26,8 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		var crops []Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, map[string]any{"cropid": cropID}, &crops); err != nil || len(crops) == 0 {
+		crops, err := getCropsByCropID(ctx, app.DB, cropID)
+		if err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop not found")
 			return
 		}
@@ -41,13 +40,8 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 			farmIDs = append(farmIDs, c.FarmID)
 		}
 
-		var farms []Farm
-		if err := app.DB.FindMany(
-			ctx,
-			farmsCollection,
-			map[string]any{"farmid": map[string]any{"$in": farmIDs}},
-			&farms,
-		); err != nil {
+		farms, err := getFarmsByIDs(ctx, app.DB, farmIDs)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
 			return
 		}
@@ -110,15 +104,8 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		filter := map[string]any{
-			"name": map[string]any{
-				"$regex":   "^" + regexp.QuoteMeta(cropName) + "$",
-				"$options": "i",
-			},
-		}
-
-		var crops []Crop
-		if err := app.DB.FindMany(ctx, cropsCollection, filter, &crops); err != nil || len(crops) == 0 {
+		crops, err := getCropsByNameFilter(ctx, app.DB, cropName)
+		if err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop type not found")
 			return
 		}
@@ -130,13 +117,8 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 			farmIDs = append(farmIDs, c.FarmID)
 		}
 
-		var farms []Farm
-		if err := app.DB.FindMany(
-			ctx,
-			farmsCollection,
-			map[string]any{"farmid": map[string]any{"$in": farmIDs}},
-			&farms,
-		); err != nil {
+		farms, err := getFarmsByIDs(ctx, app.DB, farmIDs)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
 			return
 		}
@@ -229,8 +211,8 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		id := utils.GetParam(r, "id")
 
-		var farm Farm
-		if err := app.DB.FindOne(ctx, farmsCollection, map[string]any{"farmid": id}, &farm); err != nil {
+		farm, err := getFarmByID(ctx, app.DB, id)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
 				"message": "Farm not found",
@@ -238,8 +220,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var crops []Crop
-		_ = app.DB.FindMany(ctx, cropsCollection, map[string]any{"farmid": id}, &crops)
+		crops, _ := getCropsByFarmID(ctx, app.DB, id)
 
 		farm.Crops = crops
 
@@ -262,40 +243,11 @@ func GetPaginatedFarms(app *infra.Deps) http.HandlerFunc {
 		skip, limit := utils.ParsePagination(r, 10, 100)
 		search := r.URL.Query().Get("search")
 
-		pipeline := make([]any, 0)
-
-		if search != "" {
-			pipeline = append(pipeline, map[string]any{
-				"$match": map[string]any{
-					"$or": []map[string]any{
-						utils.RegexFilter("name", search),
-						utils.RegexFilter("location", search),
-						utils.RegexFilter("owner", search),
-					},
-				},
-			})
-		}
-
-		pipeline = append(
-			pipeline,
-			map[string]any{"$sort": map[string]any{"createdAt": -1}},
-			map[string]any{"$lookup": map[string]any{
-				"from":         "crops",
-				"localField":   "farmid",
-				"foreignField": "farmid",
-				"as":           "crops",
-			}},
-			map[string]any{"$skip": skip},
-			map[string]any{"$limit": limit},
-		)
-
-		var farms []Farm
-		if err := app.DB.Aggregate(ctx, farmsCollection, pipeline, &farms); err != nil {
+		farms, total, err := getPaginatedFarms(ctx, app.DB, search, skip, limit)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Error fetching farms")
 			return
 		}
-
-		total, _ := app.DB.CountDocuments(ctx, farmsCollection, map[string]any{})
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"success": true,

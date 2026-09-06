@@ -1,122 +1,18 @@
 package activity
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
 	"scav/infra"
-	"scav/infra/db"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // AnalyticsPayload represents the incoming batch payload from activityLogger.js
 type AnalyticsPayload struct {
 	Meta   map[string]any   `json:"meta"`
 	Events []map[string]any `json:"events"`
-}
-
-// -------------------- MongoDB Helpers --------------------
-
-func insertActivities(
-	ctx context.Context,
-	app *infra.Deps,
-	activities []Activity,
-) error {
-	docs := make([]any, len(activities))
-	for i := range activities {
-		docs[i] = activities[i]
-	}
-
-	return app.DB.WithDB(ctx, func(ctx context.Context) error {
-		return app.DB.InsertMany(ctx, ActivitiesCollection, docs)
-	})
-}
-
-func getActivities(
-	ctx context.Context,
-	app *infra.Deps,
-	userID string,
-	cursor time.Time,
-	limit int,
-) ([]Activity, error) {
-	// FIX: Matched struct bson tag "userid" instead of "userid"
-	filter := map[string]any{
-		"userid": userID,
-	}
-
-	if !cursor.IsZero() {
-		filter["timestamp"] = map[string]any{
-			"$lt": cursor,
-		}
-	}
-
-	opts := db.FindManyOptions{
-		Limit: limit,
-		Sort:  []bson.E{{Key: "timestamp", Value: -1}},
-	}
-
-	var activities []Activity
-
-	err := app.DB.FindManyWithOptions(
-		ctx,
-		ActivitiesCollection,
-		filter,
-		opts,
-		&activities,
-	)
-
-	return activities, err
-}
-
-func insertAnalyticsEvents(
-	ctx context.Context,
-	app *infra.Deps,
-	payload AnalyticsPayload,
-	remoteAddr string,
-) (int, error) {
-	var docsToInsert []any
-
-	meta := payload.Meta
-	user, _ := meta["user"].(string)
-	session, _ := meta["session"].(string)
-	url, _ := meta["url"].(string)
-
-	err := app.DB.WithDB(ctx, func(ctx context.Context) error {
-		for _, ev := range payload.Events {
-			key := analyticsIdempotencyKey(ev)
-
-			ok, err := app.Cache.SetNX(ctx, key, []byte("1"), analyticsIdemTTL)
-			if err != nil || !ok {
-				continue
-			}
-
-			// Consolidate payload metadata with specific event data
-			doc := map[string]any{
-				"type":      ev["type"],
-				"data":      ev["data"],
-				"url":       url,
-				"user":      user,
-				"session":   session,
-				"timestamp": time.Now(),
-				"ip":        remoteAddr,
-			}
-
-			docsToInsert = append(docsToInsert, doc)
-		}
-
-		if len(docsToInsert) == 0 {
-			return nil
-		}
-
-		// FIX: Use batch insertion rather than loops of single inserts
-		return app.DB.InsertMany(ctx, AnalyticsCollection, docsToInsert)
-	})
-
-	return len(docsToInsert), err
 }
 
 // -------------------- Log Activities --------------------

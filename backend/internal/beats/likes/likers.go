@@ -59,18 +59,7 @@ func GetLikers(app *infra.Deps) http.HandlerFunc {
 			limit = parsed
 		}
 
-		var likes []Like
-
-		err := app.DB.FindMany(
-			ctx,
-			likesCollection,
-			map[string]any{
-				"entity_type": entityType,
-				"entity_id":   entityID,
-			},
-			&likes,
-		)
-
+		likes, err := FindLikesByEntity(ctx, app, entityType, entityID)
 		if err != nil {
 			http.Error(
 				w,
@@ -101,23 +90,7 @@ func GetLikers(app *infra.Deps) http.HandlerFunc {
 			userIDs = append(userIDs, like.UserID)
 		}
 
-		var users []struct {
-			UserID   string `bson:"userid"`
-			Username string `bson:"username"`
-			Avatar   string `bson:"avatar,omitempty"`
-		}
-
-		err = app.DB.FindMany(
-			ctx,
-			usersCollection,
-			map[string]any{
-				"userid": map[string]any{
-					"$in": userIDs,
-				},
-			},
-			&users,
-		)
-
+		users, err := FindUsersByIDs(ctx, app, userIDs)
 		if err != nil {
 			http.Error(
 				w,
@@ -130,11 +103,7 @@ func GetLikers(app *infra.Deps) http.HandlerFunc {
 		userMap := make(map[string]map[string]string, len(users))
 
 		for _, user := range users {
-			userMap[user.UserID] = map[string]string{
-				"userid":   user.UserID,
-				"username": user.Username,
-				"avatar":   user.Avatar,
-			}
+			userMap[user["userid"]] = user
 		}
 
 		likers := make([]map[string]string, 0, len(likes))

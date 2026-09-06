@@ -44,6 +44,15 @@ func FindDateCap(ctx context.Context, d db.Database, entityType, entityId, date 
 	return d.FindOne(ctx, dateCapsCollection, map[string]any{"entityType": entityType, "entityId": entityId, "date": date}, out)
 }
 
+func FindDateBookings(ctx context.Context, d db.Database, entityType, entityId, date string, out any) error {
+	return d.FindMany(ctx, bookingsCollection, map[string]any{
+		"entityType": entityType,
+		"entityId":   entityId,
+		"date":       date,
+		"status":     map[string]any{"$ne": StatusCancelled},
+	}, out)
+}
+
 func FindVendorAvailability(ctx context.Context, d db.Database, vendorId string, date string, out any) error {
 	return d.FindMany(ctx, config.Collections.VendorAvailabilityCollection, map[string]any{"vendorid": vendorId, "start_date": map[string]any{"$lte": date}, "end_date": map[string]any{"$gte": date}}, out)
 }

@@ -299,13 +299,7 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 		var dc DateCap
 		if err := FindDateCap(ctx, app.DB, req.EntityType, req.EntityId, req.Date, &dc); err == nil {
 			var dateBookings []Booking
-			err := app.DB.FindMany(ctx, bookingsCollection, map[string]any{
-				"entityType": req.EntityType,
-				"entityId":   req.EntityId,
-				"date":       req.Date,
-				"status":     map[string]any{"$ne": StatusCancelled},
-			}, &dateBookings)
-			if err != nil {
+			if err := FindDateBookings(ctx, app.DB, req.EntityType, req.EntityId, req.Date, &dateBookings); err != nil {
 				return "", err
 			}
 

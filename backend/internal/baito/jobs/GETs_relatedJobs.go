@@ -14,11 +14,8 @@ func GetJobsRelatedTOEntity(app *infra.Deps) http.HandlerFunc {
 		entityType := utils.GetParam(r, "entitytype")
 		entityID := utils.GetParam(r, "entityid")
 
-		var jobs []baito.BaitosResponse
-		if err := app.DB.FindMany(ctx, baitosCollection, map[string]any{
-			"entityType": entityType,
-			"entityId":   entityID,
-		}, &jobs); err != nil {
+		jobs, err := FindJobsForEntity(ctx, app, entityType, entityID)
+		if err != nil {
 			http.Error(w, "Failed to fetch jobs", http.StatusInternalServerError)
 			return
 		}

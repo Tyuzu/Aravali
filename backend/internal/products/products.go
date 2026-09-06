@@ -51,7 +51,7 @@ func createItem(w http.ResponseWriter, r *http.Request, itemType string, app *in
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	if err := app.DB.InsertOne(ctx, productsCollection, item); err != nil {
+	if err := InsertProduct(ctx, app, item); err != nil {
 		http.Error(w, "Failed to insert item", http.StatusInternalServerError)
 		return
 	}
@@ -102,7 +102,7 @@ func updateItem(
 	defer cancel()
 
 	var existingItem farms.Product
-	if err := app.DB.FindOne(ctx, productsCollection, map[string]any{"productid": id}, &existingItem); err != nil {
+	if err := GetProductByID(ctx, app, id, &existingItem); err != nil {
 		http.Error(w, "Product not found", http.StatusNotFound)
 		return
 	}
@@ -124,7 +124,7 @@ func updateItem(
 	item.UpdatedAt = time.Now()
 
 	update := map[string]any{"$set": item}
-	if _, err := app.DB.UpdateOne(ctx, productsCollection, map[string]any{"productid": id}, update); err != nil {
+	if _, err := UpdateProductByID(ctx, app, id, update); err != nil {
 		http.Error(w, "Failed to update item", http.StatusInternalServerError)
 		return
 	}
@@ -174,7 +174,7 @@ func deleteItem(app *infra.Deps) http.HandlerFunc {
 
 		// SECURITY: Check if user is the creator
 		var item farms.Product
-		if err := app.DB.FindOne(ctx, productsCollection, map[string]any{"productid": id}, &item); err != nil {
+		if err := GetProductByID(ctx, app, id, &item); err != nil {
 			http.Error(w, "Product not found", http.StatusNotFound)
 			return
 		}
@@ -184,7 +184,7 @@ func deleteItem(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.DeleteOne(ctx, productsCollection, map[string]any{"productid": id}); err != nil {
+		if _, err := DeleteProductByID(ctx, app, id); err != nil {
 			http.Error(w, "Failed to delete item", http.StatusInternalServerError)
 			return
 		}

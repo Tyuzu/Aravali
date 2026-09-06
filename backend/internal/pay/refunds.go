@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const RefundsCollection = "refunds"
@@ -61,42 +60,13 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 			amount    int64
 		)
 
-		// Try regular order first.
-		var regularOrder struct {
-			Total int64 `bson:"total"`
-		}
-		err := app.DB.FindOne(ctx, ordersCollection, map[string]any{
-			"orderId": req.OrderID,
-			"userid":  userID,
-		}, &regularOrder)
-
+		svc := NewPaymentService(app)
+		orderType, amount, err := svc.findOrderTotalByUser(ctx, req.OrderID, userID)
 		switch {
 		case err == nil:
-			orderType = "regular"
-			amount = regularOrder.Total
-
 		case err == mongo.ErrNoDocuments:
-			var farmOrder struct {
-				Total int64 `bson:"total"`
-			}
-			err = app.DB.FindOne(ctx, farmOrdersCollection, map[string]any{
-				"orderid": req.OrderID,
-				"userid":  userID,
-			}, &farmOrder)
-
-			if err != nil {
-				if err == mongo.ErrNoDocuments {
-					utils.RespondWithError(w, http.StatusNotFound, "Order not found")
-				} else {
-					log.Println("FindOne farm order error:", err)
-					utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
-				}
-				return
-			}
-
-			orderType = "farm"
-			amount = farmOrder.Total
-
+			utils.RespondWithError(w, http.StatusNotFound, "Order not found")
+			return
 		default:
 			log.Println("FindOne order error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
@@ -104,15 +74,7 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Ensure there isn't already an active refund request.
-		var existingRefund tickets.RefundRequest
-
-		err = app.DB.FindOne(ctx, RefundsCollection, map[string]any{
-			"order_id": req.OrderID,
-			"status": map[string]any{
-				"$in": []string{"pending", "approved"},
-			},
-		}, &existingRefund)
-
+		_, err = svc.findActiveRefundRequestByOrderID(ctx, req.OrderID)
 		if err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "A refund request already exists for this order")
 			return
@@ -138,7 +100,7 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt: now,
 		}
 
-		if err := app.DB.InsertOne(ctx, RefundsCollection, refundReq); err != nil {
+		if err := svc.createRefundRequestRecord(ctx, refundReq); err != nil {
 			log.Println("InsertOne refund request error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create refund request")
 			return
@@ -179,31 +141,19 @@ func GetMyRefundRequests(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
+		svc := NewPaymentService(app)
+
 		// Count total
-		total, err := app.DB.Count(ctx, RefundsCollection, map[string]any{
-			"userid": userID,
-		})
+		total, err := svc.countRefundRequestsByUser(ctx, userID)
 		if err != nil {
 			log.Println("Count refund requests error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
 			return
 		}
 
-		// Query options
-		opts := options.Find().
-			SetSkip(int64(skip)).
-			SetLimit(int64(limit)).
-			SetSort(map[string]any{"created_at": -1})
-
 		// Fetch refunds
 		var refunds []tickets.RefundRequest
-		err = app.DB.FindMany(
-			ctx,
-			RefundsCollection,
-			map[string]any{"userid": userID},
-			&refunds,
-			opts,
-		)
+		refunds, err = svc.listRefundRequestsByUser(ctx, userID, skip, limit)
 		if err != nil {
 			log.Println("FindMany refund requests error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch refund requests")
@@ -266,30 +216,19 @@ func GetAllRefundRequests(app *infra.Deps) http.HandlerFunc {
 			filter["order_type"] = orderType
 		}
 
+		svc := NewPaymentService(app)
+
 		// Count total
-		total, err := app.DB.Count(ctx, RefundsCollection, filter)
+		total, err := svc.countRefundRequests(ctx, filter)
 		if err != nil {
 			log.Println("Count refund requests error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
 			return
 		}
 
-		// Query options
-		opts := options.Find().
-			SetSkip(int64(skip)).
-			SetLimit(int64(limit)).
-			SetSort(map[string]any{"created_at": -1})
-
 		// Fetch refunds
 		var refunds []tickets.RefundRequest
-
-		err = app.DB.FindMany(
-			ctx,
-			RefundsCollection,
-			filter,
-			&refunds,
-			opts,
-		)
+		refunds, err = svc.listRefundRequests(ctx, filter, skip, limit)
 		if err != nil {
 			log.Println("FindMany refund requests error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch refund requests")
@@ -333,8 +272,8 @@ func ApproveRefundRequest(app *infra.Deps) http.HandlerFunc {
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 
-		var refund OrderRefundRequest
-		err := app.DB.FindOne(ctx, RefundsCollection, map[string]any{"_id": refundID}, &refund)
+		svc := NewPaymentService(app)
+		refund, err := svc.findRefundRequestByID(ctx, refundID)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				utils.RespondWithError(w, http.StatusNotFound, "Refund request not found")
@@ -368,28 +307,21 @@ func ApproveRefundRequest(app *infra.Deps) http.HandlerFunc {
 			},
 		}
 
-		if err := app.DB.InsertOne(ctx, transactionsCollection, refundTxn); err != nil {
+		if err := svc.createRefundTransactionRecord(ctx, refundTxn); err != nil {
 			log.Println("InsertOne refund transaction error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to process refund")
 			return
 		}
 
 		now := time.Now()
-		_, err = app.DB.UpdateOne(
-			ctx,
-			RefundsCollection,
-			map[string]any{"_id": refundID},
-			map[string]any{
-				"$set": map[string]any{
-					"status":         "approved",
-					"transaction_id": refundTxn.ID,
-					"reviewed_by":    adminID,
-					"reviewed_at":    now,
-					"review_notes":   req.Notes,
-					"updated_at":     now,
-				},
-			},
-		)
+		err = svc.updateRefundRequestStatus(ctx, refundID, map[string]any{
+			"status":         "approved",
+			"transaction_id": refundTxn.ID,
+			"reviewed_by":    adminID,
+			"reviewed_at":    now,
+			"review_notes":   req.Notes,
+			"updated_at":     now,
+		})
 		if err != nil {
 			log.Println("UpdateOne refund request error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update refund request")
@@ -448,8 +380,8 @@ func RejectRefundRequest(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var refund OrderRefundRequest
-		err := app.DB.FindOne(ctx, RefundsCollection, map[string]any{"_id": refundID}, &refund)
+		svc := NewPaymentService(app)
+		refund, err := svc.findRefundRequestByID(ctx, refundID)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				utils.RespondWithError(w, http.StatusNotFound, "Refund request not found")
@@ -466,20 +398,13 @@ func RejectRefundRequest(app *infra.Deps) http.HandlerFunc {
 		}
 
 		now := time.Now()
-		_, err = app.DB.UpdateOne(
-			ctx,
-			RefundsCollection,
-			map[string]any{"_id": refundID},
-			map[string]any{
-				"$set": map[string]any{
-					"status":       "rejected",
-					"reviewed_by":  adminID,
-					"reviewed_at":  now,
-					"review_notes": req.Notes,
-					"updated_at":   now,
-				},
-			},
-		)
+		err = svc.updateRefundRequestStatus(ctx, refundID, map[string]any{
+			"status":       "rejected",
+			"reviewed_by":  adminID,
+			"reviewed_at":  now,
+			"review_notes": req.Notes,
+			"updated_at":   now,
+		})
 		if err != nil {
 			log.Println("UpdateOne refund request error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update refund request")

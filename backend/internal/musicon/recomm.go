@@ -45,8 +45,8 @@ func GetRecommendedSongs(app *infra.Deps) http.HandlerFunc {
 
 		filter := map[string]any{"published": true}
 
-		songs := []Song{}
-		if err := app.DB.FindManyWithOptions(ctx, songsCollection, filter, opts, &songs); err != nil {
+		songs, err := getRecommendedSongsList(ctx, app, filter, opts)
+		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommended songs")
 			return
 		}
@@ -72,8 +72,8 @@ func GetRecommendedAlbums(app *infra.Deps) http.HandlerFunc {
 
 		filter := map[string]any{"published": true}
 
-		albums := []Album{}
-		if err := app.DB.FindManyWithOptions(ctx, albumsCollection, filter, opts, &albums); err != nil {
+		albums, err := getRecommendedAlbumsList(ctx, app, filter, opts)
+		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommended albums")
 			return
 		}
@@ -115,8 +115,8 @@ func GetRecommendations(app *infra.Deps) http.HandlerFunc {
 			Sort:  sort,
 		}
 
-		songs := []Song{}
-		if err := app.DB.FindManyWithOptions(ctx, songsCollection, filter, opts, &songs); err != nil {
+		songs, err := getRecommendedSongsList(ctx, app, filter, opts)
+		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommendations")
 			return
 		}

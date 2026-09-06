@@ -39,16 +39,8 @@ func TransferTicket(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var ticket PurchasedTicket
-		if err := app.DB.FindOne(
-			ctx,
-			purchasedTicketsCollection,
-			map[string]any{
-				"eventid":    eventID,
-				"uniquecode": payload.UniqueCode,
-			},
-			&ticket,
-		); err != nil {
+		ticket, err := FindPurchasedTicketByUnique(ctx, app, eventID, payload.UniqueCode)
+		if err != nil {
 			http.Error(w, fmt.Sprintf("Ticket not found: %v", err), http.StatusNotFound)
 			return
 		}
@@ -60,21 +52,7 @@ func TransferTicket(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Update ownership
-		if _, err := app.DB.UpdateOne(
-			ctx,
-			purchasedTicketsCollection,
-			map[string]any{
-				"eventid":    eventID,
-				"uniquecode": payload.UniqueCode,
-			},
-			map[string]any{
-				"$set": map[string]any{
-					"userid":        payload.Recipient,
-					"transferred":   true,
-					"transferredto": payload.Recipient,
-				},
-			},
-		); err != nil {
+		if _, err := UpdatePurchasedTicket(ctx, app, map[string]any{"eventid": eventID, "uniquecode": payload.UniqueCode}, map[string]any{"$set": map[string]any{"userid": payload.Recipient, "transferred": true, "transferredto": payload.Recipient}}); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to transfer ticket: %v", err), http.StatusInternalServerError)
 			return
 		}

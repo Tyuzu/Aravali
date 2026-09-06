@@ -18,7 +18,7 @@ func GetReportsForMod(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var reports []Report
-		err := app.DB.FindMany(ctx, reportsCollection, filter, &reports)
+		err := FindReports(ctx, app, filter, &reports)
 		if err != nil {
 			http.Error(w, `{"error":"Failed to fetch reports"}`, http.StatusInternalServerError)
 			return

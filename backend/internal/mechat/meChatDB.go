@@ -33,6 +33,97 @@ func dbEnsureChatAccess(ctx context.Context, app *infra.Deps, chatID, user strin
 	}, &struct{}{})
 }
 
+func dbFindChat(ctx context.Context, app *infra.Deps, filter map[string]any, out *Chat) error {
+	return app.DB.FindOne(ctx, MereChatCollection, filter, out)
+}
+
+func dbInsertChat(ctx context.Context, app *infra.Deps, chat Chat) error {
+	return app.DB.InsertOne(ctx, MereChatCollection, chat)
+}
+
+func dbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID string, user string, limit, skip int) ([]Message, error) {
+	if err := dbEnsureChatAccess(ctx, app, chatID, user); err != nil {
+		return nil, err
+	}
+
+	filter := map[string]any{
+		"chatid":     chatID,
+		"deleted_ne": true,
+	}
+
+	opts := db.FindManyOptions{
+		Limit: limit,
+		Skip:  skip,
+		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+	}
+
+	var msgs []Message
+	if err := app.DB.FindManyWithOptions(ctx, MessagesCollection, filter, opts, &msgs); err != nil {
+		return nil, err
+	}
+	if msgs == nil {
+		msgs = make([]Message, 0)
+	}
+	return msgs, nil
+}
+
+func dbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user string) (Chat, error) {
+	var chat Chat
+	if err := app.DB.FindOne(ctx, MereChatCollection, map[string]any{
+		"chatid":       chatID,
+		"participants": user,
+	}, &chat); err != nil {
+		return Chat{}, err
+	}
+	return chat, nil
+}
+
+func dbFindUserChats(ctx context.Context, app *infra.Deps, user string, skip, limit int) ([]Chat, error) {
+	opts := db.FindManyOptions{
+		Skip:  skip,
+		Limit: limit,
+		Sort:  []bson.E{{Key: "updatedAt", Value: -1}},
+	}
+
+	var chats []Chat
+	if err := app.DB.FindManyWithOptions(
+		ctx,
+		MereChatCollection,
+		map[string]any{"participants": user},
+		opts,
+		&chats,
+	); err != nil {
+		return nil, err
+	}
+	if chats == nil {
+		chats = make([]Chat, 0)
+	}
+	return chats, nil
+}
+
+func dbPersistAttachmentMessage(ctx context.Context, app *infra.Deps, chatID, user string, msg *Message) error {
+	if err := app.DB.InsertOne(ctx, MessagesCollection, msg); err != nil {
+		return err
+	}
+
+	_, _ = app.DB.UpdateOne(
+		ctx,
+		MereChatCollection,
+		map[string]any{"chatid": chatID},
+		map[string]any{
+			"updatedAt": nowUTC(),
+			"lastMessage": map[string]any{
+				"text":      "[attachment]",
+				"senderId":  user,
+				"timestamp": time.Now(),
+			},
+		},
+	)
+	return nil
+}
+
+func nowUTC() time.Time { return time.Now() }
+
 func dbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, msg *Message) {
 	if msg == nil {
 		return

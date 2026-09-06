@@ -6,15 +6,12 @@ import (
 	"net/http"
 	"scav/config/mqevent"
 	"scav/infra"
-	"scav/infra/db"
 	"scav/infra/mq"
 	"scav/utils"
 	log "scav/utils/logger"
 	"sort"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetChat(app *infra.Deps) http.HandlerFunc {
@@ -29,23 +26,14 @@ func GetChat(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var chat Chat
-		err := app.DB.FindOne(ctx, chatsCollection, map[string]any{
-			"chatid": chatID,
-			"users":  map[string]any{"$in": []string{userID}},
-		}, &chat)
+		_, err := getChatForUser(ctx, app, chatID, userID)
 		if err != nil {
 			http.Error(w, "Chat not found", http.StatusNotFound)
 			return
 		}
 
-		var messages []Message
-		opts := db.FindManyOptions{
-			Sort: []bson.E{{Key: "createdAt", Value: 1}},
-		}
-		if err := app.DB.FindManyWithOptions(ctx, messagesCollection, map[string]any{
-			"chatid": chatID,
-		}, opts, &messages); err != nil {
+		messages, err := getChatMessages(ctx, app, chatID)
+		if err != nil {
 			http.Error(w, "Failed to fetch messages", http.StatusInternalServerError)
 			return
 		}
@@ -63,8 +51,8 @@ func CreateMessage(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var chat Chat
-		if err := app.DB.FindOne(ctx, chatsCollection, map[string]any{"chatid": chatID}, &chat); err != nil {
+		chat, err := getChatByID(ctx, app, chatID)
+		if err != nil {
 			http.Error(w, "Chat not found", http.StatusNotFound)
 			return
 		}
@@ -134,23 +122,15 @@ func CreateMessage(app *infra.Deps) http.HandlerFunc {
 			ReplyTo:   replyRef,
 		}
 
-		if err := app.DB.InsertOne(ctx, messagesCollection, msg); err != nil {
+		if err := insertMessage(ctx, app, msg); err != nil {
 			http.Error(w, "Insert failed", http.StatusInternalServerError)
 			return
 		}
 
 		previewText := buildLastMessagePreview(text, fileType, replyRef, 0)
-		update := map[string]any{
-			"$set": map[string]any{
-				"lastMessage": MessagePreview{
-					Text:      previewText,
-					UserID:    userID,
-					Timestamp: now,
-				},
-				"updatedAt": now,
-			},
+		if err := updateChatLastMessage(ctx, app, chatID, userID, now, previewText); err != nil {
+			log.Printf("update chat preview failed: %v", err)
 		}
-		_, _ = app.DB.UpdateOne(ctx, chatsCollection, map[string]any{"chatid": chatID}, update)
 
 		mqpayload, _ := json.Marshal(mqevent.ChatMessageCreatedPayload{})
 
@@ -203,8 +183,8 @@ func UpdateMessage(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var message Message
-		if err := app.DB.FindOne(ctx, messagesCollection, map[string]any{"messageid": msgID}, &message); err != nil {
+		message, err := findMessageByID(ctx, app, msgID)
+		if err != nil {
 			http.Error(w, "Message not found", http.StatusNotFound)
 			return
 		}
@@ -222,8 +202,7 @@ func UpdateMessage(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := map[string]any{"$set": map[string]any{"text": input.Text}}
-		if _, err := app.DB.UpdateOne(ctx, messagesCollection, map[string]any{"messageid": msgID}, update); err != nil {
+		if err := updateMessageText(ctx, app, msgID, input.Text); err != nil {
 			http.Error(w, "Update failed", http.StatusInternalServerError)
 			return
 		}
@@ -239,8 +218,8 @@ func DeletesMessage(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var message Message
-		if err := app.DB.FindOne(ctx, messagesCollection, map[string]any{"messageid": msgID}, &message); err != nil {
+		message, err := findMessageByID(ctx, app, msgID)
+		if err != nil {
 			http.Error(w, "Message not found", http.StatusNotFound)
 			return
 		}
@@ -250,13 +229,14 @@ func DeletesMessage(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.DeleteOne(ctx, messagesCollection, map[string]any{"messageid": msgID}); err != nil {
+		if err := deleteMessageByID(ctx, app, msgID); err != nil {
 			http.Error(w, "Delete failed", http.StatusInternalServerError)
 			return
 		}
 
-		_, _ = app.DB.UpdateOne(ctx, chatsCollection, map[string]any{"chatid": message.ChatID},
-			map[string]any{"$set": map[string]any{"updatedAt": time.Now()}})
+		if err := touchChatUpdatedAt(ctx, app, message.ChatID); err != nil {
+			log.Printf("touch chat updatedAt failed: %v", err)
+		}
 
 		w.WriteHeader(http.StatusOK)
 	}
@@ -279,8 +259,7 @@ func InitChat(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var existing Chat
-		if err := app.DB.FindOne(ctx, chatsCollection, map[string]any{"users": users}, &existing); err == nil {
+		if existing, err := findChatByUsers(ctx, app, users); err == nil {
 			if err := json.NewEncoder(w).Encode(map[string]any{"chatid": existing.ChatID}); err != nil { // #nosec G104
 				log.Printf("failed to encode response: %v", err)
 			}
@@ -292,7 +271,7 @@ func InitChat(app *infra.Deps) http.HandlerFunc {
 			Users:  users,
 		}
 
-		if err := app.DB.InsertOne(ctx, chatsCollection, chat); err != nil {
+		if err := createChat(ctx, app, chat); err != nil {
 			http.Error(w, "Failed to create chat", http.StatusInternalServerError)
 			return
 		}
@@ -314,18 +293,10 @@ func GetUserChats(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var chats []Chat
-		opts := db.FindManyOptions{
-			Sort:  []bson.E{{Key: "updatedAt", Value: -1}},
-			Limit: 15,
-		}
-		if err := app.DB.FindManyWithOptions(ctx, chatsCollection, map[string]any{"users": map[string]any{"$in": []string{userID}}}, opts, &chats); err != nil {
+		chats, err := getUserChats(ctx, app, userID)
+		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
-		}
-
-		if chats == nil {
-			chats = []Chat{}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, chats)

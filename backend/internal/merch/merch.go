@@ -1,9 +1,7 @@
 package merch
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"scav/infra/mq"
 	"time"
@@ -12,7 +10,6 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/internal/beats/auditlog"
-	"scav/internal/userdata"
 	"scav/utils"
 )
 
@@ -40,47 +37,21 @@ func CreateMerch(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// SECURITY: Verify user is the owner of the entity
-		collection := ""
-		idField := ""
-		ownerField := ""
-
-		switch entityType {
-		case "event":
-			collection = "events"
-			idField = "eventid"
-			ownerField = "creatorid"
-		case "farm":
-			collection = "farms"
-			idField = "farmid"
-			ownerField = "createdBy"
-		case "artist":
-			collection = "artists"
-			idField = "artistid"
-			ownerField = "creatorid"
-		}
-
-		if collection != "" {
-			var ownerEntity map[string]any
-			err := app.DB.FindOne(r.Context(), collection, map[string]any{
-				idField: eventID,
-			}, &ownerEntity)
-
-			if err != nil {
-				utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "entity not found"})
-				return
-			}
-
-			// Check ownership based on entity type
-			owner, ok := ownerEntity[ownerField].(string)
-			if !ok {
+		if _, err := getEntityOwner(r.Context(), app, entityType, eventID); err != nil {
+			if err.Error() == "cannot verify ownership" {
 				utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "cannot verify ownership"})
 				return
 			}
+			utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "entity not found"})
+			return
+		}
 
-			if owner != userID {
-				utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can create merch"})
-				return
-			}
+		if owner, err := getEntityOwner(r.Context(), app, entityType, eventID); err != nil {
+			utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can create merch"})
+			return
+		} else if owner != userID {
+			utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can create merch"})
+			return
 		}
 
 		var body struct {
@@ -115,7 +86,7 @@ func CreateMerch(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  now,
 		}
 
-		if err := app.DB.Insert(r.Context(), merchCollection, merch); err != nil {
+		if err := insertMerch(r.Context(), app, merch); err != nil {
 			utils.RespondWithJSON(w, 500, map[string]any{"success": false, "error": "insert failed"})
 			return
 		}
@@ -158,41 +129,16 @@ func EditMerch(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// SECURITY: Verify user is the owner of the entity
-		collection := ""
-		idField := ""
-		ownerField := ""
-
-		switch entityType {
-		case "event":
-			collection = "events"
-			idField = "eventid"
-			ownerField = "creatorid"
-		case "farm":
-			collection = "farms"
-			idField = "farmid"
-			ownerField = "createdBy"
-		case "artist":
-			collection = "artists"
-			idField = "artistid"
-			ownerField = "creatorid"
-		}
-
-		if collection != "" {
-			var ownerEntity map[string]any
-			err := app.DB.FindOne(r.Context(), collection, map[string]any{
-				idField: eventID,
-			}, &ownerEntity)
-
-			if err != nil {
-				utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "entity not found"})
+		if owner, err := getEntityOwner(r.Context(), app, entityType, eventID); err != nil {
+			if err.Error() == "cannot verify ownership" {
+				utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "cannot verify ownership"})
 				return
 			}
-
-			owner, ok := ownerEntity[ownerField].(string)
-			if !ok || owner != userID {
-				utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can edit merch"})
-				return
-			}
+			utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "entity not found"})
+			return
+		} else if owner != userID {
+			utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can edit merch"})
+			return
 		}
 
 		var body struct {
@@ -224,17 +170,7 @@ func EditMerch(app *infra.Deps) http.HandlerFunc {
 			update["stock"] = *body.Stock
 		}
 
-		_, err := app.DB.UpdateOne(
-			r.Context(),
-			merchCollection,
-			map[string]any{
-				"entity_type": entityType,
-				"entity_id":   eventID,
-				"merchid":     merchID,
-			},
-			map[string]any{"$set": update},
-		)
-		if err != nil {
+		if err := updateMerchFields(r.Context(), app, entityType, eventID, merchID, update); err != nil {
 			utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "merch not found"})
 			return
 		}
@@ -273,60 +209,21 @@ func DeleteMerch(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// SECURITY: Verify user is the owner of the entity
-		collection := ""
-		idField := ""
-		ownerField := ""
-
-		switch entityType {
-		case "event":
-			collection = "events"
-			idField = "eventid"
-			ownerField = "creatorid"
-		case "farm":
-			collection = "farms"
-			idField = "farmid"
-			ownerField = "createdBy"
-		case "artist":
-			collection = "artists"
-			idField = "artistid"
-			ownerField = "creatorid"
-		}
-
-		if collection != "" {
-			var ownerEntity map[string]any
-			err := app.DB.FindOne(r.Context(), collection, map[string]any{
-				idField: eventID,
-			}, &ownerEntity)
-
-			if err != nil {
-				utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "entity not found"})
+		if owner, err := getEntityOwner(r.Context(), app, entityType, eventID); err != nil {
+			if err.Error() == "cannot verify ownership" {
+				utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "cannot verify ownership"})
 				return
 			}
-
-			owner, ok := ownerEntity[ownerField].(string)
-			if !ok || owner != userID {
-				utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can delete merch"})
-				return
-			}
+			utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "entity not found"})
+			return
+		} else if owner != userID {
+			utils.RespondWithJSON(w, 403, map[string]any{"success": false, "error": "forbidden: only entity owner can delete merch"})
+			return
 		}
 
 		// SECURITY: Use soft delete instead of hard delete
 		now := time.Now()
-		_, err := app.DB.UpdateOne(
-			r.Context(),
-			merchCollection,
-			map[string]any{
-				"entity_type": entityType,
-				"entity_id":   eventID,
-				"merchid":     merchID,
-				"deletedAt":   map[string]any{"$exists": false}, // Only soft-delete if not already deleted
-			},
-			map[string]any{"$set": map[string]any{
-				"deletedAt": now,
-				"updatedat": now,
-			}},
-		)
-		if err != nil {
+		if err := softDeleteMerch(r.Context(), app, entityType, eventID, merchID, now); err != nil {
 			utils.RespondWithJSON(w, 404, map[string]any{"success": false, "error": "merch not found"})
 			return
 		}
@@ -367,42 +264,7 @@ func BuyMerch(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		err := app.DB.WithDB(r.Context(), func(ctx context.Context) error {
-			var merch Merch
-			err := app.DB.FindOne(ctx, merchCollection, map[string]any{
-				"entity_type": utils.GetParam(r, "entityType"),
-				"entity_id":   utils.GetParam(r, "eventid"),
-				"merchid":     utils.GetParam(r, "merchid"),
-			}, &merch)
-			if err != nil {
-				return errors.New("merch not found")
-			}
-
-			if merch.Stock < body.Quantity {
-				return errors.New("insufficient stock")
-			}
-
-			_, err = app.DB.UpdateOne(
-				ctx,
-				merchCollection,
-				map[string]any{"merchid": merch.MerchID},
-				map[string]any{"$inc": map[string]any{"stock": -body.Quantity}},
-			)
-			if err != nil {
-				return err
-			}
-
-			userdata.SetUserData(
-				"merch",
-				merch.MerchID,
-				userID,
-				merch.EntityType,
-				merch.EntityID,
-				app,
-			)
-
-			return nil
-		})
+		err := buyMerchTransaction(r.Context(), app, r.Context(), userID, utils.GetParam(r, "entityType"), utils.GetParam(r, "eventid"), utils.GetParam(r, "merchid"), body.Quantity)
 
 		if err != nil {
 			utils.RespondWithJSON(w, 400, map[string]any{"success": false, "error": err.Error()})

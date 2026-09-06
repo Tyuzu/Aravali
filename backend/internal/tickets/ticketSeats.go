@@ -15,22 +15,15 @@ func GetAvailableSeats(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		// Structure matches DB document
-		var ticket struct {
-			Seats []struct {
-				SeatID string `bson:"seat_id"`
-				Status string `bson:"status"`
-			} `bson:"seats"`
-		}
-
-		err := app.DB.FindOne(ctx, ticketsCollection, map[string]any{"event_id": eventID}, &ticket)
-		if err != nil {
+		var tickets []Ticket
+		if err := FindTicketsByEvent(ctx, app, eventID, &tickets); err != nil || len(tickets) == 0 {
 			http.Error(w, `{"error": "No tickets found for this event"}`, http.StatusNotFound)
 			return
 		}
 
-		availableSeats := make([]string, 0, len(ticket.Seats))
-		for _, seat := range ticket.Seats {
+		// Use first ticket document's seats
+		availableSeats := make([]string, 0, len(tickets[0].Seats))
+		for _, seat := range tickets[0].Seats {
 			if seat.Status == "available" {
 				availableSeats = append(availableSeats, seat.SeatID)
 			}
@@ -53,16 +46,12 @@ func GetTicketSeats(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var ticket Ticket
-		err := app.DB.FindOne(ctx, ticketsCollection, map[string]any{
-			"eventid":  eventID,
-			"ticketid": ticketID,
-		}, &ticket)
-
-		if err != nil {
+		ticketPtr, err := FindTicketByID(ctx, app, eventID, ticketID)
+		if err != nil || ticketPtr == nil {
 			http.Error(w, "Ticket not found", http.StatusNotFound)
 			return
 		}
+		ticket := *ticketPtr
 
 		// Ensure empty slice if Seats is nil
 		if ticket.Seats == nil {

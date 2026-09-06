@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -53,48 +52,6 @@ type dbCoupon struct {
 	MaxDiscount float64 `bson:"maxdiscount"`
 }
 
-func validateCouponServer(ctx context.Context, code string, subtotal int64, app *infra.Deps) (*CouponResult, error) {
-	code = strings.TrimSpace(strings.ToLower(code))
-	if code == "" {
-		return &CouponResult{DiscountAmount: 0}, nil
-	}
-
-	var coupon dbCoupon
-	err := app.DB.FindOne(ctx, couponCollection, map[string]any{"code": code}, &coupon)
-	if err != nil || !coupon.Active {
-		return nil, errors.New("invalid coupon")
-	}
-
-	if coupon.ExpiresAt > 0 && time.Now().Unix() > coupon.ExpiresAt {
-		return nil, errors.New("coupon expired")
-	}
-
-	var discount int64
-	switch strings.ToLower(coupon.Type) {
-	case "flat":
-		discount = int64(coupon.Value * 100)
-
-	case "percent":
-		raw := float64(subtotal) * (coupon.Value / 100)
-		discount = int64(raw)
-
-		if coupon.MaxDiscount > 0 {
-			max := int64(coupon.MaxDiscount * 100)
-			if discount > max {
-				discount = max
-			}
-		}
-	default:
-		return nil, fmt.Errorf("unsupported coupon type: %s", coupon.Type)
-	}
-
-	if discount > subtotal {
-		discount = subtotal
-	}
-
-	return &CouponResult{DiscountAmount: discount}, nil
-}
-
 /* ───────────────────────── Validate Coupon Handler ───────────────────────── */
 
 // ValidateCouponHandler checks if a coupon code is applicable for an entity and returns calculated discounts.
@@ -128,8 +85,8 @@ func ValidateCouponHandler(app *infra.Deps) http.HandlerFunc {
 			"active":     true,
 		}
 
-		var coupon Coupon
-		if err := app.DB.FindOne(ctx, couponCollection, filter, &coupon); err != nil {
+		coupon, err := findCouponByFilter(ctx, app, filter)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, CouponResponse{
 				Valid:   false,
 				Message: "Coupon not valid for this entity",

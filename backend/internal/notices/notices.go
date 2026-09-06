@@ -76,7 +76,7 @@ func CreateNotice(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  time.Now(),
 		}
 
-		if err := app.DB.Insert(ctx, noticesCollection, notice); err != nil {
+		if err := createNotice(ctx, app, notice); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB insert failed")
 			return
 		}
@@ -109,13 +109,8 @@ func UpdateNotice(app *infra.Deps) http.HandlerFunc {
 
 		userID := utils.GetUserIDFromRequest(r)
 
-		var existing Notice
-		if err := app.DB.FindOne(
-			ctx,
-			noticesCollection,
-			map[string]any{"noticeid": noticeID},
-			&existing,
-		); err != nil {
+		existing, err := findNoticeByID(ctx, app, noticeID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Notice not found")
 			return
 		}
@@ -132,24 +127,13 @@ func UpdateNotice(app *infra.Deps) http.HandlerFunc {
 			"updated_at": time.Now(),
 		}
 
-		// ✅ pass plain fields
-		if _, err := app.DB.Update(
-			ctx,
-			noticesCollection,
-			map[string]any{"noticeid": noticeID},
-			update,
-		); err != nil {
+		if err := updateNoticeByID(ctx, app, noticeID, update); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB update failed")
 			return
 		}
 
-		// Fetch updated notice
-		if err := app.DB.FindOne(
-			ctx,
-			noticesCollection,
-			map[string]any{"noticeid": noticeID},
-			&existing,
-		); err != nil {
+		existing, err = findNoticeByID(ctx, app, noticeID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Fetch failed")
 			return
 		}
@@ -176,13 +160,8 @@ func DeleteNotice(app *infra.Deps) http.HandlerFunc {
 
 		userID := utils.GetUserIDFromRequest(r)
 
-		var existing Notice
-		if err := app.DB.FindOne(
-			ctx,
-			noticesCollection,
-			map[string]any{"noticeid": noticeID},
-			&existing,
-		); err != nil {
+		existing, err := findNoticeByID(ctx, app, noticeID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Notice not found")
 			return
 		}
@@ -192,11 +171,7 @@ func DeleteNotice(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.Delete(
-			ctx,
-			noticesCollection,
-			map[string]any{"noticeid": noticeID},
-		); err != nil {
+		if err := deleteNoticeByID(ctx, app, noticeID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Delete failed")
 			return
 		}

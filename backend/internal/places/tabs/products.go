@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"scav/infra"
+	placedb "scav/internal/places/placedb"
 	"scav/utils"
 
 	"github.com/julienschmidt/httprouter"
@@ -98,8 +99,8 @@ func GetProducts(app *infra.Deps) httprouter.Handle {
 		defer cancel()
 
 		var products []Product
-		if err := app.DB.FindMany(ctx,
-			productsCollection,
+		if err := placedb.FindPlaceProducts(ctx,
+			app,
 			map[string]any{"placeid": placeID},
 			&products,
 		); err != nil {
@@ -135,7 +136,7 @@ func PostProduct(app *infra.Deps) httprouter.Handle {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if err := app.DB.InsertOne(ctx, productsCollection, product); err != nil {
+		if err := placedb.InsertPlaceProduct(ctx, app, product); err != nil {
 			http.Error(w, "Insert failed", http.StatusInternalServerError)
 			return
 		}
@@ -165,8 +166,8 @@ func PutProduct(app *infra.Deps) httprouter.Handle {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if _, err := app.DB.UpdateOne(ctx,
-			productsCollection,
+		if _, err := placedb.UpdatePlaceProduct(ctx,
+			app,
 			map[string]any{"_id": id},
 			map[string]any{
 				"name":  updateData.Name,
@@ -192,8 +193,8 @@ func DeleteProduct(app *infra.Deps) httprouter.Handle {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if _, err := app.DB.DeleteOne(ctx,
-			productsCollection,
+		if _, err := placedb.DeletePlaceProduct(ctx,
+			app,
 			map[string]any{"_id": id},
 		); err != nil {
 			http.Error(w, "Delete failed", http.StatusInternalServerError)

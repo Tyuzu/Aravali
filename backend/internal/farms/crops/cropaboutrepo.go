@@ -10,11 +10,7 @@ func CreateCropAbout(
 	app *infra.Deps,
 	crop *CropAbout,
 ) error {
-	return app.DB.InsertOne(
-		ctx,
-		cropsAboutCollection,
-		crop,
-	)
+	return createCropAbout(ctx, app.DB, crop)
 }
 
 func GetCropAbout(
@@ -22,38 +18,14 @@ func GetCropAbout(
 	app *infra.Deps,
 	cropID string,
 ) (*CropAbout, error) {
-
-	var crop CropAbout
-
-	err := app.DB.FindOne(
-		ctx,
-		cropsAboutCollection,
-		map[string]any{"id": cropID},
-		&crop,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &crop, nil
+	return getCropAboutByID(ctx, app.DB, cropID)
 }
 
 func GetAllCropAbouts(
 	ctx context.Context,
 	app *infra.Deps,
 ) ([]CropAbout, error) {
-
-	var crops []CropAbout
-
-	err := app.DB.FindMany(
-		ctx,
-		cropsAboutCollection,
-		map[string]any{},
-		&crops,
-	)
-
-	return crops, err
+	return getAllCropAbouts(ctx, app.DB)
 }
 
 func UpdateCropAbout(
@@ -62,15 +34,7 @@ func UpdateCropAbout(
 	cropID string,
 	crop *CropAbout,
 ) (any, error) {
-
-	return app.DB.UpdateOne(
-		ctx,
-		cropsAboutCollection,
-		map[string]any{"id": cropID},
-		map[string]any{
-			"$set": crop,
-		},
-	)
+	return updateCropAbout(ctx, app.DB, cropID, crop)
 }
 
 func DeleteCropAbout(
@@ -78,12 +42,5 @@ func DeleteCropAbout(
 	app *infra.Deps,
 	cropID string,
 ) error {
-
-	_, err := app.DB.DeleteOne(
-		ctx,
-		cropsAboutCollection,
-		map[string]any{"id": cropID},
-	)
-
-	return err
+	return deleteCropAbout(ctx, app.DB, cropID)
 }

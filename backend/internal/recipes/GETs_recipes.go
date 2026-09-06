@@ -22,7 +22,7 @@ func GetRecipe(app *infra.Deps) http.HandlerFunc {
 		id := utils.GetParam(r, "id")
 
 		var recipe Recipe
-		if err := app.DB.FindOne(ctx, recipeCollection, map[string]any{"recipeid": id}, &recipe); err != nil {
+		if err := GetRecipeByID(ctx, app, id, &recipe); err != nil {
 			http.Error(w, "Recipe not found", http.StatusNotFound)
 			return
 		}
@@ -79,7 +79,7 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var recipes []Recipe
-		if err := app.DB.FindManyWithOptions(ctx, recipeCollection, filter, opts, &recipes); err != nil {
+		if err := FindRecipesWithOptions(ctx, app, filter, opts, &recipes); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch recipes")
 			return
 		}
@@ -88,7 +88,7 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 			normalizeRecipeSlices(&recipes[i])
 		}
 
-		totalCount, err := app.DB.CountDocuments(ctx, recipeCollection, filter)
+		totalCount, err := CountRecipes(ctx, app, filter)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count recipes")
 			return
@@ -123,7 +123,7 @@ func GetRecipeTags(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var result []recipeTagAgg
-		if err := app.DB.Aggregate(ctx, recipeCollection, pipeline, &result); err != nil {
+		if err := AggregateRecipes(ctx, app, pipeline, &result); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

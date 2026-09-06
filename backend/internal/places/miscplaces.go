@@ -10,6 +10,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
+	placedb "scav/internal/places/placedb"
 	"scav/utils"
 )
 
@@ -33,9 +34,9 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 		var existing struct {
 			CreatedBy string `bson:"createdBy"`
 		}
-		if err := app.DB.FindOne(
+		if err := placedb.FindOnePlace(
 			ctx,
-			placesCollection,
+			app,
 			map[string]any{"placeid": placeID},
 			&existing,
 		); err != nil {
@@ -91,9 +92,9 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 		update["updatedBy"] = userID
 
 		// ✅ Pass plain fields (DB layer adds $set)
-		if _, err := app.DB.Update(
+		if _, err := placedb.UpdatePlace(
 			ctx,
-			placesCollection,
+			app,
 			map[string]any{"placeid": placeID},
 			update,
 		); err != nil {

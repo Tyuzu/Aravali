@@ -109,6 +109,10 @@ func findMyBaitosFromDB(ctx context.Context, app *infra.Deps, userID string) ([]
 	return baitos, err
 }
 
+func countApplicationsForBaito(ctx context.Context, app *infra.Deps, baitoID string) (int64, error) {
+	return app.DB.CountDocuments(ctx, BaitoAppCollection, map[string]any{"baitoid": baitoID})
+}
+
 func findBaitoApplicantsFromDB(ctx context.Context, app *infra.Deps, baitoID string) ([]map[string]any, error) {
 	var results []map[string]any
 	err := app.DB.FindMany(ctx, BaitoAppCollection, map[string]any{"baitoid": baitoID}, &results)

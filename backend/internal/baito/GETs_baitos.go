@@ -13,7 +13,7 @@ import (
 /* -------------------- Helpers -------------------- */
 
 func enrichBaitoApplicationCount(ctx *context.Context, app *infra.Deps, baito *Baito) error {
-	count, err := app.DB.CountDocuments(*ctx, BaitoAppCollection, map[string]any{"baitoid": baito.BaitoId})
+	count, err := countApplicationsForBaito(*ctx, app, baito.BaitoId)
 	if err != nil {
 		return err
 	}

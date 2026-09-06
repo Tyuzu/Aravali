@@ -50,7 +50,7 @@ func GetUserProfileData(app *infra.Deps) http.HandlerFunc {
 			"userid":      username,
 		}
 
-		if err := app.DB.FindMany(ctx, userdataCollection, filter, &results); err != nil {
+		if err := FindUserData(ctx, app, filter, &results); err != nil {
 			http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
 			log.Printf("Error fetching user data: %v", err)
 			return

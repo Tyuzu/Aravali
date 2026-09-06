@@ -23,16 +23,8 @@ func GetUserPlaylists(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		// Exclude special likes playlist from normal playlists list
-		filter := map[string]any{
-			"userid": userID,
-			"playlistid": map[string]any{
-				"$ne": "likes_" + userID,
-			},
-		}
-
-		var playlists []Playlist
-		if err := app.DB.FindMany(ctx, playlistsCollection, filter, &playlists); err != nil {
+		playlists, err := findUserPlaylists(ctx, app, userID)
+		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch playlists")
 			return
 		}
@@ -83,7 +75,7 @@ func CreatePlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if err := app.DB.Insert(ctx, playlistsCollection, newPlaylist); err != nil {
+		if err := insertPlaylist(ctx, app, newPlaylist); err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to create playlist")
 			return
 		}
@@ -112,12 +104,7 @@ func DeletePlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}
-
-		if _, err := app.DB.DeleteOne(ctx, playlistsCollection, filter); err != nil {
+		if _, err := deletePlaylistForUser(ctx, app, playlistID, userID); err != nil {
 			respondError(w, http.StatusNotFound, "Playlist not found or unauthorized")
 			return
 		}
@@ -162,17 +149,7 @@ func AddSongToPlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}
-
-		update := map[string]any{
-			"$addToSet": map[string]any{"songs": body.SongID},
-			"$set":      map[string]any{"updatedAt": time.Now()},
-		}
-
-		if _, err := app.DB.UpdateOne(ctx, playlistsCollection, filter, update); err != nil {
+		if err := addSongToPlaylist(ctx, app, playlistID, userID, body.SongID); err != nil {
 			respondError(w, http.StatusForbidden, "Playlist not found or unauthorized")
 			return
 		}
@@ -205,17 +182,7 @@ func RemoveSongFromPlaylist(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}
-
-		update := map[string]any{
-			"$pull": map[string]any{"songs": songID},
-			"$set":  map[string]any{"updatedAt": time.Now()},
-		}
-
-		if _, err := app.DB.UpdateOne(ctx, playlistsCollection, filter, update); err != nil {
+		if err := removeSongFromPlaylist(ctx, app, playlistID, userID, songID); err != nil {
 			respondError(w, http.StatusForbidden, "Playlist not found or unauthorized")
 			return
 		}
@@ -264,21 +231,7 @@ func UpdatePlaylistInfo(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{
-			"playlistid": playlistID,
-			"userid":     userID,
-		}
-
-		update := map[string]any{
-			"$set": map[string]any{
-				"name":        req.Name,
-				"description": req.Description,
-				"coverUrl":    req.CoverURL,
-				"updatedAt":   time.Now(),
-			},
-		}
-
-		if _, err := app.DB.UpdateOne(ctx, playlistsCollection, filter, update); err != nil {
+		if err := updatePlaylistMeta(ctx, app, playlistID, userID, req.Name, req.Description, req.CoverURL); err != nil {
 			respondError(w, http.StatusForbidden, "Playlist not found or unauthorized")
 			return
 		}

@@ -24,13 +24,8 @@ func (p *PaymentService) Refund(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var orig Transaction
-	if err := p.app.DB.FindOne(
-		ctx,
-		transactionsCollection,
-		map[string]any{"_id": req.TransactionID},
-		&orig,
-	); err != nil {
+	orig, err := p.findTransactionByID(ctx, req.TransactionID)
+	if err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "not found")
 		return
 	}
@@ -130,7 +125,7 @@ func (p *PaymentService) Refund(w http.ResponseWriter, r *http.Request) {
 		Meta:        Meta{"original_txn": orig.ID},
 	}
 
-	if err := p.app.DB.InsertOne(ctx, transactionsCollection, refund); err != nil {
+	if err := p.createTransactionRecord(ctx, refund); err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
@@ -145,31 +140,19 @@ func (p *PaymentService) Refund(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:     now,
 	}
 
-	if err := p.app.DB.InsertOne(ctx, journalCollection, j); err != nil {
+	if err := p.createJournalEntryRecord(ctx, j); err != nil {
 		p.failTxn(ctx, txnID)
 		http.Error(w, "failed", http.StatusInternalServerError)
 		return
 	}
 
-	if err := p.app.DB.Inc(
-		ctx,
-		accountsCollection,
-		map[string]any{"_id": fromAcc},
-		"cached_balance",
-		-refund.Amount,
-	); err != nil {
+	if err := p.applyBalanceDelta(ctx, fromAcc, -refund.Amount); err != nil {
 		p.failTxn(ctx, txnID)
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
 	}
 
-	if err := p.app.DB.Inc(
-		ctx,
-		accountsCollection,
-		map[string]any{"_id": toAcc},
-		"cached_balance",
-		refund.Amount,
-	); err != nil {
+	if err := p.applyBalanceDelta(ctx, toAcc, refund.Amount); err != nil {
 		p.failTxn(ctx, txnID)
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
 		return
@@ -178,17 +161,7 @@ func (p *PaymentService) Refund(w http.ResponseWriter, r *http.Request) {
 	p.successTxn(ctx, txnID)
 
 	// mark original reversed (best-effort)
-	_, _ = p.app.DB.UpdateOne(
-		ctx,
-		transactionsCollection,
-		map[string]any{"_id": orig.ID},
-		map[string]any{
-			"$set": map[string]any{
-				"status":     "reversed",
-				"updated_at": now,
-			},
-		},
-	)
+	_ = p.markTransactionReversed(ctx, orig.ID, now)
 
 	if err := mq.PublishWithMeta(ctx, p.app.MQ, mqevent.RefundCompletedEvent, mqevent.RefundCompletedPayload{}); err != nil {
 		log.Printf("failed to publish refund completed event: %v", err)

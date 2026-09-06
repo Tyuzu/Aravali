@@ -47,13 +47,7 @@ func ApplyModerator(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing ModeratorApplication
-		err := app.DB.FindOne(
-			ctx,
-			moderatorApplicationsCollection,
-			map[string]any{"userid": payload.UserID},
-			&existing,
-		)
-		if err == nil {
+		if err := FindModeratorApplicationByUser(ctx, app.DB, payload.UserID, &existing); err == nil {
 			http.Error(w, `{"error":"You have already applied to be a moderator"}`, http.StatusConflict)
 			return
 		}
@@ -68,7 +62,7 @@ func ApplyModerator(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt: now,
 		}
 
-		if err := app.DB.Insert(ctx, moderatorApplicationsCollection, appx); err != nil {
+		if err := InsertModeratorApplication(ctx, app.DB, appx); err != nil {
 			http.Error(w, `{"error":"Failed to save application"}`, http.StatusInternalServerError)
 			return
 		}
@@ -94,8 +88,7 @@ func ListModeratorApplications(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var applications []ModeratorApplication
-		err := app.DB.FindMany(ctx, moderatorApplicationsCollection, filter, &applications)
-		if err != nil {
+		if err := ListModeratorApplicationsDB(ctx, app.DB, filter, &applications); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch applications",
 			})
@@ -118,19 +111,7 @@ func ApproveModerator(app *infra.Deps) http.HandlerFunc {
 		}
 
 		now := time.Now().UTC()
-		_, err := app.DB.UpdateOne(
-			ctx,
-			moderatorApplicationsCollection,
-			map[string]any{"id": id},
-			map[string]any{
-				"$set": map[string]any{
-					"status":     "approved",
-					"updatedAt":  now,
-					"updated_at": now,
-				},
-			},
-		)
-		if err != nil {
+		if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "approved"); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{
 				"error": "Application not found or update failed",
 			})
@@ -161,19 +142,7 @@ func RejectModerator(app *infra.Deps) http.HandlerFunc {
 		}
 
 		now := time.Now().UTC()
-		_, err := app.DB.UpdateOne(
-			ctx,
-			moderatorApplicationsCollection,
-			map[string]any{"id": id},
-			map[string]any{
-				"$set": map[string]any{
-					"status":     "rejected",
-					"updatedAt":  now,
-					"updated_at": now,
-				},
-			},
-		)
-		if err != nil {
+		if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "rejected"); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{
 				"error": "Application not found or update failed",
 			})

@@ -110,11 +110,9 @@ func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds Lo
 	if !matched && len(user.Password) > 0 && isBcrypt(user.Password) {
 		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)) == nil {
 			matched = true
-			// migrate existing hash into canonical field
-			_, _ = app.DB.Update(ctx, UsersCollection, map[string]string{"userid": user.UserID}, map[string]any{"$set": map[string]any{"password_hash": user.Password}})
-			log.Printf("auth: migrated password -> password_hash for userid=%s", user.UserID)
-		} else {
-			log.Printf("auth: password mismatch for username=%s userid=%s using field=password", creds.Username, user.UserID)
+				if _, err := MigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
+					log.Printf("auth: failed to migrate password hash for userid=%s: %v", user.UserID, err)
+				}
 		}
 	}
 

@@ -39,11 +39,8 @@ func BuyMenu(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var menu Menu
-		if err := app.DB.FindOne(ctx, menuCollection, map[string]string{
-			"placeid": placeID,
-			"menuid":  menuID,
-		}, &menu); err != nil {
+		menu, err := findMenuByPlaceAndID(ctx, app, placeID, menuID)
+		if err != nil {
 			http.Error(w, "Menu not found", http.StatusNotFound)
 			return
 		}
@@ -53,8 +50,7 @@ func BuyMenu(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := map[string]any{"$inc": map[string]int{"stock": -body.Quantity}, "$set": map[string]any{"updated_at": time.Now()}}
-		if _, err := app.DB.UpdateOne(ctx, menuCollection, map[string]string{"placeid": placeID, "menuid": menuID}, update); err != nil {
+		if err := decrementMenuStock(ctx, app, placeID, menuID, body.Quantity); err != nil {
 			http.Error(w, "Failed to update menu stock", http.StatusInternalServerError)
 			return
 		}

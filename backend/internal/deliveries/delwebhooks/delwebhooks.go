@@ -23,7 +23,7 @@ func CreateWebhook(app *infra.Deps) http.HandlerFunc {
 		wh.CreatedAt = time.Now()
 
 		ctx := r.Context()
-		if err := app.DB.InsertOne(ctx, "webhooks", wh); err != nil {
+		if err := createWebhook(ctx, app, wh); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create webhook")
 			return
 		}
@@ -36,13 +36,10 @@ func ListWebhooks(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var webhooks []deliveries.Webhook
-		if err := app.DB.FindMany(ctx, "webhooks", map[string]any{"tenantid": tenantID}, &webhooks); err != nil {
+		webhooks, err := listWebhooksForTenant(ctx, app, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to list webhooks")
 			return
-		}
-		if len(webhooks) == 0 {
-			webhooks = []deliveries.Webhook{}
 		}
 		utils.RespondWithJSON(w, http.StatusOK, webhooks)
 	}
@@ -54,9 +51,8 @@ func GetWebhook(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var wh deliveries.Webhook
-		filter := map[string]any{"id": whID, "tenantid": tenantID}
-		if err := app.DB.FindOne(ctx, "webhooks", filter, &wh); err != nil {
+		wh, err := getWebhookByID(ctx, app, whID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Webhook not found")
 			return
 		}
@@ -79,8 +75,7 @@ func UpdateWebhook(app *infra.Deps) http.HandlerFunc {
 		delete(updates, "_id")
 		delete(updates, "tenantid")
 
-		filter := map[string]any{"_id": whID, "tenantid": tenantID}
-		if _, err := app.DB.UpdateOne(ctx, "webhooks", filter, map[string]any{"$set": updates}); err != nil {
+		if err := updateWebhookByID(ctx, app, whID, tenantID, updates); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update webhook")
 			return
 		}
@@ -94,8 +89,7 @@ func DeleteWebhook(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		filter := map[string]any{"_id": whID, "tenantid": tenantID}
-		count, err := app.DB.DeleteOne(ctx, "webhooks", filter)
+		count, err := deleteWebhookByID(ctx, app, whID, tenantID)
 		if err != nil || count == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Webhook not found or failed to delete")
 			return

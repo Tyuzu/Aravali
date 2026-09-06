@@ -11,11 +11,8 @@ import (
 
 	"scav/config/mqevent"
 	"scav/infra"
-	"scav/infra/db"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 //
@@ -57,7 +54,7 @@ func StartNewChat(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing Chat
-		if err := app.DB.FindOne(ctx, MereChatCollection, filter, &existing); err == nil {
+		if err := dbFindChat(ctx, app, filter, &existing); err == nil {
 			utils.RespondWithJSON(w, http.StatusOK, existing)
 			return
 		}
@@ -72,7 +69,7 @@ func StartNewChat(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:    now,
 		}
 
-		if err := app.DB.InsertOne(ctx, MereChatCollection, chat); err != nil {
+		if err := dbInsertChat(ctx, app, chat); err != nil {
 			writeErr(w, 500, "failed to create chat")
 			return
 		}
@@ -96,15 +93,6 @@ func GetChatMessages(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// access check
-		if err := app.DB.FindOne(ctx, MereChatCollection, map[string]any{
-			"chatid":       chatID,
-			"participants": user,
-		}, &struct{}{}); err != nil {
-			writeErr(w, 404, "not found or access denied")
-			return
-		}
-
 		limit := 50
 		if l := r.URL.Query().Get("limit"); l != "" {
 			if v, err := strconv.Atoi(l); err == nil && v > 0 {
@@ -119,25 +107,10 @@ func GetChatMessages(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		filter := map[string]any{
-			"chatid":     chatID,
-			"deleted_ne": true,
-		}
-
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
-		}
-
-		var msgs []Message
-		if err := app.DB.FindManyWithOptions(ctx, MessagesCollection, filter, opts, &msgs); err != nil {
-			writeErr(w, 500, "failed to load messages")
+		msgs, err := dbFindMessagesForChat(ctx, app, chatID, user, limit, skip)
+		if err != nil {
+			writeErr(w, 404, "not found or access denied")
 			return
-		}
-
-		if msgs == nil {
-			msgs = make([]Message, 0)
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, msgs)
@@ -150,12 +123,8 @@ func GetChatByID(app *infra.Deps) http.HandlerFunc {
 		user := utils.GetUserIDFromRequest(r)
 
 		chatID := utils.GetParam(r, "chatid")
-		var chat Chat
-
-		if err := app.DB.FindOne(ctx, MereChatCollection, map[string]any{
-			"chatid":       chatID,
-			"participants": user,
-		}, &chat); err != nil {
+		chat, err := dbFindChatByUser(ctx, app, chatID, user)
+		if err != nil {
 			writeErr(w, 404, "not found or access denied")
 			return
 		}
@@ -183,26 +152,10 @@ func GetUserChats(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		opts := db.FindManyOptions{
-			Skip:  skip,
-			Limit: limit,
-			Sort:  []bson.E{{Key: "updatedAt", Value: -1}},
-		}
-
-		var chats []Chat
-		if err := app.DB.FindManyWithOptions(
-			ctx,
-			MereChatCollection,
-			map[string]any{"participants": user},
-			opts,
-			&chats,
-		); err != nil {
+		chats, err := dbFindUserChats(ctx, app, user, skip, limit)
+		if err != nil {
 			writeErr(w, 500, "failed to load chats")
 			return
-		}
-
-		if chats == nil {
-			chats = make([]Chat, 0)
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, chats)
@@ -237,11 +190,7 @@ func UploadAttachment(app *infra.Deps) http.HandlerFunc {
 			mediaType = "audio"
 		}
 
-		// authorization check
-		if err := app.DB.FindOne(ctx, MereChatCollection, map[string]any{
-			"chatid":       chatID,
-			"participants": user,
-		}, &struct{}{}); err != nil {
+		if err := dbEnsureChatAccess(ctx, app, chatID, user); err != nil {
 			writeErr(w, 403, "chat not found or access denied")
 			return
 		}
@@ -270,25 +219,10 @@ func UploadAttachment(app *infra.Deps) http.HandlerFunc {
 			CreatedAt: now,
 		}
 
-		if err := app.DB.InsertOne(ctx, MessagesCollection, msg); err != nil {
+		if err := dbPersistAttachmentMessage(ctx, app, chatID, user, msg); err != nil {
 			writeErr(w, 500, "failed to persist message")
 			return
 		}
-
-		// update chat metadata (non-critical)
-		_, _ = app.DB.UpdateOne(
-			ctx,
-			MereChatCollection,
-			map[string]any{"chatid": chatID},
-			map[string]any{
-				"updatedAt": now,
-				"lastMessage": map[string]any{
-					"text":      "[attachment]",
-					"senderId":  user,
-					"timestamp": now,
-				},
-			},
-		)
 
 		utils.RespondWithJSON(w, http.StatusOK, msg)
 	}

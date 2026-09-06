@@ -22,7 +22,7 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var orders []cart.FarmOrder
-		if err := app.DB.FindMany(ctx, farmOrdersCollection, map[string]any{}, &orders); err != nil {
+		if err := FindFarmOrders(ctx, app, map[string]any{}, &orders); err != nil {
 			log.Println("GetIncomingOrders error:", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
@@ -63,13 +63,13 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 
 func getUserByID(ctx context.Context, id string, app *infra.Deps) auth.User {
 	var user auth.User
-	_ = app.DB.FindOne(ctx, usersCollection, map[string]any{"userid": id}, &user)
+	_ = GetUserByID(ctx, app, id, &user)
 	return user
 }
 
 func getCropByID(ctx context.Context, id string, app *infra.Deps) farms.Crop {
 	var crop farms.Crop
-	_ = app.DB.FindOne(ctx, cropsCollection, map[string]any{"cropid": id}, &crop)
+	_ = GetCropByID(ctx, app, id, &crop)
 	return crop
 }
 

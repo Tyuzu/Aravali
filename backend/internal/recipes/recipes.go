@@ -162,11 +162,7 @@ func CreateRecipe(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		err := app.DB.InsertOne(
-			ctx,
-			recipeCollection,
-			recipe,
-		)
+		err := InsertRecipe(ctx, app, recipe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -264,10 +260,10 @@ func UpdateRecipe(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		_, err := app.DB.Update(
+		_, err := UpdateRecipeByID(
 			ctx,
-			recipeCollection,
-			map[string]any{"recipeid": id},
+			app,
+			id,
 			map[string]any{"$set": updates},
 		)
 		if err != nil {

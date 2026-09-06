@@ -55,7 +55,7 @@ func GetRelatedPosts(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var related []Post
-		if err := app.DB.FindManyWithOptions(ctx, blogPostsCollection, filter, opts, &related); err != nil {
+		if err := FindRelatedPostsWithOptions(ctx, app, filter, opts, &related); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

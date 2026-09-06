@@ -3,11 +3,8 @@ package pay
 import (
 	"context"
 	"errors"
-	"time"
 
 	"scav/infra"
-	"scav/internal/auth"
-	"scav/utils"
 )
 
 // ===== Price Resolver =====
@@ -45,24 +42,16 @@ func (p *PaymentService) resolver(entityType string) (PriceResolver, error) {
 // ===== Default Resolvers =====
 
 func (p *PaymentService) RegisterDefaultResolvers() {
-	db := p.app.DB
-
 	p.RegisterResolver("ticket", func(ctx context.Context, id string) (int64, error) {
-		var t struct{ Price int64 }
-		err := db.FindOne(ctx, ticketsCollection, map[string]any{"ticketid": id}, &t)
-		return t.Price, err
+		return p.fetchPriceByField(ctx, ticketsCollection, "ticketid", id)
 	})
 
 	p.RegisterResolver("menu", func(ctx context.Context, id string) (int64, error) {
-		var m struct{ Price int64 }
-		err := db.FindOne(ctx, menuCollection, map[string]any{"menuid": id}, &m)
-		return m.Price, err
+		return p.fetchPriceByField(ctx, menuCollection, "menuid", id)
 	})
 
 	p.RegisterResolver("service", func(ctx context.Context, id string) (int64, error) {
-		var s struct{ Price int64 }
-		err := db.FindOne(ctx, serviceCollection, map[string]any{"serviceid": id}, &s)
-		return s.Price, err
+		return p.fetchPriceByField(ctx, serviceCollection, "serviceid", id)
 	})
 
 	// donations / tips
@@ -72,25 +61,7 @@ func (p *PaymentService) RegisterDefaultResolvers() {
 
 	// orders - fetch total from order or farmOrders
 	p.RegisterResolver("order", func(ctx context.Context, id string) (int64, error) {
-		// Try to find in regular orders collection first
-		var o struct {
-			Total int64 `bson:"total"`
-		}
-		err := db.FindOne(ctx, ordersCollection, map[string]any{"orderId": id}, &o)
-		if err == nil {
-			return o.Total, nil
-		}
-
-		// If not found, try farm orders collection
-		var fo struct {
-			PriceAtPurchase float64 `bson:"priceAtPurchase"`
-		}
-		err = db.FindOne(ctx, farmOrdersCollection, map[string]any{"orderid": id}, &fo)
-		if err != nil {
-			return 0, err
-		}
-		// Convert rupees to paise (multiply by 100)
-		return int64(fo.PriceAtPurchase * 100), nil
+		return p.findOrderTotalByID(ctx, id)
 	})
 
 	// cart - custom entity, no fixed price
@@ -100,30 +71,22 @@ func (p *PaymentService) RegisterDefaultResolvers() {
 
 	// product - treat like menu item
 	p.RegisterResolver("product", func(ctx context.Context, id string) (int64, error) {
-		var p struct{ Price int64 }
-		err := db.FindOne(ctx, productCollection, map[string]any{"productid": id}, &p)
-		return p.Price, err
+		return p.fetchPriceByField(ctx, productCollection, "productid", id)
 	})
 
 	// booking - has a price
 	p.RegisterResolver("booking", func(ctx context.Context, id string) (int64, error) {
-		var b struct{ Price int64 }
-		err := db.FindOne(ctx, bookingsCollection, map[string]any{"bookingid": id}, &b)
-		return b.Price, err
+		return p.fetchPriceByField(ctx, bookingsCollection, "bookingid", id)
 	})
 
 	// merch - has a price
 	p.RegisterResolver("merch", func(ctx context.Context, id string) (int64, error) {
-		var m struct{ Price int64 }
-		err := db.FindOne(ctx, merchCollection, map[string]any{"merchid": id}, &m)
-		return m.Price, err
+		return p.fetchPriceByField(ctx, merchCollection, "merchid", id)
 	})
 
 	// crop - has a price
 	p.RegisterResolver("crop", func(ctx context.Context, id string) (int64, error) {
-		var c struct{ Price int64 }
-		err := db.FindOne(ctx, cropsCollection, map[string]any{"cropid": id}, &c)
-		return c.Price, err
+		return p.fetchPriceByField(ctx, cropsCollection, "cropid", id)
 	})
 
 	// farm - custom entity
@@ -133,9 +96,7 @@ func (p *PaymentService) RegisterDefaultResolvers() {
 
 	// beat - has a price
 	p.RegisterResolver("beat", func(ctx context.Context, id string) (int64, error) {
-		var b struct{ Price int64 }
-		err := db.FindOne(ctx, "beats", map[string]any{"beatid": id}, &b)
-		return b.Price, err
+		return p.fetchPriceByField(ctx, "beats", "beatid", id)
 	})
 
 	// donation - custom amount
@@ -151,126 +112,11 @@ func (p *PaymentService) RegisterDefaultResolvers() {
 
 // ===== Account Helpers =====
 
-func (p *PaymentService) getOrCreateAccount(ctx context.Context, userID string) (string, error) {
-	var acc Account
-	err := p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"userid": userID}, &acc)
-	if err == nil {
-		return acc.ID, nil
-	}
-
-	if userID != "merchant" && userID != "external" {
-		if !p.userExists(ctx, userID) {
-			return "", errors.New("user_not_found")
-		}
-	}
-
-	newAcc := Account{
-		ID:            utils.GetUUID(),
-		UserID:        userID,
-		Currency:      "INR",
-		Status:        "active",
-		CachedBalance: 0,
-		Version:       1,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-
-	if err := p.app.DB.InsertOne(ctx, accountsCollection, newAcc); err != nil {
-		// race: retry read
-		err = p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"userid": userID}, &acc)
-		return acc.ID, err
-	}
-
-	return newAcc.ID, nil
-}
-
-func (p *PaymentService) userExists(ctx context.Context, userID string) bool {
-	if userID == "" {
-		return false
-	}
-
-	var user auth.User
-	return p.app.DB.FindOne(ctx, usersCollection, map[string]any{"userid": userID}, &user) == nil
-}
-
-func (p *PaymentService) getAccountByID(ctx context.Context, accountID string) (Account, error) {
-	var acc Account
-	err := p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"_id": accountID}, &acc)
-	return acc, err
-}
-
 func (p *PaymentService) ensureAccountActive(acc Account) error {
 	if acc.Status != "active" {
 		return errors.New("account_not_active")
 	}
 	return nil
-}
-
-// HELPERS
-
-func (p *PaymentService) failTxn(ctx context.Context, txnID string) {
-	_, _ = p.app.DB.UpdateOne(ctx, transactionsCollection,
-		map[string]any{"_id": txnID},
-		map[string]any{"$set": map[string]any{"status": "failed", "updated_at": time.Now()}},
-	)
-}
-
-func (p *PaymentService) successTxn(ctx context.Context, txnID string) {
-	_, _ = p.app.DB.UpdateOne(ctx, transactionsCollection,
-		map[string]any{"_id": txnID},
-		map[string]any{"$set": map[string]any{"status": "success", "updated_at": time.Now()}},
-	)
-}
-
-// recordGlobalLedger records money additions/deletions in the global ledger
-// type: "addition" (topup/refund) or "deletion" (payment/withdrawal)
-// reason: topup, refund, payment, transfer, etc
-func (p *PaymentService) recordGlobalLedger(ctx context.Context, txnID string, journalEntryID string, ledgerType string, reason string, amount int64, accountID string, userID string) error {
-	// Get previous running totals
-	var entries []GlobalLedger
-
-	totalAdditions := int64(0)
-	totalDeletions := int64(0)
-
-	// Query for entries (ideally latest, but we'll get available entries)
-	// Note: In production, consider maintaining a summary document or using aggregation pipeline
-	err := p.app.DB.FindMany(ctx, globalLedgerCollection,
-		map[string]any{},
-		&entries)
-
-	// Use the last entry's totals as baseline if any exist
-	if err == nil && len(entries) > 0 {
-		// Get the last entry (assumes entries are in order)
-		lastEntry := entries[len(entries)-1]
-		totalAdditions = lastEntry.TotalAdditionsUpto
-		totalDeletions = lastEntry.TotalDeletionsUpto
-	}
-
-	// Update running totals based on entry type
-	switch ledgerType {
-	case "addition":
-		totalAdditions += amount
-	case "deletion":
-		totalDeletions += amount
-	}
-
-	entry := GlobalLedger{
-		ID:                 utils.GetUUID(),
-		TxnID:              txnID,
-		Type:               ledgerType,
-		Reason:             reason,
-		Amount:             amount,
-		Currency:           "INR",
-		AccountID:          accountID,
-		UserID:             userID,
-		JournalEntryID:     journalEntryID,
-		TotalAdditionsUpto: totalAdditions,
-		TotalDeletionsUpto: totalDeletions,
-		NetBalanceUpto:     totalAdditions - totalDeletions,
-		CreatedAt:          time.Now(),
-	}
-
-	return p.app.DB.InsertOne(ctx, globalLedgerCollection, entry)
 }
 
 // ===== Payment Rules =====

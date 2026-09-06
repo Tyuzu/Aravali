@@ -262,9 +262,9 @@ func CreateOrUpdatePost(
 			"updatedAt":   now,
 		}
 
-		if _, err := app.DB.UpdateOne(
+		if _, err := UpdatePostByFilter(
 			ctx,
-			blogPostsCollection,
+			app,
 			filter,
 			update,
 		); err != nil {
@@ -298,9 +298,9 @@ func CreateOrUpdatePost(
 		Username:    utils.GetUsernameFromRequest(r),
 	}
 
-	if err := app.DB.InsertOne(
+	if err := InsertPost(
 		ctx,
-		blogPostsCollection,
+		app,
 		post,
 	); err != nil {
 		utils.RespondWithError(
@@ -362,9 +362,9 @@ func DeletePost(app *infra.Deps) http.HandlerFunc {
 			"createdBy": userID,
 		}
 
-		_, err := app.DB.DeleteOne(
+		_, err := DeletePostByFilter(
 			ctx,
-			blogPostsCollection,
+			app,
 			filter,
 		)
 		if err != nil {

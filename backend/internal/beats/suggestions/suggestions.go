@@ -3,7 +3,6 @@ package suggestions
 import (
 	"context"
 	"net/http"
-	"scav/internal/beats/follows"
 	"scav/internal/places"
 	log "scav/utils/logger"
 	"strconv"
@@ -45,13 +44,7 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var followData follows.UserFollow
-		err = app.DB.FindOne(
-			ctx,
-			followingsCollection,
-			map[string]any{"userid": currentUserID},
-			&followData,
-		)
+		followData, err := findFollowDataByUserID(ctx, app, currentUserID)
 		if err != nil {
 			followData.Follows = []string{}
 		}
@@ -62,13 +55,8 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 			"userid": map[string]any{"$nin": excludedUserIDs},
 		}
 
-		var users []UserSuggest
-		if err := app.DB.FindMany(
-			ctx,
-			usersCollection,
-			filter,
-			&users,
-		); err != nil {
+		users, err := findSuggestedUsers(ctx, app, filter)
+		if err != nil {
 			http.Error(w, "Failed to fetch suggestions", http.StatusInternalServerError)
 			return
 		}
@@ -102,13 +90,8 @@ func GetNearbyPlaces(app *infra.Deps) http.HandlerFunc {
 			log.Printf("invalid place id: %s", curplace)
 		}
 
-		var nearbyplaces []places.Place
-		if err := app.DB.FindMany(
-			ctx,
-			placesCollection,
-			map[string]any{},
-			&nearbyplaces,
-		); err != nil {
+		nearbyplaces, err := findNearbyPlaces(ctx, app, map[string]any{})
+		if err != nil {
 			http.Error(w, "Failed to fetch places", http.StatusInternalServerError)
 			return
 		}

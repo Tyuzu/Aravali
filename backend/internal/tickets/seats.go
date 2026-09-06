@@ -46,7 +46,7 @@ func LockSeats(app *infra.Deps) http.HandlerFunc {
 			},
 		}
 
-		if _, err := app.DB.UpdateOne(ctx, ticketsCollection, filter, update); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, filter, update); err != nil {
 			http.Error(w, `{"error":"Failed to lock seats"}`, http.StatusInternalServerError)
 			return
 		}
@@ -94,7 +94,7 @@ func UnlockSeats(app *infra.Deps) http.HandlerFunc {
 			},
 		}
 
-		if _, err := app.DB.UpdateOne(ctx, ticketsCollection, filter, update); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, filter, update); err != nil {
 			http.Error(w, `{"error":"Failed to unlock seats"}`, http.StatusInternalServerError)
 			return
 		}
@@ -131,11 +131,12 @@ func ConfirmSeatPurchase(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var ticket Ticket
-		if err := app.DB.FindOne(ctx, ticketsCollection, map[string]any{"ticketid": ticketID, "eventid": eventID}, &ticket); err != nil {
+		ticketPtr, err := FindTicketByID(ctx, app, eventID, ticketID)
+		if err != nil || ticketPtr == nil {
 			http.Error(w, `{"error":"Ticket not found"}`, http.StatusNotFound)
 			return
 		}
+		ticket := *ticketPtr
 
 		// Verify all requested seats are locked to this user
 		for _, seat := range ticket.Seats {
@@ -148,7 +149,7 @@ func ConfirmSeatPurchase(app *infra.Deps) http.HandlerFunc {
 		}
 
 		update := map[string]any{"$set": map[string]any{"seats.$[].status": "booked"}}
-		if _, err := app.DB.UpdateOne(ctx, ticketsCollection, map[string]any{"ticketid": ticketID, "eventid": eventID, "seats.seat_id": map[string]any{"$in": req.Seats}}, update); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, map[string]any{"ticketid": ticketID, "eventid": eventID, "seats.seat_id": map[string]any{"$in": req.Seats}}, update); err != nil {
 			http.Error(w, `{"error":"Failed to confirm purchase"}`, http.StatusInternalServerError)
 			return
 		}

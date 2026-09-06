@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	placedb "scav/internal/places/placedb"
 	"scav/infra"
 	"scav/utils"
 )
@@ -17,7 +18,7 @@ func GetPlaces(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var places []Place
-		if err := app.DB.FindMany(ctx, placesCollection, map[string]any{}, &places); err != nil {
+		if err := placedb.FindPlaces(ctx, app, map[string]any{}, &places); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch places")
 			return
 		}
@@ -61,13 +62,7 @@ func GetPlace(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var place Place
-		if err := app.DB.FindOne(
-			r.Context(),
-			placesCollection,
-			map[string]any{"placeid": placeID},
-			&place,
-		); err != nil {
-
+		if err := placedb.FindOnePlace(r.Context(), app, map[string]any{"placeid": placeID}, &place); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Place not found")
 			return
 		}
@@ -86,13 +81,7 @@ func GetPlaceQ(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var place Place
-		if err := app.DB.FindOne(
-			r.Context(),
-			placesCollection,
-			map[string]any{"placeid": placeID},
-			&place,
-		); err != nil {
-
+		if err := placedb.FindOnePlace(r.Context(), app, map[string]any{"placeid": placeID}, &place); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Place not found")
 			return
 		}

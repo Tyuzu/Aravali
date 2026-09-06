@@ -5,6 +5,7 @@ import (
 	"errors"
 	"scav/config"
 	"scav/infra"
+	"scav/infra/db"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -46,6 +47,19 @@ func getUniqueWorkerSkillsFromDB(ctx context.Context, app *infra.Deps) ([]string
 	}
 
 	return skills, nil
+}
+
+func findWorkersFromDB(ctx context.Context, app *infra.Deps, filter any, opts db.FindManyOptions) ([]BaitoWorkersResponse, error) {
+	var workers []BaitoWorkersResponse
+	err := app.DB.FindManyWithOptions(ctx, BaitoWorkersCollection, filter, opts, &workers)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return []BaitoWorkersResponse{}, nil
+	}
+	return workers, err
+}
+
+func countWorkersFromDB(ctx context.Context, app *infra.Deps, filter any) (int64, error) {
+	return app.DB.CountDocuments(ctx, BaitoWorkersCollection, filter)
 }
 
 func findExistingWorkerProfile(ctx context.Context, app *infra.Deps, userID string, result any) error {

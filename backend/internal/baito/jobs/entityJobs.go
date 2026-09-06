@@ -60,7 +60,7 @@ func CreateBaitoForEntity(app *infra.Deps) http.HandlerFunc {
 		baito.ApplicationCount = 0
 
 		// Insert using Database interface
-		if err := app.DB.Insert(ctx, baitosCollection, baito); err != nil {
+		if err := InsertBaitoForEntity(ctx, app, baito); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to save baito")
 			return
 		}

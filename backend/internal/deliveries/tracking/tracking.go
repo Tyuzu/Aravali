@@ -17,11 +17,8 @@ func GetDeliveryTracking(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var result map[string]any
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		proj := []string{"status", "status_history", "current_location"}
-
-		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, proj, &result); err != nil {
+		result, err := getTrackingDetails(ctx, app, deliveryID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Tracking details not found")
 			return
 		}
@@ -52,15 +49,10 @@ func GetDeliveryEvents(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var events []map[string]any
-		filter := map[string]any{"deliveryid": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindMany(ctx, "delivery_events", filter, &events); err != nil {
+		events, err := getDeliveryEvents(ctx, app, deliveryID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to retrieve events")
 			return
-		}
-
-		if len(events) == 0 {
-			events = []map[string]any{}
 		}
 		utils.RespondWithJSON(w, http.StatusOK, events)
 	}
@@ -72,15 +64,12 @@ func GetStatusHistory(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var res struct {
-			StatusHistory []deliveries.StatusHistoryItem `bson:"status_history" json:"status_history"`
-		}
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, []string{"status_history"}, &res); err != nil {
+		history, err := getStatusHistory(ctx, app, deliveryID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "History not found")
 			return
 		}
-		utils.RespondWithJSON(w, http.StatusOK, res.StatusHistory)
+		utils.RespondWithJSON(w, http.StatusOK, history)
 	}
 }
 
@@ -106,8 +95,7 @@ func AddProof(app *infra.Deps) http.HandlerFunc {
 			CreatedAt: time.Now(),
 		}
 
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.AddToSet(ctx, "deliveries", filter, "proofs", proof); err != nil {
+		if err := addProofToDelivery(ctx, app, deliveryID, tenantID, proof); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to add proof")
 			return
 		}
@@ -121,15 +109,12 @@ func GetProof(app *infra.Deps) http.HandlerFunc {
 		tenantID := deliveries.GetTenantIDFromContext(r.Context())
 		ctx := r.Context()
 
-		var res struct {
-			Proofs []deliveries.Proof `bson:"proofs" json:"proofs"`
-		}
-		filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, []string{"proofs"}, &res); err != nil {
+		proofs, err := getProofs(ctx, app, deliveryID, tenantID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Proof not found")
 			return
 		}
-		utils.RespondWithJSON(w, http.StatusOK, res.Proofs)
+		utils.RespondWithJSON(w, http.StatusOK, proofs)
 	}
 }
 
@@ -138,11 +123,8 @@ func GetPublicTracking(app *infra.Deps) http.HandlerFunc {
 		token := utils.GetParam(r, "token")
 		ctx := r.Context()
 
-		var res map[string]any
-		filter := map[string]any{"public_tracking_token": token}
-		proj := []string{"status", "pickup_loc", "dropoff_loc", "estimated_arrival"}
-
-		if err := app.DB.FindOneWithProjection(ctx, "deliveries", filter, proj, &res); err != nil {
+		res, err := getPublicTrackingInfo(ctx, app, token)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Invalid or expired tracking token")
 			return
 		}

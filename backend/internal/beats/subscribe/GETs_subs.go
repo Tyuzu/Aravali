@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"scav/infra"
-	"scav/internal/auth"
 	"scav/utils"
 )
 
@@ -33,16 +32,7 @@ func DoesSubscribeEntity(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := app.DB.CountDocuments(
-			r.Context(),
-			subscribersCollection,
-			map[string]any{
-				"userid": currentUserID,
-				"subscribed": map[string]any{
-					"$in": []string{entityID},
-				},
-			},
-		)
+		count, err := countUserSubscriptionsForEntity(r.Context(), app, currentUserID, entityID)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
@@ -65,29 +55,13 @@ func GetSubscribers(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var sub UserSubscribe
-		err := app.DB.FindOne(
-			r.Context(),
-			subscribersCollection,
-			map[string]any{"userid": targetUserID},
-			&sub,
-		)
+		sub, err := findSubscriptionEntryByUserID(r.Context(), app, targetUserID)
 		if err != nil || len(sub.Subscribers) == 0 {
-			utils.RespondWithJSON(w, http.StatusOK, []auth.User{})
+			utils.RespondWithJSON(w, http.StatusOK, []map[string]any{})
 			return
 		}
 
-		var subscribers []auth.User
-		err = app.DB.FindMany(
-			r.Context(),
-			usersCollection,
-			map[string]any{
-				"userid": map[string]any{
-					"$in": sub.Subscribers,
-				},
-			},
-			&subscribers,
-		)
+		subscribers, err := findUsersByIDs(r.Context(), app, sub.Subscribers)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return

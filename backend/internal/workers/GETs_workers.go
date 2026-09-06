@@ -2,7 +2,6 @@ package workers
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -13,7 +12,6 @@ import (
 	log "scav/utils/logger"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 /* -------------------- Workers -------------------- */
@@ -86,18 +84,14 @@ func GetWorkers(app *infra.Deps) http.HandlerFunc {
 			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
 		}
 
-		var workers []BaitoWorkersResponse
-		if err := app.DB.FindManyWithOptions(ctx, BaitoWorkersCollection, filter, opts, &workers); err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
-				workers = []BaitoWorkersResponse{}
-			} else {
-				log.Printf("DB error: %v", err)
-				utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch workers")
-				return
-			}
+		workers, err := findWorkersFromDB(ctx, app, filter, opts)
+		if err != nil {
+			log.Printf("DB error: %v", err)
+			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch workers")
+			return
 		}
 
-		total, err := app.DB.CountDocuments(ctx, BaitoWorkersCollection, filter)
+		total, err := countWorkersFromDB(ctx, app, filter)
 		if err != nil {
 			log.Printf("Count error: %v", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch workers")

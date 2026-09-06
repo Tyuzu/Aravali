@@ -24,13 +24,8 @@ func GetReviews(app *infra.Deps) http.HandlerFunc {
 
 		skip, limit := utils.ParsePagination(r, 10, 100)
 
-		// SQL where/args already created below
-
 		var reviews []Review
-		// translate filter to SQL where clause and args
-		where := "entityType = $1 AND entityId = $2"
-		args := []any{entityType, entityId}
-		if err := app.SQLDB.FindMany(ctx, reviewsCollection, where, args, &reviews); err != nil {
+		if err := GetReviewsForEntity(ctx, app, entityType, entityId, &reviews); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch reviews"})
 			return
 		}
@@ -59,13 +54,7 @@ func GetReview(app *infra.Deps) http.HandlerFunc {
 		reviewId := utils.GetParam(r, "reviewId")
 
 		var review Review
-		if err := app.SQLDB.FindOne(
-			r.Context(),
-			reviewsCollection,
-			"reviewid = $1",
-			[]any{reviewId},
-			&review,
-		); err != nil {
+		if err := GetReviewByID(r.Context(), app, reviewId, &review); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"scav/utils"
-	"time"
 )
 
 // CreateWallet explicitly provisions an account for an onboarded user
@@ -13,10 +12,7 @@ func (p *PaymentService) CreateWallet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := utils.GetUserIDFromRequest(r)
 
-	// Check if account already exists
-	var existing Account
-	err := p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"userid": userID}, &existing)
-	if err == nil {
+	if _, err := p.getAccountByUserID(ctx, userID); err == nil {
 		utils.RespondWithError(w, http.StatusConflict, "wallet already exists")
 		return
 	}
@@ -26,18 +22,8 @@ func (p *PaymentService) CreateWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newAcc := Account{
-		ID:            utils.GetUUID(),
-		UserID:        userID,
-		Currency:      "INR",
-		Status:        "active",
-		CachedBalance: 0,
-		Version:       1,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-
-	if err := p.app.DB.InsertOne(ctx, accountsCollection, newAcc); err != nil {
+	newAcc, err := p.createWalletAccount(ctx, userID)
+	if err != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "failed to create wallet")
 		return
 	}
@@ -47,8 +33,7 @@ func (p *PaymentService) CreateWallet(w http.ResponseWriter, r *http.Request) {
 
 // GetAccountStrict retrieves an account or returns an error if not found (No lazy generation!)
 func (p *PaymentService) GetAccountStrict(ctx context.Context, userID string) (string, error) {
-	var acc Account
-	err := p.app.DB.FindOne(ctx, accountsCollection, map[string]any{"userid": userID}, &acc)
+	acc, err := p.getAccountByUserID(ctx, userID)
 	if err != nil {
 		return "", errors.New("account_not_found")
 	}

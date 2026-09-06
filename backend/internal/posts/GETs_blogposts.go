@@ -18,9 +18,7 @@ func GetPost(app *infra.Deps) http.HandlerFunc {
 		postID := utils.GetParam(r, "id")
 
 		var post BlogPost
-		if err := app.DB.FindOne(ctx, blogPostsCollection, map[string]any{
-			"postid": postID,
-		}, &post); err != nil {
+		if err := GetPostByID(ctx, app, postID, &post); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Post not found")
 			return
 		}
@@ -62,7 +60,7 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var posts []BlogPost
-		if err := app.DB.FindManyWithOptions(ctx, blogPostsCollection, map[string]any{}, opts, &posts); err != nil {
+		if err := FindPostsWithOptions(ctx, app, map[string]any{}, opts, &posts); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch posts")
 			return
 		}
@@ -92,7 +90,7 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 				Username string `bson:"username"`
 			}
 
-			if err := app.DB.FindMany(ctx, usersCollection, map[string]any{
+			if err := FindUsersByFilter(ctx, app, map[string]any{
 				"userid_in": ids,
 			}, &users); err == nil {
 				for _, u := range users {

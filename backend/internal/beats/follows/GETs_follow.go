@@ -24,16 +24,7 @@ func DoesFollow(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := app.DB.CountDocuments(
-			r.Context(),
-			followingsCollection,
-			map[string]any{
-				"userid": userID,
-				"follows": map[string]any{
-					"$in": []string{followedUserID},
-				},
-			},
-		)
+		count, err := CountFollowRelationship(r.Context(), app, userID, followedUserID)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
@@ -57,28 +48,14 @@ func GetFollowers(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var userFollow UserFollow
-		err := app.DB.FindOne(
-			r.Context(),
-			followingsCollection,
-			map[string]any{"userid": userID},
-			&userFollow,
-		)
+		err := FindFollowEntryByUserID(r.Context(), app, userID, &userFollow)
 		if err != nil || len(userFollow.Followers) == 0 {
 			utils.RespondWithJSON(w, http.StatusOK, []auth.User{})
 			return
 		}
 
 		var followers []auth.User
-		err = app.DB.FindMany(
-			r.Context(),
-			usersCollection,
-			map[string]any{
-				"userid": map[string]any{
-					"$in": userFollow.Followers,
-				},
-			},
-			&followers,
-		)
+		err = FindUsersByIDsForFollow(r.Context(), app, userFollow.Followers, &followers)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
@@ -98,28 +75,14 @@ func GetFollowing(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var userFollow UserFollow
-		err := app.DB.FindOne(
-			r.Context(),
-			followingsCollection,
-			map[string]any{"userid": userID},
-			&userFollow,
-		)
+		err := FindFollowEntryByUserID(r.Context(), app, userID, &userFollow)
 		if err != nil || len(userFollow.Follows) == 0 {
 			utils.RespondWithJSON(w, http.StatusOK, []auth.User{})
 			return
 		}
 
 		var following []auth.User
-		err = app.DB.FindMany(
-			r.Context(),
-			usersCollection,
-			map[string]any{
-				"userid": map[string]any{
-					"$in": userFollow.Follows,
-				},
-			},
-			&following,
-		)
+		err = FindUsersByIDsForFollow(r.Context(), app, userFollow.Follows, &following)
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return

@@ -53,7 +53,7 @@ func RegisterVendor(
 		UpdatedAt:   now,
 	}
 
-	if err := app.DB.InsertOne(ctx, vendorCollection, vendor); err != nil {
+	if err := InsertVendor(ctx, app, vendor); err != nil {
 		return nil, err
 	}
 
@@ -62,50 +62,22 @@ func RegisterVendor(
 
 // GetVendorByID retrieves a vendor by vendor ID.
 func GetVendorByID(ctx context.Context, app *infra.Deps, vendorID string) (*Vendor, error) {
-	var vendor Vendor
-	err := app.DB.FindOne(
-		ctx,
-		vendorCollection,
-		map[string]any{
-			"vendorid":  vendorID,
-			"available": true,
-		},
-		&vendor,
-	)
-	if err != nil {
-		return nil, ErrVendorNotFound
-	}
-
-	return &vendor, nil
+	return FindVendorByID(ctx, app, vendorID)
 }
 
 // GetVendorByUserID retrieves the active vendor profile for a specific user.
 func GetVendorByUserID(ctx context.Context, app *infra.Deps, userID string) (*Vendor, error) {
-	var vendor Vendor
-	err := app.DB.FindOne(
-		ctx,
-		vendorCollection,
-		map[string]any{
-			"userid":    userID,
-			"available": true,
-		},
-		&vendor,
-	)
+	v, err := FindVendorByUserID(ctx, app, userID)
 	if err != nil {
 		return nil, nil
 	}
-
-	return &vendor, nil
+	return v, nil
 }
 
 // GetVendorsByCategory retrieves all vendors in a specific category.
 func GetVendorsByCategory(ctx context.Context, app *infra.Deps, category string) ([]Vendor, error) {
 	var vendors []Vendor
-	err := app.DB.FindMany(ctx, vendorCollection, map[string]any{
-		"available": true,
-		"category":  category,
-	}, &vendors)
-	if err != nil {
+	if err := FindVendors(ctx, app, map[string]any{"available": true, "category": category}, &vendors); err != nil {
 		return nil, err
 	}
 
@@ -135,8 +107,7 @@ func GetAllVendors(ctx context.Context, app *infra.Deps, search string, category
 	}
 
 	var vendors []Vendor
-	err := app.DB.FindMany(ctx, vendorCollection, filter, &vendors)
-	if err != nil {
+	if err := FindVendors(ctx, app, filter, &vendors); err != nil {
 		return nil, err
 	}
 
@@ -155,63 +126,22 @@ func UpdateVendor(ctx context.Context, app *infra.Deps, vendorID string, updates
 
 	updates["updated_at"] = time.Now()
 
-	return app.DB.Update(
-		ctx,
-		vendorCollection,
-		map[string]any{"vendorid": vendorID, "available": true},
-		map[string]any{"$set": updates},
-	)
+	return UpdateVendorDB(ctx, app, map[string]any{"vendorid": vendorID, "available": true}, map[string]any{"$set": updates})
 }
 
 // DeleteVendor soft-deletes a vendor by setting available to false.
 func DeleteVendor(ctx context.Context, app *infra.Deps, vendorID string) (any, error) {
-	return app.DB.Update(
-		ctx,
-		vendorCollection,
-		map[string]any{"vendorid": vendorID},
-		map[string]any{
-			"$set": map[string]any{
-				"available":  false,
-				"updated_at": time.Now(),
-			},
-		},
-	)
+	return DeleteVendorDB(ctx, app, vendorID)
 }
 
 // GetVendorHiringByID retrieves a hiring record by hiring ID.
 func GetVendorHiringByID(ctx context.Context, app *infra.Deps, hiringID string) (*VendorHiring, error) {
-	var hiring VendorHiring
-	err := app.DB.FindOne(
-		ctx,
-		hiringCollection,
-		map[string]any{"hiringid": hiringID},
-		&hiring,
-	)
-	if err != nil {
-		return nil, ErrVendorNotFound
-	}
-
-	return &hiring, nil
+	return FindHiringByID(ctx, app, hiringID)
 }
 
 // GetVendorHiringByEventAndVendor retrieves a hiring record for a specific event/vendor pair.
 func GetVendorHiringByEventAndVendor(ctx context.Context, app *infra.Deps, eventID, vendorID string) (*VendorHiring, error) {
-	var hiring VendorHiring
-	err := app.DB.FindOne(
-		ctx,
-		hiringCollection,
-		map[string]any{
-			"eventid":  eventID,
-			"vendorid": vendorID,
-			"status":   map[string]any{"$ne": "rejected"},
-		},
-		&hiring,
-	)
-	if err != nil {
-		return nil, ErrVendorNotInEvent
-	}
-
-	return &hiring, nil
+	return FindHiringByEventAndVendor(ctx, app, eventID, vendorID)
 }
 
 // HireVendor creates a vendor hiring record for an event.
@@ -236,7 +166,7 @@ func HireVendor(ctx context.Context, app *infra.Deps, eventID, vendorID, vendorN
 		UpdatedAt:      now,
 	}
 
-	if err := app.DB.InsertOne(ctx, hiringCollection, hiring); err != nil {
+	if err := InsertHiring(ctx, app, hiring); err != nil {
 		return nil, err
 	}
 
@@ -246,11 +176,7 @@ func HireVendor(ctx context.Context, app *infra.Deps, eventID, vendorID, vendorN
 // GetEventVendors retrieves all vendors hired for an event.
 func GetEventVendors(ctx context.Context, app *infra.Deps, eventID string) ([]VendorHiring, error) {
 	var hirings []VendorHiring
-	err := app.DB.FindMany(ctx, hiringCollection, map[string]any{
-		"eventid": eventID,
-		"status":  map[string]any{"$ne": "rejected"},
-	}, &hirings)
-	if err != nil {
+	if err := FindHiringsByEvent(ctx, app, eventID, &hirings); err != nil {
 		return nil, err
 	}
 
@@ -264,11 +190,7 @@ func GetEventVendors(ctx context.Context, app *infra.Deps, eventID string) ([]Ve
 // GetVendorHiringsByVendorID retrieves vendor hiring records for a specific vendor.
 func GetVendorHiringsByVendorID(ctx context.Context, app *infra.Deps, vendorID string) ([]VendorHiring, error) {
 	var hirings []VendorHiring
-	err := app.DB.FindMany(ctx, hiringCollection, map[string]any{
-		"vendorid": vendorID,
-		"status":   map[string]any{"$ne": "rejected"},
-	}, &hirings)
-	if err != nil {
+	if err := FindHiringsByVendorID(ctx, app, vendorID, &hirings); err != nil {
 		return nil, err
 	}
 
@@ -281,45 +203,17 @@ func GetVendorHiringsByVendorID(ctx context.Context, app *infra.Deps, vendorID s
 
 // RemoveVendorFromEvent removes a vendor from an event.
 func RemoveVendorFromEvent(ctx context.Context, app *infra.Deps, eventID, vendorID string) (any, error) {
-	var existing VendorHiring
-	err := app.DB.FindOne(ctx, hiringCollection, map[string]any{
-		"eventid":  eventID,
-		"vendorid": vendorID,
-		"status":   map[string]any{"$ne": "rejected"},
-	}, &existing)
-	if err != nil {
+	existing, err := FindHiringByEventAndVendor(ctx, app, eventID, vendorID)
+	if err != nil || existing == nil {
 		return nil, ErrVendorNotInEvent
 	}
 
-	return app.DB.Update(
-		ctx,
-		hiringCollection,
-		map[string]any{
-			"eventid":  eventID,
-			"vendorid": vendorID,
-		},
-		map[string]any{
-			"$set": map[string]any{
-				"status":     "rejected",
-				"updated_at": time.Now(),
-			},
-		},
-	)
+	return UpdateHiringDB(ctx, app, map[string]any{"eventid": eventID, "vendorid": vendorID}, map[string]any{"$set": map[string]any{"status": "rejected", "updated_at": time.Now()}})
 }
 
 // UpdateVendorStatus updates the status of a vendor hiring.
 func UpdateVendorStatus(ctx context.Context, app *infra.Deps, hiringID, status string) (any, error) {
-	return app.DB.Update(
-		ctx,
-		hiringCollection,
-		map[string]any{"hiringid": hiringID},
-		map[string]any{
-			"$set": map[string]any{
-				"status":     status,
-				"updated_at": time.Now(),
-			},
-		},
-	)
+	return UpdateHiringDB(ctx, app, map[string]any{"hiringid": hiringID}, map[string]any{"$set": map[string]any{"status": status, "updated_at": time.Now()}})
 }
 
 // GetVendorsByEvent retrieves detailed vendor info for an event.

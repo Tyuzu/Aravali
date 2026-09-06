@@ -11,11 +11,9 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/infra/db"
 	"scav/utils"
 
 	"github.com/gorilla/websocket"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ------------------------- Helpers -------------------------
@@ -181,13 +179,8 @@ func WebSocketHandler(hub *Hub, app *infra.Deps) http.HandlerFunc {
 
 		// send history
 		go func() {
-			opts := db.FindManyOptions{
-				Sort:  []bson.E{{Key: "timestamp", Value: -1}},
-				Limit: 20,
-			}
-
-			var history []Message
-			if err := app.DB.FindManyWithOptions(ctx, messagesCollection, map[string]any{"room": room}, opts, &history); err != nil {
+			history, err := getRoomMessages(ctx, app, room)
+			if err != nil {
 				return
 			}
 
@@ -273,7 +266,7 @@ func readPump(c *Client, hub *Hub, app *infra.Deps) {
 					Timestamp: time.Now().Unix(),
 				}
 
-				if err := app.DB.InsertOne(c.ctx, messagesCollection, msg); err != nil {
+				if err := insertMessage(c.ctx, app, msg); err != nil {
 					continue
 				}
 

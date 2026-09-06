@@ -53,7 +53,7 @@ func GetNotices(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var notices []Notice
-		if err := app.DB.FindManyWithOptions(ctx, noticesCollection, filter, opts, &notices); err != nil {
+		if err := listNoticesWithOptions(ctx, app, filter, opts, &notices); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch notices")
 			return
 		}
@@ -94,13 +94,8 @@ func GetNotice(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var notice Notice
-		if err := app.DB.FindOne(
-			ctx,
-			noticesCollection,
-			map[string]any{"noticeid": noticeID},
-			&notice,
-		); err != nil {
+		notice, err := findNoticeByID(ctx, app, noticeID)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Notice not found")
 			return
 		}
