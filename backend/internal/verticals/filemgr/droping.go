@@ -1,7 +1,6 @@
 package filemgr
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	log "scav/utils/logger"
@@ -92,10 +91,6 @@ func validateUploadRequest(w http.ResponseWriter, r *http.Request) error {
 
 func convertToAttachments(serviceAttachments []Attachment) []Attachment {
 	return append([]Attachment(nil), serviceAttachments...)
-}
-
-func updateEntityMediaInDB(app *infra.Deps, collection, idField, entityID string, update map[string]any) (any, error) {
-	return app.DB.UpdateOne(context.Background(), collection, map[string]any{idField: entityID}, update)
 }
 
 func updateEntityMedia(app *infra.Deps, entityType string, entityId string, attachments []Attachment) (any, error) {

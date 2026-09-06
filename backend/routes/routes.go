@@ -3,8 +3,8 @@ package routes
 import (
 	"net/http"
 	"scav/infra"
+	"scav/internal/beats/userdata/metadata"
 	"scav/internal/home"
-	"scav/internal/userdata/metadata"
 	"scav/middleware"
 	"scav/utils"
 
