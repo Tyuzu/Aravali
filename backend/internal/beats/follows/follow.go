@@ -9,7 +9,7 @@ import (
 	"scav/infra"
 	"scav/infra/db"
 	"scav/infra/mq"
-	"scav/internal/userdata"
+	"scav/internal/beats/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
 )

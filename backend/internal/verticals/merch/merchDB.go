@@ -5,7 +5,7 @@ import (
 	"errors"
 	"scav/config"
 	"scav/infra"
-	"scav/internal/userdata"
+	"scav/internal/beats/userdata"
 	"time"
 )
 
@@ -146,6 +146,7 @@ func confirmMerchPurchase(ctx context.Context, app *infra.Deps, eventID, merchID
 }
 
 func buyMerchTransaction(ctx context.Context, app *infra.Deps, r context.Context, userID, entityType, entityID, merchID string, quantity int) error {
+	_ = ctx
 	return app.DB.WithDB(r, func(txCtx context.Context) error {
 		var merch Merch
 		err := app.DB.FindOne(txCtx, merchCollection, map[string]any{

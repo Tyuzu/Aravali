@@ -5,7 +5,7 @@ import (
 	"scav/config"
 	"scav/infra"
 	"scav/infra/db"
-	"scav/internal/media"
+	"scav/internal/verticals/media"
 )
 
 var fanmadeMediaCollection = config.Collections.MediaCollection

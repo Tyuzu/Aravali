@@ -8,7 +8,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/internal/userdata"
+	"scav/internal/beats/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
 	"strings"

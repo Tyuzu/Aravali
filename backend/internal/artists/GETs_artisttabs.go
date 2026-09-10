@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"scav/infra"
-	"scav/internal/media"
-	"scav/internal/merch"
+	"scav/internal/verticals/media"
+	"scav/internal/verticals/merch"
 	"scav/utils"
 )
 

@@ -1,7 +1,7 @@
 package places
 
 import (
-	"scav/internal/media"
+	"scav/internal/verticals/media"
 	"time"
 )
 

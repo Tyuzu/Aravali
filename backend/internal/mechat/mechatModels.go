@@ -1,7 +1,7 @@
 package mechat
 
 import (
-	"scav/internal/media"
+	"scav/internal/verticals/media"
 	"time"
 )
 

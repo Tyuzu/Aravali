@@ -9,8 +9,8 @@ import (
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
-	"scav/internal/pay/stripe"
-	"scav/internal/userdata"
+	"scav/internal/beats/userdata"
+	"scav/internal/verticals/pay/stripe"
 	"scav/utils"
 )
 

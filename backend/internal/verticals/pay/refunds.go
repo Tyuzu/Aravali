@@ -7,7 +7,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/internal/tickets"
+	"scav/internal/verticals/tickets"
 	"scav/utils"
 	log "scav/utils/logger"
 	"strconv"

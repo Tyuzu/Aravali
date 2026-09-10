@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"scav/infra"
-	"scav/internal/userdata"
+	"scav/internal/beats/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
 )

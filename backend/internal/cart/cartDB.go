@@ -9,7 +9,7 @@ import (
 	"scav/config"
 	"scav/infra"
 	"scav/internal/auth"
-	"scav/internal/pay"
+	"scav/internal/verticals/pay"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 
 	"scav/config"
 	"scav/internal/auth"
-	"scav/internal/tickets"
+	"scav/internal/verticals/tickets"
 	"scav/utils"
 
 	"go.mongodb.org/mongo-driver/mongo"

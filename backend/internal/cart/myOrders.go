@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/internal/pay"
+	"scav/internal/verticals/pay"
 	"scav/utils"
 	"scav/utils/logger"
 )

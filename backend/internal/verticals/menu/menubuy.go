@@ -7,7 +7,7 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/internal/pay/stripe"
+	"scav/internal/verticals/pay/stripe"
 	"scav/utils"
 	log "scav/utils/logger"
 )

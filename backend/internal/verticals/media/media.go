@@ -11,7 +11,7 @@ import (
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
-	"scav/internal/userdata"
+	"scav/internal/beats/userdata"
 	"scav/utils"
 )
 

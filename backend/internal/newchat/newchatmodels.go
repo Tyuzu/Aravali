@@ -2,7 +2,7 @@ package newchat
 
 import (
 	"context"
-	"scav/internal/media"
+	"scav/internal/verticals/media"
 	"sync"
 	"time"
 

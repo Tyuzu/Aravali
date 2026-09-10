@@ -11,7 +11,7 @@ import (
 	"scav/internal/auth"
 	"scav/internal/cart"
 	"scav/internal/farms"
-	"scav/internal/pay"
+	"scav/internal/verticals/pay"
 	"scav/utils"
 )
 

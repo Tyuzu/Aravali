@@ -7,8 +7,8 @@ import (
 	"scav/config"
 	"scav/infra"
 	db "scav/infra/db"
+	"scav/internal/beats/userdata"
 	"scav/internal/events"
-	"scav/internal/userdata"
 )
 
 var (
