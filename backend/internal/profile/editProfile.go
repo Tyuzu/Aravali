@@ -12,7 +12,6 @@ import (
 	"scav/infra/cache"
 	"scav/infra/db"
 	"scav/infra/mq"
-	"scav/middleware"
 	"scav/utils"
 )
 
@@ -24,12 +23,8 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// 1. Validate JWT
-		claims, err := validateJWT(r)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+		username := utils.GetUsernameFromRequest(r)
+		userID := utils.GetUserIDFromRequest(r)
 
 		// 2. Parse form data (~10 MB)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
@@ -38,24 +33,24 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 3. Invalidate cached profile
-		_ = InvalidateCachedProfile(ctx, app.Cache, claims.Username)
-		_ = UpdateCachedUsername(ctx, app.Cache, claims.UserID)
+		_ = InvalidateCachedProfile(ctx, app.Cache, username)
+		_ = UpdateCachedUsername(ctx, app.Cache, userID)
 
 		// 4. Build updates map
-		updates, err := BuildProfileUpdates(ctx, r, claims, app.Cache)
+		updates, err := BuildProfileUpdates(ctx, r, username, userID, app.Cache)
 		if err != nil {
 			http.Error(w, "Failed to update profile fields", http.StatusInternalServerError)
 			return
 		}
 
 		// 5. Apply updates in DB
-		if _, err := ApplyProfileUpdatesDeps(ctx, app, claims.UserID, updates); err != nil {
+		if _, err := ApplyProfileUpdatesDeps(ctx, app, userID, updates); err != nil {
 			http.Error(w, "Failed to update profile", http.StatusInternalServerError)
 			return
 		}
 
 		// 6. Respond with updated profile
-		RespondWithUserProfileDeps(w, claims.UserID, app)
+		RespondWithUserProfileDeps(w, userID, app)
 		// if err := RespondWithUserProfile(w, claims.UserID, app.DB); err != nil {
 		// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
 		// }
@@ -70,18 +65,15 @@ func DeleteProfile(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		claims, err := validateJWT(r)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+		username := utils.GetUsernameFromRequest(r)
+		userID := utils.GetUserIDFromRequest(r)
 
 		// Invalidate cached profile
-		_ = InvalidateCachedProfile(ctx, app.Cache, claims.Username)
-		_ = UpdateCachedUsername(ctx, app.Cache, claims.UserID)
+		_ = InvalidateCachedProfile(ctx, app.Cache, username)
+		_ = UpdateCachedUsername(ctx, app.Cache, userID)
 
 		// Delete user in DB
-		if _, err := DeleteUserByIDDeps(ctx, app, claims.UserID); err != nil {
+		if _, err := DeleteUserByIDDeps(ctx, app, userID); err != nil {
 			http.Error(w, "Failed to delete profile", http.StatusInternalServerError)
 			return
 		}
@@ -105,16 +97,17 @@ func DeleteProfile(app *infra.Deps) http.HandlerFunc {
 func BuildProfileUpdates(
 	ctx context.Context,
 	r *http.Request,
-	claims *middleware.Claims,
+	username string,
+	userID string,
 	c cache.Cache,
 ) (map[string]any, error) {
 
 	updates := map[string]any{}
 
 	// Username
-	if newUsername := r.FormValue("username"); newUsername != "" && newUsername != claims.Username {
+	if newUsername := r.FormValue("username"); newUsername != "" && newUsername != username {
 		updates["username"] = newUsername
-		_ = c.HSet(ctx, "users", claims.UserID, []byte(newUsername))
+		_ = c.HSet(ctx, "users", userID, []byte(newUsername))
 	}
 
 	// Email, Bio, Name, Phone

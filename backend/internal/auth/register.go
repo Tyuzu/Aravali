@@ -31,7 +31,11 @@ func Register(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		user, err := ProcessRegistration(ctx, app, input)
+		ip := clientIP(r)
+		uaHashStr := uaHash(r)
+		ipPrefixStr := ipPrefix(ip)
+
+		user, sessionID, err := ProcessRegistration(ctx, app, input, uaHashStr, ipPrefixStr)
 		if err != nil {
 			if errors.Is(err, ErrAuthInvalidCredentials) {
 				utils.RespondWithError(w, http.StatusBadRequest, "Invalid credentials")
@@ -45,6 +49,9 @@ func Register(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
+		// Automatically log the user in by setting the session cookie
+		setSessionCookie(w, r, sessionID)
+
 		utils.RespondWithJSON(w, http.StatusCreated, SignUpResponse{
 			Message: "User registered successfully",
 			UserID:  user.UserID,
@@ -56,7 +63,7 @@ func Register(app *infra.Deps) http.HandlerFunc {
    2. SERVICES (BUSINESS LAYER)
 ============================================================ */
 
-func ProcessRegistration(ctx context.Context, app *infra.Deps, input SignUpRequest) (User, error) {
+func ProcessRegistration(ctx context.Context, app *infra.Deps, input SignUpRequest, uaHash string, ipPrefix string) (User, string, error) {
 	input.Username = strings.TrimSpace(input.Username)
 	input.Password = strings.TrimSpace(input.Password)
 	input.Email = strings.ToLower(strings.TrimSpace(input.Email))
@@ -64,16 +71,34 @@ func ProcessRegistration(ctx context.Context, app *infra.Deps, input SignUpReque
 	if !validateUsername(input.Username) ||
 		!validateEmail(input.Email) ||
 		!validatePassword(input.Password) {
-		return User{}, ErrAuthInvalidCredentials
+		return User{}, "", ErrAuthInvalidCredentials
 	}
 
 	user, err := BuildUser(input)
 	if err != nil {
-		return User{}, ErrPasswordHashing
+		return User{}, "", ErrPasswordHashing
 	}
 
 	if err := CreateUser(ctx, app, user); err != nil {
-		return User{}, err
+		return User{}, "", err
+	}
+
+	// Generate and persist cookie-based session ID upon registration
+	sessionID, err := generateSessionID()
+	if err != nil {
+		return User{}, "", ErrTokenGeneration
+	}
+
+	_, err = PersistUserSession(
+		ctx,
+		app,
+		user.UserID,
+		sessionID,
+		uaHash,
+		ipPrefix,
+	)
+	if err != nil {
+		return User{}, "", ErrSessionPersistence
 	}
 
 	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserRegistered, mqevent.UserRegisteredPayload{
@@ -83,7 +108,7 @@ func ProcessRegistration(ctx context.Context, app *infra.Deps, input SignUpReque
 		OccurredAt: time.Now().UTC(),
 	})
 
-	return user, nil
+	return user, sessionID, nil
 }
 
 func BuildUser(input SignUpRequest) (User, error) {

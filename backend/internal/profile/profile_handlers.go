@@ -2,27 +2,11 @@ package profile
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"scav/infra/cache"
-	"scav/middleware"
 )
-
-/* -------------------------------------------------------
-   Helpers
-------------------------------------------------------- */
-
-// validateJWT extracts + validates JWT from header
-func validateJWT(r *http.Request) (*middleware.Claims, error) {
-	token := r.Header.Get("Authorization")
-	if token == "" {
-		return nil, errors.New("no auth header")
-	}
-	return middleware.ValidateJWT(token)
-}
 
 /* ------------------------------------------------------
 /* -------------------------------------------------------

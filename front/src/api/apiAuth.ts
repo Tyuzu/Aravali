@@ -4,29 +4,25 @@ import { generateUUID } from "../utils/genUUID.js";
 /* =========================================================
    TYPES & INTERFACES
 ========================================================= */
-export interface JwtPayload {
-  exp?: number;
+export interface RawUserRecord {
+  id?: string;
   userid?: string;
-  userID?: string;
-  sub?: string;
   username?: string;
-  roles?: string[];
+  roles?: string | string[];
   role?: string | string[];
-  permissions?: string[];
+  permissions?: string | string[];
   [key: string]: unknown;
 }
 
 export interface AuthPayload {
-  token: string;
-  user: string | null;
+  user: RawUserRecord | null;
   userid: string | null;
   username: string;
   roles: string[];
   permissions: string[];
   auth: {
     isAuthenticated: boolean;
-    accessToken: string;
-    user: string | null;
+    user: RawUserRecord | null;
     roles: string[];
     permissions: string[];
   };
@@ -44,7 +40,6 @@ export interface RefreshLockData {
 /* =========================================================
    CONSTANTS & INITIALIZATION
 ========================================================= */
-const REFRESH_BUFFER_MS = 2 * 60 * 1000;
 const REFRESH_LOCK_TTL = 10_000;
 const REFRESH_WAIT_TIMEOUT = 12_000;
 const TAB_ID = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : generateUUID();
@@ -62,28 +57,41 @@ export function abortInflightApiRequests(): void {
 }
 
 /* =========================================================
-   JWT
+   HELPERS
 ========================================================= */
-export function parseJwt(token: string | null | undefined): JwtPayload | null {
-  try {
-    const payload = token?.split(".")[1];
-    if (!payload) {
-      return null;
-    }
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-    return JSON.parse(atob(padded)) as JwtPayload;
-  } catch {
-    return null;
+function normalizeRoles(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(
+        value
+          .filter((role): role is string => role !== null && role !== undefined && String(role).trim() !== "")
+          .map((role) => String(role).trim())
+      )
+    ];
   }
+  if (typeof value === "string" && value.trim()) {
+    return [value.trim()];
+  }
+  return [];
 }
 
-export function isTokenNearExpiry(token: string | null | undefined, bufferMs: number = REFRESH_BUFFER_MS): boolean {
-  const payload = parseJwt(token);
-  if (!payload?.exp) {
-    return false;
+function normalizePermissions(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return [
+      ...new Set(
+        value
+          .filter(
+            (permission): permission is string =>
+              permission !== null && permission !== undefined && String(permission).trim() !== ""
+          )
+          .map((permission) => String(permission).trim())
+      )
+    ];
   }
-  return Date.now() > payload.exp * 1000 - bufferMs;
+  if (typeof value === "string" && value.trim()) {
+    return [value.trim()];
+  }
+  return [];
 }
 
 /* =========================================================
@@ -131,12 +139,12 @@ async function withRefreshLock<T>(taskCallback: () => Promise<T>): Promise<T | L
 /* =========================================================
    WAIT FOR ANOTHER TAB
 ========================================================= */
-function waitForTokenChange(previousToken: string | null, timeoutMs: number = REFRESH_WAIT_TIMEOUT): Promise<boolean> {
+function waitForSessionUpdate(timeoutMs: number = REFRESH_WAIT_TIMEOUT): Promise<boolean> {
   return new Promise((resolve) => {
     const started = Date.now();
     const timer = setInterval(() => {
-      const currentToken = getState("token");
-      if (currentToken && currentToken !== previousToken) {
+      const auth = getState("auth");
+      if (auth?.isAuthenticated) {
         clearInterval(timer);
         resolve(true);
         return;
@@ -150,32 +158,19 @@ function waitForTokenChange(previousToken: string | null, timeoutMs: number = RE
 }
 
 /* =========================================================
-   TOKEN REFRESH
+   SESSION / COOKIE REFRESH
 ========================================================= */
 let refreshPromise: Promise<boolean> | null = null;
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 export async function refreshToken(): Promise<boolean> {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-    refreshTimer = null;
-  }
   if (refreshPromise) {
     return refreshPromise;
   }
-
-  const previousToken = getState("token");
 
   refreshPromise = (async (): Promise<boolean> => {
     let success = false;
 
     const lockResult = await withRefreshLock(async () => {
-      const currentToken = getState("token");
-      if (currentToken && !isTokenNearExpiry(currentToken)) {
-        success = true;
-        return;
-      }
-
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10_000);
@@ -197,39 +192,40 @@ export async function refreshToken(): Promise<boolean> {
           return;
         }
 
-        const data = await response.json().catch(() => null);
-        const token: string | undefined = data?.data?.token || data?.token || data?.Token;
+        const resData = await response.json().catch(() => null);
+        const data = resData?.data && typeof resData.data === "object" ? resData.data : resData;
 
-        if (!token) {
-          success = false;
-          return;
-        }
+        const userId =
+          resData?.userid ??
+          resData?.UserID ??
+          data?.userid ??
+          data?.UserID ??
+          null;
 
-        const parsed = parseJwt(token);
-        if (!parsed) {
-          success = false;
-          return;
-        }
+        const username = resData?.username ?? data?.username ?? "";
+        const roles = normalizeRoles(
+          resData?.roles ?? resData?.role ?? data?.roles ?? data?.role
+        );
+        const permissions = normalizePermissions(
+          resData?.permissions ?? data?.permissions
+        );
 
-        const userId = parsed.userid || parsed.userID || parsed.userid || parsed.sub || "";
-        const roles = Array.isArray(parsed.roles || parsed.role)
-          ? ((parsed.roles || parsed.role) as string[])
-          : parsed.role
-            ? [parsed.role as string]
-            : [];
-        const permissions = Array.isArray(parsed.permissions) ? parsed.permissions : [];
+        const rawUser =
+          resData?.user && typeof resData.user === "object"
+            ? resData.user
+            : data?.user && typeof data.user === "object"
+            ? data.user
+            : null;
 
         const authPayload: AuthPayload = {
-          token,
-          user: userId || null,
-          userid: userId || null,
-          username: parsed.username || "",
+          user: rawUser,
+          userid: userId,
+          username,
           roles,
           permissions,
           auth: {
             isAuthenticated: true,
-            accessToken: token,
-            user: userId || null,
+            user: rawUser,
             roles,
             permissions
           }
@@ -237,27 +233,23 @@ export async function refreshToken(): Promise<boolean> {
 
         setState(authPayload, true);
         AUTH_CHANNEL?.postMessage({
-          type: "TOKEN_REFRESHED",
+          type: "SESSION_REFRESHED",
           payload: authPayload
         });
 
         success = true;
       } catch (error: unknown) {
         if (error instanceof Error && error.name === "AbortError") {
-          console.warn("[Auth] Token refresh request timed out.");
+          console.warn("[Auth] Session refresh request timed out.");
         } else {
-          console.error("[Auth] Token refresh request failed:", error);
+          console.error("[Auth] Session refresh request failed:", error);
         }
         success = false;
       }
     });
 
     if (lockResult && "lockedByOtherTab" in lockResult && lockResult.lockedByOtherTab) {
-      success = await waitForTokenChange(previousToken);
-    }
-
-    if (success) {
-      scheduleBackgroundRefresh();
+      success = await waitForSessionUpdate();
     }
 
     return success;
@@ -271,56 +263,15 @@ export async function refreshToken(): Promise<boolean> {
 }
 
 /* =========================================================
-   BACKGROUND REFRESH
-========================================================= */
-export function scheduleBackgroundRefresh(): void {
-  if (refreshTimer) {
-    clearTimeout(refreshTimer);
-    refreshTimer = null;
-  }
-
-  const token = getState("token");
-  if (!token) {
-    return;
-  }
-
-  const payload = parseJwt(token);
-  if (!payload?.exp) {
-    return;
-  }
-
-  const delay = payload.exp * 1000 - REFRESH_BUFFER_MS - Date.now();
-
-  const handleRefresh = async (): Promise<void> => {
-    const success = await refreshToken();
-    if (!success && getState("token")) {
-      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-    }
-  };
-
-  if (delay <= 0) {
-    handleRefresh();
-    return;
-  }
-
-  refreshTimer = setTimeout(handleRefresh, delay);
-}
-
-/* =========================================================
    AUTH CHANNEL
 ========================================================= */
 AUTH_CHANNEL?.addEventListener("message", (event: MessageEvent) => {
-  if (event.data?.type === "TOKEN_REFRESHED") {
+  if (event.data?.type === "SESSION_REFRESHED") {
     if (event.data.payload) {
       setState(event.data.payload, true);
     }
-    scheduleBackgroundRefresh();
   }
   if (event.data?.type === "LOGOUT") {
-    if (refreshTimer) {
-      clearTimeout(refreshTimer);
-      refreshTimer = null;
-    }
     window.dispatchEvent(new CustomEvent("auth:remote-logout"));
   }
 });
@@ -347,20 +298,13 @@ if (typeof document !== "undefined") {
     if (document.visibilityState !== "visible") {
       return;
     }
-    const token = getState("token");
-    if (token && isTokenNearExpiry(token)) {
+    const auth = getState("auth");
+    if (auth?.isAuthenticated) {
       refreshToken().then((success) => {
         if (!success) {
           window.dispatchEvent(new CustomEvent("auth:unauthorized"));
         }
       });
-    } else {
-      scheduleBackgroundRefresh();
     }
   });
 }
-
-/* =========================================================
-   INITIAL REFRESH TIMER
-========================================================= */
-scheduleBackgroundRefresh();

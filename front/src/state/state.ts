@@ -14,7 +14,6 @@ export interface User {
 export interface AuthState {
     isAuthenticated: boolean;
     loading: boolean;
-    accessToken: string | null;
     user: User | null;
     roles: string[];
     permissions: string[];
@@ -66,7 +65,7 @@ export const {
     STATE KEYS
 ========================================================= */
 const allowedKeys = new Set<string>([
-    "token", "user", "username", "userProfile", "socket",
+    "user", "username", "userProfile", "socket",
     "favFarms",
     "roles", "permissions", "auth", "environment", "lang",
     "lastPath", "currentRoute", "routeCache", "routeState",
@@ -80,10 +79,8 @@ const PERSISTED_KEYS = new Set<string>([
     "unreadMessages", "unreadNotifications"
 ]);
 
-const SESSION_KEYS = new Set<string>(["token"]);
-
 const AUTH_ALIAS_KEYS = new Set<string>([
-    "token", "user", "roles", "permissions", "username", "userid", "isLoggedIn"
+    "user", "roles", "permissions", "username", "userid", "isLoggedIn"
 ]);
 
 const ROUTE_CACHE_KEY = "routeCache";
@@ -92,14 +89,6 @@ const ROUTE_STATE_KEY = "routeState";
 /* =========================================================
     STORAGE
 ========================================================= */
-function readSessionStorage(key: string): string | null {
-    try {
-        return sessionStorage.getItem(key);
-    } catch {
-        return null;
-    }
-}
-
 function readLocalStorage(key: string): string | null {
     try {
         return localStorage.getItem(key);
@@ -109,9 +98,6 @@ function readLocalStorage(key: string): string | null {
 }
 
 function readStorage(key: string): string | null {
-    if (SESSION_KEYS.has(key)) {
-        return readSessionStorage(key);
-    }
     return readLocalStorage(key);
 }
 
@@ -124,24 +110,6 @@ function serializeValue(value: any): string | null {
     } catch (error) {
         console.warn(`[STATE] Unable to serialize state key "${String(error)}":`, error);
         return null;
-    }
-}
-
-function writeSessionStorage(key: string, value: any): boolean {
-    try {
-        if (value === null || value === undefined) {
-            sessionStorage.removeItem(key);
-            return true;
-        }
-        const serialized = serializeValue(value);
-        if (serialized === null) {
-            return false;
-        }
-        sessionStorage.setItem(key, serialized);
-        return true;
-    } catch (error) {
-        console.warn(`[STATE] Failed writing session key "${key}":`, error);
-        return false;
     }
 }
 
@@ -164,9 +132,6 @@ function writeLocalStorage(key: string, value: any): boolean {
 }
 
 function writeStorage(key: string, value: any): boolean {
-    if (SESSION_KEYS.has(key)) {
-        return writeSessionStorage(key, value);
-    }
     if (PERSISTED_KEYS.has(key)) {
         return writeLocalStorage(key, value);
     }
@@ -174,11 +139,6 @@ function writeStorage(key: string, value: any): boolean {
 }
 
 function removeStorage(key: string): void {
-    try {
-        sessionStorage.removeItem(key);
-    } catch {
-        // Ignore
-    }
     try {
         localStorage.removeItem(key);
     } catch {
@@ -215,27 +175,6 @@ function readPersistentNumber(key: string, fallback = 0): number {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
 }
-
-/* =========================================================
-    LEGACY TOKEN MIGRATION
-========================================================= */
-function migrateLegacyToken(): void {
-    const sessionToken = readSessionStorage("token");
-    const localToken = readLocalStorage("token");
-    if (!sessionToken && localToken) {
-        try {
-            sessionStorage.setItem("token", localToken);
-        } catch (error) {
-            console.warn("[AUTH] Unable to migrate legacy token:", error);
-        }
-    }
-    try {
-        localStorage.removeItem("token");
-    } catch {
-        // Ignore.
-    }
-}
-migrateLegacyToken();
 
 /* =========================================================
     ROUTE CACHE & SCROLL STATE
@@ -371,15 +310,18 @@ function normalizePermissions(permissions: any): string[] {
 function normalizeAuth(authValue: Partial<AuthState> = {}, previousAuth: Partial<AuthState> = {}): AuthState {
     const source = authValue && typeof authValue === "object" ? authValue : {};
     const previous = previousAuth && typeof previousAuth === "object" ? previousAuth : {};
-    const accessToken = Object.prototype.hasOwnProperty.call(source, "accessToken") ? source.accessToken || null : previous.accessToken || null;
     const user = Object.prototype.hasOwnProperty.call(source, "user") ? source.user || null : previous.user || null;
     const roles = normalizeRoles(Object.prototype.hasOwnProperty.call(source, "roles") ? source.roles : previous.roles);
     const permissions = normalizePermissions(Object.prototype.hasOwnProperty.call(source, "permissions") ? source.permissions : previous.permissions);
 
+    const hasUserValidId = Boolean(user && typeof user === "object" && (user.id || user.userid));
+    const isAuthenticated = Object.prototype.hasOwnProperty.call(source, "isAuthenticated")
+        ? Boolean(source.isAuthenticated)
+        : Boolean(previous.isAuthenticated || hasUserValidId);
+
     return {
-        isAuthenticated: Object.prototype.hasOwnProperty.call(source, "isAuthenticated") ? Boolean(accessToken || source.isAuthenticated) : Boolean(accessToken),
+        isAuthenticated,
         loading: Object.prototype.hasOwnProperty.call(source, "loading") ? Boolean(source.loading) : Boolean(previous.loading),
-        accessToken,
         user,
         roles,
         permissions
@@ -389,7 +331,6 @@ function normalizeAuth(authValue: Partial<AuthState> = {}, previousAuth: Partial
 /* =========================================================
     INITIAL STATE
 ========================================================= */
-const initialToken = readSessionStorage("token");
 const initialUser = readPersistentJSON<User>("user", null);
 const initialProfile = readPersistentJSON<Record<string, any>>("userProfile", {});
 const initialRoles = normalizeRoles(readPersistentJSON("roles", []));
@@ -399,11 +340,10 @@ const initialUnreadNotifications = readPersistentNumber("unreadNotifications", 0
 const initialFavFarms = readPersistentJSON<string[]>("favFarms", []);
 
 const initialAuth = normalizeAuth({
-    accessToken: initialToken || null,
     user: initialUser || null,
     roles: initialRoles,
     permissions: initialPermissions,
-    isAuthenticated: Boolean(initialToken),
+    isAuthenticated: Boolean(initialUser?.id || initialUser?.userid),
     loading: false
 });
 
@@ -422,7 +362,7 @@ const rawState: AppState = {
     unreadMessages: initialUnreadMessages,
     unreadNotifications: initialUnreadNotifications,
     favFarms: Array.isArray(initialFavFarms) ? initialFavFarms : [],
-    isLoggedIn: Boolean(initialToken || initialUser?.id || initialUser?.userid)
+    isLoggedIn: Boolean(initialUser?.id || initialUser?.userid)
 };
 
 /* =========================================================
@@ -430,8 +370,6 @@ const rawState: AppState = {
 ========================================================= */
 function getAuthAlias(key: string): any {
     switch (key) {
-        case "token":
-            return (rawState.auth?.accessToken || null);
         case "user":
             return (rawState.auth?.user || null);
         case "roles":
@@ -441,7 +379,7 @@ function getAuthAlias(key: string): any {
         case "isLoggedIn": {
             const user = rawState.auth?.user;
             const hasUserValidId = Boolean(user && typeof user === "object" && (user.id || user.userid));
-            return Boolean(rawState.auth?.isAuthenticated || rawState.auth?.accessToken || hasUserValidId);
+            return Boolean(rawState.auth?.isAuthenticated || hasUserValidId);
         }
         case "username": {
             const user = rawState.auth?.user;
@@ -477,7 +415,6 @@ function updateAuthUserProperty(property: string, value: any): void {
 }
 
 function triggerAuthNotifications(): void {
-    scheduleNotify("token");
     scheduleNotify("user");
     scheduleNotify("username");
     scheduleNotify("userid");
@@ -490,16 +427,6 @@ function triggerAuthNotifications(): void {
 function setAuthAlias(key: string, value: any): void {
     const currentAuth = rawState.auth;
     switch (key) {
-        case "token": {
-            const token = value || null;
-            rawState.auth = normalizeAuth({
-                ...currentAuth,
-                accessToken: token,
-                isAuthenticated: Boolean(token)
-            }, currentAuth);
-            triggerAuthNotifications();
-            break;
-        }
         case "user": {
             rawState.auth = normalizeAuth({
                 ...currentAuth,
@@ -513,7 +440,6 @@ function setAuthAlias(key: string, value: any): void {
             if (!isLoggedIn) {
                 rawState.auth = normalizeAuth({
                     ...currentAuth,
-                    accessToken: null,
                     user: null,
                     isAuthenticated: false
                 }, currentAuth);
@@ -596,6 +522,7 @@ function isObjectLike(value: any): boolean {
 function shouldProxy(value: any): boolean {
     return (isObjectLike(value) && !(value instanceof Map) && !(value instanceof Set) && !(value instanceof Date) && !(value instanceof RegExp));
 }
+
 function createReactiveObject<T extends object>(obj: T, path: string[] = []): T {
     if (!shouldProxy(obj)) {
         return obj;
@@ -663,10 +590,6 @@ function createReactiveObject<T extends object>(obj: T, path: string[] = []): T 
                     scheduleNotify("userid");
                     scheduleNotify("isLoggedIn");
                 }
-                if (path[1] === "accessToken") {
-                    scheduleNotify("token");
-                    scheduleNotify("isLoggedIn");
-                }
                 if (path[1] === "roles") {
                     scheduleNotify("roles");
                 }
@@ -724,10 +647,6 @@ function getStateValue(key: string): any {
     SET STATE
 ========================================================= */
 function persistStateKey(key: string, value: any): void {
-    if (SESSION_KEYS.has(key)) {
-        writeSessionStorage(key, value);
-        return;
-    }
     if (PERSISTED_KEYS.has(key)) {
         writeLocalStorage(key, value);
     }
@@ -751,7 +670,6 @@ function setAuthState(value: Partial<AuthState>, persist = false): void {
     rawState.auth = next;
     triggerAuthNotifications();
     if (persist) {
-        persistStateKey("token", next.accessToken);
         persistStateKey("user", next.user);
         persistStateKey("roles", next.roles);
         persistStateKey("permissions", next.permissions);
@@ -778,15 +696,11 @@ function setState(keyOrObject: string | Record<string, any>, persistOrValue: boo
         if (AUTH_ALIAS_KEYS.has(key)) {
             hasAuthUpdate = true;
             switch (key) {
-                case "token":
-                    authUpdates.accessToken = value || null;
-                    break;
                 case "user":
                     authUpdates.user = value || null;
                     break;
                 case "isLoggedIn":
                     if (!value) {
-                        authUpdates.accessToken = null;
                         authUpdates.user = null;
                         authUpdates.isAuthenticated = false;
                     } else {
@@ -865,7 +779,6 @@ function setState(keyOrObject: string | Record<string, any>, persistOrValue: boo
 ========================================================= */
 function buildPublicSnapshot(): Partial<AppState> & Record<string, any> {
     return {
-        token: getAuthAlias("token"),
         user: getAuthAlias("user"),
         username: getAuthAlias("username"),
         userProfile: state.userProfile,
@@ -965,7 +878,6 @@ function clearAllListeners(): void {
 
 function clearState(persist = true): void {
     setState({
-        token: null,
         user: null,
         isLoggedIn: false,
         userProfile: {},
@@ -977,7 +889,6 @@ function clearState(persist = true): void {
     }, persist);
 
     if (persist) {
-        removeStorage("token");
         removeStorage("user");
         removeStorage("userProfile");
         removeStorage("roles");

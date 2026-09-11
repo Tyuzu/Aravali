@@ -2,13 +2,13 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/middleware"
 	"scav/utils"
 )
 
@@ -27,18 +27,18 @@ func LogoutUser(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		// Safely extract the refresh token from cookie
-		var tokenStr string
-		if cookie, err := r.Cookie("refresh_token"); err == nil {
-			tokenStr = cookie.Value
+		// Extract the session ID from cookie
+		var sessionID string
+		if cookie, err := r.Cookie(SessionCookieName); err == nil {
+			sessionID = cookie.Value
 		}
 
-		// Handoff logic & event publishing down to the service layer
-		if tokenStr != "" {
-			_ = ProcessSingleLogout(ctx, app, tokenStr)
+		// Service layer handles revoking the session and emitting events
+		if sessionID != "" {
+			_ = ProcessSingleLogout(ctx, app, sessionID)
 		}
 
-		clearRefreshCookie(w, r)
+		clearSessionCookie(w, r)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Logged out",
@@ -47,16 +47,14 @@ func LogoutUser(app *infra.Deps) http.HandlerFunc {
 	}
 }
 
-// ProcessSingleLogout wraps token transformation and calls downstream side effects
-func ProcessSingleLogout(ctx context.Context, app *infra.Deps, rawRefreshToken string) error {
-	hashedToken := hashRefreshToken(rawRefreshToken)
-
-	return RevokeSessionAndEmit(ctx, app, hashedToken)
+// ProcessSingleLogout wraps session revocation and calls downstream side effects
+func ProcessSingleLogout(ctx context.Context, app *infra.Deps, sessionID string) error {
+	return RevokeSessionAndEmit(ctx, app, sessionID)
 }
 
-// RevokeSessionAndEmit deletes a single session via token hash and publishes the broker event
-func RevokeSessionAndEmit(ctx context.Context, app *infra.Deps, hashedToken string) error {
-	if _, err := LogoutUserByRefreshToken(ctx, app, hashedToken); err != nil {
+// RevokeSessionAndEmit deletes a single session via session ID and publishes the broker event
+func RevokeSessionAndEmit(ctx context.Context, app *infra.Deps, sessionID string) error {
+	if _, err := LogoutUserBySessionID(ctx, app, sessionID); err != nil {
 		return err
 	}
 
@@ -70,29 +68,31 @@ func RevokeSessionAndEmit(ctx context.Context, app *infra.Deps, hashedToken stri
 
 func LogoutAllSessions(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Extract and validate token
-		claims, err := middleware.ValidateJWT(authHeader)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		// Handoff to service layer to clear DB sessions and fire MQ events
-		if err := ProcessGlobalLogout(ctx, app, claims.UserID); err != nil {
+		// Extract current session ID from cookie
+		cookie, err := r.Cookie(SessionCookieName)
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Retrieve User ID associated with the current active session
+		userID, err := GetUserIDBySessionID(ctx, app, cookie.Value)
+		if err != nil || userID == "" {
+			clearSessionCookie(w, r)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Service layer clears all sessions for the user globally
+		if err := ProcessGlobalLogout(ctx, app, userID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Logout failed")
 			return
 		}
 
-		clearRefreshCookie(w, r)
+		clearSessionCookie(w, r)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "All sessions revoked",
@@ -114,3 +114,69 @@ func RevokeAllSessionsAndEmit(ctx context.Context, app *infra.Deps, userID strin
 	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserLoggedOutAllSessions, mqevent.UserLoggedOutPayload{})
 	return nil
 }
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+func clearSessionCookie(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+// GetUserIDBySessionID retrieves the UserID corresponding to an active session ID
+func GetUserIDBySessionID(ctx context.Context, app *infra.Deps, sessionID string) (string, error) {
+	key := fmt.Sprintf("session:%s", sessionID)
+	val, err := app.Cache.Get(ctx, key)
+	if err != nil || len(val) == 0 {
+		return "", fmt.Errorf("session invalid or expired")
+	}
+	return string(val), nil
+}
+
+// LogoutUserBySessionID deletes a single session by session ID from the cache
+func LogoutUserBySessionID(ctx context.Context, app *infra.Deps, sessionID string) (any, error) {
+	key := fmt.Sprintf("session:%s", sessionID)
+	err := app.Cache.Del(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to revoke session: %w", err)
+	}
+	return true, nil
+}
+
+// // GetUserIDBySessionID queries the database for the user ID tied to an active session ID
+// func GetUserIDBySessionID(ctx context.Context, app *infra.Deps, sessionID string) (string, error) {
+// 	var userID string
+// 	query := `SELECT user_id FROM user_sessions WHERE session_id = $1 AND expires_at > NOW()`
+
+// 	err := app.DB.QueryRowContext(ctx, query, sessionID).Scan(&userID)
+// 	if err != nil {
+// 		if errors.Is(err, sql.ErrNoRows) {
+// 			return "", fmt.Errorf("session not found or expired")
+// 		}
+// 		return "", fmt.Errorf("failed to fetch user session: %w", err)
+// 	}
+
+// 	return userID, nil
+// }
+
+// // LogoutUserBySessionID deletes a single session record from the database
+// func LogoutUserBySessionID(ctx context.Context, app *infra.Deps, sessionID string) (any, error) {
+// 	query := `DELETE FROM user_sessions WHERE session_id = $1`
+
+// 	res, err := app.DB.ExecContext(ctx, query, sessionID)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to delete session: %w", err)
+// 	}
+
+// 	rowsAffected, _ := res.RowsAffected()
+// 	return rowsAffected, nil
+// }

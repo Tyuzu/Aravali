@@ -44,7 +44,6 @@ export interface AuthState {
   state: any;
   auth: any;
   user: any;
-  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   roles: string[];
@@ -69,20 +68,18 @@ function getAuthState(): AuthState {
   const state = getState() || {};
   const auth = state.auth || {};
   const user = state.user || auth.user || state.userProfile || {};
-  const accessToken = auth.accessToken || state.token || null;
   const roles = normalizeArray(
     auth.roles || user.roles || user.role || state.userProfile?.roles || state.userProfile?.role
   );
   const permissions = normalizeArray(
     auth.permissions || user.permissions || state.userProfile?.permissions
   );
-  const isAuthenticated = Boolean(auth.isAuthenticated || accessToken);
-  
+  const isAuthenticated = Boolean(auth.isAuthenticated || state.isLoggedIn);
+
   return {
     state,
     auth,
     user,
-    accessToken,
     isAuthenticated,
     isLoading: auth.loading === true,
     roles,
@@ -105,10 +102,10 @@ function getFullTarget(context: RouteContext): string {
 
 function storeLoginRedirect(context: RouteContext): void {
   if (typeof window === "undefined") return;
-  
+
   const target = getFullTarget(context);
   const ignoredPaths = ["/", "/login", "/logout", "/404", "/error/403"];
-  
+
   if (target && !ignoredPaths.includes(context.path)) {
     sessionStorage.setItem("redirectAfterLogin", target);
   }
@@ -149,7 +146,7 @@ export function roleGuard(allowedRoles: string[] = [], matchMode: MatchMode = "A
       matchMode === "ALL"
         ? normalizedRoles.every((role) => roles.includes(role))
         : normalizedRoles.some((role) => roles.includes(role));
-        
+
     if (!hasAccess) {
       return "/error/403";
     }
@@ -182,7 +179,7 @@ export function permissionGuard(requiredPermissions: string[] = [], matchMode: M
 
 export async function onboardingGuard(context: RouteContext): Promise<GuardResult> {
   const { isAuthenticated, isProfileComplete } = getAuthState();
-  
+
   if (isAuthenticated) {
     // Needs onboarding but trying to go elsewhere
     if (!isProfileComplete && context.path !== "/onboarding") {

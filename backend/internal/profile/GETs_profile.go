@@ -55,12 +55,6 @@ func GetUserProfile(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		claims, err := validateJWT(r)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
 		username := utils.GetParam(r, "username")
 
 		user, err := FindUserByFilter(ctx, app, map[string]any{"username": username})
@@ -68,12 +62,12 @@ func GetUserProfile(app *infra.Deps) http.HandlerFunc {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
 		}
-
+		requestingUserID := utils.GetUserIDFromRequest(r)
 		userFollow, _ := follows.GetUserFollowData(ctx, user.UserID, app.DB)
 
 		isFollowing := false
 		if userFollow.UserID != "" {
-			isFollowing = slices.Contains(userFollow.Followers, claims.UserID)
+			isFollowing = slices.Contains(userFollow.Followers, requestingUserID)
 		}
 
 		online, _ := isOnline(ctx, user.UserID, app.Cache)

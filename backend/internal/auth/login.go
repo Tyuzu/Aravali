@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,13 +15,16 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
-	"scav/middleware"
 	"scav/utils"
 
 	log "scav/utils/logger"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	SessionCookieName = "session_id"
+	SessionTTL        = 24 * time.Hour
 )
 
 /* ============================================================
@@ -49,7 +54,7 @@ func Login(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		accessToken, refreshToken, userID, err := AuthenticateAndCreateSession(ctx, app, creds, uaHashStr, ipPrefixStr)
+		sessionID, userID, err := AuthenticateAndCreateSession(ctx, app, creds, uaHashStr, ipPrefixStr)
 		if err != nil {
 			IncrementRateLimitCounter(ctx, app, failKey)
 
@@ -63,13 +68,12 @@ func Login(app *infra.Deps) http.HandlerFunc {
 
 		_ = ClearRateLimitCounter(ctx, app, failKey)
 
-		setRefreshCookie(w, r, refreshToken)
+		setSessionCookie(w, r, sessionID)
 		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserLoggedIn, mqevent.UserLoggedInPayload{})
 
 		utils.RespondWithJSON(w, http.StatusOK, LoginResponse{
 			Message: "Login successful",
 			Status:  http.StatusOK,
-			Token:   accessToken,
 			UserID:  userID,
 		})
 	}
@@ -79,20 +83,19 @@ func Login(app *infra.Deps) http.HandlerFunc {
    2. SERVICES (BUSINESS LAYER)
 ============================================================ */
 
-func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds LoginRequest, uaHash string, ipPrefix string) (string, string, string, error) {
+func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds LoginRequest, uaHash string, ipPrefix string) (string, string, error) {
 	user, err := GetUserByUsername(ctx, app, creds.Username)
 	if err != nil {
 		log.Printf("auth: user lookup failed for username=%s: %v", creds.Username, err)
-		return "", "", "", ErrAuthInvalidCredentials
+		return "", "", ErrAuthInvalidCredentials
 	}
-	// Ensure incoming password is trimmed
+
 	creds.Password = strings.TrimSpace(creds.Password)
 
 	isBcrypt := func(s string) bool {
 		return strings.HasPrefix(s, "$2a$") || strings.HasPrefix(s, "$2b$") || strings.HasPrefix(s, "$2y$")
 	}
 
-	// Sanity info (do not log full hashes)
 	log.Printf("auth: user=%s userid=%s password_hash_present=%v password_present=%v", creds.Username, user.UserID, len(user.PasswordHash) > 0, len(user.Password) > 0)
 
 	var matched bool
@@ -106,53 +109,61 @@ func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds Lo
 		}
 	}
 
-	// Fallback to legacy `Password` field (migrate on success)
+	// Fallback to legacy `Password` field
 	if !matched && len(user.Password) > 0 && isBcrypt(user.Password) {
 		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)) == nil {
 			matched = true
-				if _, err := MigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
-					log.Printf("auth: failed to migrate password hash for userid=%s: %v", user.UserID, err)
-				}
+			if _, err := MigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
+				log.Printf("auth: failed to migrate password hash for userid=%s: %v", user.UserID, err)
+			}
 		}
 	}
 
 	if !matched {
-		return "", "", "", ErrAuthInvalidCredentials
+		return "", "", ErrAuthInvalidCredentials
 	}
 
-	claims := &middleware.Claims{
-		UserID:   user.UserID,
-		Username: user.Username,
-		Role:     user.Role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(AccessTokenTTL)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	accessToken, err := createAccessToken(claims)
+	// Generate secure, cryptographically random session ID
+	sessionID, err := generateSessionID()
 	if err != nil {
-		return "", "", "", ErrTokenGeneration
+		return "", "", ErrTokenGeneration
 	}
 
-	refreshToken, err := generateRefreshToken()
-	if err != nil {
-		return "", "", "", ErrTokenGeneration
-	}
-
+	// Persist the active session ID into the database/cache
 	_, err = PersistUserSession(
 		ctx,
 		app,
 		user.UserID,
-		hashRefreshToken(refreshToken),
+		sessionID,
 		uaHash,
 		ipPrefix,
 	)
 	if err != nil {
-		return "", "", "", ErrSessionPersistence
+		return "", "", ErrSessionPersistence
 	}
 
-	return accessToken, refreshToken, user.UserID, nil
+	return sessionID, user.UserID, nil
+}
+
+func generateSessionID() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+func setSessionCookie(w http.ResponseWriter, r *http.Request, sessionID string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    sessionID,
+		Path:     "/",
+		Expires:  time.Now().Add(SessionTTL),
+		MaxAge:   int(SessionTTL.Seconds()),
+		HttpOnly: true,                                                         // Prevents XSS script access
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https", // Transmit over HTTPS only
+		SameSite: http.SameSiteLaxMode,                                         // Protection against CSRF
+	})
 }
 
 /* ============================================================
@@ -184,6 +195,6 @@ func GetUserByUsername(ctx context.Context, app *infra.Deps, username string) (U
 	return FindUserByUsername(ctx, app, username)
 }
 
-func PersistUserSession(ctx context.Context, app *infra.Deps, userID, hashedRefreshToken, uaHash, ipPrefix string) (any, error) {
-	return UpdateUserSession(ctx, app, userID, hashedRefreshToken, uaHash, ipPrefix)
+func PersistUserSession(ctx context.Context, app *infra.Deps, userID, sessionID, uaHash, ipPrefix string) (any, error) {
+	return UpdateUserSession(ctx, app, userID, sessionID, uaHash, ipPrefix)
 }

@@ -6,12 +6,10 @@ import {
   LIVE_URL,
   MERE_URL,
   STRIPE_URL,
-  MUSIC_URL,
-  getState
+  MUSIC_URL
 } from "../state/state.js";
 import Notify from "../components/ui/Notify.js";
 import {
-  isTokenNearExpiry,
   refreshToken,
   navigationAbortController
 } from "./apiAuth.js";
@@ -40,16 +38,6 @@ async function apixFetch<T = any>(
   retry = false
 ): Promise<T> {
   try {
-    const token = getState("token");
-    const nearExpiry = token && isTokenNearExpiry(token);
-
-    if (options.auth !== false && nearExpiry && !retry) {
-      const refreshed = await refreshToken();
-      if (!refreshed) {
-        throw new Error("Unauthorized");
-      }
-    }
-
     const signal = options.signal || navigationAbortController.signal;
     const fetchOptions: RequestInit & { headers: Record<string, string> } = {
       method,
@@ -59,11 +47,6 @@ async function apixFetch<T = any>(
       },
       signal
     };
-
-    const currentToken = getState("token");
-    if (options.auth !== false && currentToken) {
-      fetchOptions.headers['Authorization'] = `Bearer ${currentToken}`;
-    }
 
     if (body !== null && body !== undefined) {
       if (body instanceof FormData) {
@@ -75,7 +58,6 @@ async function apixFetch<T = any>(
     }
 
     const response = await fetch(endpoint, fetchOptions);
-    // request logged via network devtools
 
     if (response.status === 401 && !retry && options.auth !== false) {
       const refreshed = await refreshToken();

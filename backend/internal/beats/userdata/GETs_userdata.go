@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"scav/config"
 	"scav/infra"
-	"scav/middleware"
 	"scav/utils"
 	log "scav/utils/logger"
 	"time"
@@ -17,14 +16,10 @@ func GetUserProfileData(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := utils.GetParam(r, "username")
 
-		// Validate JWT
-		tokenString := r.Header.Get("Authorization")
-		claims, err := middleware.ValidateJWT(tokenString)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-		if username != claims.UserID && username != claims.Username {
+		requestingUserID := utils.GetUserIDFromRequest(r)
+		requestingUserName := utils.GetUsernameFromRequest(r)
+
+		if username != requestingUserID && username != requestingUserName {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"scav/infra"
-	"scav/middleware"
 	"scav/utils"
 	"time"
 
@@ -37,12 +36,7 @@ func PrintTicket(app *infra.Deps) http.HandlerFunc {
 		eventID := utils.GetParam(r, "eventid")
 		uniqueCode := r.URL.Query().Get("uniqueCode")
 
-		tokenString := r.Header.Get("Authorization")
-		claims, err := middleware.ValidateJWT(tokenString)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+		username := utils.GetUsernameFromRequest(r)
 
 		if uniqueCode == "" {
 			http.Error(w, "Unique code is required", http.StatusBadRequest)
@@ -59,7 +53,7 @@ func PrintTicket(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		ticket.BuyerName = claims.Username
+		ticket.BuyerName = username
 
 		// Generate QR payload
 		qrPayload := GenerateQRPayload(ticket.EventID, ticket.TicketID, ticket.UniqueCode)

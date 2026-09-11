@@ -21,17 +21,6 @@ import { navigate } from "../../routes/navigate.js";
    TYPES & INTERFACES
 ========================================================= */
 
-export interface JwtPayload {
-  userid?: string;
-  userID?: string;
-  sub?: string;
-  username?: string;
-  roles?: string | string[];
-  role?: string | string[];
-  permissions?: string | string[];
-  [key: string]: unknown;
-}
-
 export interface RawUserRecord {
   id?: string;
   userid?: string;
@@ -43,8 +32,6 @@ export interface RawUserRecord {
 }
 
 export interface AuthResponseData {
-  token?: string;
-  Token?: string;
   userid?: string;
   UserID?: string;
   username?: string;
@@ -63,7 +50,6 @@ export interface AuthUser extends RawUserRecord {
 
 export interface AuthState {
   isAuthenticated: boolean;
-  accessToken: string;
   user: AuthUser;
   roles: string[];
   permissions: string[];
@@ -71,7 +57,6 @@ export interface AuthState {
 }
 
 export interface ExtractedAuthPayload {
-  token: string;
   user: AuthUser;
   userId: string | null;
   username: string;
@@ -152,48 +137,22 @@ function normalizePermissions(value: unknown): string[] {
   return [];
 }
 
-function parseJwtPayload(token: string): JwtPayload | null {
-  try {
-    const parts = token?.split(".");
-    if (!parts || parts.length < 2) {
-      return null;
-    }
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-    return JSON.parse(atob(padded)) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
-
 function extractAuthPayload(response: AuthResponseData, fallbackUsername = ""): ExtractedAuthPayload {
   const data = response?.data && typeof response.data === "object" ? response.data : response;
-  const token = response?.token ?? response?.Token ?? data?.token ?? data?.Token;
 
-  if (!token) {
-    throw new Error("Invalid response format from server.");
-  }
-
-  const jwt = parseJwtPayload(token) || {};
   const userId =
-    response?.userid ??
     response?.userid ??
     response?.UserID ??
     data?.userid ??
-    data?.userid ??
     data?.UserID ??
-    jwt.userid ??
-    jwt.userID ??
-    jwt.userid ??
-    jwt.sub ??
     "";
 
-  const username = response?.username ?? data?.username ?? jwt.username ?? fallbackUsername ?? "";
+  const username = response?.username ?? data?.username ?? fallbackUsername ?? "";
   const roles = normalizeRoles(
-    response?.roles ?? response?.role ?? data?.roles ?? data?.role ?? jwt.roles ?? jwt.role
+    response?.roles ?? response?.role ?? data?.roles ?? data?.role
   );
   const permissions = normalizePermissions(
-    response?.permissions ?? data?.permissions ?? jwt.permissions
+    response?.permissions ?? data?.permissions
   );
 
   const rawUser =
@@ -215,7 +174,6 @@ function extractAuthPayload(response: AuthResponseData, fallbackUsername = ""): 
       };
 
   return {
-    token,
     user,
     userId: userId || user.userid || null,
     username: user.username || username || "",
@@ -223,7 +181,6 @@ function extractAuthPayload(response: AuthResponseData, fallbackUsername = ""): 
     permissions,
     auth: {
       isAuthenticated: true,
-      accessToken: token,
       user,
       roles,
       permissions,
@@ -343,7 +300,7 @@ export async function login(payload: LoginPayload = {}): Promise<boolean> {
 
     setState(
       {
-        token: authPayload.token,
+        isLoggedIn: true,
         user: authPayload.user,
         userid: authPayload.userId,
         username: authPayload.username,
@@ -418,7 +375,7 @@ export async function logout(): Promise<void> {
   try {
     await logoutUser();
   } catch {
-    // Logout must clear local authentication even if the server request fails.
+    // Clear local authentication state even if network request fails
   } finally {
     silentLogout(true);
   }
@@ -445,7 +402,7 @@ export function silentLogout(broadcast = true): void {
     try {
       sessionStorage.removeItem("redirectAfterLogin");
     } catch {
-      // Ignore storage failures.
+      // Ignore storage failures
     }
   }
 

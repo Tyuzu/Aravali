@@ -18,6 +18,10 @@ import (
 )
 
 const (
+	// Keep the short-lived access token from expiring too quickly while the 7-day
+	// refresh token rotates in the background. This prevents unnecessary re-login
+	// loops in browsers when the refresh cookie is healthy but the client is idle.
+	AccessTokenTTL  = 1 * time.Hour
 	RefreshTokenTTL = 7 * 24 * time.Hour
 )
 
@@ -121,6 +125,36 @@ func isSecureCookie(r *http.Request) bool {
 	return isSecureCookieForHost("", r.Host)
 }
 
+/* ============================================================
+   COOKIE MANAGEMENT
+============================================================ */
+
+func setAccessCookie(w http.ResponseWriter, r *http.Request, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecureCookie(r),
+		Expires:  time.Now().Add(AccessTokenTTL),
+		MaxAge:   int(AccessTokenTTL.Seconds()),
+	})
+}
+
+func clearAccessCookie(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isSecureCookie(r),
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+	})
+}
+
 func setRefreshCookie(w http.ResponseWriter, r *http.Request, token string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
@@ -145,6 +179,16 @@ func clearRefreshCookie(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
 	})
+}
+
+func SetAuthCookies(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string) {
+	setAccessCookie(w, r, accessToken)
+	setRefreshCookie(w, r, refreshToken)
+}
+
+func ClearAuthCookies(w http.ResponseWriter, r *http.Request) {
+	clearAccessCookie(w, r)
+	clearRefreshCookie(w, r)
 }
 
 /* ============================================================
