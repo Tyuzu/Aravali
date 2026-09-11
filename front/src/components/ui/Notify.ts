@@ -9,6 +9,7 @@ import { addSystemLog } from "../../utils/idxDB.js"; // Import IndexedDB persist
 export type NotificationType = "info" | "success" | "error" | "warning";
 
 export interface NotifyOptions {
+  userId?: string; // Optional explicit userId override
   title?: string;
   type?: NotificationType;
   duration?: number;
@@ -37,7 +38,13 @@ const Notify = (
   message: string,
   options?: NotifyOptions | NotificationType
 ): HTMLDivElement => {
-  const { title = "", type = "info", duration = 0, dismissible = true } = normalizeNotifyOptions(options);
+  const normalizedOptions = normalizeNotifyOptions(options);
+  const { title = "", type = "info", duration = 0, dismissible = true } = normalizedOptions;
+
+  // Resolve current user ID from options, or directly from state ("user.id" or "userId")
+  const currentUser = getState("user") as { id?: string } | undefined;
+  const currentUserId = normalizedOptions.userId ?? currentUser?.id ?? (getState("userId") as string | undefined);
+
   // Track browser window timeouts
   let hideTimeoutId: number | null = null;
   let removeTimeoutId: number | null = null;
@@ -102,13 +109,18 @@ const Notify = (
   playSoundAlert({ type: "notification" });
 
   // Persistent System Log Storage (Async save to IndexedDB)
-  addSystemLog({
-    title: title || type.charAt(0).toUpperCase() + type.slice(1) + " Alert",
-    message: message,
-    type: type,
-  }).catch((err: unknown) => {
-    console.error("Failed to persist notification to IndexedDB:", err);
-  });
+  if (currentUserId) {
+    addSystemLog({
+      userId: currentUserId,
+      title: title || type.charAt(0).toUpperCase() + type.slice(1) + " Alert",
+      message: message,
+      type: type,
+    }).catch((err: unknown) => {
+      console.error("Failed to persist notification to IndexedDB:", err);
+    });
+  } else {
+    console.warn("Notification rendered without active user session; skipped IndexedDB persistence.");
+  }
 
   return notify;
 };
