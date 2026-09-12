@@ -56,7 +56,7 @@ const Button = (...args: any[]): HTMLButtonElement => {
     "button",
     {
       id,
-      class: `button ${classes}`.trim(),
+      class: `${classes}`.trim(),
       style: styles,
       events: events as Record<string, EventListenerOrEventListenerObject>,
       ...rest

@@ -20,23 +20,29 @@
 }
 
 /* =========================================================
-   MAIN CATALOGUE
+   MAIN CATALOGUE & HEADINGS
    ========================================================= */
 
 .catalogue-main {
   min-width: 0;
 }
 
-.catalogue-main>h2 {
-  margin: 0 0 var(--space-md);
+.catalogue-main > h2,
+.nimgcon h4,
+.aside-title,
+.aside-section h3 {
   color: var(--color-fg);
-  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-heading);
 }
 
+.catalogue-main > h2 {
+  margin: 0 0 var(--space-md);
+  font-size: var(--font-size-2xl);
+}
+
 /* =========================================================
-   TOP CONTROLS
+   TOP CONTROLS (SEARCH & SORT)
    ========================================================= */
 
 .top-controls {
@@ -64,7 +70,6 @@
 }
 
 .search-box {
-  flex: 1;
   min-width: 0;
   padding: 0 var(--space-md);
 }
@@ -87,9 +92,68 @@
 .search-box:focus,
 .sort-box:focus {
   border-color: var(--color-input-focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb,
-      var(--color-input-focus) 15%,
-      transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-input-focus) 15%, transparent);
+}
+
+/* =========================================================
+   BUTTONS (BASE & VARIANTS)
+   ========================================================= */
+
+.tabs .buttonx,
+.catalogue-layout .button {
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.catalogue-layout .button {
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-md);
+}
+
+.catalogue-layout .button:active {
+  transform: translateY(1px);
+}
+
+.catalogue-layout .button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* CTA Buttons */
+.cta-list .button {
+  width: 100%;
+  min-height: 42px;
+}
+
+.cta-list .primary {
+  color: var(--color-btn-fg);
+  background: var(--color-btn-bg);
+  border: 1px solid var(--color-primary);
+}
+
+.cta-list .primary:hover {
+  background: var(--color-btn-hover-bg);
+  border-color: var(--color-primary-hover);
+}
+
+.cta-list .secondary {
+  color: var(--color-fg);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.cta-list .secondary:hover {
+  color: var(--color-primary);
+  background: var(--color-card-hover);
+  border-color: var(--color-primary);
 }
 
 /* =========================================================
@@ -109,20 +173,11 @@
   flex: 0 0 auto;
   min-height: 40px;
   padding: 0 var(--space-md);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
   color: var(--color-muted);
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  cursor: pointer;
   white-space: nowrap;
-  transition:
-    color var(--transition-fast),
-    background-color var(--transition-fast),
-    border-color var(--transition-fast),
-    transform var(--transition-fast);
 }
 
 .tabs .buttonx:hover {
@@ -162,7 +217,7 @@
 }
 
 /* =========================================================
-   CROP CARD
+   CROP CARD & MEDIA
    ========================================================= */
 
 .crop-card {
@@ -187,10 +242,6 @@
   box-shadow: var(--shadow-elev-2);
 }
 
-/* =========================================================
-   CROP IMAGE
-   ========================================================= */
-
 .crop-card-image {
   display: block;
   width: 100%;
@@ -200,7 +251,7 @@
 }
 
 /* =========================================================
-   CROP CONTENT
+   CROP CARD CONTENT
    ========================================================= */
 
 .nimgcon {
@@ -213,22 +264,28 @@
 
 .nimgcon h4 {
   margin: 0 0 var(--space-xs);
-  color: var(--color-fg);
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-heading);
   text-transform: capitalize;
 }
 
-.crop-info {
-  margin: 0 0 var(--space-sm);
+.nimgcon .buttonx {
+  min-height: 40px;
+  margin-top: auto;
+}
+
+.crop-info,
+.promo-list li {
   color: var(--color-muted);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
 }
 
+.crop-info {
+  margin: 0 0 var(--space-sm);
+}
+
 /* =========================================================
-   SEASON INDICATOR
+   SEASON INDICATOR & TAGS
    ========================================================= */
 
 .season-indicator {
@@ -243,17 +300,9 @@
 
 .season-indicator.off-season {
   color: var(--color-danger);
-  background: color-mix(in srgb,
-      var(--color-danger) 10%,
-      var(--color-bg));
-  border: 1px solid color-mix(in srgb,
-      var(--color-danger) 25%,
-      var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-border));
 }
-
-/* =========================================================
-   TAGS
-   ========================================================= */
 
 .tag-wrap {
   display: flex;
@@ -267,111 +316,6 @@
   display: none;
 }
 
-/* =========================================================
-   VIEW FARMS BUTTON
-   ========================================================= */
-
-.nimgcon .buttonx {
-  min-height: 40px;
-  margin-top: auto;
-}
-
-.catalogue-layout .button {
-  padding: 0 var(--space-md);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition:
-    background-color var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.catalogue-layout .button:active {
-  transform: translateY(1px);
-}
-
-.catalogue-layout .button:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* =========================================================
-   ASIDE
-   ========================================================= */
-
-/* 
-.layout-aside {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-*/
-.aside-title {
-  margin: 0;
-  padding-bottom: var(--space-sm);
-  color: var(--color-fg);
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-heading);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.aside-section {
-  padding: var(--space-md);
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-elev-1);
-}
-
-.aside-section h3 {
-  margin: 0 0 var(--space-sm);
-  color: var(--color-fg);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-heading);
-}
-
-/* =========================================================
-   ACTIONS
-   ========================================================= */
-
-
-
-.cta-list .button {
-  width: 100%;
-  min-height: 42px;
-}
-
-/* Primary action */
-.cta-list .primary {
-  color: var(--color-btn-fg);
-  background: var(--color-btn-bg);
-  border: 1px solid var(--color-primary);
-}
-
-.cta-list .primary:hover {
-  background: var(--color-btn-hover-bg);
-  border-color: var(--color-primary-hover);
-}
-
-/* Secondary actions */
-.cta-list .secondary {
-  color: var(--color-fg);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-}
-
-.cta-list .secondary:hover {
-  color: var(--color-primary);
-  background: var(--color-card-hover);
-  border-color: var(--color-primary);
-}
 
 /* =========================================================
    PROMOTIONS / HIGHLIGHTS
@@ -399,9 +343,6 @@
 .promo-list li {
   position: relative;
   padding-left: var(--space-md);
-  color: var(--color-muted);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
 }
 
 .promo-list li::before {
@@ -415,15 +356,58 @@
   border-radius: var(--radius-circle);
 }
 
-.promo-list li+li {
+.promo-list li + li {
   padding-top: var(--space-sm);
   border-top: 1px solid var(--color-border-light);
 }
 
+/* View Toggle Controls */
+.view-toggle-group {
+  display: flex;
+  gap: var(--space-xs, 4px);
+  margin-left: auto;
+}
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  width: 44px;
+  border: 1px solid var(--color-input-border, #ccc);
+  background: var(--color-input-bg, #fff);
+  border-radius: var(--radius-md, 6px);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all var(--transition-fast, 0.2s);
+}
+
+.view-btn.active {
+  background: var(--color-primary, #007bff);
+  color: #fff;
+  border-color: var(--color-primary, #007bff);
+}
+
+/* List View Container Overrides */
+.tab-content.list-view {
+  flex-direction: column;
+}
+
+.tab-content.list-view .crop-card {
+  width: 100%;
+  flex-direction: row;
+}
+
+.tab-content.list-view .crop-card-image {
+  width: 200px;
+  height: 100%;
+}
+
 /* =========================================================
-   TABLET
+   MEDIA QUERIES
    ========================================================= */
 
+/* Tablet */
 @media (width <= 1100px) {
   .two-column.catalogue-layout {
     grid-template-columns: minmax(0, 1fr) 280px;
@@ -435,10 +419,7 @@
   }
 }
 
-/* =========================================================
-   SMALL TABLET
-   ========================================================= */
-
+/* Small Tablet */
 @media (width <= 850px) {
   .two-column.catalogue-layout {
     grid-template-columns: 1fr;
@@ -462,16 +443,13 @@
   }
 }
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
+/* Mobile */
 @media (width <= 600px) {
   .cropspage {
     padding: var(--space-md) var(--space-sm);
   }
 
-  .catalogue-main>h2 {
+  .catalogue-main > h2 {
     font-size: var(--font-size-xl);
   }
 
@@ -507,10 +485,7 @@
   }
 }
 
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
+/* Small Mobile */
 @media (width <= 400px) {
   .cropspage {
     padding: var(--space-sm);
@@ -539,10 +514,7 @@
   }
 }
 
-/* =========================================================
-   ACCESSIBILITY / REDUCED MOTION
-   ========================================================= */
-
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .crop-card,
   .tabs .buttonx,

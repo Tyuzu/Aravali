@@ -1,199 +1,551 @@
+/* ==========================================================================
+   FLUENT DESIGN SYSTEM TOKENS & VARIABLES
+   ========================================================================== */
+:root {
+  --fluent-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* Color Palette - Light Theme */
+  --fluent-bg-canvas: #f3f3f3;
+  --fluent-bg-card: #ffffff;
+  --fluent-bg-secondary: #fafafa;
+  --fluent-bg-tertiary: #f0f0f0;
+  --fluent-fg-primary: #242424;
+  --fluent-fg-secondary: #616161;
+  --fluent-border-subtle: #e0e0e0;
+  --fluent-border-strong: #d1d1d1;
+
+  /* Accent & Interaction Colors */
+  --fluent-accent: #0078d4;
+  --fluent-accent-hover: #106ebe;
+  --fluent-accent-active: #005a9e;
+  --fluent-accent-light: #eff6fc;
+
+  /* Status & Badge Colors */
+  --fluent-badge-bg: #fde7e9;
+  --fluent-badge-fg: #c42b1c;
+
+  /* Elevation & Shadows */
+  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
+  --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+
+  /* Geometry & Micro-Interactions */
+  --fluent-radius-sm: 4px;
+  --fluent-radius-md: 8px;
+  --fluent-radius-lg: 12px;
+  --fluent-radius-pill: 9999px;
+  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Fluent Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fluent-bg-canvas: #202020;
+    --fluent-bg-card: #2c2c2c;
+    --fluent-bg-secondary: #272727;
+    --fluent-bg-tertiary: #333333;
+    --fluent-fg-primary: #ffffff;
+    --fluent-fg-secondary: #adadad;
+    --fluent-border-subtle: #383838;
+    --fluent-border-strong: #444444;
+
+    --fluent-accent: #479ef5;
+    --fluent-accent-hover: #62abf7;
+    --fluent-accent-active: #2b88d8;
+    --fluent-accent-light: rgba(71, 158, 245, 0.15);
+
+    --fluent-badge-bg: rgba(241, 112, 123, 0.18);
+    --fluent-badge-fg: #f1707b;
+
+    --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ==========================================================================
+   PAGE CONTAINER & TITLE
+   ========================================================================== */
+
 .protoolspage {
-  max-width: var(--max-width);
+  max-width: 1280px;
   margin: 0 auto;
-  padding: var(--container-padding);
-  background-color: var(--color-bg);
-  color: var(--color-fg);
+  padding: 1.5rem;
+  background-color: var(--fluent-bg-canvas);
+  color: var(--fluent-fg-primary);
+  font-family: var(--fluent-font-family);
+  box-sizing: border-box;
 }
 
-.protoolspage h2 {
-  margin-bottom: var(--space-md);
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem 0;
+  letter-spacing: -0.01em;
+  color: var(--fluent-fg-primary);
 }
 
-.chip-container {
+/* Empty State Handling */
+.no-results {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--fluent-fg-secondary);
+  font-size: 0.95rem;
+  background-color: var(--fluent-bg-card);
+  border: 1px dashed var(--fluent-border-strong);
+  border-radius: var(--fluent-radius-md);
+  margin-top: 1rem;
+}
+
+/* ==========================================================================
+   HORIZONTAL SCROLLABLE FILTER CHIPS
+   ========================================================================== */
+
+.chips-wrapper {
+  margin-bottom: 1.25rem;
+}
+
+.chip-container.sub-nav-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-md);
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
 }
 
-.chip {
-  padding: var(--space-xs) var(--space-sm);
-  font-size: var(--font-size-sm);
-  border-radius: var(--radius-full);
-  background-color: var(--color-space);
-  color: var(--color-fg);
-  border: 1px solid var(--color-border);
+.chip-container.sub-nav-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fluent-fg-secondary);
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-pill);
+  padding: 0.4rem 1rem;
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+  transition: all var(--fluent-transition);
 }
 
-.chip:hover {
-  background-color: var(--color-btn-hover-bg);
-  color: var(--color-btn-fg);
+.chip.filter-chip:hover {
+  background-color: var(--fluent-bg-tertiary);
+  color: var(--fluent-fg-primary);
+  border-color: var(--fluent-border-strong);
 }
 
-.chip.selected {
-  background-color: var(--color-accent);
-  color: var(--color-btn-fg);
-  border: none;
+.chip.filter-chip.selected,
+.chip.filter-chip.active {
+  background-color: var(--fluent-accent);
+  color: #ffffff;
+  border-color: var(--fluent-accent);
+  font-weight: 600;
 }
+
+/* ==========================================================================
+   TOPBAR (SEARCH, SORT & PRIMARY ACTION)
+   ========================================================================== */
 
 .items-topbar {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-sm);
-  align-items: center;
-  margin-bottom: var(--space-md);
+  gap: 0.75rem;
+  background-color: var(--fluent-bg-card);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  box-shadow: var(--fluent-shadow-card);
+  margin-bottom: 1.5rem;
 }
 
-.items-topbar input[type="text"],
-.items-topbar select {
-  padding: var(--space-sm);
-  font-size: var(--font-size-base);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-bg);
-  color: var(--color-fg);
+.items-topbar input[name="searchproducts"] {
+  flex: 1 1 240px;
+  font-family: inherit;
+  font-size: 14px;
+  height: 36px;
+  padding: 0 12px;
+  background-color: var(--fluent-bg-tertiary);
+  color: var(--fluent-fg-primary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  outline: none;
+  transition: all var(--fluent-transition);
+  box-sizing: border-box;
 }
 
-.primary-button {
-  background-color: var(--color-btn-bg);
-  color: var(--color-btn-fg);
+.items-topbar select[name="sortproducts"] {
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 14px;
+  height: 36px;
+  padding: 0 12px;
+  background-color: var(--fluent-bg-tertiary);
+  color: var(--fluent-fg-primary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  outline: none;
+  cursor: pointer;
+  transition: all var(--fluent-transition);
+  box-sizing: border-box;
+}
+
+.items-topbar input[name="searchproducts"]:focus,
+.items-topbar select[name="sortproducts"]:focus {
+  background-color: var(--fluent-bg-card);
+  border-color: var(--fluent-accent);
+  box-shadow: 0 0 0 1px var(--fluent-accent);
+}
+
+.primary-button.critical-action {
+  margin-left: auto;
+  height: 36px;
+  padding: 0 1.25rem;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--fluent-accent);
   border: none;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-sm);
+  border-radius: var(--fluent-radius-sm);
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition: background-color var(--fluent-transition), transform var(--fluent-transition);
 }
 
-.primary-button:hover {
-  background-color: var(--color-btn-hover-bg);
+.primary-button.critical-action:hover {
+  background-color: var(--fluent-accent-hover);
 }
 
-
-
-
-
-.tool-card:hover {
-  box-shadow: var(--shadow-elev-2);
+.primary-button.critical-action:active {
+  background-color: var(--fluent-accent-active);
+  transform: scale(0.98);
 }
 
-.tool-card h3 {
-  margin-bottom: var(--space-xs);
+/* ==========================================================================
+   PRODUCT & TOOL GRID CARDS
+   ========================================================================== */
+
+.items-grid,
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
 }
 
-.tool-card p {
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--space-xs);
-}
-
-.quantity-control {
+.menu-card,
+.product-card {
   display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-sm);
+  flex-direction: column;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  box-shadow: var(--fluent-shadow-card);
+  overflow: hidden;
+  transition: transform var(--fluent-transition), box-shadow var(--fluent-transition), border-color var(--fluent-transition);
 }
 
-.quantity-control button {
-  padding: var(--space-xs) var(--space-sm);
-  font-size: var(--font-size-base);
-  border-radius: var(--radius-sm);
-
-  /* background-color: var(--color-space); */
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-}
-
-.quantity-value {
-  font-size: var(--font-size-base);
-  font-weight: bold;
-}
-
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-lg);
-}
-
-.secondary-button {
-  background-color: var(--color-space);
-  color: var(--color-fg);
-  border: 1px solid var(--color-border);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-}
-
-.secondary-button:hover {
-  background-color: var(--color-btn-hover-bg);
-  color: var(--color-btn-fg);
-}
-
-
-
-
+.menu-card:hover,
 .product-card:hover {
-  box-shadow: var(--shadow-elev-2);
+  transform: translateY(-2px);
+  box-shadow: var(--fluent-shadow-hover);
+  border-color: var(--fluent-border-strong);
 }
 
-.protoolspage .image-gallery {
-  margin-bottom: var(--space-sm);
-}
-
-.protoolspage .image-gallery img {
-  aspect-ratio: 7/3;
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-}
-
-.product-card h3 {
-  margin-bottom: var(--space-xs);
-}
-
-.product-card p {
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--space-xs);
-}
-
-.quantity-control {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-sm);
-}
-
-.quantity-control button {
-  padding: var(--space-xs) var(--space-sm);
-  font-size: var(--font-size-base);
-  border-radius: var(--radius-sm);
-
-  /* background-color: var(--color-space); */
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-}
-
-.quantity-value {
-  font-size: var(--font-size-base);
-  font-weight: bold;
-}
-
+/* Card Media Header */
 .image-section {
   position: relative;
-  margin-bottom: var(--space-md);
+  width: 100%;
+  height: 180px;
+  background-color: var(--fluent-bg-tertiary);
 }
 
 .image-section img {
   width: 100%;
-  height: auto;
-  aspect-ratio: 7 / 3;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-elev-1);
+  height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.overlay-edit-btn,
+.edit-banner-pic {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fluent-fg-primary);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all var(--fluent-transition);
+}
+
+@media (prefers-color-scheme: dark) {
+  .overlay-edit-btn,
+  .edit-banner-pic {
+    background: rgba(44, 44, 44, 0.8);
+  }
+}
+
+.overlay-edit-btn:hover,
+.edit-banner-pic:hover {
+  background: var(--fluent-bg-card);
+  border-color: var(--fluent-border-strong);
+}
+
+/* Card Content Details */
+.card-details {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.card-header-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.item-title,
+.product-card > h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--fluent-fg-primary);
+}
+
+/* Hide residual top title if duplicated inside details */
+.product-card > h3 {
+  display: none;
+}
+
+.category-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fluent-accent);
+  background-color: var(--fluent-accent-light);
+  padding: 2px 8px;
+  border-radius: var(--fluent-radius-pill);
+  white-space: nowrap;
+}
+
+.item-description {
+  font-size: 0.85rem;
+  color: var(--fluent-fg-secondary);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Card Pricing Row */
+.card-pricing {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.current-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fluent-fg-primary);
+}
+
+.original-price.strike {
+  font-size: 0.85rem;
+  color: var(--fluent-fg-secondary);
+  text-decoration: line-through;
+}
+
+.discount-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--fluent-radius-sm);
+  background-color: var(--fluent-badge-bg);
+  color: var(--fluent-badge-fg);
+}
+
+/* Card Action Controls & Quantity Selector */
+.card-actions {
+  padding: 0.85rem 1rem 1rem;
+  background-color: var(--fluent-bg-secondary);
+  border-top: 1px solid var(--fluent-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quantity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.quantity-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--fluent-fg-secondary);
+}
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  overflow: hidden;
+}
+
+.quantity-btn {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fluent-fg-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--fluent-transition);
+}
+
+.quantity-btn:hover {
+  background-color: var(--fluent-bg-tertiary);
+}
+
+.quantity-value {
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fluent-fg-primary);
+}
+
+/* Action Buttons */
+.buttonx {
+  width: 100%;
+  height: 34px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--fluent-radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--fluent-transition);
+}
+
+.primary-action-btn {
+  background-color: var(--fluent-accent);
+  color: #ffffff;
+}
+
+.primary-action-btn:hover {
+  background-color: var(--fluent-accent-hover);
+}
+
+.secondary-action-btn,
+.edit-item-btn {
+  background-color: var(--fluent-bg-card);
+  color: var(--fluent-fg-primary);
+  border-color: var(--fluent-border-subtle);
+}
+
+.secondary-action-btn:hover,
+.edit-item-btn:hover {
+  background-color: var(--fluent-bg-tertiary);
+  border-color: var(--fluent-border-strong);
+}
+
+.buttonx:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   PAGINATION
+   ========================================================================== */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  font-size: 0.875rem;
+  color: var(--fluent-fg-secondary);
+}
+
+.secondary-button {
+  height: 32px;
+  padding: 0 0.85rem;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: var(--fluent-bg-card);
+  color: var(--fluent-fg-primary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  cursor: pointer;
+  transition: all var(--fluent-transition);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background-color: var(--fluent-bg-tertiary);
+  border-color: var(--fluent-border-strong);
+}
+
+.secondary-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--fluent-border-subtle);
+}
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT MEDIA QUERIES
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  .protoolspage {
+    padding: 1rem 0.75rem;
+  }
+
+  .items-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .items-topbar select[name="sortproducts"],
+  .primary-button.critical-action {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .items-grid,
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
 }

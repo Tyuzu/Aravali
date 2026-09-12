@@ -18,6 +18,8 @@ export interface CropCardData {
   farmName?: string;
 }
 
+export type ViewMode = "grid" | "list";
+
 function formatPrice(value?: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -39,8 +41,14 @@ function formatCropSlug(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "_");
 }
 
-export function renderCropCard(crop: CropCardData, mode: "catalogue" | "listing" = "catalogue"): HTMLElement {
-  const card = createElement("div", { class: "crop-card" });
+export function renderCropCard(
+  crop: CropCardData,
+  viewMode: ViewMode = "grid",
+  mode: "catalogue" | "listing" = "catalogue"
+): HTMLElement {
+  const card = createElement("div", {
+    class: `crop-card ${viewMode === "list" ? "list-card" : "grid-card"}`
+  });
   const cropSlug = formatCropSlug(crop.name);
 
   card.addEventListener("click", () => navigate(`/crop/${cropSlug}`));
@@ -56,7 +64,7 @@ export function renderCropCard(crop: CropCardData, mode: "catalogue" | "listing"
 
   if (mode === "catalogue") {
     const info = createElement("p", { class: "crop-info" }, [
-      `${formatPriceRange(crop.minPrice, crop.maxPrice)} per ${crop.unit} • ${crop.availableCount} listings`
+      `${formatPriceRange(crop.minPrice, crop.maxPrice)} per ${crop.unit || "kg"} • ${crop.availableCount || 0} listings`
     ]);
 
     const inSeason = isSeasonal(crop);
@@ -73,7 +81,12 @@ export function renderCropCard(crop: CropCardData, mode: "catalogue" | "listing"
     const btn = Button({
       title: "View Farms",
       type: "button",
-      events: { click: () => navigate(`/crop/${cropSlug}`) },
+      events: {
+        click: (e: Event) => {
+          e.stopPropagation();
+          navigate(`/crop/${cropSlug}`);
+        }
+      },
       classes: "buttonx"
     });
 
