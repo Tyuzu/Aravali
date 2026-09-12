@@ -2,9 +2,9 @@ package reviews
 
 import (
 	"context"
-	"net/http"
 	"scav/infra"
 	"scav/utils"
+	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,15 +24,20 @@ func GetReviews(app *infra.Deps) http.HandlerFunc {
 
 		skip, limit := utils.ParsePagination(r, 10, 100)
 
+		filter := bson.M{
+			"entityType": entityType,
+			"entityId":   entityId,
+		}
+
 		var reviews []Review
-		if err := GetReviewsForEntity(ctx, app, entityType, entityId, &reviews); err != nil {
+		if err := app.DB.FindMany(ctx, reviewsCollection, filter, &reviews); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch reviews"})
 			return
 		}
 
 		utils.SortAndSlice(
 			&reviews,
-			[]bson.E{{Key: "createdAt", Value: -1}},
+			bson.D{{Key: "createdAt", Value: -1}},
 			int64(skip),
 			int64(limit),
 		)
@@ -54,7 +59,12 @@ func GetReview(app *infra.Deps) http.HandlerFunc {
 		reviewId := utils.GetParam(r, "reviewId")
 
 		var review Review
-		if err := GetReviewByID(r.Context(), app, reviewId, &review); err != nil {
+		if err := app.DB.FindOne(
+			r.Context(),
+			reviewsCollection,
+			bson.M{"reviewid": reviewId},
+			&review,
+		); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}

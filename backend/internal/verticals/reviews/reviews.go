@@ -11,6 +11,8 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -57,9 +59,14 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 		entityType := utils.GetParam(r, "entityType")
 		entityId := utils.GetParam(r, "entityId")
 
+		dupFilter := bson.M{
+			"userid":     userId,
+			"entityType": entityType,
+			"entityId":   entityId,
+		}
+
 		var existing Review
-		// check duplicate via SQL
-		if err := FindReviewByUserEntity(r.Context(), app, userId, entityType, entityId, &existing); err == nil {
+		if err := app.DB.FindOne(r.Context(), reviewsCollection, dupFilter, &existing); err == nil {
 			utils.RespondWithJSON(w, http.StatusConflict, map[string]string{"error": "Already reviewed"})
 			return
 		}
@@ -87,13 +94,13 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  now,
 		}
 
-		if err := InsertReview(r.Context(), app, review); err != nil {
+		if err := app.DB.Insert(r.Context(), reviewsCollection, review); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create review"})
 			return
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.ReviewCreatedPayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ReviewCreatedEvent, mqpayload)
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.ReviewCreatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusCreated, review)
 	}
@@ -115,7 +122,12 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 		reviewId := utils.GetParam(r, "reviewId")
 
 		var existing Review
-		if err := GetReviewByID(r.Context(), app, reviewId, &existing); err != nil {
+		if err := app.DB.FindOne(
+			r.Context(),
+			reviewsCollection,
+			bson.M{"reviewid": reviewId},
+			&existing,
+		); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}
@@ -131,7 +143,7 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := map[string]any{
+		update := bson.M{
 			"updatedAt": time.Now().UTC(),
 		}
 
@@ -152,10 +164,10 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := UpdateReviewByID(
+		if _, err := app.DB.Update(
 			r.Context(),
-			app,
-			reviewId,
+			reviewsCollection,
+			bson.M{"reviewid": reviewId},
 			update,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update review"})
@@ -163,7 +175,7 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.ReviewUpdatedPayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ReviewUpdatedEvent, mqpayload)
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.ReviewUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "Review updated"})
 	}
@@ -185,7 +197,12 @@ func DeleteReview(app *infra.Deps) http.HandlerFunc {
 		reviewId := utils.GetParam(r, "reviewId")
 
 		var review Review
-		if err := GetReviewByID(r.Context(), app, reviewId, &review); err != nil {
+		if err := app.DB.FindOne(
+			r.Context(),
+			reviewsCollection,
+			bson.M{"reviewid": reviewId},
+			&review,
+		); err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}
@@ -195,17 +212,17 @@ func DeleteReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := DeleteReviewByID(
+		if _, err := app.DB.Delete(
 			r.Context(),
-			app,
-			reviewId,
+			reviewsCollection,
+			bson.M{"reviewid": reviewId},
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to delete review"})
 			return
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.ReviewDeletedPayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ReviewDeletedEvent, mqpayload)
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.ReviewDeletedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "Review deleted"})
 	}
