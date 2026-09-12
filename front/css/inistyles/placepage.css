@@ -168,41 +168,6 @@
   display: block;
 }
 
-.edit-banner-pic {
-  position: absolute;
-  bottom: 0.85rem;
-  right: 0.85rem;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--fluent-fg-primary);
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-sm);
-  padding: 0.4rem 0.75rem;
-  cursor: pointer;
-  box-shadow: var(--fluent-shadow-card);
-  transition: all var(--fluent-transition);
-}
-
-@media (prefers-color-scheme: dark) {
-  .edit-banner-pic {
-    background: rgba(44, 44, 44, 0.75);
-  }
-}
-
-.edit-banner-pic:hover {
-  background: var(--fluent-bg-card);
-  border-color: var(--fluent-border-strong);
-  transform: translateY(-1px);
-}
-
-.edit-banner-pic:active {
-  transform: scale(0.98);
-}
-
 /* Details Section Details */
 .placedetails h1 {
   display: none; /* Hidden to avoid duplication with header title */
