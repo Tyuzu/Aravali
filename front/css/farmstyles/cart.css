@@ -167,7 +167,6 @@
    Buttons Framework
    ========================================================================== */
 
-.button, 
 .primary-button {
   font-family: var(--font-body);
   font-size: var(--font-size-sm);
@@ -184,8 +183,6 @@
 }
 
 /* Primary Button */
-.button.primary,
-.buttonx.primary,
 .primary-button,
 #checkout-all-btn,
 #confirm-order-btn {
@@ -193,8 +190,6 @@
   color: var(--color-btn-fg);
 }
 
-.button.primary:hover,
-.buttonx.primary:hover,
 .primary-button:hover,
 #checkout-all-btn:hover,
 #confirm-order-btn:hover {
@@ -202,22 +197,18 @@
 }
 
 /* Secondary Button */
-.button.secondary,
-.buttonx.secondary,
 .secondary-button {
   background-color: var(--color-bg-tertiary);
   color: var(--color-fg);
   border-color: var(--color-border);
 }
 
-.button.secondary:hover,
-.buttonx.secondary:hover,
 .secondary-button:hover {
   background-color: var(--color-border-light);
 }
 
 /* Subtle Quantity Buttons */
-.button.subtle,
+/* .button.subtle,
 .buttonx.subtle {
   background-color: var(--color-card-bg);
   color: var(--color-fg);
@@ -231,10 +222,10 @@
 .buttonx.subtle:hover {
   background-color: var(--color-bg-tertiary);
   border-color: var(--color-muted);
-}
+} */
 
 /* Danger Button */
-.button.danger,
+/* .button.danger,
 .buttonx.danger {
   background-color: transparent;
   color: var(--color-danger);
@@ -244,7 +235,7 @@
 .button.danger:hover,
 .buttonx.danger:hover {
   background-color: #fee2e2;
-}
+} */
 
 /* Full Width Block Buttons (Section Checkout) */
 .cart-category > .button.primary,

@@ -1,257 +1,510 @@
-/* =========================
-   DASHBOARD LAYOUT
-========================= */
+/* ==========================================================================
+   FLUENT DESIGN SYSTEM TOKENS & DESIGN VARIABLES
+   ========================================================================== */
+:root {
+  --fluent-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* Color Palette - Light Mode */
+  --fluent-bg-canvas: #f3f3f3;
+  --fluent-bg-card: #ffffff;
+  --fluent-bg-secondary: #fafafa;
+  --fluent-bg-tertiary: #f0f0f0;
+  --fluent-fg-primary: #242424;
+  --fluent-fg-secondary: #616161;
+  --fluent-border-subtle: #e0e0e0;
+  --fluent-border-strong: #d1d1d1;
+
+  /* Fluent Accent & Interactive Colors */
+  --fluent-accent: #0078d4;
+  --fluent-accent-hover: #106ebe;
+  --fluent-accent-active: #005a9e;
+  --fluent-accent-light: #eff6fc;
+
+  /* Status Colors (Pills & Badges) */
+  --fluent-success-fg: #107c41;
+  --fluent-success-bg: #dff6dd;
+  --fluent-warning-fg: #797775;
+  --fluent-warning-bg: #fff4ce;
+  --fluent-danger-fg: #c42b1c;
+  --fluent-danger-bg: #fde7e9;
+
+  /* Fluent Elevation & Shadows */
+  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
+  --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --fluent-shadow-flyout: 0 16px 32px rgba(0, 0, 0, 0.12), 0 0 2px rgba(0, 0, 0, 0.08);
+
+  /* Corner Radii & Transitions */
+  --fluent-radius-sm: 4px;
+  --fluent-radius-md: 8px;
+  --fluent-radius-lg: 12px;
+  --fluent-radius-pill: 9999px;
+  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Fluent Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fluent-bg-canvas: #202020;
+    --fluent-bg-card: #2c2c2c;
+    --fluent-bg-secondary: #272727;
+    --fluent-bg-tertiary: #333333;
+    --fluent-fg-primary: #ffffff;
+    --fluent-fg-secondary: #adadad;
+    --fluent-border-subtle: #383838;
+    --fluent-border-strong: #444444;
+
+    --fluent-accent: #479ef5;
+    --fluent-accent-hover: #62abf7;
+    --fluent-accent-active: #2b88d8;
+    --fluent-accent-light: rgba(71, 158, 245, 0.15);
+
+    --fluent-success-fg: #6ccb5f;
+    --fluent-success-bg: rgba(108, 203, 95, 0.18);
+    --fluent-warning-fg: #fce100;
+    --fluent-warning-bg: rgba(252, 225, 0, 0.18);
+    --fluent-danger-fg: #f1707b;
+    --fluent-danger-bg: rgba(241, 112, 123, 0.18);
+
+    --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* ==========================================================================
+   PAGE LAYOUT & CONTAINER STYLING
+   ========================================================================== */
 
 .farmdashpage {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: var(--space-sm);
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--fluent-bg-canvas);
+  color: var(--fluent-fg-primary);
+  font-family: var(--fluent-font-family);
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
 
-.dashboard-section {
-  border: 1px solid #e4e8ee;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 10px;
-  margin-top: 10px;
+.tabs-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-lg);
+  box-shadow: var(--fluent-shadow-card);
+  overflow: hidden;
 }
 
-.dashboard-section h3 {
-  margin-top: 0;
-  margin-bottom: 14px;
-  font-size: 1.05rem;
-  font-weight: 600;
-}
+/* ==========================================================================
+   FLUENT TAB NAVIGATION
+   ========================================================================== */
 
-/* =========================
-   SUMMARY CARDS
-========================= */
-
-.stats-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  min-height: 80px;
+.tab-buttons {
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-weight: 600;
-  transition: transform 0.15s ease,
-              box-shadow 0.15s ease;
+  gap: 0.25rem;
+  background-color: var(--fluent-bg-secondary);
+  border-bottom: 1px solid var(--fluent-border-subtle);
+  padding: 0.5rem 0.75rem 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 16px rgb(0 0 0 / 8%);
+.tab-buttons::-webkit-scrollbar {
+  display: none;
 }
 
-/* =========================
-   ALERTS
-========================= */
-
-.alerts ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.alerts li {
-  margin-bottom: 10px;
+.tab-button {
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 500;
-  color: #b45309;
+  color: var(--fluent-fg-secondary);
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: var(--fluent-radius-sm) var(--fluent-radius-sm) 0 0;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  white-space: nowrap;
+  transition: all var(--fluent-transition);
 }
 
-/* =========================
-   RECOMMENDATIONS
-========================= */
-
-.dashboard-section ul {
-  margin: 0;
-  padding-left: 20px;
+.tab-button:hover {
+  color: var(--fluent-fg-primary);
+  background-color: var(--fluent-bg-card);
 }
 
-.dashboard-section li {
-  margin-bottom: 8px;
+.tab-button:focus-visible {
+  outline: 2px solid var(--fluent-accent);
+  outline-offset: -2px;
 }
 
-/* =========================
-   INVENTORY
-========================= */
-
-.crop-distribution {
-  border: 1px solid #e4e8ee;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 20px;
+.tab-button.active,
+.tab-button[aria-selected="true"] {
+  color: var(--fluent-accent);
+  font-weight: 600;
+  background-color: var(--fluent-bg-card);
+  border-bottom-color: var(--fluent-accent);
 }
 
-.crop-distribution h3 {
-  margin-top: 0;
+/* ==========================================================================
+   TAB CONTENT PANELS
+   ========================================================================== */
+
+.tab-contents {
+  padding: 1.75rem;
 }
 
-.crop-distribution ul {
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fluentFadeIn 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@keyframes fluentFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-section,
+.my-farm-content,
+.orders-page {
+  margin-bottom: 2rem;
+}
+
+.dashboard-section h3,
+.orders-page h2,
+.my-farms-page h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--fluent-fg-primary);
+}
+
+.dashboard-section p {
+  color: var(--fluent-fg-secondary);
+  font-size: 0.9rem;
+}
+
+.dashboard-section ul,
+.farm-crops ul,
+.farm-availability {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.crop-distribution li {
-  padding: 12px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  margin-bottom: 10px;
+.dashboard-section li,
+.farm-crops li,
+.farm-availability li {
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 0.4rem;
+  background-color: var(--fluent-bg-secondary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  font-size: 0.875rem;
 }
 
-.crop-distribution li:hover {
-  background: #f3f4f6;
+/* ==========================================================================
+   STATS CARDS GRID (OVERVIEW TAB)
+   ========================================================================== */
+
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-/* =========================
-   FARM INFO
-========================= */
-
-.farm-extra {
-  border: 1px solid #e4e8ee;
-  border-radius: 12px;
-  padding: 18px;
-}
-
-.farm-extra h3 {
-  margin-top: 0;
-}
-
-.farm-extra p {
-  margin: 8px 0;
-  font-size: 14px;
-}
-
-/* =========================
-   EMPTY STATE
-========================= */
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-}
-
-.empty-state h3 {
-  margin-top: 0;
-}
-
-.create-farm-btn {
-  display: inline-block;
-  margin-top: 16px;
-  padding: 10px 16px;
-  background: #16a34a;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
+.stat-card {
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
   font-weight: 600;
+  color: var(--fluent-fg-primary);
+  box-shadow: var(--fluent-shadow-card);
+  transition: transform var(--fluent-transition), box-shadow var(--fluent-transition);
 }
 
-.create-farm-btn:hover {
-  opacity: 0.9;
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--fluent-shadow-hover);
+  border-color: var(--fluent-border-strong);
 }
 
-/* =========================
-   GUEST DASHBOARD
-========================= */
+/* ==========================================================================
+   ORDERS TAB: FILTERS & BULK ACTIONS CONTROL BARS
+   ========================================================================== */
 
-.dash-guest {
-  max-width: 700px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.dash-guest ul {
-  display: inline-block;
-  text-align: left;
-}
-
-/* =========================
-   LEGACY FILTERS
-========================= */
-
-.filters {
+.filters-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: flex-end;
+  gap: 1rem;
+  background-color: var(--fluent-bg-secondary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
 
-.filters label {
+.filters-section label {
   display: flex;
   flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--fluent-fg-secondary);
+}
+
+.filters-section input[type="text"],
+.filters-section input[type="date"],
+.filters-section select {
+  font-family: inherit;
   font-size: 14px;
+  height: 34px;
+  padding: 0 10px;
+  background-color: var(--fluent-bg-card);
+  color: var(--fluent-fg-primary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  outline: none;
+  transition: border-color var(--fluent-transition);
+  box-sizing: border-box;
 }
 
-.filters select,
-.filters input[type="date"] {
-  padding: 8px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+.filters-section input:focus,
+.filters-section select:focus {
+  border-color: var(--fluent-accent);
+  box-shadow: 0 0 0 1px var(--fluent-accent);
 }
 
-.filters button {
-  padding: 8px 15px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-/* =========================
-   BULK ACTIONS
-========================= */
-
-.bulk-actions {
+.bulk-actions-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.bulk-actions button {
-  background: #475569;
-  color: white;
+/* Button UI Components */
+.buttonx,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  height: 34px;
+  padding: 0 1rem;
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  background-color: var(--fluent-bg-secondary);
+  color: var(--fluent-fg-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--fluent-transition);
+}
+
+.primary-button {
+  background-color: var(--fluent-accent);
+  color: #ffffff;
   border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
+}
+
+.primary-button:hover {
+  background-color: var(--fluent-accent-hover);
+}
+
+.success-button {
+  background-color: var(--fluent-success-bg);
+  color: var(--fluent-success-fg);
+  border-color: transparent;
+}
+
+.success-button:hover {
+  filter: brightness(0.95);
+}
+
+.danger-button {
+  background-color: var(--fluent-danger-bg);
+  color: var(--fluent-danger-fg);
+  border-color: transparent;
+}
+
+.danger-button:hover {
+  filter: brightness(0.95);
+}
+
+.small-button {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.buttonx:active,
+.primary-button:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   FLUENT DATAGRID / ORDERS TABLE
+   ========================================================================== */
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  overflow: hidden;
+}
+
+.orders-table th {
+  background-color: var(--fluent-bg-secondary);
+  color: var(--fluent-fg-secondary);
+  font-weight: 600;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--fluent-border-subtle);
+  white-space: nowrap;
+}
+
+.orders-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--fluent-border-subtle);
+  color: var(--fluent-fg-primary);
+  white-space: nowrap;
+}
+
+.orders-table tbody tr {
+  transition: background-color var(--fluent-transition);
+}
+
+.orders-table tbody tr:hover {
+  background-color: var(--fluent-bg-tertiary);
+}
+
+.orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Custom Checkbox Alignment */
+.orders-table input[type="checkbox"] {
+  accent-color: var(--fluent-accent);
+  width: 16px;
+  height: 16px;
   cursor: pointer;
 }
 
-.bulk-actions button:hover {
-  opacity: 0.9;
+.action-buttons {
+  display: flex;
+  gap: 0.35rem;
 }
 
-/* =========================
-   MOBILE
-========================= */
+/* Status Badges & Pills */
+.payment-status,
+.order-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--fluent-radius-pill);
+}
 
-@media (width <= 768px) {
+.payment-paid,
+.status-delivered {
+  background-color: var(--fluent-success-bg);
+  color: var(--fluent-success-fg);
+}
+
+.payment-pending,
+.status-pending {
+  background-color: var(--fluent-warning-bg);
+  color: var(--fluent-warning-fg);
+}
+
+.payment-unpaid,
+.status-rejected {
+  background-color: var(--fluent-danger-bg);
+  color: var(--fluent-danger-fg);
+}
+
+/* ==========================================================================
+   MY FARM TAB STYLING
+   ========================================================================== */
+
+.my-farm-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.farm-header {
+  background-color: var(--fluent-bg-secondary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  padding: 1.25rem;
+}
+
+.farm-header h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.farm-header p {
+  margin: 0.25rem 0;
+  color: var(--fluent-fg-secondary);
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .orders-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-section label {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .farmdashpage {
+    padding: 0.5rem;
+  }
+
+  .tab-contents {
+    padding: 1rem;
+  }
+
   .stats-summary {
     grid-template-columns: 1fr;
   }
 
-  .stat-card {
-    min-height: 70px;
+  .bulk-actions-section {
+    flex-direction: column;
   }
 
-  .dashboard-section,
-  .crop-distribution,
-  .farm-extra {
-    padding: 14px;
+  .bulk-actions-section button {
+    width: 100%;
   }
 }

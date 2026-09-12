@@ -3,7 +3,8 @@ import Modal from "../../components/ui/Modal.js";
 import { createElement } from "../../components/createElement.js";
 import { getNotifications } from "./notifService.js";
 import * as idxDB from "../../utils/idxDB.js";
-import { getUserId, syncUnreadNotificationState } from "./notifState.js";
+import { syncUnreadNotificationState } from "./notifState.js";
+import { getUserId } from "../../utils/getUserID.js";
 import {
   createActionBar,
   createNotificationCard,
@@ -176,7 +177,8 @@ export async function openNotificationsModal(): Promise<void> {
 
     let logs: SystemLog[] = [];
     try {
-      logs = (await idxDB.getAll()) || [];
+      // Pass the current user ID to isolate logs
+      logs = userId ? ((await idxDB.getAll(userId)) || []) : [];
       logs.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (err) {
       console.error("Failed to fetch system logs from IndexedDB:", err);
@@ -200,12 +202,13 @@ export async function openNotificationsModal(): Promise<void> {
       return;
     }
 
-    const actionBar = createSystemActionBar(filtered, renderSystemTab);
+    // Pass userId so action bar / action cards can perform scoped operations (clear, mark read, delete)
+    const actionBar = createSystemActionBar(userId, filtered, renderSystemTab);
     if (actionBar) tabContentView.appendChild(actionBar);
 
     const listContainer = createElement("div", { class: "notification-list" });
     filtered.forEach((log) => {
-      listContainer.appendChild(createSystemLogCard(log, renderSystemTab));
+      listContainer.appendChild(createSystemLogCard(userId, log, renderSystemTab));
     });
     tabContentView.appendChild(listContainer);
   }

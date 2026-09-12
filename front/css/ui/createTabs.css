@@ -1,155 +1,243 @@
 /* ==========================================================================
-   TABS CONTAINER & NAVIGATION
+   FLUENT DESIGN SYSTEM VARIABLES
+   ========================================================================== */
+:root {
+  --fluent-font: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  
+  /* Color Palette */
+  --fluent-accent: #0078d4;
+  --fluent-accent-hover: #106ebe;
+  --fluent-accent-active: #005a9e;
+  --fluent-bg: #ffffff;
+  --fluent-bg-secondary: #f3f3f3;
+  --fluent-bg-tertiary: #fafafa;
+  --fluent-fg: #242424;
+  --fluent-fg-secondary: #616161;
+  --fluent-border-subtle: #e0e0e0;
+  
+  /* Fluent Elevation & Shadows */
+  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
+  --fluent-shadow-flyout: 0 8px 16px rgba(0, 0, 0, 0.14), 0 0 2px rgba(0, 0, 0, 0.12);
+  
+  /* Geometry */
+  --fluent-radius: 4px;
+  --fluent-radius-pill: 9999px;
+  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fluent-bg: #202020;
+    --fluent-bg-secondary: #2d2d2d;
+    --fluent-bg-tertiary: #333333;
+    --fluent-fg: #ffffff;
+    --fluent-fg-secondary: #adadad;
+    --fluent-border-subtle: #383838;
+    --fluent-accent: #479ef5;
+    --fluent-accent-hover: #62abf7;
+    --fluent-accent-active: #2b88d8;
+  }
+}
+
+/* ==========================================================================
+   TABS CONTAINER
    ========================================================================== */
 
 .tabs-container {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: var(--max-width);
+  max-width: 1200px;
   margin: 0 auto;
-  color: var(--color-fg);
+  font-family: var(--fluent-font);
+  color: var(--fluent-fg);
+  box-sizing: border-box;
 }
 
-/* Tab Navigation Header Bar */
+/* ==========================================================================
+   FLUENT TAB NAVIGATION BAR
+   ========================================================================== */
+
 .tab-buttons {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  border-bottom: 2px solid var(--color-border-light);
-  background-color: var(--color-bg);
-  padding: 0 var(--space-xs);
+  flex-wrap: nowrap;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 8px 0;
+  background-color: var(--fluent-bg-tertiary);
+  border-bottom: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius) var(--fluent-radius) 0 0;
+  box-shadow: var(--fluent-shadow-card);
+  box-sizing: border-box;
   
-  /* Horizontal scrolling for smaller screens */
-  overflow: auto hidden;
+  /* Smooth Horizontal Scroll Setup */
+  overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  
-  /* Hide scrollbar while retaining functionality */
-  scrollbar-width: none; /* Firefox */
+  overscroll-behavior-x: contain;
+
+  /* Custom Minimalist Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--fluent-border-subtle) transparent;
 }
 
+/* Webkit Scrollbar Styling */
 .tab-buttons::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+  height: 3px;
 }
 
-/* Individual Tab Button */
+.tab-buttons::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-buttons::-webkit-scrollbar-thumb {
+  background-color: var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-pill);
+}
+
+.tab-buttons::-webkit-scrollbar-thumb:hover {
+  background-color: var(--fluent-fg-secondary);
+}
+
+/* ==========================================================================
+   INDIVIDUAL FLUENT TAB BUTTONS
+   ========================================================================== */
+
 .tab-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-sm) var(--space-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--line-height-normal);
-  color: var(--color-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+  min-height: 40px;
+  padding: 0 16px;
+  font-family: var(--fluent-font);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fluent-fg-secondary);
   background-color: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px; /* Overlap header border */
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-radius: var(--fluent-radius);
+  margin-bottom: 4px;
   cursor: pointer;
   user-select: none;
+  outline: none;
   transition: 
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    background-color var(--transition-fast);
+    background-color var(--fluent-transition),
+    color var(--fluent-transition),
+    transform var(--fluent-transition);
 }
 
-/* Tab Hover & Focus States */
+/* Hover Effect (Fluent Subtle Highlight) */
 .tab-button:hover {
-  color: var(--color-fg);
-  background-color: var(--color-bg-secondary);
+  color: var(--fluent-fg);
+  background-color: var(--fluent-bg-secondary);
 }
 
+/* Active Pressed / Click State */
+.tab-button:active {
+  transform: scale(0.98);
+}
+
+/* Focus Indicator (Fluent Accessibility Outline) */
 .tab-button:focus-visible {
-  outline: 2px solid var(--color-input-focus);
+  outline: 2px solid var(--fluent-accent);
   outline-offset: -2px;
-  border-radius: var(--radius-sm);
 }
 
-/* Tab Active State */
+/* Active Selected Tab & Dynamic Pill Indicator */
 .tab-button.active,
 .tab-button[aria-selected="true"] {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
-  border-bottom-color: var(--color-primary);
-  background-color: transparent;
+  color: var(--fluent-fg);
+  font-weight: 600;
+  background-color: var(--fluent-bg);
+  box-shadow: var(--fluent-shadow-card);
 }
 
+/* Fluent Accent Indicator Pill at Bottom */
+.tab-button.active::after,
+.tab-button[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 3px;
+  background-color: var(--fluent-accent);
+  border-radius: var(--fluent-radius-pill);
+  transition: width var(--fluent-transition);
+}
+
+.tab-button.active:hover::after {
+  width: 24px;
+}
 
 /* ==========================================================================
-   TAB PANELS / CONTENTS
+   TAB CONTENT PANELS
    ========================================================================== */
 
 .tab-contents {
   position: relative;
   width: 100%;
-  padding-top: var(--space-md);
+  background-color: var(--fluent-bg);
+  border: 1px solid var(--fluent-border-subtle);
+  border-top: none;
+  border-radius: 0 0 var(--fluent-radius) var(--fluent-radius);
+  padding: 20px;
+  box-shadow: var(--fluent-shadow-card);
+  box-sizing: border-box;
 }
 
-/* Panel visibility handling */
 .tab-content {
   display: none;
-  background-color: var(--color-bg);
-  border-radius: var(--radius-md);
 }
 
+/* Fluent Scale/Fade Animation on Tab Switch */
 .tab-content.active {
   display: block;
-  animation: fadeIn var(--transition-fast);
+  animation: fluentEntrance var(--fluent-transition) forwards;
 }
 
-.tab-content:focus-visible {
-  outline: 2px solid var(--color-input-focus);
-  outline-offset: 4px;
-}
-
-@keyframes fadeIn {
+@keyframes fluentEntrance {
   from {
     opacity: 0;
-    transform: translateY(2px);
+    transform: scale(0.99) translateY(2px);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
   }
 }
 
-
 /* ==========================================================================
-   INTERNAL CONTENT STYLES (Gallery / Buttons / Headings)
+   ACCESSIBILITY & RESPONSIVE SUPPORTS
    ========================================================================== */
 
-.tab-content h2 {
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-heading);
-  color: var(--color-fg);
-  margin-top: var(--space-md);
-  margin-bottom: var(--space-sm);
+@media (pointer: coarse) {
+  .tab-buttons {
+    scroll-snap-type: x mandatory;
+  }
+  
+  .tab-button {
+    scroll-snap-align: start;
+    min-height: 44px; /* Larger tap zone on touch devices */
+  }
 }
 
-.tab-content p {
-  font-size: var(--font-size-base);
-  color: var(--color-muted);
-  line-height: var(--line-height-base);
-  margin-bottom: var(--space-md);
-}
-
-/* Gallery Grid Layout */
-.media-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--space-md);
-  margin-top: var(--space-md);
-  margin-bottom: var(--space-md);
-}
-
-/* Empty State Messaging */
-.media-list:empty + p {
-  display: block;
-  font-style: italic;
-  padding: var(--space-md) 0;
+@media (prefers-reduced-motion: reduce) {
+  .tab-buttons {
+    scroll-behavior: auto;
+  }
+  .tab-content.active {
+    animation: none;
+  }
+  .tab-button {
+    transition: none;
+  }
 }

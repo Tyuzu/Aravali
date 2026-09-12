@@ -1,623 +1,573 @@
-/* =========================================================
-   FARM DIRECTORY PAGE
-   Uses the supplied :root design tokens
-   ========================================================= */
+/* ==========================================================================
+   FLUENT DESIGN SYSTEM VARIABLES & DESIGN TOKENS
+   ========================================================================== */
+:root {
+  --fluent-font: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* Fluent Color Palette */
+  --fluent-bg-page: #f3f3f3;
+  --fluent-bg-card: #ffffff;
+  --fluent-bg-tertiary: #fafafa;
+  --fluent-bg-subtle: #f0f0f0;
+  --fluent-fg: #242424;
+  --fluent-fg-muted: #616161;
+  --fluent-border-subtle: #e0e0e0;
+  --fluent-border-strong: #d1d1d1;
+
+  /* Accent Colors */
+  --fluent-accent: #0078d4;
+  --fluent-accent-hover: #106ebe;
+  --fluent-accent-active: #005a9e;
+  --fluent-accent-light: #eff6fc;
+
+  /* Fluent Depth & Elevation */
+  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
+  --fluent-shadow-card-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --fluent-shadow-flyout: 0 16px 32px rgba(0, 0, 0, 0.12), 0 0 2px rgba(0, 0, 0, 0.08);
+
+  /* Geometry & Animation */
+  --fluent-radius-sm: 4px;
+  --fluent-radius-md: 8px;
+  --fluent-radius-lg: 12px;
+  --fluent-radius-pill: 9999px;
+  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
+  --max-width: 1280px;
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fluent-bg-page: #202020;
+    --fluent-bg-card: #2c2c2c;
+    --fluent-bg-tertiary: #272727;
+    --fluent-bg-subtle: #333333;
+    --fluent-fg: #ffffff;
+    --fluent-fg-muted: #adadad;
+    --fluent-border-subtle: #383838;
+    --fluent-border-strong: #444444;
+    --fluent-accent: #479ef5;
+    --fluent-accent-hover: #62abf7;
+    --fluent-accent-active: #2b88d8;
+    --fluent-accent-light: rgba(71, 158, 245, 0.15);
+    --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --fluent-shadow-card-hover: 0 8px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ==========================================================================
+   PAGE CONTAINER & TWO-COLUMN GRID
+   ========================================================================== */
 
 .farmspage {
-    width: 100%;
-    padding: var(--space-md) var(--space-sm);
+  width: 100%;
+  background-color: var(--fluent-bg-page);
+  min-height: 100vh;
+  padding: 1.5rem 1rem;
+  font-family: var(--fluent-font);
+  color: var(--fluent-fg);
+  box-sizing: border-box;
 }
 
 .two-column.farm-page {
-    width: 100%;
-    max-width: var(--max-width-xl);
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: var(--space-lg);
-    align-items: start;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  align-items: start;
 }
 
+.layout-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
 
-/* =========================================================
-   FILTER BAR
-   ========================================================= */
+.layout-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Sticky Sidebar */
+.aside-container {
+  position: sticky;
+  top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ==========================================================================
+   FLUENT FILTER CONTROL BAR
+   ========================================================================== */
 
 .farm__filters {
-    display: grid;
-    grid-template-columns: minmax(220px, 1fr) 180px minmax(180px, 240px) auto;
-    gap: var(--space-sm);
-    align-items: center;
-    margin-bottom: var(--space-lg);
-    padding: var(--space-sm);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-elev-1);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background-color: var(--fluent-bg-card);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  box-shadow: var(--fluent-shadow-card);
 }
 
 .farm__search,
-.farm__sort,
+.farm__location,
+.farm__sort {
+  font-family: var(--fluent-font);
+  font-size: 14px;
+  height: 36px;
+  padding: 0 12px;
+  background-color: var(--fluent-bg-subtle);
+  color: var(--fluent-fg);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  outline: none;
+  transition: border-color var(--fluent-transition), background-color var(--fluent-transition);
+  box-sizing: border-box;
+}
+
+.farm__search,
 .farm__location {
-    width: 100%;
-    min-width: 0;
-    height: 42px;
-    padding: 0 var(--space-md);
-    box-sizing: border-box;
-    font: inherit;
-    font-size: var(--font-size-sm);
-    color: var(--color-fg);
-    background: var(--color-input-bg);
-    border: 1px solid var(--color-input-border);
-    border-radius: var(--radius-md);
-    outline: none;
-    transition:
-        border-color var(--transition-fast),
-        box-shadow var(--transition-fast),
-        background-color var(--transition-fast);
+  flex: 1 1 180px;
 }
 
-.farm__search::placeholder,
-.farm__location::placeholder {
-    color: var(--color-muted);
-}
-
-.farm__search:hover,
-.farm__sort:hover,
-.farm__location:hover {
-    border-color: var(--color-secondary);
+.farm__sort {
+  flex: 0 0 auto;
+  cursor: pointer;
 }
 
 .farm__search:focus,
-.farm__sort:focus,
-.farm__location:focus {
-    border-color: var(--color-input-focus);
-    box-shadow: 0 0 0 3px color-mix(
-        in srgb,
-        var(--color-input-focus) 15%,
-        transparent
-    );
+.farm__location:focus,
+.farm__sort:focus {
+  background-color: var(--fluent-bg-card);
+  border-color: var(--fluent-accent);
+  box-shadow: 0 0 0 1px var(--fluent-accent);
 }
 
 .farm__availability-label {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-xs);
-    min-height: 42px;
-    padding: 0 var(--space-sm);
-    color: var(--color-fg);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    white-space: nowrap;
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  color: var(--fluent-fg-muted);
+  padding: 0 4px;
 }
 
-.farm__availability-label input {
-    width: 17px;
-    height: 17px;
-    margin: 0;
-    accent-color: var(--color-success);
-    cursor: pointer;
+.farm__availability-label input[type="checkbox"] {
+  accent-color: var(--fluent-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
-/* =========================================================
-   FARM GRID
-   ========================================================= */
+/* ==========================================================================
+   FARM CARDS GRID & ITEM STYLING
+   ========================================================================== */
 
 .farm__grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-md);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
 
 .farm__card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    overflow: hidden;
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-elev-1);
-    transition:
-        transform var(--transition-fast),
-        box-shadow var(--transition-fast),
-        border-color var(--transition-fast);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  box-shadow: var(--fluent-shadow-card);
+  overflow: hidden;
+  transition: transform var(--fluent-transition), box-shadow var(--fluent-transition), border-color var(--fluent-transition);
 }
 
 .farm__card:hover {
-    transform: translateY(-2px);
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-elev-2);
+  transform: translateY(-2px);
+  box-shadow: var(--fluent-shadow-card-hover);
+  border-color: var(--fluent-border-strong);
 }
 
-/* =========================================================
-   FARM IMAGE
-   ========================================================= */
-
 .farm__image {
-    display: block;
-    width: 100%;
-    height: 190px;
-    object-fit: cover;
-    background: var(--color-bg-tertiary);
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background-color: var(--fluent-bg-subtle);
 }
 
 .farm__header {
-    position: relative;
-    padding: var(--space-md) var(--space-md) var(--space-xs);
-    padding-right: 52px;
+  position: relative;
+  padding: 1rem 1rem 0.25rem;
 }
 
 .farm__header h3 {
-    margin: 0;
-    color: var(--color-fg);
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-bold);
-    line-height: var(--line-height-heading);
-    overflow-wrap: anywhere;
-}
-
-.farm__location {
-    margin: var(--space-xs) 0 0;
-    color: var(--color-muted);
-    font-size: var(--font-size-sm);
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--fluent-fg);
 }
 
 .farm__header .farm__location {
-    width: auto;
-    height: auto;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--fluent-fg-muted);
+  border: none;
+  background: none;
+  padding: 0;
 }
 
-/* =========================================================
-   FAVORITE BUTTON
-   ========================================================= */
-
 .farm__fav-btn {
-    position: absolute;
-    top: var(--space-md);
-    right: var(--space-md);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    color: var(--color-fg);
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-circle);
-    cursor: pointer;
-    box-shadow: var(--shadow-elev-1);
-    transition:
-        color var(--transition-fast),
-        background-color var(--transition-fast),
-        border-color var(--transition-fast),
-        transform var(--transition-fast);
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--fluent-bg-tertiary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-pill);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color var(--fluent-transition), transform var(--fluent-transition);
 }
 
 .farm__fav-btn:hover {
-    color: var(--color-danger);
-    background: var(--color-bg-secondary);
-    border-color: var(--color-danger);
-    transform: scale(1.05);
+  background-color: var(--fluent-bg-subtle);
+  transform: scale(1.05);
 }
-
-.farm__fav-btn:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
-/* =========================================================
-   BADGES
-   ========================================================= */
-
-.farm__badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
-    padding: 0 var(--space-md);
-}
-
-.farm__badges:empty {
-    display: none;
-}
-
-/* =========================================================
-   FARM META
-   ========================================================= */
 
 .farm__meta {
-    padding: var(--space-sm) var(--space-md);
+  padding: 0 1rem;
+  font-size: 0.85rem;
+  color: var(--fluent-fg-muted);
 }
 
 .farm__meta p {
-    margin: 0 0 var(--space-xs);
-    color: var(--color-muted);
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-normal);
+  margin: 0.25rem 0;
 }
 
-.farm__meta p:last-child {
-    margin-bottom: 0;
-}
-
-/* =========================================================
-   CROPS
-   ========================================================= */
-
+/* Crop Previews inside Cards */
 .farm__crops-preview {
-    margin: 0 var(--space-md);
-    padding: var(--space-sm) 0;
-    border-top: 1px solid var(--color-border-light);
+  padding: 0.5rem 1rem;
 }
 
 .farm__crops-preview h4 {
-    margin: 0 0 var(--space-sm);
-    color: var(--color-fg);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-bold);
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fluent-fg-muted);
 }
 
 .crop__list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .crop__card {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--fluent-bg-subtle);
+  padding: 4px 8px;
+  border-radius: var(--fluent-radius-sm);
 }
 
 .crop__image {
-    display: block;
-    width: 42px;
-    height: 42px;
-    object-fit: cover;
-    flex: 0 0 42px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--fluent-radius-sm);
+  object-fit: cover;
 }
 
 .crop__info {
-    min-width: 0;
-    padding: 0 var(--space-sm);
+  font-size: 0.8rem;
 }
 
-.crop__info strong {
-    display: block;
-    color: var(--color-fg);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-medium);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* =========================================================
-   FARM ACTIONS
-   ========================================================= */
-
+/* Card Action Footer */
 .farm__actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: auto;
-    padding: var(--space-sm) var(--space-md) var(--space-md);
+  margin-top: auto;
+  padding: 1rem;
+  border-top: 1px solid var(--fluent-border-subtle);
+  background-color: var(--fluent-bg-tertiary);
 }
 
 .farm__button {
-    min-width: 80px;
+  width: 100%;
+  height: 36px;
+  font-family: var(--fluent-font);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--fluent-accent);
+  border: none;
+  border-radius: var(--fluent-radius-sm);
+  cursor: pointer;
+  transition: background-color var(--fluent-transition), transform var(--fluent-transition);
 }
 
-/* Generic button fallback for this page */
-.farm-page .button {
-    min-height: 38px;
-    padding: 0 var(--space-md);
-    font: inherit;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-btn-fg);
-    background: var(--color-btn-bg);
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition:
-        background-color var(--transition-fast),
-        border-color var(--transition-fast),
-        transform var(--transition-fast),
-        box-shadow var(--transition-fast);
+.farm__button:hover {
+  background-color: var(--fluent-accent-hover);
 }
 
-.farm-page .button:hover {
-    background: var(--color-btn-hover-bg);
+.farm__button:active {
+  background-color: var(--fluent-accent-active);
+  transform: scale(0.98);
 }
-
-.farm-page .button:active {
-    transform: translateY(1px);
-}
-
-.farm-page .button:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-}
-
-/* =========================================================
-   INFINITE SCROLL SENTINEL
-   ========================================================= */
 
 .farm__sentinel {
-    width: 100%;
-    height: 1px;
-    margin-top: var(--space-lg);
+  height: 1px;
 }
 
-/* =========================================================
-   ASIDE CARDS / SECTIONS
-   ========================================================= */
+/* ==========================================================================
+   SIDEBAR & WIDGET SECTIONS
+   ========================================================================== */
 
-.farm__cta,
-.farm__weather,
-.farm__map,
-.farm__featured,
-.farm__stats,
-.farm__favorites,
-.farm__ratings {
-    padding: var(--space-md);
-    background: var(--color-card-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-elev-1);
+.aside-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
 }
 
+.aside-section {
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  padding: 1rem;
+  box-shadow: var(--fluent-shadow-card);
+}
+
+.aside-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: var(--fluent-fg);
+}
+
+/* Sidebar Call to Actions */
 .farm__cta {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.farm__cta .buttonx {
-    width: 100%;
+.buttonx {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  font-family: var(--fluent-font);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fluent-fg);
+  background-color: var(--fluent-bg-subtle);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-sm);
+  cursor: pointer;
+  transition: all var(--fluent-transition);
 }
 
-/* =========================================================
-   WEATHER
-   ========================================================= */
+.buttonx:hover {
+  background-color: var(--fluent-accent-light);
+  color: var(--fluent-accent);
+  border-color: var(--fluent-accent);
+}
 
+.buttonx:active {
+  transform: scale(0.98);
+}
+
+/* Sidebar Weather & Map Widgets */
 .farm__weather h3,
-.farm__map h3,
 .farm__featured h3,
-.farm__stats h3,
-.farm__favorites h3,
-.farm__ratings h3 {
-    margin: 0 0 var(--space-sm);
-    color: var(--color-fg);
-    font-size: var(--font-size-base);
-    font-weight: var(--font-weight-bold);
+.farm__stats h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .farm__weather p,
 .farm__stats p,
-.farm__favorites p,
-.farm__ratings p {
-    margin: 0 0 var(--space-xs);
-    color: var(--color-muted);
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-normal);
+.aside-section p {
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--fluent-fg-muted);
 }
-
-.farm__weather p:last-child,
-.farm__stats p:last-child,
-.farm__favorites p:last-child,
-.farm__ratings p:last-child {
-    margin-bottom: 0;
-}
-
-/* =========================================================
-   MAP
-   ========================================================= */
 
 .farm__map-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 150px;
-    padding: var(--space-md);
-    box-sizing: border-box;
-    color: var(--color-muted);
-    text-align: center;
-    font-size: var(--font-size-sm);
-    background:
-        linear-gradient(
-            135deg,
-            var(--color-bg-secondary) 25%,
-            var(--color-bg-tertiary) 25%,
-            var(--color-bg-tertiary) 50%,
-            var(--color-bg-secondary) 50%,
-            var(--color-bg-secondary) 75%,
-            var(--color-bg-tertiary) 75%
-        );
-    background-size: 24px 24px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+  height: 120px;
+  background-color: var(--fluent-bg-subtle);
+  border: 1px dashed var(--fluent-border-strong);
+  border-radius: var(--fluent-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: var(--fluent-fg-muted);
 }
 
-/* =========================================================
-   FEATURED FARM
-   ========================================================= */
-
+/* Featured Farm Sidebar Block */
 .farm__featured-photo {
-    display: block;
-    width: 100%;
-    height: 170px;
-    margin-bottom: var(--space-sm);
-    object-fit: cover;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-md);
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--fluent-radius-sm);
+  margin-bottom: 0.5rem;
 }
 
 .farm__featured h4 {
-    margin: 0 0 var(--space-xs);
-    color: var(--color-fg);
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-bold);
-}
-
-.farm__featured p {
-    margin: 0 0 var(--space-xs);
-    color: var(--color-muted);
-    font-size: var(--font-size-sm);
+  margin: 0;
+  font-size: 1rem;
 }
 
 .farm__featured-rating {
-    color: var(--color-warning) !important;
+  font-weight: 500;
+  color: var(--fluent-accent) !important;
 }
 
 .farm__featured .farm__button {
+  margin-top: 0.75rem;
+}
+
+/* ==========================================================================
+   ADVERTISEMENT UNITS
+   ========================================================================== */
+
+.advert {
+  width: 100%;
+}
+
+.ad-card-link {
+  display: flex;
+  gap: 1rem;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  padding: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--fluent-shadow-card);
+  transition: border-color var(--fluent-transition);
+}
+
+.ad-card-link:hover {
+  border-color: var(--fluent-accent);
+}
+
+.ad-card-media {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 80px;
+  border-radius: var(--fluent-radius-sm);
+  overflow: hidden;
+  background-color: var(--fluent-bg-subtle);
+}
+
+.ad-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ad-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.ad-card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.ad-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-card-desc {
+  font-size: 0.8rem;
+  color: var(--fluent-fg-muted);
+  margin: 0.25rem 0 0.5rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ad-card-cta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fluent-accent);
+}
+
+/* Vertical Aside Ad Overrides */
+.ad-layout-vertical .ad-card-link {
+  flex-direction: column;
+}
+
+.ad-layout-vertical .ad-card-media {
+  width: 100%;
+  height: 100px;
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES
+   ========================================================================== */
+
+@media (max-width: 960px) {
+  .two-column.farm-page {
+    grid-template-columns: 1fr;
+  }
+
+  .layout-aside {
+    order: 2;
+  }
+
+  .aside-container {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .farm__filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .farm__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-card-link {
+    flex-direction: column;
+  }
+
+  .ad-card-media {
     width: 100%;
-    margin-top: var(--space-sm);
-}
-
-/* =========================================================
-   DESKTOP LARGE
-   ========================================================= */
-
-@media (width >= 1280px) {
-    .farm__grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .two-column.farm-page {
-        grid-template-columns: minmax(0, 1fr) 320px;
-    }
-}
-
-/* =========================================================
-   TABLET / SMALL DESKTOP
-   ========================================================= */
-
-@media (width <= 1100px) {
-    .two-column.farm-page {
-        grid-template-columns: minmax(0, 1fr) 280px;
-        gap: var(--space-md);
-    }
-
-    .farm__filters {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .farm__availability-label {
-        justify-content: flex-start;
-    }
-
-    .farm__grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-/* =========================================================
-   TABLET
-   ========================================================= */
-
-@media (width <= 850px) {
-    .two-column.farm-page {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (width <= 600px) {/*
-    .farmspage {
-        padding: var(--space-md) var(--space-sm);
-    } */
-
-    .farm__filters {
-        grid-template-columns: 1fr;
-        gap: var(--space-sm);
-        padding: var(--space-sm);
-        border-radius: var(--radius-md);
-    }
-
-    .farm__search,
-    .farm__sort,
-    .farm__location {
-        height: 44px;
-    }
-
-    .farm__availability-label {
-        justify-content: flex-start;
-        padding: 0 var(--space-xs);
-    }
-
-    .farm__grid {
-        grid-template-columns: 1fr;
-        gap: var(--space-md);
-    }
-
-    .farm__image {
-        height: 210px;
-    }
-
-    .farm__featured-photo {
-        height: 200px;
-    }
-}
-
-/* =========================================================
-   SMALL MOBILE
-   ========================================================= */
-
-@media (width <= 400px) {/*
-    .farmspage {
-        padding: var(--space-sm);
-    } */
-
-    .farm__image {
-        height: 180px;
-    }
-
-    .farm__header {
-        padding: var(--space-sm);
-        padding-right: 48px;
-    }
-
-    .farm__meta {
-        padding: var(--space-sm);
-    }
-
-    .farm__crops-preview {
-        margin: 0 var(--space-sm);
-    }
-
-    .farm__actions {
-        padding: var(--space-sm);
-    }
-}
-
-/* =========================================================
-   DARK / ACCESSIBILITY FRIENDLY DETAILS
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-    .farm__card,
-    .farm__fav-btn,
-    .farm-page .button,
-    .farm__search,
-    .farm__sort,
-    .farm__location {
-        transition: none;
-    }
+    height: 120px;
+  }
 }
