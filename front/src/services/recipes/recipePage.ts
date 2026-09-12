@@ -1,7 +1,6 @@
 import { createElement } from "../../components/createElement.js";
 import { getState } from "../../state/state.js";
 import { fetchRecipeById } from "./api.js";
-import { persistTabs } from "../../utils/persistTabs.js";
 import { displayMedia } from "../media/ui/mediaGallery.js";
 
 import {
@@ -19,7 +18,7 @@ import {
   renderActions
 } from "./recipeSections.js";
 
-import { Recipe, TabItem, User } from "./types/recipe.js";
+import { Recipe, User } from "./types/recipe.js";
 
 /* =========================
    MAIN DISPLAY
@@ -32,7 +31,7 @@ export async function displayRecipe(
 ): Promise<void> {
   content.replaceChildren();
 
-  const container = createElement("div", { class: "recipepage" });
+  const container = createElement("div", { class: "recipe-page single-page-layout" });
   content.appendChild(container);
 
   const currentUser = (getState("user") as User | undefined)?.userid;
@@ -43,15 +42,15 @@ export async function displayRecipe(
     recipe = await fetchRecipeById(recipeid);
   } catch {
     container.replaceChildren(
-      createElement("p", {}, ["Recipe not found or failed to load."])
+      createElement("p", { class: "error-message" }, ["Recipe not found or failed to load."])
     );
     return;
   }
 
   const isFavorite = getFavorites().map(String).includes(String(recipeid));
 
-  /* HEADER */
-  const titleEl = createElement("h2", {}, [
+  /* HEADER & METADATA */
+  const titleEl = createElement("h2", { class: "recipe-title" }, [
     recipe.title || recipe.name || "Untitled"
   ]);
 
@@ -59,9 +58,7 @@ export async function displayRecipe(
 
   if (recipe.version) {
     metaInfo.push(
-      createElement("p", { class: "version-info" }, [
-        `Version ${recipe.version}`
-      ])
+      createElement("p", { class: "version-info" }, [`Version ${recipe.version}`])
     );
   }
 
@@ -75,49 +72,43 @@ export async function displayRecipe(
 
   const authorEl = renderAuthor(recipe, currentUser);
 
-  /* BANNER + INFO */
+  /* BANNER, INFO & TAGS */
   const bannerEl = createRecipeBannerSection(recipe, currentUser);
   const infoBox = renderInfoBox(recipe);
   const tagsEl = renderTags(recipe.tags);
 
-  /* SETUP TABS */
-  const tabs: TabItem[] = [
-    {
-      title: "Ingredients",
-      id: "ingredients-tab",
-      render: (c: HTMLElement) => {
-        c.replaceChildren(renderIngredients(recipe.ingredients, isLoggedIn, recipe));
-      }
-    },
-    {
-      title: "Steps",
-      id: "steps-tab",
-      render: (c: HTMLElement) => {
-        c.replaceChildren(renderSteps(recipeid, recipe.steps || [], recipe));
-      }
-    },
-    {
-      title: "Comments",
-      id: "comments-tab",
-      render: (c: HTMLElement) => {
-        c.replaceChildren(renderComments(recipe));
-      }
-    },
-    {
-      title: "Media",
-      id: "media-tab",
-      render: (c: HTMLElement) => displayMedia(c, "recipe", recipeid, isLoggedIn)
-    },
-    {
-      title: "Actions",
-      id: "actions-tab",
-      render: (c: HTMLElement) => {
-        c.replaceChildren(
-          renderActions(recipe, getState("user") as User, content, isFavorite, recipeid)
-        );
-      }
-    }
-  ];
+  /* SECTIONS (Replacing Tabs) */
+
+  // Top Sticky / Quick Actions Bar
+  const actionsSection = createElement("section", { class: "recipe-section actions-section" }, [
+    renderActions(recipe, getState("user") as User, content, isFavorite, recipeid)
+  ]);
+
+  // Ingredients Section
+  const ingredientsSection = createElement("section", { class: "recipe-section ingredients-section" }, [
+    createElement("h3", { class: "section-title" }, ["Ingredients"]),
+    renderIngredients(recipe.ingredients, isLoggedIn, recipe)
+  ]);
+
+  // Preparation Steps Section
+  const stepsSection = createElement("section", { class: "recipe-section steps-section" }, [
+    createElement("h3", { class: "section-title" }, ["Instructions"]),
+    renderSteps(recipeid, recipe.steps || [], recipe)
+  ]);
+
+  // Media Gallery Container
+  const mediaContainer = createElement("div", { class: "media-gallery-wrapper" });
+  displayMedia(mediaContainer, "recipe", recipeid, isLoggedIn);
+
+  const mediaSection = createElement("section", { class: "recipe-section media-section" }, [
+    createElement("h3", { class: "section-title" }, ["Photos & Media"]),
+    mediaContainer
+  ]);
+
+  // Comments Section
+  const commentsSection = createElement("section", { class: "recipe-section comments-section" }, [
+    renderComments(recipe)
+  ]);
 
   /* FINAL ASSEMBLY */
   container.replaceChildren(
@@ -126,9 +117,11 @@ export async function displayRecipe(
     authorEl,
     bannerEl,
     infoBox,
-    tagsEl
+    tagsEl,
+    actionsSection,
+    ingredientsSection,
+    stepsSection,
+    mediaSection,
+    commentsSection
   );
-
-  // Use persistent tabs component which handles storage and appending
-  persistTabs(container, tabs, `recipe-tabs:${recipeid}`);
 }

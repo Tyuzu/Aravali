@@ -43,7 +43,7 @@ const Notify = (
 
   // Resolve current user ID from options, or directly from state ("user.id" or "userId")
   const currentUser = getState("user") as { id?: string } | undefined;
-  const currentUserId = normalizedOptions.userId ?? currentUser?.id ?? (getState("userId") as string | undefined);
+  const currentUserId = normalizedOptions.userId ?? currentUser?.id ?? (getState("userid") as string | undefined);
 
   // Track browser window timeouts
   let hideTimeoutId: number | null = null;
