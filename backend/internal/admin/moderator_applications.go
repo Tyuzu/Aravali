@@ -1,8 +1,9 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
-	"net/http"
+	"errors"
 	"strings"
 	"time"
 
@@ -15,6 +16,14 @@ import (
 
 var moderatorApplicationsCollection = config.Collections.ModeratorApplications
 
+// Sentinel business errors
+var (
+	ErrMissingRequiredFields = errors.New("missing required fields")
+	ErrAlreadyApplied        = errors.New("you have already applied to be a moderator")
+	ErrModAppNotFound        = errors.New("application not found or update failed")
+)
+
+// Helper Types
 type ModeratorApplication struct {
 	ID        string    `json:"id" bson:"id"`
 	UserID    string    `json:"userid" bson:"userid"`
@@ -24,139 +33,88 @@ type ModeratorApplication struct {
 	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
 }
 
-func ApplyModerator(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		var payload struct {
-			UserID string `json:"userid"`
-			Reason string `json:"reason"`
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			http.Error(w, `{"error":"Invalid JSON payload"}`, http.StatusBadRequest)
-			return
-		}
-
-		payload.UserID = strings.TrimSpace(payload.UserID)
-		payload.Reason = strings.TrimSpace(payload.Reason)
-
-		if payload.UserID == "" || payload.Reason == "" {
-			http.Error(w, `{"error":"Missing required fields"}`, http.StatusBadRequest)
-			return
-		}
-
-		var existing ModeratorApplication
-		if err := FindModeratorApplicationByUser(ctx, app.DB, payload.UserID, &existing); err == nil {
-			http.Error(w, `{"error":"You have already applied to be a moderator"}`, http.StatusConflict)
-			return
-		}
-
-		now := time.Now().UTC()
-		appx := ModeratorApplication{
-			ID:        "mod_" + utils.GenerateRandomString(16),
-			UserID:    payload.UserID,
-			Reason:    payload.Reason,
-			Status:    "pending",
-			CreatedAt: now,
-			UpdatedAt: now,
-		}
-
-		if err := InsertModeratorApplication(ctx, app.DB, appx); err != nil {
-			http.Error(w, `{"error":"Failed to save application"}`, http.StatusInternalServerError)
-			return
-		}
-
-		mqpayload, _ := json.Marshal(mqevent.AppliedForModeratorRolePayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.AppliedForModeratorRoleEvent, mqpayload)
-
-		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
-			"message": "Moderator application submitted",
-			"id":      appx.ID,
-		})
-	}
+type ApplyModeratorPayload struct {
+	UserID string `json:"userid"`
+	Reason string `json:"reason"`
 }
 
-func ListModeratorApplications(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		status := r.URL.Query().Get("status")
+// ============================================================================
+// Business Logic / Services
+// ============================================================================
 
-		filter := map[string]any{}
-		if status != "" {
-			filter["status"] = status
-		}
+func ProcessApplyModerator(ctx context.Context, app *infra.Deps, payload ApplyModeratorPayload) (*ModeratorApplication, error) {
+	userID := strings.TrimSpace(payload.UserID)
+	reason := strings.TrimSpace(payload.Reason)
 
-		var applications []ModeratorApplication
-		if err := ListModeratorApplicationsDB(ctx, app.DB, filter, &applications); err != nil {
-			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
-				"error": "Failed to fetch applications",
-			})
-			return
-		}
-
-		utils.RespondWithJSON(w, http.StatusOK, applications)
+	if userID == "" || reason == "" {
+		return nil, ErrMissingRequiredFields
 	}
+
+	var existing ModeratorApplication
+	if err := FindModeratorApplicationByUser(ctx, app.DB, userID, &existing); err == nil {
+		return nil, ErrAlreadyApplied
+	}
+
+	now := time.Now().UTC()
+	appx := ModeratorApplication{
+		ID:        "mod_" + utils.GenerateRandomString(16),
+		UserID:    userID,
+		Reason:    reason,
+		Status:    "pending",
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := InsertModeratorApplication(ctx, app.DB, appx); err != nil {
+		return nil, err
+	}
+
+	mqpayload, _ := json.Marshal(mqevent.AppliedForModeratorRolePayload{})
+	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.AppliedForModeratorRoleEvent, mqpayload)
+
+	return &appx, nil
 }
 
-func ApproveModerator(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		id := utils.GetParam(r, "id")
-		if id == "" {
-			utils.RespondWithJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "Invalid or missing application ID",
-			})
-			return
-		}
-
-		now := time.Now().UTC()
-		if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "approved"); err != nil {
-			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{
-				"error": "Application not found or update failed",
-			})
-			return
-		}
-
-		mqpayload, _ := json.Marshal(mqevent.ApprovedModeratorRoleRequestPayload{
-			ApplicationID: id,
-			ApprovedAt:    now,
-		})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ApprovedModeratorRoleRequestEvent, mqpayload)
-
-		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
-			"message": "Application approved successfully",
-		})
+func FetchModeratorApplications(ctx context.Context, app *infra.Deps, status string) ([]ModeratorApplication, error) {
+	filter := map[string]any{}
+	if status != "" {
+		filter["status"] = status
 	}
+
+	var applications []ModeratorApplication
+	if err := ListModeratorApplicationsDB(ctx, app.DB, filter, &applications); err != nil {
+		return nil, err
+	}
+
+	return applications, nil
 }
 
-func RejectModerator(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		id := utils.GetParam(r, "id")
-		if id == "" {
-			utils.RespondWithJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "Invalid or missing application ID",
-			})
-			return
-		}
-
-		now := time.Now().UTC()
-		if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "rejected"); err != nil {
-			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{
-				"error": "Application not found or update failed",
-			})
-			return
-		}
-
-		mqpayload, _ := json.Marshal(mqevent.RejectedModeratorRoleRequestPayload{
-			ApplicationID: id,
-			RejectedAt:    now,
-		})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.RejectedModeratorRoleRequestEvent, mqpayload)
-
-		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
-			"message": "Application rejected successfully",
-		})
+func ProcessApproveModerator(ctx context.Context, app *infra.Deps, id string) error {
+	now := time.Now().UTC()
+	if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "approved"); err != nil {
+		return ErrModAppNotFound
 	}
+
+	mqpayload, _ := json.Marshal(mqevent.ApprovedModeratorRoleRequestPayload{
+		ApplicationID: id,
+		ApprovedAt:    now,
+	})
+	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ApprovedModeratorRoleRequestEvent, mqpayload)
+
+	return nil
+}
+
+func ProcessRejectModerator(ctx context.Context, app *infra.Deps, id string) error {
+	now := time.Now().UTC()
+	if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "rejected"); err != nil {
+		return ErrModAppNotFound
+	}
+
+	mqpayload, _ := json.Marshal(mqevent.RejectedModeratorRoleRequestPayload{
+		ApplicationID: id,
+		RejectedAt:    now,
+	})
+	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.RejectedModeratorRoleRequestEvent, mqpayload)
+
+	return nil
 }

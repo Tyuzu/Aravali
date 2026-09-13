@@ -26,7 +26,7 @@ func main() {
 			pkgName := d.Name()
 
 			// Construct filename: packageNameRoutes.go
-			filename := fmt.Sprintf("%sRoutes.go", pkgName)
+			filename := fmt.Sprintf("%sHandlers.go", pkgName)
 			filePath := filepath.Join(path, filename)
 
 			// Generate boiler-plate Go content

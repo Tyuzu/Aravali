@@ -3,7 +3,7 @@ package places
 import (
 	"net/http"
 	"scav/infra"
-	tabs "scav/internal/places/tabs"
+	places "scav/internal/places/tabs"
 	"scav/middleware"
 
 	"github.com/julienschmidt/httprouter"
@@ -13,101 +13,101 @@ import (
 
 // 🍽️ Restaurant / Café → Menu
 func DisplayPlaceMenu(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/menu", tabs.GetMenuTab)
-	router.POST("/api/v1/place/:placeid/menu", tabs.PostMenuTab)
-	router.PUT("/api/v1/place/:placeid/menu/:itemId", tabs.PutMenuTab)
-	router.DELETE("/api/v1/place/:placeid/menu/:itemId", tabs.DeleteMenuTab)
-	router.POST("/api/v1/place/:placeid/menu/:itemId/order", tabs.PostMenuOrder)
+	router.GET("/api/v1/place/:placeid/menu", places.GetMenuTab)
+	router.POST("/api/v1/place/:placeid/menu", places.PostMenuTab)
+	router.PUT("/api/v1/place/:placeid/menu/:itemId", places.PutMenuTab)
+	router.DELETE("/api/v1/place/:placeid/menu/:itemId", places.DeleteMenuTab)
+	router.POST("/api/v1/place/:placeid/menu/:itemId/order", places.PostMenuOrder)
 }
 
 // 🏨 Hotel → Rooms
 func DisplayPlaceRooms(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/rooms", tabs.GetRooms)
-	router.GET("/api/v1/place/:placeid/rooms/:roomId", tabs.GetRoom)
-	router.POST("/api/v1/place/:placeid/rooms", tabs.PostRoom)
-	router.PUT("/api/v1/place/:placeid/rooms/:roomId", tabs.PutRoom)
-	router.DELETE("/api/v1/place/:placeid/rooms/:roomId", tabs.DeleteRoom)
+	router.GET("/api/v1/place/:placeid/rooms", places.GetRooms)
+	router.GET("/api/v1/place/:placeid/rooms/:roomId", places.GetRoom)
+	router.POST("/api/v1/place/:placeid/rooms", places.PostRoom)
+	router.PUT("/api/v1/place/:placeid/rooms/:roomId", places.PutRoom)
+	router.DELETE("/api/v1/place/:placeid/rooms/:roomId", places.DeleteRoom)
 }
 
 // 🌳 Park → Facilities
 func DisplayPlaceFacilities(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/facilities", tabs.GetFacilities)
-	router.POST("/api/v1/place/:placeid/facilities", tabs.PostFacility)
-	router.PUT("/api/v1/place/:placeid/facilities/:facilityId", tabs.PutFacility)
-	router.GET("/api/v1/place/:placeid/facilities/:facilityId", tabs.GetFacility)
-	router.DELETE("/api/v1/place/:placeid/facilities/:facilityId", tabs.DeleteFacility)
+	router.GET("/api/v1/place/:placeid/facilities", places.GetFacilities)
+	router.POST("/api/v1/place/:placeid/facilities", places.PostFacility)
+	router.PUT("/api/v1/place/:placeid/facilities/:facilityId", places.PutFacility)
+	router.GET("/api/v1/place/:placeid/facilities/:facilityId", places.GetFacility)
+	router.DELETE("/api/v1/place/:placeid/facilities/:facilityId", places.DeleteFacility)
 }
 
 // 🏢 Business → Services
 func DisplayPlaceServices(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/services", tabs.GetServices)
-	router.POST("/api/v1/place/:placeid/services", tabs.PostService)
-	router.PUT("/api/v1/place/:placeid/services/:serviceId", tabs.PutService)
-	router.GET("/api/v1/place/:placeid/services/:serviceId", tabs.GetService)
-	router.DELETE("/api/v1/place/:placeid/services/:serviceId", tabs.DeleteService)
+	router.GET("/api/v1/place/:placeid/services", places.GetServices)
+	router.POST("/api/v1/place/:placeid/services", places.PostService)
+	router.PUT("/api/v1/place/:placeid/services/:serviceId", places.PutService)
+	router.GET("/api/v1/place/:placeid/services/:serviceId", places.GetService)
+	router.DELETE("/api/v1/place/:placeid/services/:serviceId", places.DeleteService)
 }
 
 // 🛍️ Shop → Products
 func DisplayPlaceProducts(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/products", tabs.GetProducts(app))
-	router.POST("/api/v1/place/:placeid/products", tabs.PostProduct(app))
-	router.PUT("/api/v1/place/:placeid/products/:productId", tabs.PutProduct(app))
-	router.GET("/api/v1/place/:placeid/products/:productId", tabs.GetProduct(app))
-	router.DELETE("/api/v1/place/:placeid/products/:productId", tabs.DeleteProduct(app))
-	router.POST("/api/v1/place/:placeid/products/:productId/buy", tabs.PostProductPurchase(app))
+	router.GET("/api/v1/place/:placeid/products", places.GetProducts(app))
+	router.POST("/api/v1/place/:placeid/products", places.PostProduct(app))
+	router.PUT("/api/v1/place/:placeid/products/:productId", places.PutProduct(app))
+	router.GET("/api/v1/place/:placeid/products/:productId", places.GetProduct(app))
+	router.DELETE("/api/v1/place/:placeid/products/:productId", places.DeleteProduct(app))
+	router.POST("/api/v1/place/:placeid/products/:productId/buy", places.PostProductPurchase(app))
 }
 
 // 🖼️ Museum → Exhibits
 func DisplayPlaceExhibits(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/exhibits", tabs.GetExhibits)
-	router.POST("/api/v1/place/:placeid/exhibits", tabs.PostExhibit)
-	router.PUT("/api/v1/place/:placeid/exhibits/:exhibitId", tabs.PutExhibit)
-	router.GET("/api/v1/place/:placeid/exhibits/:exhibitId", tabs.GetExhibit)
-	router.DELETE("/api/v1/place/:placeid/exhibits/:exhibitId", tabs.DeleteExhibit)
+	router.GET("/api/v1/place/:placeid/exhibits", places.GetExhibits)
+	router.POST("/api/v1/place/:placeid/exhibits", places.PostExhibit)
+	router.PUT("/api/v1/place/:placeid/exhibits/:exhibitId", places.PutExhibit)
+	router.GET("/api/v1/place/:placeid/exhibits/:exhibitId", places.GetExhibit)
+	router.DELETE("/api/v1/place/:placeid/exhibits/:exhibitId", places.DeleteExhibit)
 }
 
 // 🏋️ Gym → Membership
 func DisplayPlaceMembership(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/membership", tabs.GetMemberships)
-	router.POST("/api/v1/place/:placeid/membership", tabs.PostMembership)
-	router.PUT("/api/v1/place/:placeid/membership/:membershipId", tabs.PutMembership)
-	router.GET("/api/v1/place/:placeid/membership/:membershipId", tabs.GetMembership)
-	router.DELETE("/api/v1/place/:placeid/membership/:membershipId", tabs.DeleteMembership)
-	router.POST("/api/v1/place/:placeid/membership/:membershipId/join", tabs.PostJoinMembership)
+	router.GET("/api/v1/place/:placeid/membership", places.GetMemberships)
+	router.POST("/api/v1/place/:placeid/membership", places.PostMembership)
+	router.PUT("/api/v1/place/:placeid/membership/:membershipId", places.PutMembership)
+	router.GET("/api/v1/place/:placeid/membership/:membershipId", places.GetMembership)
+	router.DELETE("/api/v1/place/:placeid/membership/:membershipId", places.DeleteMembership)
+	router.POST("/api/v1/place/:placeid/membership/:membershipId/join", places.PostJoinMembership)
 }
 
 // 🎭 Theater → Shows
 func DisplayPlaceShows(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/shows", tabs.GetShows)
-	router.POST("/api/v1/place/:placeid/shows", tabs.PostShow)
-	router.PUT("/api/v1/place/:placeid/shows/:showId", tabs.PutShow)
-	router.GET("/api/v1/place/:placeid/shows/:showId", tabs.GetShow)
-	router.DELETE("/api/v1/place/:placeid/shows/:showId", tabs.DeleteShow)
-	router.POST("/api/v1/place/:placeid/shows/:showId/book", tabs.PostBookShow)
+	router.GET("/api/v1/place/:placeid/shows", places.GetShows)
+	router.POST("/api/v1/place/:placeid/shows", places.PostShow)
+	router.PUT("/api/v1/place/:placeid/shows/:showId", places.PutShow)
+	router.GET("/api/v1/place/:placeid/shows/:showId", places.GetShow)
+	router.DELETE("/api/v1/place/:placeid/shows/:showId", places.DeleteShow)
+	router.POST("/api/v1/place/:placeid/shows/:showId/book", places.PostBookShow)
 }
 
 // 🏟️ Arena → Events
 func DisplayPlaceEvents(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/events", tabs.GetEvents(app))
-	router.POST("/api/v1/place/:placeid/events", tabs.PostEvent(app))
-	router.PUT("/api/v1/place/:placeid/events/:eventId", tabs.PutEvent(app))
-	router.GET("/api/v1/place/:placeid/events/:eventId", tabs.GetEvent(app))
-	router.DELETE("/api/v1/place/:placeid/events/:eventId", tabs.DeleteEvent(app))
-	router.POST("/api/v1/place/:placeid/events/:eventId/view", tabs.PostViewEventDetails(app))
+	router.GET("/api/v1/place/:placeid/events", places.GetEvents(app))
+	router.POST("/api/v1/place/:placeid/events", places.PostEvent(app))
+	router.PUT("/api/v1/place/:placeid/events/:eventId", places.PutEvent(app))
+	router.GET("/api/v1/place/:placeid/events/:eventId", places.GetEvent(app))
+	router.DELETE("/api/v1/place/:placeid/events/:eventId", places.DeleteEvent(app))
+	router.POST("/api/v1/place/:placeid/events/:eventId/view", places.PostViewEventDetails(app))
 }
 
 // 💈 Saloon → Slots (if applicable)
 func DisplaySaloonSlots(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/saloon/slots", tabs.GetSaloonSlots)
-	router.POST("/api/v1/place/:placeid/saloon/slots", tabs.PostSaloonSlot)
-	router.PUT("/api/v1/place/:placeid/saloon/slots/:slotId", tabs.PutSaloonSlot)
-	router.DELETE("/api/v1/place/:placeid/saloon/slots/:slotId", tabs.DeleteSaloonSlot)
-	router.POST("/api/v1/place/:placeid/saloon/slots/:slotId/book", tabs.BookSaloonSlot)
+	router.GET("/api/v1/place/:placeid/saloon/slots", places.GetSaloonSlots)
+	router.POST("/api/v1/place/:placeid/saloon/slots", places.PostSaloonSlot)
+	router.PUT("/api/v1/place/:placeid/saloon/slots/:slotId", places.PutSaloonSlot)
+	router.DELETE("/api/v1/place/:placeid/saloon/slots/:slotId", places.DeleteSaloonSlot)
+	router.POST("/api/v1/place/:placeid/saloon/slots/:slotId/book", places.BookSaloonSlot)
 }
 
 // ❓ Fallback → Generic Place Info
 func DisplayPlaceDetailsFallback(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/details", tabs.GetDetailsFallback)
+	router.GET("/api/v1/place/:placeid/details", places.GetDetailsFallback)
 }
 
 func AddPlaceTabRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter *middleware.RateLimiter) {
