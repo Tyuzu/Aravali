@@ -1,73 +1,7 @@
-/* ==========================================================================
-   FLUENT DESIGN SYSTEM TOKENS & DESIGN VARIABLES
-   ========================================================================== */
-:root {
-  --fluent-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-
-  /* Color Palette - Light Mode */
-  --fluent-bg-canvas: #f3f3f3;
-  --fluent-bg-card: #ffffff;
-  --fluent-bg-secondary: #fafafa;
-  --fluent-bg-tertiary: #f0f0f0;
-  --fluent-fg-primary: #242424;
-  --fluent-fg-secondary: #616161;
-  --fluent-border-subtle: #e0e0e0;
-  --fluent-border-strong: #d1d1d1;
-
-  /* Fluent Accent & Interactive Colors */
-  --fluent-accent: #0078d4;
-  --fluent-accent-hover: #106ebe;
-  --fluent-accent-active: #005a9e;
-  --fluent-accent-light: #eff6fc;
-
-  /* Status Colors (Pills & Badges) */
-  --fluent-success-fg: #107c41;
-  --fluent-success-bg: #dff6dd;
-  --fluent-warning-fg: #797775;
-  --fluent-warning-bg: #fff4ce;
-  --fluent-danger-fg: #c42b1c;
-  --fluent-danger-bg: #fde7e9;
-
-  /* Fluent Elevation & Shadows */
-  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
-  --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --fluent-shadow-flyout: 0 16px 32px rgba(0, 0, 0, 0.12), 0 0 2px rgba(0, 0, 0, 0.08);
-
-  /* Corner Radii & Transitions */
-  --fluent-radius-sm: 4px;
-  --fluent-radius-md: 8px;
-  --fluent-radius-lg: 12px;
-  --fluent-radius-pill: 9999px;
-  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-/* Fluent Dark Theme Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fluent-bg-canvas: #202020;
-    --fluent-bg-card: #2c2c2c;
-    --fluent-bg-secondary: #272727;
-    --fluent-bg-tertiary: #333333;
-    --fluent-fg-primary: #ffffff;
-    --fluent-fg-secondary: #adadad;
-    --fluent-border-subtle: #383838;
-    --fluent-border-strong: #444444;
-
-    --fluent-accent: #479ef5;
-    --fluent-accent-hover: #62abf7;
-    --fluent-accent-active: #2b88d8;
-    --fluent-accent-light: rgba(71, 158, 245, 0.15);
-
-    --fluent-success-fg: #6ccb5f;
-    --fluent-success-bg: rgba(108, 203, 95, 0.18);
-    --fluent-warning-fg: #fce100;
-    --fluent-warning-bg: rgba(252, 225, 0, 0.18);
-    --fluent-danger-fg: #f1707b;
-    --fluent-danger-bg: rgba(241, 112, 123, 0.18);
-
-    --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
-  }
+/* Base text selection styles */
+::selection {
+  background-color: var(--color-selection-bg);
+  color: var(--color-selection-fg);
 }
 
 /* ==========================================================================
@@ -77,34 +11,34 @@
 .farmdashpage {
   width: 100%;
   min-height: 100vh;
-  background-color: var(--fluent-bg-canvas);
-  color: var(--fluent-fg-primary);
-  font-family: var(--fluent-font-family);
-  padding: 1.5rem;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  padding: var(--space-md);
   box-sizing: border-box;
 }
 
 .tabs-container {
-  max-width: 1400px;
+  max-width: var(--max-width);
   margin: 0 auto;
-  background-color: var(--fluent-bg-card);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-lg);
-  box-shadow: var(--fluent-shadow-card);
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 
 /* ==========================================================================
-   FLUENT TAB NAVIGATION
+   TAB NAVIGATION
    ========================================================================== */
 
 .tab-buttons {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  background-color: var(--fluent-bg-secondary);
-  border-bottom: 1px solid var(--fluent-border-subtle);
-  padding: 0.5rem 0.75rem 0;
+  gap: var(--space-xs);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+  padding: var(--space-sm) var(--space-md) 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -114,38 +48,38 @@
 }
 
 .tab-button {
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--fluent-fg-secondary);
+  font-family: var(--font-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-muted);
   padding: 0.6rem 1.25rem;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
-  border-radius: var(--fluent-radius-sm) var(--fluent-radius-sm) 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   cursor: pointer;
   outline: none;
   user-select: none;
   white-space: nowrap;
-  transition: all var(--fluent-transition);
+  transition: all var(--transition-fast);
 }
 
 .tab-button:hover {
-  color: var(--fluent-fg-primary);
-  background-color: var(--fluent-bg-card);
+  color: var(--color-fg);
+  background-color: var(--color-card-bg);
 }
 
 .tab-button:focus-visible {
-  outline: 2px solid var(--fluent-accent);
+  outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
 
 .tab-button.active,
 .tab-button[aria-selected="true"] {
-  color: var(--fluent-accent);
-  font-weight: 600;
-  background-color: var(--fluent-bg-card);
-  border-bottom-color: var(--fluent-accent);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+  background-color: var(--color-card-bg);
+  border-bottom-color: var(--color-primary);
 }
 
 /* ==========================================================================
@@ -153,7 +87,7 @@
    ========================================================================== */
 
 .tab-contents {
-  padding: 1.75rem;
+  padding: var(--space-md);
 }
 
 .tab-content {
@@ -162,32 +96,40 @@
 
 .tab-content.active {
   display: block;
-  animation: fluentFadeIn 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+  animation: themeFadeIn var(--transition-fast);
 }
 
-@keyframes fluentFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes themeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dashboard-section,
 .my-farm-content,
 .orders-page {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-lg);
 }
 
 .dashboard-section h3,
 .orders-page h2,
 .my-farms-page h2 {
-  font-size: 1.15rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-  color: var(--fluent-fg-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--color-fg);
 }
 
 .dashboard-section p {
-  color: var(--fluent-fg-secondary);
-  font-size: 0.9rem;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
 }
 
 .dashboard-section ul,
@@ -201,12 +143,12 @@
 .dashboard-section li,
 .farm-crops li,
 .farm-availability li {
-  padding: 0.6rem 0.85rem;
-  margin-bottom: 0.4rem;
-  background-color: var(--fluent-bg-secondary);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-sm);
-  font-size: 0.875rem;
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-xs);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
 }
 
 /* ==========================================================================
@@ -216,26 +158,27 @@
 .stats-summary {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .stat-card {
-  background-color: var(--fluent-bg-card);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-md);
-  padding: 1rem 1.25rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--fluent-fg-primary);
-  box-shadow: var(--fluent-shadow-card);
-  transition: transform var(--fluent-transition), box-shadow var(--fluent-transition);
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--fluent-shadow-hover);
-  border-color: var(--fluent-border-strong);
+  background-color: var(--color-card-hover);
+  box-shadow: var(--shadow-elev-3);
+  border-color: var(--color-border);
 }
 
 /* ==========================================================================
@@ -246,50 +189,50 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 1rem;
-  background-color: var(--fluent-bg-secondary);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-md);
-  padding: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .filters-section label {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--fluent-fg-secondary);
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-muted);
 }
 
 .filters-section input[type="text"],
 .filters-section input[type="date"],
 .filters-section select {
-  font-family: inherit;
-  font-size: 14px;
-  height: 34px;
-  padding: 0 10px;
-  background-color: var(--fluent-bg-card);
-  color: var(--fluent-fg-primary);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-sm);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  height: 36px;
+  padding: 0 var(--space-sm);
+  background-color: var(--color-input-bg);
+  color: var(--color-fg);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color var(--fluent-transition);
+  transition: border-color var(--transition-fast);
   box-sizing: border-box;
 }
 
 .filters-section input:focus,
 .filters-section select:focus {
-  border-color: var(--fluent-accent);
-  box-shadow: 0 0 0 1px var(--fluent-accent);
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 1px var(--color-input-focus);
 }
 
 .bulk-actions-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
 /* Button UI Components */
@@ -298,54 +241,66 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  height: 34px;
-  padding: 0 1rem;
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-sm);
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-primary);
+  font-family: var(--font-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  height: 36px;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-fg);
   cursor: pointer;
   user-select: none;
-  transition: all var(--fluent-transition);
+  transition: all var(--transition-fast);
+}
+
+.buttonx:hover {
+  background-color: var(--color-bg-tertiary);
 }
 
 .primary-button {
-  background-color: var(--fluent-accent);
-  color: #ffffff;
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-fg);
   border: none;
 }
 
 .primary-button:hover {
-  background-color: var(--fluent-accent-hover);
+  background-color: var(--color-btn-hover-bg);
 }
 
 .success-button {
-  background-color: var(--fluent-success-bg);
-  color: var(--fluent-success-fg);
+  background-color: var(--color-success);
+  color: #ffffff;
   border-color: transparent;
 }
 
 .success-button:hover {
-  filter: brightness(0.95);
+  filter: brightness(0.9);
 }
 
 .danger-button {
-  background-color: var(--fluent-danger-bg);
-  color: var(--fluent-danger-fg);
+  background-color: var(--color-danger);
+  color: #ffffff;
   border-color: transparent;
 }
 
 .danger-button:hover {
-  filter: brightness(0.95);
+  filter: brightness(0.9);
 }
 
 .small-button {
   height: 28px;
-  padding: 0 8px;
-  font-size: 12px;
+  padding: 0 var(--space-sm);
+  font-size: var(--font-size-xs);
+}
+
+.buttonx:disabled,
+.primary-button:disabled {
+  background-color: var(--color-btn-disabled-bg);
+  color: var(--color-btn-disabled-fg);
+  cursor: not-allowed;
+  border-color: transparent;
 }
 
 .buttonx:active,
@@ -354,51 +309,51 @@
 }
 
 /* ==========================================================================
-   FLUENT DATAGRID / ORDERS TABLE
+   DATAGRID / ORDERS TABLE
    ========================================================================== */
 
 .orders-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   text-align: left;
-  background-color: var(--fluent-bg-card);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-md);
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
 .orders-table th {
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-secondary);
-  font-weight: 600;
-  padding: 0.75rem 0.85rem;
-  border-bottom: 1px solid var(--fluent-border-subtle);
+  background-color: var(--color-surface);
+  color: var(--color-muted);
+  font-weight: var(--font-weight-bold);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
   white-space: nowrap;
 }
 
 .orders-table td {
-  padding: 0.75rem 0.85rem;
-  border-bottom: 1px solid var(--fluent-border-subtle);
-  color: var(--fluent-fg-primary);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-fg);
   white-space: nowrap;
 }
 
 .orders-table tbody tr {
-  transition: background-color var(--fluent-transition);
+  transition: background-color var(--transition-fast);
 }
 
 .orders-table tbody tr:hover {
-  background-color: var(--fluent-bg-tertiary);
+  background-color: var(--color-bg-tertiary);
 }
 
 .orders-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* Custom Checkbox Alignment */
+/* Checkbox Styling */
 .orders-table input[type="checkbox"] {
-  accent-color: var(--fluent-accent);
+  accent-color: var(--color-primary);
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -406,7 +361,7 @@
 
 .action-buttons {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--space-xs);
 }
 
 /* Status Badges & Pills */
@@ -414,28 +369,28 @@
 .order-status {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: var(--fluent-radius-pill);
+  padding: var(--space-xxs) var(--space-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-full);
 }
 
 .payment-paid,
 .status-delivered {
-  background-color: var(--fluent-success-bg);
-  color: var(--fluent-success-fg);
+  background-color: var(--color-success);
+  color: #ffffff;
 }
 
 .payment-pending,
 .status-pending {
-  background-color: var(--fluent-warning-bg);
-  color: var(--fluent-warning-fg);
+  background-color: var(--color-warning);
+  color: #ffffff;
 }
 
 .payment-unpaid,
 .status-rejected {
-  background-color: var(--fluent-danger-bg);
-  color: var(--fluent-danger-fg);
+  background-color: var(--color-danger);
+  color: #ffffff;
 }
 
 /* ==========================================================================
@@ -445,25 +400,25 @@
 .my-farm-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-md);
 }
 
 .farm-header {
-  background-color: var(--fluent-bg-secondary);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-md);
-  padding: 1.25rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
 }
 
 .farm-header h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.25rem;
+  margin: 0 0 var(--space-xs);
+  font-size: var(--font-size-lg);
 }
 
 .farm-header p {
-  margin: 0.25rem 0;
-  color: var(--fluent-fg-secondary);
-  font-size: 0.9rem;
+  margin: var(--space-xxs) 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
 }
 
 /* ==========================================================================
@@ -489,11 +444,11 @@
 
 @media (max-width: 600px) {
   .farmdashpage {
-    padding: 0.5rem;
+    padding: var(--space-sm);
   }
 
   .tab-contents {
-    padding: 1rem;
+    padding: var(--space-sm);
   }
 
   .stats-summary {
