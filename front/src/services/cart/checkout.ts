@@ -41,6 +41,18 @@ export interface CheckoutHandlerProps {
 const toRupees = (p: number = 0): number => p / 100;
 const formatPrice = (v: number): string => `₹${v.toFixed(2)}`;
 
+const normalizeDiscountPercent = (value: number | string | undefined): number => {
+  const numericValue = Number(value ?? 0);
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return 0;
+  }
+
+  // Backend cart discounts are stored as percentage basis points in some flows,
+  // e.g. 600 means 6%, while older payloads may already send plain percentages.
+  return numericValue > 100 ? numericValue / 100 : numericValue;
+};
+
 const calculateSubtotal = (items: CheckoutItem[] = []): number =>
   items.reduce(
     (sum, i) => sum + toRupees(i.price) * (Number(i.quantity) || 0),
@@ -209,7 +221,7 @@ function renderSummary(container: HTMLElement, { items, address, couponCode }: S
   const subtotal = calculateSubtotal(items);
   const itemDiscountTotal = items.reduce((sum, i) => {
     const price = toRupees(i.price);
-    const discountPercent = Number(i.discount || 0);
+    const discountPercent = normalizeDiscountPercent(i.discount);
     const lineDiscount = discountPercent > 0 ? price * (discountPercent / 100) * (Number(i.quantity) || 0) : 0;
     return sum + lineDiscount;
   }, 0);

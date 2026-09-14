@@ -15,6 +15,16 @@ export interface MenuCardProps {
   isLoggedIn?: boolean;
 }
 
+const normalizeDiscountPercent = (value: number | string | undefined): number => {
+  const numericValue = Number(value ?? 0);
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return 0;
+  }
+
+  return numericValue > 100 ? numericValue / 100 : numericValue;
+};
+
 const MenuCard = ({
   name,
   price,
@@ -27,8 +37,9 @@ const MenuCard = ({
   isCreator = false,
   isLoggedIn = false,
 }: MenuCardProps): HTMLElement => {
-  const hasDiscount = Number(discount || 0) > 0;
-  const discountedPrice = hasDiscount ? (price * (1 - Number(discount || 0) / 100)) / 100 : price / 100;
+  const normalizedDiscount = normalizeDiscountPercent(discount);
+  const hasDiscount = normalizedDiscount > 0;
+  const discountedPrice = hasDiscount ? (price * (1 - normalizedDiscount / 100)) / 100 : price / 100;
   const priceText = hasDiscount ? `Price: ₹${discountedPrice.toFixed(2)}` : `Price: ₹${(price / 100).toFixed(2)}`;
 
   // Images and details
@@ -49,7 +60,7 @@ const MenuCard = ({
             fontWeight: "bold",
           },
         },
-        [`${discount}% OFF`]
+        [`${normalizedDiscount}% OFF`]
       )
     : null;
 

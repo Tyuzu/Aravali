@@ -39,8 +39,9 @@ const MerchCard = ({
     loading: "lazy",
   }) as HTMLImageElement;
 
-  const hasDiscount = Number(discount || 0) > 0;
-  const discountedPrice = hasDiscount ? price * (1 - Number(discount || 0) / 100) : price;
+  const normalizedDiscount = Number.isFinite(Number(discount)) && Number(discount) > 100 ? Number(discount) / 100 : Number(discount || 0);
+  const hasDiscount = normalizedDiscount > 0;
+  const discountedPrice = hasDiscount ? price * (1 - normalizedDiscount / 100) : price;
 
   const priceText = hasDiscount
     ? `Price: ₹${(discountedPrice / 100).toFixed(2)}`
@@ -110,7 +111,7 @@ const MerchCard = ({
           {
             style: { color: "#e53935", fontWeight: "bold" },
           },
-          [`${discount}% OFF`]
+          [`${normalizedDiscount}% OFF`]
         )
       : null,
     createElement("p", {}, [`Available: ${stock}`]),
