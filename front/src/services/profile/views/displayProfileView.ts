@@ -1,7 +1,11 @@
 import profilGen from "../profilegen.js";
-import type { UserProfile } from "../../profile/profileGenHelpers.js";
+import type { UserProfile } from "../../profile/profileGenHelpers";
+import type { LoadUserDataCallback } from "../../profile/profilegen.js";
 
-export function renderProfile(profile: UserProfile, isLoggedIn: boolean, onLoadUserData?: (isLoggedIn: boolean, container: HTMLElement, username: string) => void): HTMLElement {
-  const profileElement = profilGen(profile, isLoggedIn, onLoadUserData as any);
-  return profileElement;
+export function renderProfile(
+  profile: UserProfile,
+  isLoggedIn: boolean,
+  onLoadUserData?: LoadUserDataCallback
+): HTMLElement {
+  return profilGen(profile, isLoggedIn, onLoadUserData || null);
 }

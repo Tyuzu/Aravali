@@ -1,15 +1,15 @@
 // profileUtils.ts
 
 import Datex from "../../components/base/Datex";
-import Button from "../../components/base/Button.js";
-import { getState } from "../../state/state.js";
-import { createProfileDetails, createStatistics, UserProfile, appendChildren } from "./profileGenHelpers.js";
-import { createBanner } from "./components/bannerView.js";
-import { createAvatar } from "./components/avatarView.js";
-import { othusrdata } from "../userdata/otheruserdata.js";
-import { createElement } from "../../components/createElement.js";
+import Button from "../../components/base/Button";
+import { getState } from "../../state/state";
+import { createProfileDetails, createStatistics, UserProfile, appendChildren } from "./profileGenHelpers";
+import { createBanner } from "./components/bannerView";
+import { createAvatar } from "./components/avatarView";
+import { othusrdata } from "../userdata/otheruserdata";
+import { createElement } from "../../components/createElement";
 
-type LoadUserDataCallback = (
+export type LoadUserDataCallback = (
   isLoggedIn: boolean,
   container: HTMLElement,
   username: string
@@ -90,7 +90,7 @@ export function previewAvatar(event: Event, previewId: string = "profile-picture
   if (!preview) return;
 
   if (file) {
-    // Revoke previous Object URL to prevent memory leaks if re-uploading
+    // Revoke previous Object URL to prevent memory leaks
     if (preview.dataset.objectUrl) {
       URL.revokeObjectURL(preview.dataset.objectUrl);
     }
@@ -101,12 +101,6 @@ export function previewAvatar(event: Event, previewId: string = "profile-picture
     preview.dataset.objectUrl = objectUrl;
   }
 }
-
-/* ============================================================
-    HELPERS
-============================================================ */
-
-// use shared `appendChildren` from profileGenHelpers
 
 /* ============================================================
     PROFILE GENERATOR COMPONENT
@@ -153,13 +147,36 @@ function profilGen(
 
     const loadUserDataButton = Button({
       title: "Load UserData",
-      id: "load-user-data",
+      // Avoid duplicate static IDs when rendering multiple profiles
+      id: profile.userid ? `load-user-data-${String(profile.userid)}` : undefined,
       classes: "buttonx primary",
       type: "button",
       events: {
-        click: () => {
-          if (typeof onLoadUserData === "function") {
-            onLoadUserData(isLoggedIn, udata, String(profile.username || profile.userid));
+        click: async (event: Event) => {
+          // Debug: log click to help diagnose non-responsive button
+          try {
+            console.debug("LoadUserData button clicked", { userid: profile.userid, username: profile.username });
+          } catch (e) {
+            // ignore
+          }
+
+          if (event && (event as Event).cancelable) (event as Event).preventDefault();
+
+          if (typeof onLoadUserData !== "function") {
+            console.warn("onLoadUserData callback not provided");
+            return;
+          }
+
+          const btn = event.currentTarget as HTMLButtonElement | null;
+          if (btn) btn.disabled = true;
+
+          try {
+            const username = String(profile.username ?? profile.userid ?? "");
+            await onLoadUserData(isLoggedIn, udata, username);
+          } catch (err) {
+            console.error("Error loading user data:", err);
+          } finally {
+            if (btn) btn.disabled = false;
           }
         }
       }

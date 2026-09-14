@@ -1,9 +1,10 @@
-import { fetchUserProfile } from "./fetchProfile.js";
+import { fetchUserProfile } from "./fetchProfile";
 import profilGen from "./profilegen.js";
-import { attachProfileEventListeners } from "./events/profileEvents.js";
-import { displayUserProfileData } from "../userdata/displayProfileData.js";
-import { createElement } from "../../components/createElement.js";
-import Notify from "../../components/ui/Notify.js";
+import { attachProfileEventListeners } from "./events/profileEvents";
+import { displayUserProfileData } from "../userdata/displayProfileData";
+import { createElement } from "../../components/createElement";
+import { showLoadingMessage, removeLoadingMessage } from "./profilegen.js";
+import Notify from "../../components/ui/Notify";
 
 /* ============================================================
     DISPLAY OTHER USER PROFILE
@@ -19,24 +20,35 @@ async function displayUserProfile(
 ): Promise<void> {
   if (!content) return;
 
-  content.replaceChildren(); // Clear existing container content
+  // Clear existing content and display loading state
+  content.replaceChildren();
+  const loadingContainerId = content.id || "content";
+  showLoadingMessage("Loading profile...", loadingContainerId);
+
   try {
     const userProfile = await fetchUserProfile(username);
+    removeLoadingMessage();
 
     if (userProfile) {
-      // Pass displayUserProfileData directly as the callback dependency
+      // Generate profile element with user data loading callback
       const profileElement = profilGen(userProfile, isLoggedIn, displayUserProfileData);
-      content.appendChild(profileElement);
+      
+      content.replaceChildren(profileElement);
       attachProfileEventListeners(content);
     } else {
       const notFoundMessage = createElement("p", { class: "error-message" }, "User not found.");
-      content.appendChild(notFoundMessage);
+      content.replaceChildren(notFoundMessage);
     }
   } catch (error) {
+    removeLoadingMessage();
     console.error("Failed to display user profile:", error);
 
-    const errorMessage = createElement("p", { class: "error-message" }, "Failed to load user profile. Please try again later.");
-    content.appendChild(errorMessage);
+    const errorMessage = createElement(
+      "p",
+      { class: "error-message" },
+      "Failed to load user profile. Please try again later."
+    );
+    content.replaceChildren(errorMessage);
 
     Notify("Error fetching user profile.", { type: "error", duration: 3000, dismissible: true });
   }
