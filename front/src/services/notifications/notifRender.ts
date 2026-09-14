@@ -10,6 +10,7 @@ import { decrementUnreadNotificationState, syncUnreadNotificationState } from ".
 
 export interface SystemLog {
   id?: string | number;
+  userId?: string;
   notificationid?: string | number;
   type?: "info" | "error" | "success" | string;
   title?: string;
@@ -41,7 +42,11 @@ function matchesQuery(value: string | undefined, query: string): boolean {
   return (value || "").toLowerCase().includes(query.toLowerCase());
 }
 
-export function filterNotifications(items: NotificationItem[], filter: NotificationFilter, query: string): NotificationItem[] {
+export function filterNotifications(
+  items: NotificationItem[],
+  filter: NotificationFilter,
+  query: string
+): NotificationItem[] {
   return items.filter((item) => {
     const matchesFilter = filter === "all" ? true : !item.isRead;
     const text = [item.title, item.type, item.message].join(" ");
@@ -49,7 +54,11 @@ export function filterNotifications(items: NotificationItem[], filter: Notificat
   });
 }
 
-export function filterSystemLogs(items: SystemLog[], filter: SystemFilter, query: string): SystemLog[] {
+export function filterSystemLogs(
+  items: SystemLog[],
+  filter: SystemFilter,
+  query: string
+): SystemLog[] {
   return items.filter((item) => {
     const type = String(item.type || "info").toLowerCase();
     const matchesFilter =
@@ -90,7 +99,11 @@ export function renderEmptyState(container: HTMLElement, message: string): void 
   );
 }
 
-export function createNotificationCard(n: NotificationItem, userId: string | null, onChange?: () => void): HTMLElement {
+export function createNotificationCard(
+  n: NotificationItem,
+  userId: string | null,
+  onChange?: () => void
+): HTMLElement {
   let isRead = Boolean(n.isRead);
 
   const leftContent = createElement("div", { class: "notification-card__content" }, [
@@ -144,7 +157,11 @@ export function createNotificationCard(n: NotificationItem, userId: string | nul
   return card;
 }
 
-export function createSystemLogCard(log: SystemLog, onChange?: () => void): HTMLElement {
+export function createSystemLogCard(
+  userId: string,
+  log: SystemLog,
+  onChange?: () => void
+): HTMLElement {
   let isRead = Boolean(log.isRead);
   const isError = String(log.type || "info").toLowerCase() === "error";
   const isSuccess = String(log.type || "info").toLowerCase() === "success";
@@ -159,22 +176,29 @@ export function createSystemLogCard(log: SystemLog, onChange?: () => void): HTML
 
   const content = createElement("div", { class: "notification-card__content" }, [
     badge,
-    createElement("strong", { class: `notification-card__title${isRead ? " is-read" : ""}` }, [log.title || "System Message"]),
+    createElement(
+      "strong",
+      { class: `notification-card__title${isRead ? " is-read" : ""}` },
+      [log.title || "System Message"]
+    ),
     createElement("p", { class: "notification-card__message" }, [log.message || ""]),
-    createElement("small", { class: "notification-card__time" }, [timeAgo(log.createdAt || Date.now())]),
+    createElement("small", { class: "notification-card__time" }, [
+      timeAgo(log.createdAt || Date.now()),
+    ]),
   ]);
 
   const markReadBtn = createElement(
     "button",
     {
       class: "notification-action-btn",
+      type: "button",
       events: {
         click: async (e: Event) => {
           const mouseEvent = e as MouseEvent;
           mouseEvent.stopPropagation();
           try {
-            const updatedLog = { ...log, isRead: true };
-            const saveMethod = (idxDB as any).update || (idxDB as any).put;
+            const updatedLog = { ...log, userId, isRead: true };
+            const saveMethod = (idxDB as any).update || (idxDB as any).put || (idxDB as any).set;
 
             if (saveMethod) {
               await saveMethod(updatedLog);
@@ -194,8 +218,33 @@ export function createSystemLogCard(log: SystemLog, onChange?: () => void): HTML
     ["Mark Read"]
   );
 
+  const deleteBtn = createElement(
+    "button",
+    {
+      class: "notification-delete-btn",
+      type: "button",
+      "aria-label": "Delete log",
+      events: {
+        click: async (e: Event) => {
+          const mouseEvent = e as MouseEvent;
+          mouseEvent.stopPropagation();
+          try {
+            if (log.id != null) {
+              await idxDB.remove(log.id, userId);
+            }
+            if (onChange) onChange();
+          } catch (err) {
+            console.error("Failed to delete log from IndexedDB:", err);
+          }
+        },
+      },
+    },
+    ["×"]
+  );
+
   const children: HTMLElement[] = [content];
   if (!isRead) children.push(markReadBtn);
+  children.push(deleteBtn);
 
   const card = createElement(
     "div",
@@ -208,8 +257,12 @@ export function createSystemLogCard(log: SystemLog, onChange?: () => void): HTML
   return card;
 }
 
-export function createSystemActionBar(logs: SystemLog[], onRefresh: () => void): HTMLElement | null {
-  if (!logs.length) return null;
+export function createSystemActionBar(
+  userId: string,
+  logs: SystemLog[],
+  onRefresh: () => void
+): HTMLElement | null {
+  if (!userId || !logs.length) return null;
 
   const actionBarChildren: HTMLElement[] = [];
   const unreadExist = logs.some((log) => !log.isRead);
@@ -219,15 +272,11 @@ export function createSystemActionBar(logs: SystemLog[], onRefresh: () => void):
       "button",
       {
         class: "notification-action-bar__btn notification-action-bar__btn--success",
+        type: "button",
         events: {
           click: async () => {
             try {
-              const saveMethod = (idxDB as any).update || (idxDB as any).put;
-              const updatePromises = logs
-                .filter((log) => !log.isRead)
-                .map((log) => saveMethod({ ...log, isRead: true }));
-
-              await Promise.all(updatePromises);
+              await idxDB.markAllAsRead(userId);
               syncUnreadNotificationState(0);
               onRefresh();
             } catch (error) {
@@ -246,11 +295,12 @@ export function createSystemActionBar(logs: SystemLog[], onRefresh: () => void):
     "button",
     {
       class: "notification-action-bar__btn notification-action-bar__btn--danger",
+      type: "button",
       events: {
         click: async () => {
           if (!confirm("Clear all stored system logs?")) return;
           try {
-            await idxDB.clear();
+            await idxDB.clear(userId);
             onRefresh();
           } catch (error) {
             console.error("Error clearing IndexedDB logs:", error);
@@ -281,6 +331,7 @@ export function createActionBar(
       "button",
       {
         class: "notification-action-bar__btn notification-action-bar__btn--success",
+        type: "button",
         events: {
           click: async () => {
             try {
@@ -303,6 +354,7 @@ export function createActionBar(
     "button",
     {
       class: "notification-action-bar__btn notification-action-bar__btn--danger",
+      type: "button",
       events: {
         click: async () => {
           if (!confirm("Clear all activity notifications?")) return;

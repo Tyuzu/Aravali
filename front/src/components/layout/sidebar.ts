@@ -263,5 +263,9 @@ export function toggleControlCenter(): void {
   attachHandlers(dialog, close);
 }
 
+export function goHome(): void {
+  navigate("/home");
+}
+
 // Backwards compatibility alias
 export { toggleControlCenter as toggleSidebar };

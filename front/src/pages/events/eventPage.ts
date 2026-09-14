@@ -1,5 +1,6 @@
 
 import "../../../css/subpages/tickscon.css";
+import "../../../css/inistyles/eventpage.css";
 import { displayEvent } from "../../services/event/eventService.js";
 
 export async function Event(

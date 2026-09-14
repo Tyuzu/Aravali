@@ -112,7 +112,13 @@
     "login": "Login",
     "email": "Email",
     "password": "Password",
-    "logout": "Logout"
+    "logout": "Logout",
+    "login.signUpLink":"",
+    "login.noAccount":"",
+    "login.button":"",
+    "login.title":"",
+    "login.usernamePlaceholder":"",
+    "login.passwordPlaceholder":""
   },
   "feed": {
     "unknownPostType": "Unknown post type",
@@ -144,6 +150,7 @@
     "disclaimer": "Disclaimer",
     "blog": "Blog",
     "allRightsReserved": "All rights reserved",
-    "feedback": "Feedback"
+    "feedback": "Feedback",
+    "lang.en": "English"
   }
 }

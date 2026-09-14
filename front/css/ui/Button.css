@@ -3,7 +3,7 @@
    Uses CSS Custom Properties defined in :root
    ========================================================================== */
 
-.button {
+.buttonx {
   /* Layout & Alignment */
   display: inline-flex;
   align-items: center;
@@ -41,30 +41,30 @@
 }
 
 /* Hover State */
-.button:hover {
+.buttonx:hover {
   background-color: var(--color-btn-hover-bg);
   box-shadow: var(--shadow-elev-2);
 }
 
 /* Focus & Accessibility State */
-.button:focus {
+.buttonx:focus {
   outline: none;
 }
 
-.button:focus-visible {
+.buttonx:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 /* Active / Pressed State */
-.button:active {
+.buttonx:active {
   transform: translateY(1px);
   box-shadow: var(--shadow-elev-0);
 }
 
 /* Disabled State */
-.button:disabled,
-.button.is-disabled {
+.buttonx:disabled,
+.buttonx.is-disabled {
   background-color: var(--color-btn-disabled-bg);
   color: var(--color-btn-disabled-fg);
   border-color: transparent;
@@ -79,40 +79,40 @@
    ========================================================================== */
 
 /* Full Width Helper Class */
-.button.w-full {
+.buttonx.w-full {
   width: 100%;
 }
 
 /* Secondary Variant */
-.button.secondary {
+.buttonx.secondary {
   background-color: var(--color-bg-tertiary);
   color: var(--color-fg);
   border-color: var(--color-border);
 }
 
-.button.secondary:hover {
+.buttonx.secondary:hover {
   background-color: var(--color-border-light);
   border-color: var(--color-border);
 }
 
 /* Outline Variant */
-.button.outline {
+.buttonx.outline {
   background-color: transparent;
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-.button.outline:hover {
+.buttonx.outline:hover {
   background-color: var(--color-primary);
   color: #fff;
 }
 
 /* Danger / Destructive Variant */
-.button.danger {
+.buttonx.danger {
   background-color: var(--color-danger);
   color: #fff;
 }
 
-.button.danger:hover {
+.buttonx.danger:hover {
   background-color: #b91c1c;
 }

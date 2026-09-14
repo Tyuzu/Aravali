@@ -26,6 +26,8 @@ export interface Crop {
 
 export type CategorizedCrops = Record<string, Crop[]>;
 
+export type ViewMode = "grid" | "list";
+
 interface FilterOptions {
   term: string;
   tags: Set<string>;
@@ -37,8 +39,11 @@ interface InterfaceState {
   categories: string[];
   currentTab: string | null;
   activeTags: Set<string>;
+  viewMode: ViewMode;
   searchBox: HTMLInputElement;
   sortSelect: HTMLSelectElement;
+  gridViewBtn: HTMLButtonElement;
+  listViewBtn: HTMLButtonElement;
   tabs: Record<string, HTMLElement>;
   tabButtons: HTMLElement;
 }
@@ -164,10 +169,6 @@ function formatCropSlug(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "_");
 }
 
-// --- Component Renderers ---
-
-// `renderCropCard` implementation moved to `components/cropCard.js`.
-
 // --- Interface State Management ---
 
 export function renderCropInterface(container: HTMLElement, cropData: CategorizedCrops): void {
@@ -185,7 +186,40 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
     createElement("option", { value: "za" }, ["Z → A"])
   ]) as HTMLSelectElement;
 
-  const controls = createElement("div", { class: "top-controls" }, [searchBox, sortSelect]);
+  // View Toggle Buttons
+  const gridViewBtn = createElement(
+    "button",
+    {
+      class: "view-btn active",
+      type: "button",
+      "aria-label": "Grid View",
+      title: "Grid View"
+    },
+    ["田"]
+  ) as HTMLButtonElement;
+
+  const listViewBtn = createElement(
+    "button",
+    {
+      class: "view-btn",
+      type: "button",
+      "aria-label": "List View",
+      title: "List View"
+    },
+    ["☰"]
+  ) as HTMLButtonElement;
+
+  const viewToggleGroup = createElement("div", { class: "view-toggle-group" }, [
+    gridViewBtn,
+    listViewBtn
+  ]);
+
+  const controls = createElement("div", { class: "top-controls" }, [
+    searchBox,
+    sortSelect,
+    viewToggleGroup
+  ]);
+
   const tabButtons = createElement("div", { class: "tabs" });
   const tabsWrapper = createElement("div", { id: "catalogue-container" });
 
@@ -202,21 +236,39 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
     categories,
     currentTab: categories[0] || null,
     activeTags: new Set(),
+    viewMode: "grid",
     searchBox,
     sortSelect,
+    gridViewBtn,
+    listViewBtn,
     tabs: {},
     tabButtons
   };
 
+  // Switch View Mode Handler
+  const setViewMode = (mode: ViewMode) => {
+    if (state.viewMode === mode) return;
+    state.viewMode = mode;
+
+    gridViewBtn.classList.toggle("active", mode === "grid");
+    listViewBtn.classList.toggle("active", mode === "list");
+
+    updateAllTabs(state);
+  };
+
+  gridViewBtn.onclick = () => setViewMode("grid");
+  listViewBtn.onclick = () => setViewMode("list");
+
   categories.forEach((cat, index) => {
     const isFirst = index === 0;
     const count = cropData[cat]?.length || 0;
-    
+
     const btn = createElement(
       "button",
-      { 
+      {
         class: `buttonx ${isFirst ? "active" : ""}`,
-        disabled: count === 0
+        disabled: count === 0,
+        "data-category": cat.toLowerCase()
       },
       [`${cat.charAt(0).toUpperCase() + cat.slice(1)} (${count})`]
     ) as HTMLButtonElement;
@@ -228,7 +280,10 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
 
     tabButtons.appendChild(btn);
 
-    const pane = createElement("div", { class: "tab-content", id: cat });
+    const pane = createElement("div", {
+      class: `tab-content ${state.viewMode}-view`,
+      id: cat
+    });
     state.tabs[cat] = pane;
     tabsWrapper.appendChild(pane);
   });
@@ -250,7 +305,7 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
 }
 
 function updateAllTabs(state: InterfaceState): void {
-  const { categories, currentTab, tabButtons, tabs } = state;
+  const { categories, currentTab, tabButtons, tabs, viewMode } = state;
   if (!currentTab) return;
 
   updateTab(currentTab, state);
@@ -259,6 +314,10 @@ function updateAllTabs(state: InterfaceState): void {
     const pane = tabs[cat];
     if (pane) {
       pane.style.display = cat === currentTab ? "flex" : "none";
+      
+      // Keep view mode class updated across all tab content panels
+      pane.classList.remove("grid-view", "list-view");
+      pane.classList.add(`${viewMode}-view`);
     }
   });
 
@@ -270,7 +329,7 @@ function updateAllTabs(state: InterfaceState): void {
 }
 
 function updateTab(category: string, state: InterfaceState): void {
-  const { cropData, tabs, searchBox, sortSelect, activeTags } = state;
+  const { cropData, tabs, searchBox, sortSelect, activeTags, viewMode } = state;
   const container = tabs[category];
 
   if (!container) return;
@@ -291,7 +350,10 @@ function updateTab(category: string, state: InterfaceState): void {
   }
 
   const fragment = document.createDocumentFragment();
-  filtered.forEach(crop => fragment.appendChild(renderCropCard(crop)));
+  filtered.forEach(crop => {
+    // Pass viewMode down if renderCropCard accepts it
+    fragment.appendChild(renderCropCard(crop, viewMode));
+  });
   container.appendChild(fragment);
 }
 

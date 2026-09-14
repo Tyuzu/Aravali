@@ -1,6 +1,5 @@
 
 import "../../../css/inistyles/postpage.css";
-import "../../../css/inistyles/postpage.css";
 import { displayPost } from "../../services/posts/postDisplay.js";
 
 export async function Post(

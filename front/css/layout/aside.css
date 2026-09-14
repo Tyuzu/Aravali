@@ -74,6 +74,30 @@
 }
 */
 
+/* =========================================================
+   ASIDE & SECTIONS
+   ========================================================= */
+
+.aside-title {
+  margin: 0;
+  padding-bottom: var(--space-sm);
+  font-size: var(--font-size-xl);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.aside-section {
+  margin: var(--space-md) 0;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elev-1);
+}
+
+.aside-section h3 {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--font-size-base);
+}
+
 .aside-section:hover,
 .layout-aside>div>section:hover {
   background-color: var(--color-card-hover);
@@ -112,7 +136,7 @@
 .aside-actions,
 .cta-list,
 
-
+/* 
 .buttonx {
   display: inline-flex;
   align-items: center;
@@ -129,7 +153,6 @@
   transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
   width: fit-content;
 
-  /* Default Button Style */
   background-color: var(--color-btn-bg);
   color: var(--color-btn-fg);
   margin-right: var(--space-xs);
@@ -138,8 +161,9 @@
 .buttonx:hover {
   background-color: var(--color-btn-hover-bg);
 }
-
+*/
 /* Primary Button Modifier */
+/*
 .buttonx.primary {
   background-color: var(--color-primary);
   color: var(--color-primary-fg);
@@ -147,10 +171,10 @@
 
 .buttonx.primary:hover {
   background-color: var(--color-primary-hover);
-}
+} */
 
 /* Secondary Button Modifier */
-.buttonx.secondary {
+/* .buttonx.secondary {
   background-color: transparent;
   border-color: var(--color-border);
   color: var(--color-fg);
@@ -165,7 +189,7 @@
   background-color: var(--color-btn-disabled-bg);
   color: var(--color-btn-disabled-fg);
   cursor: not-allowed;
-}
+} */
 
 /* ==========================================================================
    Specific Layout-Aside Elements

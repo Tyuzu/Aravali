@@ -58,9 +58,10 @@ export async function displayProduct(
 
     const priceValue = Number(product.price ?? 0);
     const discountValue = Number(product.discount ?? 0);
-    const hasDiscount = Number.isFinite(discountValue) && discountValue > 0;
+    const normalizedDiscount = Number.isFinite(discountValue) && discountValue > 100 ? discountValue / 100 : discountValue;
+    const hasDiscount = Number.isFinite(normalizedDiscount) && normalizedDiscount > 0;
     const effectivePrice = hasDiscount
-      ? Math.max(priceValue * (1 - discountValue / 100), 0)
+      ? Math.max(priceValue * (1 - normalizedDiscount / 100), 0)
       : priceValue;
 
     const title = createElement("h1", {}, [product.name || "Product"]);
@@ -82,7 +83,7 @@ export async function displayProduct(
         ? createElement("div", {}, [
             createElement("span", { class: "current-price" }, [`₹${formatPrice(effectivePrice)}`]),
             createElement("span", { class: "original-price" }, [`₹${formatPrice(product.price)}`]),
-            createElement("span", { class: "discount-badge" }, [`${Math.min(Math.max(discountValue, 0), 100).toFixed(0)}% OFF`]),
+            createElement("span", { class: "discount-badge" }, [`${Math.min(Math.max(normalizedDiscount, 0), 100).toFixed(0)}% OFF`]),
           ])
         : createElement("span", { class: "current-price" }, [`₹${formatPrice(product.price)}`]),
     ]);

@@ -37,10 +37,11 @@ export function displayCropCard(crop: CropCardData): HTMLElement {
 
     // 2. Pricing Calculations
     const discountPercent = Number(crop.discount || 0);
-    const hasDiscount = discountPercent > 0;
+    const normalizedDiscount = discountPercent > 100 ? discountPercent / 100 : discountPercent;
+    const hasDiscount = normalizedDiscount > 0;
     const basePrice = Number(crop.price || 0);
     const discountedPrice = hasDiscount
-        ? Number((basePrice * (1 - discountPercent / 100)).toFixed(2))
+        ? Number((basePrice * (1 - normalizedDiscount / 100)).toFixed(2))
         : basePrice;
 
     // 3. Card Elements
@@ -53,7 +54,7 @@ export function displayCropCard(crop: CropCardData): HTMLElement {
             ? createElement(
                   "p",
                   { class: "crop-card-discount", style: { color: "#e53935", fontWeight: "bold" } },
-                  [`${discountPercent}% OFF`]
+                  [`${normalizedDiscount}% OFF`]
               )
             : null,
         createElement("p", { class: "crop-card-stock" }, [`📦 In Stock: ${crop.quantity ?? 0}`]),

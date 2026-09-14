@@ -188,8 +188,9 @@ export function renderItemCard(
   const numericPrice = Number(item.price);
   const safePrice = Number.isFinite(numericPrice) && numericPrice >= 0 ? numericPrice : 0;
   const numericDiscount = Number(item.discount || 0);
-  const hasDiscount = Number.isFinite(numericDiscount) && numericDiscount > 0;
-  const discountedPrice = calculateDisplayPrice(safePrice, numericDiscount);
+  const normalizedDiscount = Number.isFinite(numericDiscount) && numericDiscount > 100 ? numericDiscount / 100 : numericDiscount;
+  const hasDiscount = Number.isFinite(normalizedDiscount) && normalizedDiscount > 0;
+  const discountedPrice = calculateDisplayPrice(safePrice, normalizedDiscount);
   const displayUnit = item.unit ? ` / ${item.unit}` : "";
 
   const pricingSection = createElement(
@@ -203,7 +204,7 @@ export function renderItemCard(
             [
               createElement("span", { class: "current-price discounted" }, [`₹${discountedPrice.toFixed(2)}${displayUnit}`]),
               createElement("span", { class: "original-price strike" }, [`₹${safePrice.toFixed(2)}`]),
-              createElement("span", { class: "discount-badge" }, [`${Math.min(Math.max(numericDiscount, 0), 100)}% OFF`])
+              createElement("span", { class: "discount-badge" }, [`${Math.min(Math.max(normalizedDiscount, 0), 100)}% OFF`])
             ]
           )
         : createElement("span", { class: "current-price" }, [`₹${safePrice.toFixed(2)}${displayUnit}`])

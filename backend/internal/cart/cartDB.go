@@ -423,6 +423,35 @@ func fetchUserOrdersFromDB(
 	from accidentally resolving a crop as a product.
 */
 
+func resolveLookupTypeAlias(itemType string, category string) string {
+	itemType = strings.ToLower(strings.TrimSpace(itemType))
+	category = strings.ToLower(strings.TrimSpace(category))
+
+	switch itemType {
+	case "crop", "farm":
+		return "crop"
+	case "product", "book", "tool", "tools":
+		return "product"
+	case "menu", "food":
+		return "menu"
+	case "merch", "merchandise", "merchandises":
+		return "merch"
+	}
+
+	switch {
+	case strings.Contains(category, "crop"):
+		return "crop"
+	case strings.Contains(category, "product") || strings.Contains(category, "tool"):
+		return "product"
+	case strings.Contains(category, "menu") || strings.Contains(category, "food"):
+		return "menu"
+	case strings.Contains(category, "merch"):
+		return "merch"
+	default:
+		return ""
+	}
+}
+
 func lookupItemDetailsByType(
 	ctx context.Context,
 	itemID string,
@@ -431,49 +460,23 @@ func lookupItemDetailsByType(
 	app *infra.Deps,
 ) (*ItemDetails, error) {
 	itemID = strings.TrimSpace(itemID)
-	itemType = strings.ToLower(strings.TrimSpace(itemType))
-	category = strings.ToLower(strings.TrimSpace(category))
-
 	if itemID == "" {
 		return nil, errors.New("item id is required")
 	}
 
-	/*
-		Category is used as a secondary hint.
+	lookupType := resolveLookupTypeAlias(itemType, category)
 
-		We intentionally don't blindly trust it because old clients may
-		send slightly different category names.
-	*/
-	switch itemType {
-	case "crop", "farm":
+	switch lookupType {
+	case "crop":
 		return lookupCrop(ctx, itemID, app)
-
-	case "product", "book":
+	case "product":
 		return lookupProduct(ctx, itemID, app)
-
-	case "menu", "food":
+	case "menu":
 		return lookupMenu(ctx, itemID, app)
-
-	case "merch", "merchandise":
+	case "merch":
 		return lookupMerchandise(ctx, itemID, app)
-
 	default:
-		switch category {
-		case "crops":
-			return lookupCrop(ctx, itemID, app)
-
-		case "products":
-			return lookupProduct(ctx, itemID, app)
-
-		case "menu":
-			return lookupMenu(ctx, itemID, app)
-
-		case "merchandise":
-			return lookupMerchandise(ctx, itemID, app)
-
-		default:
-			return nil, errors.New("unsupported item type")
-		}
+		return nil, errors.New("unsupported item type")
 	}
 }
 

@@ -1,10 +1,10 @@
 import "../../../css/layout/sticky.css";
 import { createElement } from "../createElement.js";
-import { notifSVG, cartSVG, chatSVG, menuSVG } from "../svgs/featherSVGs";
+import { notifSVG, cartSVG, chatSVG, menuSVG, aSVG } from "../svgs/featherSVGs";
 import { navigate } from "../../routes/navigate.js";
 import { getState, subscribe } from "../../state/state.js";
 import { openNotificationsModal } from "../../services/notifications/notifModal.js";
-import { toggleSidebar } from "./sidebar.js";
+import { goHome, toggleSidebar } from "./sidebar.js";
 import { createIconButton } from "../../utils/svgIconButton.js";
 
 /* =========================================================
@@ -58,6 +58,16 @@ function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}
     // And here 👇
     container.dataset['stateKey'] = nextStateKey;
     const fragment: DocumentFragment = document.createDocumentFragment();
+
+    // 0. Sidebar Home Button
+    fragment.appendChild(
+        createIconButton({
+            classSuffix: "menu",
+            svgMarkup: aSVG,
+            onClick: goHome,
+            label: "Open menu"
+        })
+    );
 
     // 1. Sidebar Toggle Button
     fragment.appendChild(

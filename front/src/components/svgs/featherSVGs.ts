@@ -84,14 +84,16 @@ const starFilledSVG: string = plusSquareSVG;
 
 const commentSVG: string = `<svg aria-label="Comment" class="clrful" fill="none" height="24" role="img" viewBox="0 0 24 24" width="24"><title>Comment</title><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke-linejoin="round" stroke-width="2"></path></svg>`;
 
-const menuSVG: string = `<svg class="clrful" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-linecap="round" stroke-linejoin="round">
-<title>Menu</title><line x1="2" y1="12" x2="18" y2="12"></line><line x1="8" y1="6" x2="0" y2="20"></line><line x1="12" y1="6" x2="20" y2="20"></line></svg>`;
+const menuSVG: string = `<svg xmlns="http://w3.org" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>`;
 
 const skipBackSVG: string = `<svg class="clrful" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>`;
 
 const skipForwardSVG: string = `<svg class="clrful" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>`;
 
 const shareSVG: string = `<svg class="clrful" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>`;
+
+const aSVG: string = `<svg class="clrful" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<title>Menu</title><line x1="2" y1="12" x2="18" y2="12"></line><line x1="8" y1="6" x2="0" y2="20"></line><line x1="12" y1="6" x2="20" y2="20"></line></svg>`;
 
 export {
   profileSVG,
@@ -140,5 +142,6 @@ export {
   menuSVG,
   skipBackSVG,
   skipForwardSVG,
-  shareSVG
+  shareSVG,
+  aSVG
 };

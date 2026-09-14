@@ -14,6 +14,30 @@ import {
 import { Recipe, Ingredient, RecipeStep, User } from "./types/recipe.js";
 
 /* ============================================================
+   HELPERS & STORAGE
+============================================================ */
+const Storage = {
+  get<T>(key: string, defaultValue: T): T {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? (JSON.parse(item) as T) : defaultValue;
+    } catch (err) {
+      console.warn(`[Storage] Failed to read ${key}:`, err);
+      return defaultValue;
+    }
+  },
+  set(key: string, value: unknown): boolean {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (err) {
+      console.warn(`[Storage] Failed to write ${key}:`, err);
+      return false;
+    }
+  }
+};
+
+/* ============================================================
    INGREDIENTS
 ============================================================ */
 export function renderIngredients(
@@ -21,132 +45,128 @@ export function renderIngredients(
   isLoggedIn?: boolean,
   recipe?: Recipe
 ): HTMLElement {
-  const ingList = createElement("ul", {
-    class: "ingredients-list",
-  }) as HTMLUListElement;
+  const container = createElement("ul", { class: "ingredients-list" }) as HTMLUListElement;
 
-  if (!Array.isArray(ingredients) || ingredients.length === 0) {
-    return createElement("ul", { class: "ingredients-list" }, [
-      createElement("li", {}, ["No ingredients available."]),
+  if (!ingredients?.length) {
+    return createElement("ul", { class: "ingredients-list empty" }, [
+      createElement("li", { class: "empty-state" }, ["No ingredients listed for this recipe."]),
     ]);
   }
-  const canEditRecipe = isRecipeOwner(recipe);
 
-  function makeAddBtn(ingredient: Ingredient, recipeQuantity?: number | string): HTMLElement {
-    let adding = false;
-
-    const btn = Button({
-      title: "Add to Cart",
-      classes: "small-button",
-      events: {
-        click: async (event?: Event) => {
-          event?.stopPropagation?.();
-          if (adding) return;
-
-          const token = getState("token");
-          if (!token) {
-            await addToCart({
-              itemId: getIngredientItemId(ingredient),
-              itemType: "product",
-              quantity: normalizeCartQuantity(recipeQuantity),
-              isLoggedIn: false,
-            });
-            return;
-          }
-          const itemId = getIngredientItemId(ingredient);
-          if (!itemId) {
-            Notify("This ingredient is currently unavailable in the store.", {
-              type: "warning",
-              duration: 3000,
-            });
-            return;
-          }
-          const quantity = normalizeCartQuantity(recipeQuantity);
-          if (!Number.isInteger(quantity) || quantity < 1 || !isValidCartQuantity(quantity)) {
-            Notify("Invalid ingredient quantity.", {
-              type: "warning",
-              duration: 3000,
-            });
-            return;
-          }
-          adding = true;
-          btn.disabled = true;
-          try {
-            await addToCart({
-              itemId,
-                itemType: "product",
-              quantity,
-              isLoggedIn: true,
-              onCartUpdated: (response: unknown) => {
-                console.debug("Recipe ingredient cart updated:", response);
-              },
-            });
-          } catch (error) {
-            console.error("Failed to add recipe ingredient to cart:", error);
-          } finally {
-            adding = false;
-            btn.disabled = false;
-          }
-        },
-      },
-    }) as HTMLButtonElement;
-
-    return btn;
-  }
+  const canEdit = isRecipeOwner(recipe);
 
   ingredients.forEach((ingredient, index) => {
-    const li = createElement("li", {});
+    const itemId = getIngredientItemId(ingredient);
     const quantity = ingredient.quantity ?? "";
     const unit = ingredient.unit ?? "";
-    const name = ingredient.name ?? "";
-    const textContainer = createElement("span", {}, [`${quantity} ${unit} ${name}`.trim()]);
-    li.appendChild(textContainer);
+    const name = ingredient.name ?? "Unnamed ingredient";
 
-    const itemId = getIngredientItemId(ingredient);
+    const labelText = `${quantity} ${unit} ${name}`.replace(/\s+/g, " ").trim();
+    const textContainer = createElement("span", { class: "ingredient-text" }, [labelText]);
+
+    const li = createElement("li", { class: "ingredient-item", "data-index": String(index) }, [
+      textContainer
+    ]);
+
+    // Availability Tag & Quick Add
     if (!itemId) {
-      li.appendChild(createElement("span", { class: "warning" }, ["Unavailable in store"]));
+      li.appendChild(createElement("span", { class: "badge badge-warning" }, ["Unavailable in store"]));
+    } else if (isLoggedIn) {
+      const addBtn = createAddToCartButton(ingredient, quantity);
+      li.appendChild(addBtn);
     }
 
-    if (isLoggedIn && itemId) {
-      li.appendChild(makeAddBtn(ingredient, quantity));
-    }
-
-    if (canEditRecipe) {
+    // Recipe Owner Controls
+    if (canEdit) {
       const editBtn = Button({
         title: "Edit",
-        classes: "tiny-button",
+        classes: "tiny-button secondary",
         events: {
-          click: (event?: Event) => {
-            event?.stopPropagation?.();
+          click: (e?: Event) => {
+            e?.stopPropagation();
             makeInlineEditable(textContainer, name, (newValue: string) => {
-              const cleanValue = String(newValue ?? "").trim();
+              const cleanValue = newValue.trim();
               ingredient.name = cleanValue;
-              textContainer.replaceChildren(
-                `${ingredient.quantity ?? ""} ${ingredient.unit ?? ""} ${cleanValue}`.trim()
-              );
+              textContainer.textContent = `${ingredient.quantity ?? ""} ${ingredient.unit ?? ""} ${cleanValue}`.trim();
             });
-          },
-        },
+          }
+        }
       });
 
       const delBtn = Button({
         title: "Delete",
-        classes: "tiny-button",
+        classes: "tiny-button danger",
         events: {
-          click: (event?: Event) => {
-            event?.stopPropagation?.();
-            if (!confirm("Delete this ingredient?")) return;
+          click: (e?: Event) => {
+            e?.stopPropagation();
+            if (!confirm(`Remove "${name}" from ingredients?`)) return;
             li.remove();
             ingredients.splice(index, 1);
-          },
-        },
+          }
+        }
       });
 
-      li.append(editBtn, delBtn);
+      const actionsGroup = createElement("div", { class: "inline-actions" }, [editBtn, delBtn]);
+      li.appendChild(actionsGroup);
     }
-    ingList.appendChild(li);
+
+    container.appendChild(li);
   });
-  return ingList;
+
+  return container;
+}
+
+function createAddToCartButton(ingredient: Ingredient, recipeQuantity?: number | string): HTMLElement {
+  let isAdding = false;
+
+  const btn = Button({
+    title: "Add to Cart",
+    classes: "small-button primary",
+    events: {
+      click: async (e?: Event) => {
+        e?.stopPropagation();
+        if (isAdding) return;
+
+        const itemId = getIngredientItemId(ingredient);
+        if (!itemId) {
+          Notify("This ingredient is currently unavailable.", { type: "warning" });
+          return;
+        }
+
+        const quantity = normalizeCartQuantity(recipeQuantity);
+        if (!Number.isInteger(quantity) || quantity < 1 || !isValidCartQuantity(quantity)) {
+          Notify("Invalid ingredient quantity.", { type: "warning" });
+          return;
+        }
+
+        const isLoggedIn = Boolean(getState("token"));
+
+        isAdding = true;
+        btn.disabled = true;
+        btn.textContent = "Adding...";
+
+        try {
+          await addToCart({
+            itemId,
+            itemType: "product",
+            quantity,
+            isLoggedIn,
+            onCartUpdated: (res) => console.debug("Cart updated:", res)
+          });
+          Notify(`Added ${ingredient.name || "item"} to cart.`, { type: "success", duration: 2000 });
+        } catch (error) {
+          console.error("Failed to add to cart:", error);
+          Notify("Could not add item to cart.", { type: "error" });
+        } finally {
+          isAdding = false;
+          btn.disabled = false;
+          btn.textContent = "Add to Cart";
+        }
+      }
+    }
+  }) as HTMLButtonElement;
+
+  return btn;
 }
 
 /* ============================================================
@@ -158,108 +178,14 @@ export function renderSteps(
   recipe?: Recipe
 ): HTMLElement {
   const safeSteps: RecipeStep[] = Array.isArray(steps) ? steps : [];
-  let completedSteps = new Set<number>();
+  const storageKey = getStepKey(recipeid);
+  
+  const savedIndices = Storage.get<number[]>(storageKey, []);
+  let completedSteps = new Set<number>(savedIndices.filter((idx) => idx >= 0 && idx < safeSteps.length));
 
-  try {
-    const stored = JSON.parse(localStorage.getItem(getStepKey(recipeid)) || "[]");
-    if (Array.isArray(stored)) {
-      completedSteps = new Set(
-        stored.filter((value): value is number => Number.isInteger(value) && value >= 0)
-      );
-    }
-  } catch (error) {
-    console.warn("Failed to restore recipe progress:", error);
-  }
-
+  // Progress Bar Elements
   const progressFill = createElement("div", { class: "progress-fill" });
   const progressText = createElement("span", { class: "progress-text" });
-
-  function updateProgress(): void {
-    const percentage = safeSteps.length ? Math.round((completedSteps.size / safeSteps.length) * 100) : 0;
-    progressFill.style.width = `${percentage}%`;
-    progressText.textContent = `${percentage}% done`;
-  }
-  updateProgress();
-
-  const stepsOl = createElement("ol", {});
-  const canEditRecipe = isRecipeOwner(recipe);
-
-  safeSteps.forEach((step, index) => {
-    const text = typeof step === "object" ? step?.text ?? "" : String(step ?? "");
-    const li = createElement("li", {});
-    const checkbox = createElement("input", {
-      type: "checkbox",
-      "aria-label": `Complete step ${index + 1}`,
-    }) as HTMLInputElement;
-
-    checkbox.checked = completedSteps.has(index);
-    checkbox.addEventListener("change", (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      if (target.checked) {
-        completedSteps.add(index);
-      } else {
-        completedSteps.delete(index);
-      }
-      try {
-        localStorage.setItem(getStepKey(recipeid), JSON.stringify([...completedSteps]));
-      } catch (error) {
-        console.warn("Failed to save recipe progress:", error);
-      }
-      updateProgress();
-    });
-
-    const textContainer = createElement("span", {}, [text]);
-    li.append(checkbox, textContainer);
-
-    if (canEditRecipe) {
-      const editBtn = Button({
-        title: "Edit",
-        classes: "tiny-button",
-        events: {
-          click: (event?: Event) => {
-            event?.stopPropagation?.();
-            makeInlineEditable(textContainer, text, (newValue: string) => {
-              const cleanValue = String(newValue ?? "").trim();
-              if (typeof step === "object") {
-                safeSteps[index] = { ...step, text: cleanValue };
-              } else {
-                safeSteps[index] = { text: cleanValue };
-              }
-              textContainer.replaceChildren(cleanValue);
-            });
-          },
-        },
-      });
-
-      const delBtn = Button({
-        title: "Delete",
-        classes: "tiny-button",
-        events: {
-          click: (event?: Event) => {
-            event?.stopPropagation?.();
-            if (!confirm("Delete this step?")) return;
-            li.remove();
-            safeSteps.splice(index, 1);
-            completedSteps = new Set(
-              [...completedSteps]
-                .filter((completedIndex) => completedIndex !== index)
-                .map((completedIndex) => (completedIndex > index ? completedIndex - 1 : completedIndex))
-            );
-            try {
-              localStorage.setItem(getStepKey(recipeid), JSON.stringify([...completedSteps]));
-            } catch (error) {
-              console.warn("Failed to save recipe progress:", error);
-            }
-            updateProgress();
-          },
-        },
-      });
-
-      li.append(editBtn, delBtn);
-    }
-    stepsOl.appendChild(li);
-  });
-
   const progressBar = createElement(
     "div",
     {
@@ -267,11 +193,113 @@ export function renderSteps(
       role: "progressbar",
       "aria-valuemin": "0",
       "aria-valuemax": "100",
+      "aria-valuenow": "0"
     },
     [progressFill, progressText]
   );
 
-  return createElement("div", { class: "steps-section" }, [progressBar, stepsOl]);
+  function syncProgress(): void {
+    const total = safeSteps.length;
+    const count = completedSteps.size;
+    const percentage = total ? Math.round((count / total) * 100) : 0;
+
+    progressFill.style.width = `${percentage}%`;
+    progressText.textContent = `${percentage}% completed (${count}/${total})`;
+    progressBar.setAttribute("aria-valuenow", String(percentage));
+  }
+
+  syncProgress();
+
+  const stepsList = createElement("ol", { class: "recipe-steps-list" });
+  const canEdit = isRecipeOwner(recipe);
+
+  safeSteps.forEach((step, index) => {
+    const stepText = typeof step === "object" ? step?.text ?? "" : String(step ?? "");
+    const isChecked = completedSteps.has(index);
+
+    const checkbox = createElement("input", {
+      type: "checkbox",
+      id: `step-${recipeid}-${index}`,
+      "aria-label": `Mark step ${index + 1} as completed`
+    }) as HTMLInputElement;
+
+    checkbox.checked = isChecked;
+
+    const textSpan = createElement(
+      "span",
+      { class: `step-text ${isChecked ? "completed" : ""}` },
+      [stepText]
+    );
+
+    checkbox.addEventListener("change", (e: Event) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      
+      if (checked) {
+        completedSteps.add(index);
+        textSpan.classList.add("completed");
+      } else {
+        completedSteps.delete(index);
+        textSpan.classList.remove("completed");
+      }
+
+      Storage.set(storageKey, Array.from(completedSteps));
+      syncProgress();
+    });
+
+    const li = createElement("li", { class: "step-item" }, [checkbox, textSpan]);
+
+    if (canEdit) {
+      const editBtn = Button({
+        title: "Edit",
+        classes: "tiny-button secondary",
+        events: {
+          click: (e?: Event) => {
+            e?.stopPropagation();
+            makeInlineEditable(textSpan, stepText, (newValue: string) => {
+              const clean = newValue.trim();
+              if (typeof safeSteps[index] === "object") {
+                (safeSteps[index] as { text: string }).text = clean;
+              } else {
+                safeSteps[index] = { text: clean };
+              }
+              textSpan.textContent = clean;
+            });
+          }
+        }
+      });
+
+      const delBtn = Button({
+        title: "Delete",
+        classes: "tiny-button danger",
+        events: {
+          click: (e?: Event) => {
+            e?.stopPropagation();
+            if (!confirm(`Delete step ${index + 1}?`)) return;
+
+            li.remove();
+            safeSteps.splice(index, 1);
+
+            // Reindex completed steps
+            const reindexed = new Set<number>();
+            completedSteps.forEach((idx) => {
+              if (idx < index) reindexed.add(idx);
+              if (idx > index) reindexed.add(idx - 1);
+            });
+            completedSteps = reindexed;
+
+            Storage.set(storageKey, Array.from(completedSteps));
+            syncProgress();
+          }
+        }
+      });
+
+      li.appendChild(createElement("div", { class: "inline-actions" }, [editBtn, delBtn]));
+    }
+
+    stepsList.appendChild(li);
+  });
+
+  return createElement("div", { class: "steps-section" }, [progressBar, stepsList]);
 }
 
 /* ============================================================
@@ -280,54 +308,51 @@ export function renderSteps(
 export function renderComments(recipe: Recipe): HTMLElement {
   const wrapper = createElement("div", { class: "recipe-comments" });
   const heading = createElement("h4", {}, ["Comments"]);
+  
   const toggle = createElement(
     "button",
     {
       type: "button",
       class: "toggle-comments btn btn-link",
-      "aria-expanded": "false",
+      "aria-expanded": "false"
     },
     ["💬 Show Comments"]
   ) as HTMLButtonElement;
 
   let commentsEl: HTMLElement | null = null;
-  let visible = false;
-  let loaded = false;
-  let loading = false;
+  let isLoading = false;
+  let isVisible = false;
 
   toggle.addEventListener("click", async () => {
-    if (loaded) {
-      visible = !visible;
-      if (commentsEl) {
-        commentsEl.style.display = visible ? "" : "none";
-      }
-      toggle.textContent = visible ? "💬 Hide Comments" : "💬 Show Comments";
-      toggle.setAttribute("aria-expanded", String(visible));
+    if (commentsEl) {
+      isVisible = !isVisible;
+      commentsEl.style.display = isVisible ? "block" : "none";
+      toggle.textContent = isVisible ? "💬 Hide Comments" : "💬 Show Comments";
+      toggle.setAttribute("aria-expanded", String(isVisible));
       return;
     }
-    if (loading) return;
-    loading = true;
+
+    if (isLoading) return;
+    isLoading = true;
     toggle.disabled = true;
+    toggle.textContent = "Loading comments...";
+
     try {
       const user = getState("user") as User | undefined;
       commentsEl = await createCommentsSection("recipe", recipe.recipeid, user?.userid);
-      if (!commentsEl) {
-        throw new Error("Comments component returned no element.");
-      }
+      
+      if (!commentsEl) throw new Error("Comments container unavailable.");
+
       wrapper.appendChild(commentsEl);
-      loaded = true;
-      visible = true;
+      isVisible = true;
       toggle.textContent = "💬 Hide Comments";
       toggle.setAttribute("aria-expanded", "true");
     } catch (error) {
       console.error("Failed to load comments:", error);
-      Notify("Failed to load comments.", {
-        type: "error",
-        duration: 3000,
-        dismissible: true,
-      });
+      Notify("Failed to load comments.", { type: "error" });
+      toggle.textContent = "💬 Show Comments";
     } finally {
-      loading = false;
+      isLoading = false;
       toggle.disabled = false;
     }
   });
@@ -346,110 +371,92 @@ export function renderActions(
   isFavorite: boolean,
   recipeid: string | number
 ): HTMLElement {
+  let favoriteState = isFavorite;
+
   const favBtn = Button({
-    title: isFavorite ? "Unsave" : "Save Recipe",
+    title: favoriteState ? "❤️ Saved" : "🤍 Save Recipe",
     classes: "buttonx secondary",
     events: {
       click: () => {
-        let favorites: Array<string | number> = [];
-        try {
-          const stored = JSON.parse(localStorage.getItem("favoriteRecipes") || "[]");
-          if (Array.isArray(stored)) {
-            favorites = stored;
-          }
-        } catch (error) {
-          console.warn("Failed to read favorite recipes:", error);
-        }
-        const normalizedRecipeId = String(recipeid);
-        const normalizedFavorites = favorites.map((id) => String(id));
-        if (isFavorite) {
-          favorites = normalizedFavorites.filter((id) => id !== normalizedRecipeId);
-          isFavorite = false;
+        const key = "favoriteRecipes";
+        const favorites = Storage.get<string[]>(key, []);
+        const targetId = String(recipeid);
+
+        let updated: string[];
+        if (favoriteState) {
+          updated = favorites.filter((id) => id !== targetId);
+          favoriteState = false;
         } else {
-          favorites = [...new Set([...normalizedFavorites, normalizedRecipeId])];
-          isFavorite = true;
+          updated = Array.from(new Set([...favorites, targetId]));
+          favoriteState = true;
         }
-        try {
-          localStorage.setItem("favoriteRecipes", JSON.stringify(favorites));
-        } catch (error) {
-          console.warn("Failed to save favorite recipe:", error);
-          Notify("Unable to save this recipe locally.", {
-            type: "warning",
-            duration: 3000,
+
+        if (Storage.set(key, updated)) {
+          favBtn.textContent = favoriteState ? "❤️ Saved" : "🤍 Save Recipe";
+          Notify(favoriteState ? "Recipe saved to favorites." : "Recipe removed from favorites.", {
+            type: "info",
+            duration: 2000
           });
-          return;
+        } else {
+          Notify("Unable to update favorites.", { type: "warning" });
         }
-        favBtn.textContent = isFavorite ? "Unsave" : "Save Recipe";
-      },
-    },
+      }
+    }
   });
 
   const shareBtn = Button({
-    title: "Copy Link",
+    title: "🔗 Copy Link",
     classes: "buttonx secondary",
     events: {
       click: async () => {
         try {
-          if (!navigator.clipboard) {
-            throw new Error("Clipboard API unavailable.");
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(window.location.href);
+          } else {
+            // Fallback for older browsers / non-secure contexts
+            const textarea = document.createElement("textarea");
+            textarea.value = window.location.href;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
           }
-          await navigator.clipboard.writeText(window.location.href);
-          Notify("Recipe link copied.", { type: "success", duration: 2000 });
+          shareBtn.textContent = "✓ Copied!";
+          setTimeout(() => (shareBtn.textContent = "🔗 Copy Link"), 2000);
+          Notify("Recipe link copied to clipboard.", { type: "success", duration: 2000 });
         } catch (error) {
-          console.error("Failed to copy recipe link:", error);
-          Notify("Unable to copy the recipe link.", { type: "warning", duration: 3000 });
+          console.error("Failed to copy link:", error);
+          Notify("Unable to copy link.", { type: "warning" });
         }
-      },
-    },
+      }
+    }
   });
 
   const printBtn = Button({
-    title: "Print",
+    title: "🖨️ Print",
     classes: "buttonx secondary",
-    events: {
-      click: () => {
-        window.print();
-      },
-    },
+    events: { click: () => window.print() }
   });
 
   const actions: HTMLElement[] = [favBtn, shareBtn, printBtn];
 
-  const resolvedCurrentUserId =
-    typeof currentUser === "object" && currentUser !== null
-      ? currentUser.id ?? currentUser.userid
-      : currentUser;
-
-  const resolvedRecipeUserId = recipe?.userid ?? recipe?.userid;
-
-  const isOwner =
-    resolvedCurrentUserId !== null &&
-    resolvedCurrentUserId !== undefined &&
-    resolvedRecipeUserId !== null &&
-    resolvedRecipeUserId !== undefined &&
-    String(resolvedCurrentUserId) === String(resolvedRecipeUserId);
+  // Resolve ownership safely
+  const currentUserId = typeof currentUser === "object" && currentUser ? currentUser.id ?? currentUser.userid : currentUser;
+  const isOwner = Boolean(currentUserId && recipe?.userid && String(currentUserId) === String(recipe.userid));
 
   if (isOwner) {
     const editBtn = Button({
-      title: "Edit",
+      title: "✏️ Edit Recipe",
       classes: "buttonx secondary",
-      events: {
-        click: () => {
-          editRecipe(contentContainer, recipe);
-        },
-      },
+      events: { click: () => editRecipe(contentContainer, recipe) }
     });
     actions.push(editBtn);
   }
 
   const backBtn = Button({
-    title: "Back",
+    title: "← Back",
     classes: "buttonx primary",
-    events: {
-      click: () => {
-        history.back();
-      },
-    },
+    events: { click: () => history.back() }
   });
   actions.push(backBtn);
 

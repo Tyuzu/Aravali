@@ -1,257 +1,465 @@
-/* =========================
-   DASHBOARD LAYOUT
-========================= */
+/* Base text selection styles */
+::selection {
+  background-color: var(--color-selection-bg);
+  color: var(--color-selection-fg);
+}
+
+/* ==========================================================================
+   PAGE LAYOUT & CONTAINER STYLING
+   ========================================================================== */
 
 .farmdashpage {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: var(--space-sm);
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  padding: var(--space-md);
+  box-sizing: border-box;
 }
 
-.dashboard-section {
-  border: 1px solid #e4e8ee;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 10px;
-  margin-top: 10px;
+.tabs-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
-.dashboard-section h3 {
-  margin-top: 0;
-  margin-bottom: 14px;
-  font-size: 1.05rem;
-  font-weight: 600;
-}
+/* ==========================================================================
+   TAB NAVIGATION
+   ========================================================================== */
 
-/* =========================
-   SUMMARY CARDS
-========================= */
-
-.stats-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-
-.stat-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  min-height: 80px;
+.tab-buttons {
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-weight: 600;
-  transition: transform 0.15s ease,
-              box-shadow 0.15s ease;
+  gap: var(--space-xs);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+  padding: var(--space-sm) var(--space-md) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 16px rgb(0 0 0 / 8%);
+.tab-buttons::-webkit-scrollbar {
+  display: none;
 }
 
-/* =========================
-   ALERTS
-========================= */
-
-.alerts ul {
-  margin: 0;
-  padding-left: 18px;
+.tab-button {
+  font-family: var(--font-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-muted);
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
 }
 
-.alerts li {
-  margin-bottom: 10px;
-  font-weight: 500;
-  color: #b45309;
+.tab-button:hover {
+  color: var(--color-fg);
+  background-color: var(--color-card-bg);
 }
 
-/* =========================
-   RECOMMENDATIONS
-========================= */
-
-.dashboard-section ul {
-  margin: 0;
-  padding-left: 20px;
+.tab-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
-.dashboard-section li {
-  margin-bottom: 8px;
+.tab-button.active,
+.tab-button[aria-selected="true"] {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+  background-color: var(--color-card-bg);
+  border-bottom-color: var(--color-primary);
 }
 
-/* =========================
-   INVENTORY
-========================= */
+/* ==========================================================================
+   TAB CONTENT PANELS
+   ========================================================================== */
 
-.crop-distribution {
-  border: 1px solid #e4e8ee;
-  border-radius: 12px;
-  padding: 18px;
-  margin-bottom: 20px;
+.tab-contents {
+  padding: var(--space-md);
 }
 
-.crop-distribution h3 {
-  margin-top: 0;
+.tab-content {
+  display: none;
 }
 
-.crop-distribution ul {
+.tab-content.active {
+  display: block;
+  animation: themeFadeIn var(--transition-fast);
+}
+
+@keyframes themeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-section,
+.my-farm-content,
+.orders-page {
+  margin-bottom: var(--space-lg);
+}
+
+.dashboard-section h3,
+.orders-page h2,
+.my-farms-page h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--color-fg);
+}
+
+.dashboard-section p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.dashboard-section ul,
+.farm-crops ul,
+.farm-availability {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.crop-distribution li {
-  padding: 12px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  margin-bottom: 10px;
+.dashboard-section li,
+.farm-crops li,
+.farm-availability li {
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-xs);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
 }
 
-.crop-distribution li:hover {
-  background: #f3f4f6;
+/* ==========================================================================
+   STATS CARDS GRID (OVERVIEW TAB)
+   ========================================================================== */
+
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
-/* =========================
-   FARM INFO
-========================= */
-
-.farm-extra {
-  border: 1px solid #e4e8ee;
-  border-radius: 12px;
-  padding: 18px;
+.stat-card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.farm-extra h3 {
-  margin-top: 0;
+.stat-card:hover {
+  transform: translateY(-2px);
+  background-color: var(--color-card-hover);
+  box-shadow: var(--shadow-elev-3);
+  border-color: var(--color-border);
 }
 
-.farm-extra p {
-  margin: 8px 0;
-  font-size: 14px;
-}
+/* ==========================================================================
+   ORDERS TAB: FILTERS & BULK ACTIONS CONTROL BARS
+   ========================================================================== */
 
-/* =========================
-   EMPTY STATE
-========================= */
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-}
-
-.empty-state h3 {
-  margin-top: 0;
-}
-
-.create-farm-btn {
-  display: inline-block;
-  margin-top: 16px;
-  padding: 10px 16px;
-  background: #16a34a;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-.create-farm-btn:hover {
-  opacity: 0.9;
-}
-
-/* =========================
-   GUEST DASHBOARD
-========================= */
-
-.dash-guest {
-  max-width: 700px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.dash-guest ul {
-  display: inline-block;
-  text-align: left;
-}
-
-/* =========================
-   LEGACY FILTERS
-========================= */
-
-.filters {
+.filters-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: flex-end;
+  gap: var(--space-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
-.filters label {
+.filters-section label {
   display: flex;
   flex-direction: column;
-  font-size: 14px;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-muted);
 }
 
-.filters select,
-.filters input[type="date"] {
-  padding: 8px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+.filters-section input[type="text"],
+.filters-section input[type="date"],
+.filters-section select {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  height: 36px;
+  padding: 0 var(--space-sm);
+  background-color: var(--color-input-bg);
+  color: var(--color-fg);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
 }
 
-.filters button {
-  padding: 8px 15px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.filters-section input:focus,
+.filters-section select:focus {
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 1px var(--color-input-focus);
 }
 
-/* =========================
-   BULK ACTIONS
-========================= */
-
-.bulk-actions {
+.bulk-actions-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
-.bulk-actions button {
-  background: #475569;
-  color: white;
+/* Button UI Components */
+.buttonx,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  height: 36px;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-fg);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+}
+
+.buttonx:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.primary-button {
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-fg);
   border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
+}
+
+.primary-button:hover {
+  background-color: var(--color-btn-hover-bg);
+}
+
+.success-button {
+  background-color: var(--color-success);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.success-button:hover {
+  filter: brightness(0.9);
+}
+
+.danger-button {
+  background-color: var(--color-danger);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.danger-button:hover {
+  filter: brightness(0.9);
+}
+
+.small-button {
+  height: 28px;
+  padding: 0 var(--space-sm);
+  font-size: var(--font-size-xs);
+}
+
+.buttonx:disabled,
+.primary-button:disabled {
+  background-color: var(--color-btn-disabled-bg);
+  color: var(--color-btn-disabled-fg);
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+.buttonx:active,
+.primary-button:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   DATAGRID / ORDERS TABLE
+   ========================================================================== */
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.orders-table th {
+  background-color: var(--color-surface);
+  color: var(--color-muted);
+  font-weight: var(--font-weight-bold);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  white-space: nowrap;
+}
+
+.orders-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-fg);
+  white-space: nowrap;
+}
+
+.orders-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.orders-table tbody tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Checkbox Styling */
+.orders-table input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
   cursor: pointer;
 }
 
-.bulk-actions button:hover {
-  opacity: 0.9;
+.action-buttons {
+  display: flex;
+  gap: var(--space-xs);
 }
 
-/* =========================
-   MOBILE
-========================= */
+/* Status Badges & Pills */
+.payment-status,
+.order-status {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xxs) var(--space-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-full);
+}
 
-@media (width <= 768px) {
+.payment-paid,
+.status-delivered {
+  background-color: var(--color-success);
+  color: #ffffff;
+}
+
+.payment-pending,
+.status-pending {
+  background-color: var(--color-warning);
+  color: #ffffff;
+}
+
+.payment-unpaid,
+.status-rejected {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   MY FARM TAB STYLING
+   ========================================================================== */
+
+.my-farm-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.farm-header {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.farm-header h3 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--font-size-lg);
+}
+
+.farm-header p {
+  margin: var(--space-xxs) 0;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .orders-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-section label {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .farmdashpage {
+    padding: var(--space-sm);
+  }
+
+  .tab-contents {
+    padding: var(--space-sm);
+  }
+
   .stats-summary {
     grid-template-columns: 1fr;
   }
 
-  .stat-card {
-    min-height: 70px;
+  .bulk-actions-section {
+    flex-direction: column;
   }
 
-  .dashboard-section,
-  .crop-distribution,
-  .farm-extra {
-    padding: 14px;
+  .bulk-actions-section button {
+    width: 100%;
   }
 }

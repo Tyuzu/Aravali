@@ -1,217 +1,332 @@
-/* ===========================
-   Post type
-   =========================== */
+/* ==========================================================================
+   FLUENT DESIGN SYSTEM TOKENS & VARIABLES
+   ========================================================================== */
+:root {
+  --fluent-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
 
-.postpage .post-header-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
+  /* Color Palette - Light Theme */
+  --fluent-bg-canvas: #f3f3f3;
+  --fluent-bg-card: #ffffff;
+  --fluent-bg-secondary: #fafafa;
+  --fluent-bg-tertiary: #f0f0f0;
+  --fluent-fg-primary: #242424;
+  --fluent-fg-secondary: #616161;
+  --fluent-border-subtle: #e0e0e0;
+  --fluent-border-strong: #d1d1d1;
+
+  /* Fluent Accent & Interactive Colors */
+  --fluent-accent: #0078d4;
+  --fluent-accent-hover: #106ebe;
+  --fluent-accent-active: #005a9e;
+  --fluent-accent-light: #eff6fc;
+
+  /* State / Warning / Danger Colors */
+  --fluent-warning-bg: #fff4ce;
+  --fluent-warning-fg: #797775;
+  --fluent-danger-bg: #fde7e9;
+  --fluent-danger-fg: #c42b1c;
+
+  /* Fluent Elevation & Depth */
+  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
+  --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+
+  /* Geometry & Micro-Transitions */
+  --fluent-radius-sm: 4px;
+  --fluent-radius-md: 8px;
+  --fluent-radius-lg: 12px;
+  --fluent-radius-pill: 9999px;
+  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.postpage .post-type {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+/* Fluent Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fluent-bg-canvas: #202020;
+    --fluent-bg-card: #2c2c2c;
+    --fluent-bg-secondary: #272727;
+    --fluent-bg-tertiary: #333333;
+    --fluent-fg-primary: #ffffff;
+    --fluent-fg-secondary: #adadad;
+    --fluent-border-subtle: #383838;
+    --fluent-border-strong: #444444;
+
+    --fluent-accent: #479ef5;
+    --fluent-accent-hover: #62abf7;
+    --fluent-accent-active: #2b88d8;
+    --fluent-accent-light: rgba(71, 158, 245, 0.15);
+
+    --fluent-warning-bg: rgba(255, 244, 206, 0.15);
+    --fluent-warning-fg: #fce100;
+    --fluent-danger-bg: rgba(241, 112, 123, 0.18);
+    --fluent-danger-fg: #f1707b;
+
+    --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
+  }
 }
 
-/* ===========================
-   Reference section
-   =========================== */
+/* ==========================================================================
+   PAGE CONTAINER & CARD LAYOUT
+   ========================================================================== */
 
-.postpage .post-reference {
-  margin: 1rem 0;
-  padding: 0.75rem 1rem;
-  border-left: 4px solid var(--color-primary);
-  background: var(--color-surface);
-  border-radius: var(--radius);
-  word-break: break-word;
-}
-
-/* ===========================
-   Tags
-   =========================== */
-
-.postpage .post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 1.25rem 0;
-}
-
-.postpage .tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-/* ===========================
-   Code blocks
-   =========================== */
-
-.postpage .post-code {
-  overflow-x: auto;
-  margin: 1rem 0;
-  padding: 1rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.postpage .post-code code {
-  display: block;
-  white-space: pre;
-}
-
-/* ===========================
-   Video blocks
-   =========================== */
-
-.postpage .post-video {
-  margin: 1.25rem 0;
-  text-align: center;
-}
-
-.postpage .post-video video {
-  width: 100%;
-  max-width: 100%;
-  border-radius: var(--radius);
-  display: block;
-}
-
-.postpage .video-caption {
-  margin-top: 0.5rem;
-  color: var(--color-muted);
-  font-size: 0.9rem;
-}
-
-/* ===========================
-   Improved body content
-   =========================== */
-
-.postpage .post-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.postpage .post-body p {
-  margin: 0.5rem 0;
-  text-align: left;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* ===========================
-   Image gallery
-   =========================== */
-
-.postpage .image-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
-  margin: 1rem 0;
-}
-
-
-.postpage .image-group img,
-.postpage .image-group .post-image {
-  width: 100%;
-  max-height: 60ch;
-  height: auto;
-  border-radius: var(--radius);
-  cursor: zoom-in;
-  display: block;
-  background: var(--color-surface);
-  transition:
-    opacity var(--transition),
-    transform var(--transition);
-}
-
-.postpage .image-group img:hover,
-.postpage .image-group .post-image:hover {
-  transform: scale(1.01);
-}
-
-/* ===========================
-   Metadata
-   =========================== */
-
-.postpage .post-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--color-muted);
-}
-
-/* ===========================
-   Block editor improvements
-   =========================== */
-
-.block input[type="text"],
-.block input[type="url"],
-.block select,
-.block textarea {
-  width: 100%;
+.postpage {
+  max-width: 850px;
+  margin: 1.5rem auto;
+  padding: 1.75rem;
+  background-color: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-lg);
+  box-shadow: var(--fluent-shadow-card);
+  font-family: var(--fluent-font-family);
+  color: var(--fluent-fg-primary);
   box-sizing: border-box;
 }
 
-.block input[type="text"],
-.block input[type="url"],
-.block select {
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
+/* ==========================================================================
+   POST HEADER & METADATA
+   ========================================================================== */
+
+.post-data {
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--fluent-border-subtle);
+  padding-bottom: 1rem;
 }
 
-.block video {
+.post-data h2 {
+  font-size: 1.85rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.01em;
+  color: var(--fluent-fg-primary);
+}
+
+.post-header-meta {
+  margin-bottom: 0.5rem;
+}
+
+.post-type {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--fluent-accent);
+  background-color: var(--fluent-accent-light);
+  padding: 2px 8px;
+  border-radius: var(--fluent-radius-pill);
+}
+
+.post-meta {
+  font-size: 0.85rem;
+  color: var(--fluent-fg-secondary);
+  margin: 0;
+}
+
+/* ==========================================================================
+   POST BODY & IMAGE GALLERY
+   ========================================================================== */
+
+.post-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  color: var(--fluent-fg-primary);
+}
+
+.post-body p {
+  margin: 0 0 1rem 0;
+}
+
+.image-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.post-image {
   width: 100%;
-  margin-top: 0.5rem;
-  border-radius: var(--radius);
+  height: 160px;
+  object-fit: cover;
+  border-radius: var(--fluent-radius-md);
+  border: 1px solid var(--fluent-border-subtle);
+  transition: transform var(--fluent-transition), box-shadow var(--fluent-transition);
+  cursor: pointer;
 }
 
-/* ===========================
-   Responsive
-   =========================== */
+.post-image:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--fluent-shadow-hover);
+}
 
-@media (width <= 640px) {
+/* ==========================================================================
+   TAGS & USER PROFILE CARD
+   ========================================================================== */
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.tag {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fluent-fg-secondary);
+  background-color: var(--fluent-bg-tertiary);
+  padding: 3px 10px;
+  border-radius: var(--fluent-radius-sm);
+  transition: background-color var(--fluent-transition);
+}
+
+.tag:hover {
+  background-color: var(--fluent-border-subtle);
+  color: var(--fluent-fg-primary);
+}
+
+/* Profile Card */
+.user-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  background-color: var(--fluent-bg-secondary);
+  border: 1px solid var(--fluent-border-subtle);
+  border-radius: var(--fluent-radius-md);
+  margin-bottom: 1.5rem;
+}
+
+.user-profile-card .avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--fluent-radius-pill);
+  object-fit: cover;
+  border: 1px solid var(--fluent-border-subtle);
+}
+
+.user-profile-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--fluent-fg-primary);
+}
+
+.user-profile-card .bio {
+  font-size: 0.8rem;
+  color: var(--fluent-fg-secondary);
+  margin: 2px 0 0 0;
+}
+
+/* ==========================================================================
+   BUTTON CONTROLS & ACTIONS
+   ========================================================================== */
+
+.post-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.buttonx,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  height: 34px;
+  padding: 0 0.9rem;
+  border-radius: var(--fluent-radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--fluent-transition);
+}
+
+.btn-warning {
+  background-color: var(--fluent-bg-secondary);
+  color: var(--fluent-fg-primary);
+  border-color: var(--fluent-border-subtle);
+}
+
+.btn-warning:hover {
+  background-color: var(--fluent-warning-bg);
+  color: var(--fluent-warning-fg);
+  border-color: transparent;
+}
+
+.btn-danger {
+  background-color: var(--fluent-danger-bg);
+  color: var(--fluent-danger-fg);
+}
+
+.btn-danger:hover {
+  background-color: var(--fluent-danger-fg);
+  color: #ffffff;
+}
+
+.btn-link {
+  background: transparent;
+  color: var(--fluent-accent);
+  padding: 0;
+  height: auto;
+}
+
+.btn-link:hover {
+  color: var(--fluent-accent-hover);
+  text-decoration: underline;
+}
+
+.buttonx:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   COMMENTS & RELATED POSTS SECTIONS
+   ========================================================================== */
+
+.post-comments,
+.related-posts {
+  border-top: 1px solid var(--fluent-border-subtle);
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.post-comments h4,
+.related-posts h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: var(--fluent-fg-primary);
+}
+
+.related-posts p {
+  font-size: 0.875rem;
+  color: var(--fluent-fg-secondary);
+  margin: 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+
+@media (max-width: 768px) {
   .postpage {
-    margin: 1rem;
+    border-radius: 0;
+    border: none;
+    margin: 0;
+    padding: 1rem;
   }
 
-  .postpage .post-actions {
-    flex-direction: column;
-  }
-
-  .postpage .image-group {
+  .image-group {
     grid-template-columns: 1fr;
   }
 
-  .postpage .post-meta {
+  .post-actions {
     flex-direction: column;
-    align-items: flex-start;
   }
 
-  .postpage .user-profile-card {
-    flex-direction: column;
-    align-items: flex-start;
+  .buttonx {
+    width: 100%;
   }
 }

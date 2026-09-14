@@ -11,6 +11,8 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -300,8 +302,8 @@ func validateSetting(key string, value any) error {
 	return errors.New("invalid setting type")
 }
 
-func settingsToMap(s UserSettings) map[string]any {
-	return map[string]any{
+func settingsToMap(s UserSettings) bson.M {
+	return bson.M{
 		"userID":              s.UserID,
 		"theme":               s.Theme,
 		"notifications":       s.Notifications,
@@ -366,17 +368,16 @@ func GetSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var settings UserSettings
-		err := app.SQLDB.FindOne(
+		err := app.DB.FindOne(
 			ctx,
 			settingsCollection,
-			"userID = $1",
-			[]any{userID},
+			bson.M{"userID": userID},
 			&settings,
 		)
 
 		if err != nil {
 			settings = DefaultSettings(userID)
-			_ = app.SQLDB.Insert(ctx, settingsCollection, settings)
+			_ = app.DB.Insert(ctx, settingsCollection, settings)
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, settings)
@@ -424,9 +425,8 @@ func UpdateSettings(app *infra.Deps) http.HandlerFunc {
 			"daily_reminder":      true,
 		}
 
-		whereClause := "userID = $1"
-		whereArgs := []any{userID}
-		updateFields := map[string]any{}
+		filter := bson.M{"userID": userID}
+		updateFields := bson.M{}
 
 		for key, value := range payload {
 			if !allowed[key] {
@@ -453,18 +453,20 @@ func UpdateSettings(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.SQLDB.Update(ctx, settingsCollection, whereClause, whereArgs, updateFields); err != nil {
+		if _, err := app.DB.Update(ctx, settingsCollection, filter, updateFields); err != nil {
 			settings := DefaultSettings(userID)
+			doc := settingsToMap(settings)
 
 			for k, v := range updateFields {
+				doc[k] = v
 				applyPatch(&settings, k, v)
 			}
 
-			_ = app.SQLDB.Insert(ctx, settingsCollection, settings)
+			_ = app.DB.Insert(ctx, settingsCollection, doc)
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsUpdatedPayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsUpdatedEvent, mqpayload)
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsUpdatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
@@ -487,16 +489,15 @@ func ResetSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		defaults := DefaultSettings(userID)
-		whereClause := "userID = $1"
-		whereArgs := []any{userID}
+		filter := bson.M{"userID": userID}
 		update := settingsToMap(defaults)
 
-		if _, err := app.SQLDB.Update(ctx, settingsCollection, whereClause, whereArgs, update); err != nil {
-			_ = app.SQLDB.Insert(ctx, settingsCollection, defaults)
+		if _, err := app.DB.Update(ctx, settingsCollection, filter, update); err != nil {
+			_ = app.DB.Insert(ctx, settingsCollection, update)
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsResetPayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsResetEvent, mqpayload)
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsResetEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
@@ -518,11 +519,10 @@ func InitUserSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing UserSettings
-		err := app.SQLDB.FindOne(
+		err := app.DB.FindOne(
 			ctx,
 			settingsCollection,
-			"userID = $1",
-			[]any{userID},
+			bson.M{"userID": userID},
 			&existing,
 		)
 
@@ -532,7 +532,7 @@ func InitUserSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		defaults := DefaultSettings(userID)
-		if err := app.SQLDB.Insert(ctx, settingsCollection, defaults); err != nil {
+		if err := app.DB.Insert(ctx, settingsCollection, defaults); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "failed to initialize settings",
 			})
@@ -540,7 +540,7 @@ func InitUserSettings(app *infra.Deps) http.HandlerFunc {
 		}
 
 		mqpayload, _ := json.Marshal(mqevent.UserSettingsInitiatedPayload{})
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsInitiatedEvent, mqpayload)
+		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsInitiatedEvent, mqpayload)
 
 		utils.RespondWithJSON(w, http.StatusOK, true)
 	}

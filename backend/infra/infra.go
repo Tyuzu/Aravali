@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,19 +17,18 @@ import (
 	"scav/infra/cache"
 	"scav/infra/db"
 	"scav/infra/mq"
-	"scav/infra/sqldb"
 	"scav/utils/logger"
 )
 
 type Deps struct {
-	SQLDB    sqldb.PostgresDatabase
+	// SQLDB    sqldb.PostgresDatabase
 	DB       db.Database
 	Cache    cache.Cache
 	MQ       mq.MQ
 	NatsConn *nats.Conn
 	Config   config.Config
 	// underlying clients for graceful shutdown
-	PGPool      *pgxpool.Pool
+	// PGPool      *pgxpool.Pool
 	MongoClient *mongo.Client
 	RedisClient *redis.Client
 }
@@ -81,43 +79,43 @@ func New(cfg *config.Config) (*Deps, error) {
 		nc = conn
 	}
 
-	/* -------- Postgres -------- */
+	// /* -------- Postgres -------- */
 
-	postgresURL := cfg.DatabaseURL
-	if postgresURL == "" {
-		postgresURL = env("POSTGRES_URL", env("DATABASE_URL", ""))
-	}
+	// postgresURL := cfg.DatabaseURL
+	// if postgresURL == "" {
+	// 	postgresURL = env("POSTGRES_URL", env("DATABASE_URL", ""))
+	// }
 
-	// Construct connection string from discrete env vars if no full URL is provided
-	if postgresURL == "" {
-		user := env("POSTGRES_USER", "apeman")
-		pass := env("POSTGRES_PASSWORD", "ningning")
-		host := env("POSTGRES_HOST", "localhost")
-		port := env("POSTGRES_PORT", "5432")
-		dbname := env("POSTGRES_DB", "eventdb")
+	// // Construct connection string from discrete env vars if no full URL is provided
+	// if postgresURL == "" {
+	// 	user := env("POSTGRES_USER", "apeman")
+	// 	pass := env("POSTGRES_PASSWORD", "ningning")
+	// 	host := env("POSTGRES_HOST", "localhost")
+	// 	port := env("POSTGRES_PORT", "5432")
+	// 	dbname := env("POSTGRES_DB", "eventdb")
 
-		postgresURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, pass, host, port, dbname)
-	}
+	// 	postgresURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, pass, host, port, dbname)
+	// }
 
-	pool, err := NewPostgres(postgresURL)
-	if err != nil {
-		return nil, err
-	}
+	// pool, err := NewPostgres(postgresURL)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	sqldbLayer := sqldb.NewPostgresDatabase(pool, 100)
+	// sqldbLayer := sqldb.NewPostgresDatabase(pool, 100)
 
 	// ---------------
 
 	logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
 
 	return &Deps{
-		SQLDB:       *sqldbLayer,
-		DB:          dbLayer,
-		Cache:       cacheLayer,
-		MQ:          mqLayer,
-		NatsConn:    nc,
-		Config:      *cfg,
-		PGPool:      pool,
+		// SQLDB:       *sqldbLayer,
+		DB:       dbLayer,
+		Cache:    cacheLayer,
+		MQ:       mqLayer,
+		NatsConn: nc,
+		Config:   *cfg,
+		// PGPool:      pool,
 		MongoClient: client,
 		RedisClient: rclient,
 	}, nil
@@ -144,9 +142,9 @@ func (d *Deps) Close(ctx context.Context) error {
 		}
 	}
 
-	if d.PGPool != nil {
-		d.PGPool.Close()
-	}
+	// if d.PGPool != nil {
+	// 	d.PGPool.Close()
+	// }
 
 	if d.RedisClient != nil {
 		if err := d.RedisClient.Close(); err != nil {
@@ -237,21 +235,21 @@ func NewJetStream(url string) (*nats.Conn, nats.JetStreamContext, error) {
 	return nc, js, nil
 }
 
-/* -------------------- Postgres -------------------- */
+// /* -------------------- Postgres -------------------- */
 
-func NewPostgres(uri string) (*pgxpool.Pool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// func NewPostgres(uri string) (*pgxpool.Pool, error) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, uri)
-	if err != nil {
-		return nil, err
-	}
+// 	pool, err := pgxpool.New(ctx, uri)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	if err := pool.Ping(ctx); err != nil {
-		pool.Close()
-		return nil, err
-	}
+// 	if err := pool.Ping(ctx); err != nil {
+// 		pool.Close()
+// 		return nil, err
+// 	}
 
-	return pool, nil
-}
+// 	return pool, nil
+// }
