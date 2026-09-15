@@ -118,8 +118,7 @@ export function createNotificationCard(
       class: "notification-action-btn",
       events: {
         click: async (e: Event) => {
-          const mouseEvent = e as MouseEvent;
-          mouseEvent.stopPropagation();
+          e.stopPropagation();
           const notifId = n.notificationid || n.id;
 
           isRead = true;
@@ -194,15 +193,9 @@ export function createSystemLogCard(
       type: "button",
       events: {
         click: async (e: Event) => {
-          const mouseEvent = e as MouseEvent;
-          mouseEvent.stopPropagation();
+          e.stopPropagation();
           try {
-            const updatedLog = { ...log, userId, isRead: true };
-            const saveMethod = (idxDB as any).update || (idxDB as any).put || (idxDB as any).set;
-
-            if (saveMethod) {
-              await saveMethod(updatedLog);
-            }
+            await idxDB.set({ ...log, userId, isRead: true } as idxDB.SystemLogEntry);
 
             isRead = true;
             card.classList.add("is-read");
@@ -226,8 +219,7 @@ export function createSystemLogCard(
       "aria-label": "Delete log",
       events: {
         click: async (e: Event) => {
-          const mouseEvent = e as MouseEvent;
-          mouseEvent.stopPropagation();
+          e.stopPropagation();
           try {
             if (log.id != null) {
               await idxDB.remove(log.id, userId);

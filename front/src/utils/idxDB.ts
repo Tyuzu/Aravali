@@ -6,7 +6,7 @@ export type SystemLogType = "success" | "error" | "info" | "warning";
 
 export interface SystemLogEntry {
   id: string | number;
-  userId: string; // Mandatory user identification field
+  userId: string;
   title: string;
   message: string;
   type: SystemLogType;
@@ -35,7 +35,7 @@ export interface GetAllOptions {
 ========================================================= */
 
 const DB_NAME = "AppNotificationsDB";
-const DB_VERSION = 3; // Bumped version for index migration
+const DB_VERSION = 3;
 const STORE_NAME = "system_logs";
 const MAX_LOGS_PER_USER = 200;
 
@@ -54,27 +54,24 @@ function normalizeLogType(type?: SystemLogType | string): SystemLogType {
 }
 
 function normalizeLogEntry<T extends Partial<SystemLogEntry>>(value: T): T & SystemLogEntry {
-  const nextValue = { ...value };
-
-  if (!nextValue.userId) {
+  if (!value.userId) {
     throw new Error("IndexedDB log entry must include a valid userId.");
   }
 
   return {
-    id: nextValue.id ?? `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    userId: String(nextValue.userId),
-    title: String(nextValue.title ?? "System Message"),
-    message: String(nextValue.message ?? ""),
-    type: normalizeLogType(nextValue.type),
-    isRead: Boolean(nextValue.isRead),
-    createdAt: nextValue.createdAt ? new Date(nextValue.createdAt).toISOString() : new Date().toISOString(),
-    ...nextValue,
+    id: value.id ?? `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    userId: String(value.userId),
+    title: String(value.title ?? "System Message"),
+    message: String(value.message ?? ""),
+    type: normalizeLogType(value.type),
+    isRead: Boolean(value.isRead),
+    createdAt: value.createdAt ? new Date(value.createdAt).toISOString() : new Date().toISOString(),
+    ...value,
   } as T & SystemLogEntry;
 }
 
 function generateLogId(): string {
-  const hasCrypto = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function";
-  if (hasCrypto) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `log-${crypto.randomUUID()}`;
   }
   return `log-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -93,17 +90,12 @@ function safeErrorMessage(error: unknown): string {
   return String(error ?? "Unknown IndexedDB error");
 }
 
-/**
- * Initializes and opens the IndexedDB database instance.
- */
 function openDB(): Promise<IDBDatabase> {
   if (!isIndexedDBAvailable()) {
     return Promise.reject(new Error("IndexedDB is not available in this browser environment."));
   }
 
-  if (dbPromise) {
-    return dbPromise;
-  }
+  if (dbPromise) return dbPromise;
 
   dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -118,27 +110,15 @@ function openDB(): Promise<IDBDatabase> {
         store = request.transaction!.objectStore(STORE_NAME);
       }
 
-      if (!store.indexNames.contains("userId")) {
-        store.createIndex("userId", "userId", { unique: false });
-      }
-      if (!store.indexNames.contains("createdAt")) {
-        store.createIndex("createdAt", "createdAt", { unique: false });
-      }
-      if (!store.indexNames.contains("isRead")) {
-        store.createIndex("isRead", "isRead", { unique: false });
-      }
-      if (!store.indexNames.contains("type")) {
-        store.createIndex("type", "type", { unique: false });
-      }
+      if (!store.indexNames.contains("userId")) store.createIndex("userId", "userId", { unique: false });
+      if (!store.indexNames.contains("createdAt")) store.createIndex("createdAt", "createdAt", { unique: false });
+      if (!store.indexNames.contains("isRead")) store.createIndex("isRead", "isRead", { unique: false });
+      if (!store.indexNames.contains("type")) store.createIndex("type", "type", { unique: false });
     };
 
     request.onsuccess = () => {
       const db = request.result;
-
-      db.onversionchange = () => {
-        db.close();
-      };
-
+      db.onversionchange = () => db.close();
       resolve(db);
     };
 
@@ -151,9 +131,6 @@ function openDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-/**
- * Trim logs for a specific user down to MAX_LOGS_PER_USER.
- */
 async function pruneOldLogs(userId: string): Promise<void> {
   try {
     const logs = await getAll<SystemLogEntry>(userId);
@@ -170,9 +147,6 @@ async function pruneOldLogs(userId: string): Promise<void> {
    DATA ACCESS LAYER (CRUD)
 ========================================================= */
 
-/**
- * Retrieve a single log by ID while ensuring it belongs to the target userId.
- */
 export async function get<T extends SystemLogEntry = SystemLogEntry>(
   id: IDBValidKey,
   userId: string
@@ -181,7 +155,6 @@ export async function get<T extends SystemLogEntry = SystemLogEntry>(
 
   try {
     const db = await openDB();
-
     const log = await new Promise<T | undefined>((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
@@ -192,33 +165,19 @@ export async function get<T extends SystemLogEntry = SystemLogEntry>(
       tx.onabort = () => reject(tx.error ?? new Error("IndexedDB read aborted."));
     });
 
-    if (log && log.userId === userId) {
-      return log;
-    }
-
-    return undefined;
+    return log && log.userId === userId ? log : undefined;
   } catch (error) {
     console.warn(`Failed to read IndexedDB log ${String(id)}:`, safeErrorMessage(error));
     return undefined;
   }
 }
 
-/**
- * Store a new log or update an existing log for a specific user.
- */
 export async function set<T extends SystemLogEntry = SystemLogEntry>(
   value: T
 ): Promise<IDBValidKey> {
-  if (!value || value.id == null) {
-    throw new Error("IndexedDB log must contain an id.");
-  }
-  if (!value.userId) {
-    throw new Error("IndexedDB log must contain a userId.");
-  }
-
-  if (!isIndexedDBAvailable()) {
-    return value.id;
-  }
+  if (!value || value.id == null) throw new Error("IndexedDB log must contain an id.");
+  if (!value.userId) throw new Error("IndexedDB log must contain a userId.");
+  if (!isIndexedDBAvailable()) return value.id;
 
   const normalizedValue = normalizeLogEntry(value);
   const db = await openDB();
@@ -234,36 +193,23 @@ export async function set<T extends SystemLogEntry = SystemLogEntry>(
   });
 }
 
-/**
- * Explicit update alias.
- */
-export async function update<T extends SystemLogEntry = SystemLogEntry>(
-  value: T
-): Promise<IDBValidKey> {
+export async function update<T extends SystemLogEntry = SystemLogEntry>(value: T): Promise<IDBValidKey> {
   return set(value);
 }
 
-/**
- * Explicit put alias.
- */
-export async function put<T extends SystemLogEntry = SystemLogEntry>(
-  value: T
-): Promise<IDBValidKey> {
+export async function put<T extends SystemLogEntry = SystemLogEntry>(value: T): Promise<IDBValidKey> {
   return set(value);
 }
 
-/**
- * Delete a single log by ID (verifying ownership).
- */
 export async function remove(id: IDBValidKey, userId: string): Promise<void> {
   if (!isIndexedDBAvailable() || !userId) return;
 
   const existing = await get(id, userId);
-  if (!existing) return; // Prevent deleting other user logs
+  if (!existing) return;
 
   const db = await openDB();
 
-  await new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const request = tx.objectStore(STORE_NAME).delete(id);
 
@@ -273,9 +219,6 @@ export async function remove(id: IDBValidKey, userId: string): Promise<void> {
   });
 }
 
-/**
- * Retrieve all system log entries for a specific userId.
- */
 export async function getAll<T extends SystemLogEntry = SystemLogEntry>(
   userId: string,
   options: GetAllOptions = {}
@@ -297,19 +240,11 @@ export async function getAll<T extends SystemLogEntry = SystemLogEntry>(
 
     let filtered = items.map((item) => normalizeLogEntry(item) as T);
 
-    if (options.unreadOnly) {
-      filtered = filtered.filter((item) => !item.isRead);
-    }
-
-    if (options.type) {
-      filtered = filtered.filter((item) => item.type === normalizeLogType(options.type));
-    }
-
+    if (options.unreadOnly) filtered = filtered.filter((item) => !item.isRead);
+    if (options.type) filtered = filtered.filter((item) => item.type === normalizeLogType(options.type));
     if (options.since) {
       const sinceTime = new Date(options.since).getTime();
-      if (!Number.isNaN(sinceTime)) {
-        filtered = filtered.filter((item) => new Date(item.createdAt).getTime() >= sinceTime);
-      }
+      if (!Number.isNaN(sinceTime)) filtered = filtered.filter((item) => new Date(item.createdAt).getTime() >= sinceTime);
     }
 
     filtered = sortLogs(filtered, options.order ?? "desc");
@@ -325,18 +260,13 @@ export async function getAll<T extends SystemLogEntry = SystemLogEntry>(
   }
 }
 
-/**
- * Count stored logs for a specific userId.
- */
 export async function count(userId: string): Promise<number> {
   if (!isIndexedDBAvailable() || !userId) return 0;
-
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index("userId");
+    const index = tx.objectStore(STORE_NAME).index("userId");
     const request = index.count(IDBKeyRange.only(userId));
 
     request.onsuccess = () => resolve(request.result);
@@ -346,23 +276,25 @@ export async function count(userId: string): Promise<number> {
 }
 
 /**
- * Clear entries belonging ONLY to the specified user.
+ * Optimized single-transaction cursor cleanup for user logs.
  */
 export async function clear(userId: string): Promise<void> {
   if (!isIndexedDBAvailable() || !userId) return;
-
-  const userLogs = await getAll(userId);
-  if (!userLogs.length) return;
-
   const db = await openDB();
 
-  await new Promise<void>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
+    const index = store.index("userId");
+    const request = index.openCursor(IDBKeyRange.only(userId));
 
-    userLogs.forEach((log) => {
-      store.delete(log.id);
-    });
+    request.onsuccess = (event) => {
+      const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      }
+    };
 
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error ?? new Error("Failed to clear user logs."));
@@ -370,9 +302,6 @@ export async function clear(userId: string): Promise<void> {
   });
 }
 
-/**
- * Mark all stored logs as read for a specific user.
- */
 export async function markAllAsRead(userId: string): Promise<number> {
   if (!userId) return 0;
 
@@ -383,22 +312,13 @@ export async function markAllAsRead(userId: string): Promise<number> {
   return unread.length;
 }
 
-/* =========================================================
-   DOMAIN HELPERS
-========================================================= */
-
-/**
- * Helper to add a new system log tied to a specific userId.
- */
 export async function addSystemLog({
   userId,
   title,
   message,
   type = "info"
 }: AddSystemLogOptions): Promise<SystemLogEntry> {
-  if (!userId) {
-    throw new Error("Cannot add system log without a valid userId.");
-  }
+  if (!userId) throw new Error("Cannot add system log without a valid userId.");
 
   const logItem: SystemLogEntry = normalizeLogEntry({
     id: generateLogId(),

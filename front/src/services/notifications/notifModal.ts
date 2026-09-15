@@ -3,7 +3,6 @@ import Modal from "../../components/ui/Modal.js";
 import { createElement } from "../../components/createElement.js";
 import { getNotifications } from "./notifService.js";
 import * as idxDB from "../../utils/idxDB.js";
-import { syncUnreadNotificationState } from "./notifState.js";
 import { getUserId } from "../../utils/getUserID.js";
 import {
   createActionBar,
@@ -29,12 +28,10 @@ export async function openNotificationsModal(): Promise<void> {
   const userId = getUserId();
   let activeTab: "activity" | "system" = "activity";
 
-  syncUnreadNotificationState(0);
-
   const content = createElement("div", { class: "notification-modal" });
   const tabHeader = createElement("div", { class: "notification-tab-header" });
-  const activityTabBtn = createElement("button", { class: "notification-tab-button is-active" }, ["Activity"]);
-  const systemTabBtn = createElement("button", { class: "notification-tab-button" }, ["System Logs"]);
+  const activityTabBtn = createElement("button", { class: "notification-tab-button" }, ["Activity"]);
+  const systemTabBtn = createElement("button", { class: "notification-tab-button is-active" }, ["System Logs"]);
 
   const toolbar = createElement("div", { class: "notification-toolbar" });
   const searchInput = createElement("input", {
@@ -52,8 +49,7 @@ export async function openNotificationsModal(): Promise<void> {
 
   Object.entries(filterButtons).forEach(([key, button]) => {
     button.addEventListener("click", () => {
-      const nextFilter = key as NotificationFilter;
-      UI_STATE.activityFilter = nextFilter;
+      UI_STATE.activityFilter = key as NotificationFilter;
       applyActivityFilterState();
       renderActivityTab();
     });
@@ -62,8 +58,8 @@ export async function openNotificationsModal(): Promise<void> {
 
   toolbar.appendChild(searchInput);
   toolbar.appendChild(filterGroup);
-  tabHeader.appendChild(activityTabBtn);
   tabHeader.appendChild(systemTabBtn);
+  tabHeader.appendChild(activityTabBtn);
   content.appendChild(tabHeader);
   content.appendChild(toolbar);
 
@@ -73,8 +69,7 @@ export async function openNotificationsModal(): Promise<void> {
   Modal({ title: "📬 Notifications & Logs", content, size: "medium", showCloseButton: true });
 
   searchInput.addEventListener("input", (event: Event) => {
-    const value = (event.target as HTMLInputElement).value;
-    UI_STATE.search = value;
+    UI_STATE.search = (event.target as HTMLInputElement).value;
     if (activeTab === "activity") renderActivityTab();
     else renderSystemTab();
   });
@@ -135,8 +130,8 @@ export async function openNotificationsModal(): Promise<void> {
   }
 
   async function renderActivityTab(): Promise<void> {
-    const summaryHost = createElement("div");
     tabContentView.innerHTML = "";
+    const summaryHost = createElement("div");
     tabContentView.appendChild(summaryHost);
     summaryHost.innerHTML = '<div class="notification-loading">Loading activity...</div>';
 
@@ -170,14 +165,13 @@ export async function openNotificationsModal(): Promise<void> {
   }
 
   async function renderSystemTab(): Promise<void> {
-    const summaryHost = createElement("div");
     tabContentView.innerHTML = "";
+    const summaryHost = createElement("div");
     tabContentView.appendChild(summaryHost);
     summaryHost.innerHTML = '<div class="notification-loading">Loading system logs...</div>';
 
     let logs: SystemLog[] = [];
     try {
-      // Pass the current user ID to isolate logs
       logs = userId ? ((await idxDB.getAll(userId)) || []) : [];
       logs.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (err) {
@@ -194,15 +188,11 @@ export async function openNotificationsModal(): Promise<void> {
       { label: "Errors", value: errorCount, tone: "error" },
     ]);
 
-    tabContentView.innerHTML = "";
-    tabContentView.appendChild(summaryHost);
-
     if (!filtered.length) {
       renderEmptyState(tabContentView, "No matching system logs found.");
       return;
     }
 
-    // Pass userId so action bar / action cards can perform scoped operations (clear, mark read, delete)
     const actionBar = createSystemActionBar(userId, filtered, renderSystemTab);
     if (actionBar) tabContentView.appendChild(actionBar);
 

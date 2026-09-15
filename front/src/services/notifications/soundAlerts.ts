@@ -29,13 +29,16 @@ const DEFAULT_SETTINGS: SoundSettings = {
   notificationTone: 'default',
 };
 
-// Singleton AudioContext unlocked on first user gesture
 let audioContext: AudioContext | null = null;
 
 if (typeof window !== 'undefined') {
   const unlockAudio = () => {
     if (!audioContext) {
-      const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+      // Fixed type casting via unknown double-assertion
+      const AudioCtor =
+        window.AudioContext ||
+        ((window as unknown as Record<string, unknown>).webkitAudioContext as typeof AudioContext);
+
       if (AudioCtor) audioContext = new AudioCtor();
     }
     if (audioContext && audioContext.state === 'suspended') {
@@ -51,7 +54,6 @@ if (typeof window !== 'undefined') {
   );
 }
 
-// Storage Helpers
 function getItem<T>(key: string, fallback: T): T {
   try {
     const data = localStorage.getItem(key);
@@ -69,7 +71,6 @@ function setItem<T>(key: string, value: T): void {
   }
 }
 
-// Public API
 export function getSoundSettings(): SoundSettings {
   return { ...DEFAULT_SETTINGS, ...getItem<Partial<SoundSettings>>(SOUND_KEY, {}) };
 }
@@ -97,9 +98,9 @@ export function resolveSoundPreference({ type = 'message', chatId }: SoundPrefer
 
   const enabled =
     (globalSettings.enabled ?? true) &&
-    ((chatSettings as any)[enabledKey] ?? globalSettings[enabledKey as keyof SoundSettings] ?? true);
+    (chatSettings[enabledKey] ?? globalSettings[enabledKey] ?? true);
 
-  const tone = (chatSettings as any)[toneKey] || globalSettings[toneKey as keyof SoundSettings] || 'default';
+  const tone = chatSettings[toneKey] || globalSettings[toneKey] || 'default';
 
   return { enabled, tone };
 }

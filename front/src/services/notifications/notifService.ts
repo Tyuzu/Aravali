@@ -10,10 +10,6 @@ export interface NotificationItem {
   isRead?: boolean;
 }
 
-/**
- * Fetch all notifications for the authenticated user.
- * Normalizes backend payloads (array or object wrapper) and sorts newest first.
- */
 export async function getNotifications(): Promise<NotificationItem[]> {
   try {
     const response: any = await apiFetch("/notifs", "GET");
@@ -28,12 +24,8 @@ export async function getNotifications(): Promise<NotificationItem[]> {
   }
 }
 
-/**
- * Mark a single notification as read by ID.
- */
-export async function markNotificationAsRead(id: string | number | undefined): Promise<any> {
+export async function markNotificationAsRead(id: string | number | undefined): Promise<unknown> {
   if (!id) throw new Error("Notification ID is required.");
-  
   try {
     return await apiFetch(`/notifs/notif/${id}/read`, "PUT");
   } catch (error) {
@@ -42,10 +34,7 @@ export async function markNotificationAsRead(id: string | number | undefined): P
   }
 }
 
-/**
- * Mark all notifications as read for the current user.
- */
-export async function markAllNotificationsAsRead(): Promise<any> {
+export async function markAllNotificationsAsRead(): Promise<unknown> {
   try {
     return await apiFetch("/notifs/read-all", "PUT");
   } catch (error) {
@@ -54,10 +43,7 @@ export async function markAllNotificationsAsRead(): Promise<any> {
   }
 }
 
-/**
- * Delete all notifications for the current user.
- */
-export async function clearAllNotifications(): Promise<any> {
+export async function clearAllNotifications(): Promise<unknown> {
   try {
     return await apiFetch("/notifs", "DELETE");
   } catch (error) {
