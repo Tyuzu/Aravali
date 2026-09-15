@@ -18,15 +18,15 @@ func getEntityOwner(ctx context.Context, app *infra.Deps, entityType, entityID s
 
 	switch entityType {
 	case "event":
-		collection = "events"
+		collection = config.Collections.EventsCollection
 		idField = "eventid"
 		ownerField = "creatorid"
 	case "farm":
-		collection = "farms"
+		collection = config.Collections.FarmsCollection
 		idField = "farmid"
 		ownerField = "createdBy"
 	case "artist":
-		collection = "artists"
+		collection = config.Collections.ArtistsCollection
 		idField = "artistid"
 		ownerField = "creatorid"
 	default:

@@ -9,6 +9,7 @@ type DB struct {
 	ArtistAlbumsCollection             string
 	ArtistEventsCollection             string
 	ArtistsCollection                  string
+	AuditlogsCollection                string
 	AutocompleteCollection             string
 	BaitoApplicationsCollection        string
 	BaitoCollection                    string
@@ -24,6 +25,11 @@ type DB struct {
 	CropsCollection                    string
 	CropsAboutCollection               string
 	DateCapsCollection                 string
+	DeliveriesCollection               string
+	DeliveryEventsCollection           string
+	DeliveryWebhooksCollection         string
+	DriversCollection                  string
+	DriverJobRejectionsCollection      string
 	EventsCollection                   string
 	FAQsCollection                     string
 	FarmsCollection                    string
@@ -56,6 +62,7 @@ type DB struct {
 	RefundsCollection                  string
 	ReportsCollection                  string
 	ReviewsCollection                  string
+	RoleApplicationsCollection         string
 	ServiceCollection                  string
 	SettingsCollection                 string
 	SlotCollection                     string
@@ -83,7 +90,8 @@ var Collections = DB{
 	AppealsCollection:                  "appeals",
 	ArtistEventsCollection:             "artistevents",
 	ArtistsCollection:                  "artists",
-	AutocompleteCollection:             "artists",
+	AutocompleteCollection:             "autocomplete",
+	AuditlogsCollection:                "audit_logs",
 	BaitoApplicationsCollection:        "baitoapply",
 	BaitoCollection:                    "baitos",
 	BaitoWorkerCollection:              "baitoworkers",
@@ -98,6 +106,11 @@ var Collections = DB{
 	CropsCollection:                    "crops",
 	CropsAboutCollection:               "cropsabout",
 	DateCapsCollection:                 "date_caps",
+	DeliveriesCollection:               "deliveries",
+	DeliveryEventsCollection:           "deliveryEvents",
+	DeliveryWebhooksCollection:         "delwebhooks",
+	DriverJobRejectionsCollection:      "driver_rejection",
+	DriversCollection:                  "drivers",
 	EventsCollection:                   "events",
 	FAQsCollection:                     "faqs",
 	FarmsCollection:                    "farms",
@@ -132,6 +145,7 @@ var Collections = DB{
 	RefundsCollection:                  "refunds",
 	ReportsCollection:                  "reports",
 	ReviewsCollection:                  "reviews",
+	RoleApplicationsCollection:         "role_applications",
 	ServiceCollection:                  "service",
 	SettingsCollection:                 "settings",
 	SlotCollection:                     "slots",

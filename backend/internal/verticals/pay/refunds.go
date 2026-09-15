@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
@@ -16,7 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const RefundsCollection = "refunds"
+var RefundsCollection = config.Collections.RefundsCollection
 
 // Collections are defined in payDB.go but declared here for reference
 // var transactionsCollection - from payDB.go

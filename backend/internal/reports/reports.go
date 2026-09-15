@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
@@ -388,28 +389,28 @@ func setEntityDeletedFlag(
 
 	switch entityType {
 	case "post":
-		collection = "posts"
+		collection = config.Collections.BlogPostsCollection
 		idField = "postid"
 	case "place":
-		collection = "places"
+		collection = config.Collections.PlacesCollection
 		idField = "placeid"
 	case "event":
-		collection = "events"
+		collection = config.Collections.EventsCollection
 		idField = "eventid"
 	case "user":
-		collection = "users"
+		collection = config.Collections.UserCollection
 		idField = "userid"
 	case "merch":
-		collection = "merch"
+		collection = config.Collections.MerchCollection
 		idField = "merchid"
 	case "message":
-		collection = "messages"
+		collection = config.Collections.MessagesCollection
 		idField = "messageid"
 	case "chat":
-		collection = "chats"
+		collection = config.Collections.ChatsCollection
 		idField = "chatid"
 	case "comment":
-		collection = "comments"
+		collection = config.Collections.CommentsCollection
 		idField = "commentid"
 	default:
 		return errors.New("unsupported entity type")

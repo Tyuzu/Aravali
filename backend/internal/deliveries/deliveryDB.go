@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"scav/config"
 	"scav/infra"
 )
 
-const deliveriesCollection = "deliveries"
+var deliveriesCollection = config.Collections.DeliveriesCollection
 
 func findDeliveryByFilter(ctx context.Context, app *infra.Deps, filter map[string]any, out any) error {
 	return app.DB.FindOne(ctx, deliveriesCollection, filter, out)

@@ -3,12 +3,13 @@ package tracking
 import (
 	"context"
 
+	"scav/config"
 	"scav/infra"
 	"scav/internal/deliveries"
 )
 
-const deliveriesCollection = "deliveries"
-const deliveryEventsCollection = "delivery_events"
+var deliveriesCollection = config.Collections.DeliveriesCollection
+var deliveryEventsCollection = config.Collections.DeliveryEventsCollection
 
 func getTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (map[string]any, error) {
 	var result map[string]any

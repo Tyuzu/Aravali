@@ -3,11 +3,12 @@ package delwebhooks
 import (
 	"context"
 
+	"scav/config"
 	"scav/infra"
 	"scav/internal/deliveries"
 )
 
-const webhooksCollection = "webhooks"
+var webhooksCollection = config.Collections.DeliveryWebhooksCollection
 
 func createWebhook(ctx context.Context, app *infra.Deps, wh deliveries.Webhook) error {
 	return app.DB.InsertOne(ctx, webhooksCollection, wh)

@@ -11,7 +11,7 @@ import (
 	"scav/utils"
 )
 
-const roleApplicationsCollection = "role_applications"
+var roleApplicationsCollection = config.Collections.RoleApplicationsCollection
 
 var usersCollection = config.Collections.UserCollection
 

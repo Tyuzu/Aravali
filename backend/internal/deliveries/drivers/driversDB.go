@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"scav/config"
 	"scav/infra"
 	"scav/internal/deliveries"
 )
 
-const driversCollection = "drivers"
-const driverJobRejectionsCollection = "driver_job_rejections"
+var driversCollection = config.Collections.DriversCollection
+var driverJobRejectionsCollection = config.Collections.DriverJobRejectionsCollection
 
 func getDriverProfileByID(ctx context.Context, app *infra.Deps, driverID, tenantID string) (deliveries.Driver, error) {
 	var driver deliveries.Driver

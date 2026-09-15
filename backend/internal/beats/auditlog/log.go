@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"scav/config"
 	"scav/infra"
 	"scav/utils"
 )
 
-const auditCollection = "auditlogs"
+var auditCollection = config.Collections.AuditlogsCollection
 
 // LogAction records an audit event
 func LogAction(
