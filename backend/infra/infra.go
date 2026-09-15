@@ -63,21 +63,21 @@ func New(cfg *config.Config) (*Deps, error) {
 	}
 	cacheLayer := cache.NewRedisCache(rclient)
 
-	/* -------- NATS JetStream (optional) -------- */
+	// /* -------- NATS JetStream (optional) -------- */
 
-	var mqLayer mq.MQ
-	var nc *nats.Conn
+	// var mqLayer mq.MQ
+	// var nc *nats.Conn
 
-	natsURL := env("NATS_URL", "")
-	if natsURL != "" {
-		conn, js, err := NewJetStream(natsURL)
-		if err != nil {
-			return nil, err
-		}
+	// natsURL := env("NATS_URL", "")
+	// if natsURL != "" {
+	// 	conn, js, err := NewJetStream(natsURL)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		mqLayer = mq.NewJetStreamMQ(js)
-		nc = conn
-	}
+	// 	mqLayer = mq.NewJetStreamMQ(js)
+	// 	nc = conn
+	// }
 
 	// /* -------- Postgres -------- */
 
@@ -106,15 +106,16 @@ func New(cfg *config.Config) (*Deps, error) {
 
 	// ---------------
 
-	logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
+	// logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
+	logger.L.Sugar().Infow("infra initialized")
 
 	return &Deps{
 		// SQLDB:       *sqldbLayer,
-		DB:       dbLayer,
-		Cache:    cacheLayer,
-		MQ:       mqLayer,
-		NatsConn: nc,
-		Config:   *cfg,
+		DB:    dbLayer,
+		Cache: cacheLayer,
+		// MQ:    mqLayer,
+		// NatsConn: nc,
+		Config: *cfg,
 		// PGPool:      pool,
 		MongoClient: client,
 		RedisClient: rclient,

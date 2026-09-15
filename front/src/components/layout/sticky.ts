@@ -1,6 +1,6 @@
 import "../../../css/layout/sticky.css";
 import { createElement } from "../createElement.js";
-import { notifSVG, cartSVG, chatSVG, menuSVG, aSVG } from "../svgs/featherSVGs";
+import { notifSVG, cartSVG, chatCircleSVG, menuSVG, aSVG } from "../svgs/featherSVGs";
 import { navigate } from "../../routes/navigate.js";
 import { getState, subscribe } from "../../state/state.js";
 import { openNotificationsModal } from "../../services/notifications/notifModal.js";
@@ -93,7 +93,7 @@ function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}
         // Chat / Messages Button
         const chatBtn: HTMLElement = createIconButton({
             classSuffix: "stickychat",
-            svgMarkup: chatSVG,
+            svgMarkup: chatCircleSVG,
             onClick: () => navigate("/newchats"),
             label: "Chats"
         });

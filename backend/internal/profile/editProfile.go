@@ -3,6 +3,7 @@ package profile
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -25,11 +26,7 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 
 		// 1. Validate JWT
-		claims, err := validateJWT(r)
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
+		claims := &middleware.Claims{Username: utils.GetUsernameFromRequest(r), UserID: utils.GetUserIDFromRequest(r)}
 
 		// 2. Parse form data (~10 MB)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
@@ -127,7 +124,7 @@ func BuildProfileUpdates(
 	if val := r.FormValue("name"); val != "" {
 		updates["name"] = val
 	}
-	if val := r.FormValue("phone"); val != "" {
+	if val := r.FormValue("phone_number"); val != "" {
 		updates["phone_number"] = val
 	}
 
@@ -155,7 +152,10 @@ func ApplyProfileUpdates(
 	userID string,
 	updates map[string]any,
 ) (any, error) {
-	return database.UpdateOne(ctx, usersCollection, map[string]any{"userid": userID}, updates)
+	s, err := database.UpdateOne(ctx, usersCollection, map[string]any{"userid": userID}, updates)
+	log.Println(";;;;;;;;;;;;;;;;;;;;;;;;;;", updates)
+	log.Println(";;;;;;;;;;;;;;;;;;;;;;;;;;", s)
+	return s, err
 }
 
 func DeleteUserByID(

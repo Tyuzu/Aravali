@@ -42,7 +42,8 @@ const PAYMENT_RULES: PaymentRules = {
       "order", "cart", "menu", "booking", "product",
       "ticket", "merch", "crop", "service", "farm"
     ],
-    methods: ["card", "wallet", "cash_on_delivery"]
+    // methods: ["card", "wallet", "cash_on_delivery"]
+    methods: ["cash_on_delivery"]
   }
 };
 
