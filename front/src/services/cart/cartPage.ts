@@ -1,8 +1,6 @@
-// src/ui/cart/cartPage.ts
 import { createElement } from "../../components/createElement.js";
 import { renderCartCategory, CartItem, CartData, SectionTotals } from "./cartUtils.js";
 import { displayCheckout } from "./checkout.js";
-import Button from "../../components/base/Button.js";
 import { getCart } from "./api.js";
 
 /**
@@ -28,7 +26,7 @@ export async function displayCart(content: HTMLElement | null, isLoggedIn: boole
     return;
   }
 
-  // Maintain a dynamically up-to-date registry mapping categories to their active item states
+  // Maintain a dynamically up-to-date registry mapping categories to active item states
   const groupedRegistry: CartData = groupCartByCategory(serverCart);
   const categories = Object.keys(groupedRegistry).filter(
     cat => Array.isArray(groupedRegistry[cat]) && groupedRegistry[cat].length
@@ -51,15 +49,15 @@ export async function displayCart(content: HTMLElement | null, isLoggedIn: boole
   }, ["← Back"]);
 
   const titleHeader = createElement("h2", {}, ["Your Cart"]);
-
   container.replaceChildren(backButton, titleHeader);
 
   const sectionTotals: SectionTotals = {};
   const grandTotalText = createElement("h3", { class: "grand-total" });
 
+  // Render each category with its own section checkout handler
   categories.forEach(category => {
     renderCartCategory({
-      cart: groupedRegistry, // Pass registry reference down for inline sub-mutations
+      cart: groupedRegistry,
       category,
       sectionTotals,
       updateGrandTotal,
@@ -68,31 +66,8 @@ export async function displayCart(content: HTMLElement | null, isLoggedIn: boole
     });
   });
 
-  const checkoutAllBtn = Button({
-    title: "Checkout All",
-    id: "checkout-all-btn",
-    events: {
-      click: () => {
-        // Extract fresh items from the current registry state instead of stale closures
-        const allItems = Object.values(groupedRegistry).flat().filter(Boolean) as CartItem[];
-        
-        // Remove zero-quantity or deleted item records before proceeding
-        const activeItems = allItems.filter(item => (Number(item.quantity) || 0) > 0);
-
-        if (!activeItems.length) {
-          alert("There are no active items in your cart to checkout.");
-          return;
-        }
-        
-        displayCheckout(container, activeItems);
-      }
-    },
-    classes: "buttonx primary"
-  }) as HTMLButtonElement;
-
   const grandBox = createElement("div", { class: "grand-box" }, [
-    grandTotalText,
-    checkoutAllBtn
+    grandTotalText
   ]);
 
   container.appendChild(grandBox);
@@ -105,12 +80,7 @@ export async function displayCart(content: HTMLElement | null, isLoggedIn: boole
       (sum, val) => sum + (Number(val) || 0),
       0
     );
-    grandTotalText.replaceChildren(`Grand Total: ₹${total.toFixed(2)}`);
-    
-    // Disable checkout button dynamically if cart total drops to zero
-    if (total <= 0) {
-      checkoutAllBtn.disabled = true;
-    }
+    grandTotalText.replaceChildren(`Grand Total across categories: ₹${total.toFixed(2)}`);
   }
 }
 
@@ -138,7 +108,6 @@ function groupCartByCategory(cartData: any): CartData {
   });
 
   const grouped: CartData = {};
-  // Safeguard against prototype pollution using explicit Object.keys looping arrays
   Object.keys(byCategory).forEach(cat => {
     const map: Record<string, CartItem> = {};
     byCategory[cat].forEach(it => {

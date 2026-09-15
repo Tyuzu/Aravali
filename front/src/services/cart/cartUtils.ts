@@ -61,8 +61,8 @@ function buildPayload(base: Record<string, any>, entityId?: string | number, ent
 }
 
 export const CartAPI = {
-  remove(itemId: string | number, category: string, entityId?: string | number, entityType?: string): Promise<any> {
-    return removeCartItem(buildPayload({ itemId, category }, entityId, entityType));
+  remove(itemType: string, itemId: string | number, category: string, entityId?: string | number, entityType?: string): Promise<any> {
+    return removeCartItem(buildPayload({ itemId, category, itemType }, entityId, entityType));
   },
 
   updateQty(itemId: string | number, category: string, quantity: number, entityId?: string | number, entityType?: string): Promise<any> {
@@ -249,6 +249,7 @@ export function renderCartCategory({
       clearQtyTimer(item);
 
       await CartAPI.remove(
+        item.itemType!,
         item.itemId!,
         category,
         item.entityId,
