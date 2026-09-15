@@ -50,7 +50,7 @@ type UpdateReviewPayload struct {
 func AddReview(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		userId, ok := getUserID(r.Context())
+		userId, ok := getUserID(ctx)
 		if !ok {
 			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 			return
@@ -59,14 +59,7 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 		entityType := utils.GetParam(r, "entityType")
 		entityId := utils.GetParam(r, "entityId")
 
-		dupFilter := bson.M{
-			"userid":     userId,
-			"entityType": entityType,
-			"entityId":   entityId,
-		}
-
-		var existing Review
-		if err := app.DB.FindOne(r.Context(), reviewsCollection, dupFilter, &existing); err == nil {
+		if existing, _ := GetUserReviewForEntity(ctx, app, userId, entityType, entityId); existing != nil {
 			utils.RespondWithJSON(w, http.StatusConflict, map[string]string{"error": "Already reviewed"})
 			return
 		}
@@ -94,7 +87,7 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  now,
 		}
 
-		if err := app.DB.Insert(r.Context(), reviewsCollection, review); err != nil {
+		if err := InsertReview(ctx, app, review); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create review"})
 			return
 		}
@@ -113,7 +106,7 @@ func AddReview(app *infra.Deps) http.HandlerFunc {
 func EditReview(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		userId, ok := getUserID(r.Context())
+		userId, ok := getUserID(ctx)
 		if !ok {
 			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 			return
@@ -121,18 +114,13 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 
 		reviewId := utils.GetParam(r, "reviewId")
 
-		var existing Review
-		if err := app.DB.FindOne(
-			r.Context(),
-			reviewsCollection,
-			bson.M{"reviewid": reviewId},
-			&existing,
-		); err != nil {
+		existing, err := GetReviewByID(ctx, app, reviewId)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}
 
-		if existing.UserID != userId && !isAdmin(r.Context()) {
+		if existing.UserID != userId && !isAdmin(ctx) {
 			utils.RespondWithJSON(w, http.StatusForbidden, map[string]string{"error": "Forbidden"})
 			return
 		}
@@ -164,12 +152,7 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := app.DB.Update(
-			r.Context(),
-			reviewsCollection,
-			bson.M{"reviewid": reviewId},
-			update,
-		); err != nil {
+		if err := UpdateReviewByID(ctx, app, reviewId, update); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update review"})
 			return
 		}
@@ -188,7 +171,7 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 func DeleteReview(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		userId, ok := getUserID(r.Context())
+		userId, ok := getUserID(ctx)
 		if !ok {
 			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
 			return
@@ -196,27 +179,18 @@ func DeleteReview(app *infra.Deps) http.HandlerFunc {
 
 		reviewId := utils.GetParam(r, "reviewId")
 
-		var review Review
-		if err := app.DB.FindOne(
-			r.Context(),
-			reviewsCollection,
-			bson.M{"reviewid": reviewId},
-			&review,
-		); err != nil {
+		review, err := GetReviewByID(ctx, app, reviewId)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
 			return
 		}
 
-		if review.UserID != userId && !isAdmin(r.Context()) {
+		if review.UserID != userId && !isAdmin(ctx) {
 			utils.RespondWithJSON(w, http.StatusForbidden, map[string]string{"error": "Forbidden"})
 			return
 		}
 
-		if _, err := app.DB.Delete(
-			r.Context(),
-			reviewsCollection,
-			bson.M{"reviewid": reviewId},
-		); err != nil {
+		if err := DeleteReviewByID(ctx, app, reviewId); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to delete review"})
 			return
 		}

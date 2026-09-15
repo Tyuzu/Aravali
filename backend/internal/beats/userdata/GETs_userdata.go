@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"scav/config"
 	"scav/infra"
 	"scav/middleware"
 	"scav/utils"
 	log "scav/utils/logger"
 	"time"
 )
+
+// HTTP Handlers
 
 // GetUserProfileData fetches user-specific entity data
 func GetUserProfileData(app *infra.Deps) http.HandlerFunc {
@@ -40,25 +41,15 @@ func GetUserProfileData(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// Fetch data from Database interface
+		// Fetch data from database
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		var results []UserData
-		filter := map[string]any{
-			"entity_type": entityType,
-			"userid":      username,
-		}
-
-		if err := FindUserData(ctx, app, filter, &results); err != nil {
+		results, err := FetchUserDataByEntity(ctx, app, entityType, username)
+		if err != nil {
 			http.Error(w, "Failed to fetch user data", http.StatusInternalServerError)
 			log.Printf("Error fetching user data: %v", err)
 			return
-		}
-
-		// Ensure empty slice instead of nil
-		if results == nil {
-			results = []UserData{}
 		}
 
 		// Respond with JSON
@@ -92,29 +83,8 @@ func GetOtherUserProfileData(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		type postDoc struct {
-			PostID    string    `bson:"postid"`
-			Title     string    `bson:"title"`
-			Thumb     string    `bson:"thumb"`
-			CreatedBy string    `bson:"createdBy"`
-			Username  string    `bson:"username"`
-			CreatedAt time.Time `bson:"createdAt"`
-			Blocks    []struct {
-				Type    string `bson:"type"`
-				URL     string `bson:"url"`
-				Caption string `bson:"caption"`
-			} `bson:"blocks"`
-		}
-
-		var posts []postDoc
-		filter := map[string]any{
-			"$or": []map[string]any{
-				{"createdBy": username},
-				{"username": username},
-			},
-		}
-
-		if err := app.DB.FindMany(ctx, config.Collections.FeedPostsCollection, filter, &posts); err != nil {
+		posts, err := FetchOtherUserFeedPosts(ctx, app, username)
+		if err != nil {
 			http.Error(w, "DB error", http.StatusInternalServerError)
 			log.Printf("Error fetching other user feed posts: %v", err)
 			return
