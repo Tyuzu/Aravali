@@ -70,7 +70,7 @@ export function createProfileSection(): HTMLDivElement {
   const links: DropdownMenuItem[] = [
     { href: "/profile", text: username, icon: profileSVG },
     { href: "/my-orders", text: "My Orders", icon: shopBagSVG },
-    { href: "/wallet", text: "Wallet", icon: cardSVG },
+    // { href: "/wallet", text: "Wallet", icon: cardSVG },
     { href: "/settings", text: "Settings", icon: settingsSVG }
   ];
 

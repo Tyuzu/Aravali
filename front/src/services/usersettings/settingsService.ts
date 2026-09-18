@@ -3,11 +3,10 @@ import { getState } from "../../state/state.js";
 import { createElement } from "../../components/createElement.js";
 import ToggleSwitch from "../../components/ui/ToggleSwitch.js";
 import { submitRoleRequest } from "../admin/roleManagement.js";
-import { getMyAppeals } from "../reporting/api.js";
+import { getMyAppeals, type Appeal } from "../reporting/api.js";
 import {
   loadSettingsRequest,
   updateSettingRequest,
-  type ApiResponse,
   type SettingSchemaItem,
   type SettingsValues
 } from "./api.js";
@@ -77,18 +76,26 @@ async function loadSettings(): Promise<{ schema: SettingSchemaItem[]; values: Se
 // --- Dynamic Control Factories ---
 
 function createToggle(setting: SettingSchemaItem, value: unknown, inputId: string): HTMLElement {
-  const toggle = ToggleSwitch(async (checked: boolean) => {
-    const success = await updateSetting(setting.type, checked);
-    if (!success && input) {
-      input.checked = !checked; // Rollback toggle state on failure
+  let isUpdating = false;
+
+  const toggle = ToggleSwitch({
+    id: inputId,
+    checked: Boolean(value),
+    onToggle: async (checked: boolean) => {
+      if (isUpdating) return;
+      isUpdating = true;
+
+      const success = await updateSetting(setting.type, checked);
+      if (!success) {
+        // Rollback visual checkbox state if update failed
+        const input = toggle.querySelector<HTMLInputElement>("input");
+        if (input) {
+          input.checked = !checked;
+        }
+      }
+      isUpdating = false;
     }
   });
-
-  const input = toggle.querySelector<HTMLInputElement>("input");
-  if (input) {
-    input.id = inputId;
-    input.checked = Boolean(value);
-  }
 
   return toggle;
 }
@@ -105,6 +112,8 @@ function createSelect(setting: SettingSchemaItem, value: unknown, inputId: strin
     )
   );
 
+  let previousValue = String(value ?? "");
+
   const select = createElement(
     "select",
     {
@@ -113,7 +122,13 @@ function createSelect(setting: SettingSchemaItem, value: unknown, inputId: strin
       events: {
         change: async (e: Event) => {
           const target = e.target as HTMLSelectElement;
-          await updateSetting(setting.type, target.value);
+          const newValue = target.value;
+          const success = await updateSetting(setting.type, newValue);
+          if (success) {
+            previousValue = newValue;
+          } else {
+            target.value = previousValue; // Revert on API failure
+          }
         }
       }
     },
@@ -129,7 +144,7 @@ function createInputControl(
   inputId: string,
   type = "text"
 ): HTMLInputElement {
-  const initialValue = type === "number" ? String(value ?? 0) : String(value || "");
+  const initialValue = type === "number" ? String(value ?? 0) : String(value ?? "");
 
   let originalValue = initialValue;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -229,7 +244,7 @@ async function createAppealStatusCard(): Promise<HTMLElement> {
       return createElement("div", { class: "setting-card" }, [info, listHost]);
     }
 
-    const rows = appeals.map((appeal) => {
+    const rows = appeals.map((appeal: Appeal) => {
       const item = createElement("div", { class: "setting-card" }, []);
       const label = createElement("strong", {}, [appeal.targetType ? `${appeal.targetType} appeal` : "Appeal"]);
       const status = createElement("span", {}, [String(appeal.status || "pending")]);
@@ -261,7 +276,7 @@ async function createAppealStatusCard(): Promise<HTMLElement> {
 }
 
 function createRoleAccessCard(): HTMLElement {
-  const existingRoles = Array.isArray(getState("roles")) ? getState("roles") as string[] : [];
+  const existingRoles = Array.isArray(getState("roles")) ? (getState("roles") as string[]) : [];
   const availableRoles = ["farmer", "worker", "admin"].filter((role) => !existingRoles.includes(role));
 
   const title = createElement("h3", { class: "setting-title" }, ["Role access"]);
@@ -274,7 +289,7 @@ function createRoleAccessCard(): HTMLElement {
 
   const select = createElement("select", { class: "setting-select" }) as HTMLSelectElement;
   if (availableRoles.length === 0) {
-    const option = createElement("option", { value: "" }, ["You already have the available role requests"]);
+    const option = createElement("option", { value: "" }, ["You already have all available roles"]);
     select.appendChild(option);
     select.disabled = true;
   } else {
@@ -287,14 +302,19 @@ function createRoleAccessCard(): HTMLElement {
     type: "text",
     class: "setting-input",
     placeholder: "Tell us why you want this role",
-    value: ""
+    value: "",
+    disabled: availableRoles.length === 0
   }) as HTMLInputElement;
 
-  const button = createElement("button", {
-    class: "buttonx",
-    type: "button",
-    disabled: availableRoles.length === 0
-  }, ["Apply for role"]) as HTMLButtonElement;
+  const button = createElement(
+    "button",
+    {
+      class: "buttonx",
+      type: "button",
+      disabled: availableRoles.length === 0
+    },
+    ["Apply for role"]
+  ) as HTMLButtonElement;
 
   button.addEventListener("click", async () => {
     const role = select.value;
@@ -308,6 +328,7 @@ function createRoleAccessCard(): HTMLElement {
       return;
     }
 
+    button.disabled = true;
     try {
       await submitRoleRequest({ role, reason: text });
       showToast("Role request submitted.");
@@ -315,6 +336,8 @@ function createRoleAccessCard(): HTMLElement {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to submit role request.";
       showToast(message, true);
+    } finally {
+      button.disabled = availableRoles.length === 0;
     }
   });
 
@@ -337,10 +360,7 @@ function renderSettings(
       const heading = createElement("h2", { class: "settings-category-title" }, [categoryName]);
       const body = createElement("div", { class: "settings-category-body" });
 
-      const section = createElement("section", { class: "settings-category" }, [
-        heading,
-        body
-      ]);
+      const section = createElement("section", { class: "settings-category" }, [heading, body]);
 
       fragment.appendChild(section);
       categories.set(categoryName, body);

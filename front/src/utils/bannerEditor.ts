@@ -181,25 +181,25 @@ function askUpdateMethod(imageType: string): Promise<UpdateMethodChoice> {
       Button({
         title: "Upload Image",
         id: "up-banner-btn",
-        classes: "btn",
+        classes: "buttonx",
         events: { click: () => handleChoice("upload") }
       }),
       Button({
         title: "Use URL",
         id: "url-banner-btn",
-        classes: "btn",
+        classes: "buttonx",
         events: { click: () => handleChoice("url") }
       }),
       Button({
         title: "Use URL + Crop",
         id: "url-crop-banner-btn",
-        classes: "btn",
+        classes: "buttonx",
         events: { click: () => handleChoice("url-crop") }
       }),
       Button({
         title: "Cancel",
         id: "cancel-banner-btn",
-        classes: "btn",
+        classes: "buttonx",
         events: { click: () => handleChoice(false) }
       })
     ]);
@@ -246,7 +246,7 @@ function promptUrlInput(): Promise<string | null> {
     const cancelBtn = Button({
       title: "Cancel",
       id: "cancel-url-btn",
-      classes: "btn",
+      classes: "buttonx",
       events: { click: () => handleDone(null) }
     });
 

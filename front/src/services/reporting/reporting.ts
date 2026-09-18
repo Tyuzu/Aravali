@@ -52,8 +52,8 @@ export function reportEntity(
   parentType = "",
   parentId = ""
 ): void {
-  const user = getState("user") as { userid?: string } | undefined;
-  const userId = user?.userid;
+  const user = getState("user") as { userid?: string; id?: string } | undefined;
+  const userId = user?.userid || user?.id;
 
   if (!userId) {
     Notify("You must be logged in to report content.", { type: "error" });
@@ -67,7 +67,7 @@ export function reportEntity(
 
   const content = createElement("div", { class: "vflex report-modal-content" });
 
-  const reasonLabel = createElement("label", { for: "report-reason" }, ["Reason"]);
+  const reasonLabel = createElement("label", { htmlFor: "report-reason" }, ["Reason"]);
   const reasonSelect = createElement(
     "select",
     { id: "report-reason", class: "input-select" },
@@ -76,7 +76,7 @@ export function reportEntity(
     )
   ) as HTMLSelectElement;
 
-  const notesLabel = createElement("label", { for: "report-notes" }, ["Notes (optional)"]);
+  const notesLabel = createElement("label", { htmlFor: "report-notes" }, ["Notes (optional)"]);
   const notesTextarea = createElement(
     "textarea",
     { id: "report-notes", class: "input-textarea", rows: "4", placeholder: "Add details if needed…" },
@@ -85,30 +85,78 @@ export function reportEntity(
 
   const messageP = createElement("p", {
     class: "error-message",
-    style: { color: "#c00", fontSize: "0.85rem", minHeight: "1.2em", margin: "0.5rem 0" }
+    style: { color: "var(--color-error, #c00)", fontSize: "0.85rem", minHeight: "1.2em", margin: "0.5rem 0" }
   }) as HTMLParagraphElement;
 
-  let submitBtnNode: HTMLElement;
-  let cancelBtnNode: HTMLElement;
+  let submitBtnNode: HTMLButtonElement;
+  let cancelBtnNode: HTMLButtonElement;
 
   const { close } = Modal({
     title: "Report Content",
     content
   });
 
+  const handleSubmit = async () => {
+    submitBtnNode.disabled = true;
+    cancelBtnNode.disabled = true;
+    submitBtnNode.textContent = "Submitting…";
+    messageP.textContent = "";
+
+    const payload = {
+      targetId,
+      targetType,
+      parentType,
+      parentId,
+      reason: reasonSelect.value,
+      notes: notesTextarea.value.trim()
+    };
+
+    try {
+      const res: ApiResponse = await submitReport(payload);
+      const isSuccess = Boolean(
+        res?.reportId || 
+        res?.status === "success" || 
+        (res?.data && (res.data as Record<string, unknown>).reportId)
+      );
+
+      if (isSuccess) {
+        setReportedLocally(userId, targetType, targetId);
+        close();
+        Notify("Report submitted. Thank you.", { type: "success" });
+        return;
+      }
+
+      messageP.textContent = res?.error || res?.message || "Failed to submit report.";
+    } catch (err) {
+      const error = err as ApiError;
+      if (error?.status === 409) {
+        setReportedLocally(userId, targetType, targetId);
+        close();
+        Notify("You already reported this item.", { type: "info" });
+        return;
+      }
+      messageP.textContent = "Network error. Try again.";
+    } finally {
+      submitBtnNode.disabled = !reasonSelect.value;
+      cancelBtnNode.disabled = false;
+      submitBtnNode.textContent = "Submit";
+    }
+  };
+
   submitBtnNode = Button({
     title: "Submit",
     type: "button",
     disabled: true,
-    classes: "button-primary"
-  });
+    classes: "button-primary",
+    events: { click: handleSubmit }
+  }) as HTMLButtonElement;
 
   cancelBtnNode = Button({
     title: "Cancel",
     type: "button",
     classes: "button-secondary",
     events: { click: close }
-  });
+  }) as HTMLButtonElement;
 
   const actionsRow = createElement(
     "div",
@@ -126,52 +174,7 @@ export function reportEntity(
   );
 
   reasonSelect.addEventListener("change", () => {
-    (submitBtnNode as HTMLButtonElement).disabled = !reasonSelect.value;
-  });
-
-  submitBtnNode.addEventListener("click", async () => {
-    const submitBtn = submitBtnNode as HTMLButtonElement;
-    const cancelBtn = cancelBtnNode as HTMLButtonElement;
-
-    submitBtn.disabled = true;
-    cancelBtn.disabled = true;
-    submitBtn.textContent = "Submitting…";
-    messageP.textContent = "";
-
-    const payload = {
-      targetId,
-      targetType,
-      parentType,
-      parentId,
-      reason: reasonSelect.value,
-      notes: notesTextarea.value.trim()
-    };
-
-    try {
-      const res = await submitReport(payload);
-
-      if (res?.reportId) {
-        setReportedLocally(userId, targetType, targetId);
-        close();
-        Notify("Report submitted. Thank you.", { type: "success" });
-        return;
-      }
-
-      messageP.textContent = res?.error || "Failed to submit report.";
-    } catch (err) {
-      const error = err as ApiError;
-      if (error?.status === 409) {
-        setReportedLocally(userId, targetType, targetId);
-        close();
-        Notify("You already reported this item.", { type: "info" });
-        return;
-      }
-      messageP.textContent = "Network error. Try again.";
-    } finally {
-      submitBtn.disabled = !reasonSelect.value;
-      cancelBtn.disabled = false;
-      submitBtn.textContent = "Submit";
-    }
+    submitBtnNode.disabled = !reasonSelect.value;
   });
 }
 
@@ -179,8 +182,8 @@ export function reportEntity(
  * Opens a modal to submit a content appeal.
  */
 export function appealContent(targetId: string, targetType: TargetType): void {
-  const user = getState("user") as { userid?: string } | undefined;
-  const userId = user?.userid;
+  const user = getState("user") as { userid?: string; id?: string } | undefined;
+  const userId = user?.userid || user?.id;
 
   if (!userId) {
     Notify("You must be logged in to submit an appeal.", { type: "error" });
@@ -199,30 +202,71 @@ export function appealContent(targetId: string, targetType: TargetType): void {
 
   const messageP = createElement("p", {
     class: "error-message",
-    style: { color: "#c00", fontSize: "0.85rem", minHeight: "1.2em", margin: "0.5rem 0" }
+    style: { color: "var(--color-error, #c00)", fontSize: "0.85rem", minHeight: "1.2em", margin: "0.5rem 0" }
   }) as HTMLParagraphElement;
 
-  let submitBtnNode: HTMLElement;
-  let cancelBtnNode: HTMLElement;
+  let submitBtnNode: HTMLButtonElement;
+  let cancelBtnNode: HTMLButtonElement;
 
   const { close } = Modal({
     title: "Submit Appeal",
     content
   });
 
+  const handleSubmit = async () => {
+    submitBtnNode.disabled = true;
+    cancelBtnNode.disabled = true;
+    submitBtnNode.textContent = "Submitting…";
+    messageP.textContent = "";
+
+    try {
+      const res: ApiResponse = await submitAppeal({
+        targetId,
+        targetType,
+        reason: textarea.value.trim()
+      });
+
+      const isSuccess = Boolean(
+        res?.appealId || 
+        res?.status === "success" || 
+        (res?.data && (res.data as Record<string, unknown>).appealId)
+      );
+
+      if (isSuccess) {
+        close();
+        Notify("Appeal submitted for review.", { type: "success" });
+        return;
+      }
+
+      messageP.textContent = res?.error || res?.message || "Failed to submit appeal.";
+    } catch (err) {
+      const error = err as ApiError;
+      if (error?.status === 409) {
+        messageP.textContent = "You already have a pending appeal.";
+      } else {
+        messageP.textContent = "Network error. Try again.";
+      }
+    } finally {
+      submitBtnNode.disabled = textarea.value.trim().length < 10;
+      cancelBtnNode.disabled = false;
+      submitBtnNode.textContent = "Submit Appeal";
+    }
+  };
+
   submitBtnNode = Button({
     title: "Submit Appeal",
     type: "button",
     disabled: true,
-    classes: "button-primary"
-  });
+    classes: "button-primary",
+    events: { click: handleSubmit }
+  }) as HTMLButtonElement;
 
   cancelBtnNode = Button({
     title: "Cancel",
     type: "button",
     classes: "button-secondary",
     events: { click: close }
-  });
+  }) as HTMLButtonElement;
 
   const actionsRow = createElement(
     "div",
@@ -233,43 +277,6 @@ export function appealContent(targetId: string, targetType: TargetType): void {
   content.append(info, textarea, messageP, actionsRow);
 
   textarea.addEventListener("input", () => {
-    (submitBtnNode as HTMLButtonElement).disabled = textarea.value.trim().length < 10;
-  });
-
-  submitBtnNode.addEventListener("click", async () => {
-    const submitBtn = submitBtnNode as HTMLButtonElement;
-    const cancelBtn = cancelBtnNode as HTMLButtonElement;
-
-    submitBtn.disabled = true;
-    cancelBtn.disabled = true;
-    submitBtn.textContent = "Submitting…";
-    messageP.textContent = "";
-
-    try {
-      const res = await submitAppeal({
-        targetId,
-        targetType,
-        reason: textarea.value.trim()
-      });
-
-      if (res?.appealId) {
-        close();
-        Notify("Appeal submitted for review.", { type: "success" });
-        return;
-      }
-
-      messageP.textContent = res?.error || "Failed to submit appeal.";
-    } catch (err) {
-      const error = err as ApiError;
-      if (error?.status === 409) {
-        messageP.textContent = "You already have a pending appeal.";
-      } else {
-        messageP.textContent = "Network error. Try again.";
-      }
-    } finally {
-      submitBtn.disabled = textarea.value.trim().length < 10;
-      cancelBtn.disabled = false;
-      submitBtn.textContent = "Submit Appeal";
-    }
+    submitBtnNode.disabled = textarea.value.trim().length < 10;
   });
 }

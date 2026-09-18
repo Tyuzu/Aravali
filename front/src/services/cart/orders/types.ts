@@ -1,18 +1,25 @@
 export type RefundStatus = "pending" | "approved" | "rejected" | "completed" | "none";
-export type OrderType = "farm" | "regular" | "product" | "merch" | "ticket" | "subscription" | "menu";
+
+export type OrderType =
+  | "farm"
+  | "regular"
+  | "product"
+  | "merch"
+  | "ticket"
+  | "subscription"
+  | "menu";
 
 export interface RefundRequest {
   id: string;
-  order_id: string;
-  userid: string;
+  orderId: string;
+  userId: string;
   amount: number;
   reason?: string;
   status: RefundStatus;
-  created_at?: string;
   createdAt?: string;
-  order_type?: OrderType;
-  review_notes?: string;
-  reviewed_by?: string;
+  orderType?: OrderType;
+  reviewNotes?: string;
+  reviewedBy?: string;
 }
 
 export interface OrderItem {
@@ -27,32 +34,25 @@ export interface OrderItemsStructure {
   [category: string]: OrderItem[] | undefined;
 }
 
+/**
+ * Clean domain model for an Order.
+ * Raw API payloads with duplicate/casing variants should be 
+ * converted to this canonical shape via `normalizeOrders()`.
+ */
 export interface Order {
-  id?: string;
   orderId: string;
-  orderid?: string;
-  OrderID?: string;
   orderType: OrderType | string;
   createdAt: string | number;
-  created_at?: string;
-  createdTime?: string;
-  timestamp?: number;
   status: string;
-  orderStatus?: string;
   paymentMethod: string;
-  payment?: string;
-  paymentStatus?: string;
   address: string;
-  deliveryAddress?: string;
-  shippingAddress?: string;
   total: number;
-  subtotal: number;
-  discount: number;
-  tax: number;
-  delivery: number;
-  approvedBy: string[];
-  farmId: string;
-  farmid?: string;
+  subtotal?: number;
+  discount?: number;
+  tax?: number;
+  delivery?: number;
+  approvedBy?: string[];
+  farmId?: string;
   items: OrderItemsStructure;
   refundStatus?: RefundStatus;
 }
@@ -67,6 +67,7 @@ export interface OrderPageState {
   filters: OrderFilters;
   currentPage: number;
   expandedOrders: Set<string>;
+  loading?: boolean;
 }
 
 export type StateMutatedCallback = () => void;

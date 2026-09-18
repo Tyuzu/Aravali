@@ -3,42 +3,67 @@ import { createElement } from "../createElement.js";
 
 // ---- Types & Interfaces ----
 
+export type OnToggleCallback = (checked: boolean) => void;
+
 export interface ToggleSwitchOptions {
+  onToggle?: OnToggleCallback;
   checked?: boolean;
   disabled?: boolean;
   id?: string;
   label?: string;
+  classes?: string;
+  styles?: Partial<CSSStyleDeclaration> | Record<string, string>;
+  [key: string]: unknown;
 }
 
-export type OnToggleCallback = (checked: boolean) => void;
-
 /**
- * Creates an accessible ToggleSwitch component.
+ * Creates an accessible ToggleSwitch component supporting both options object and positional calls.
  */
-const ToggleSwitch = (
-  onToggle: OnToggleCallback,
-  {
+const ToggleSwitch = (...args: any[]): HTMLLabelElement => {
+  let opts: ToggleSwitchOptions = {};
+
+  if (args.length === 1 && typeof args[0] === "object" && args[0] !== null) {
+    opts = args[0] as ToggleSwitchOptions;
+  } else {
+    // Legacy / positional signature: ToggleSwitch(onToggle, checked?, label?, options?)
+    if (typeof args[0] === "function") {
+      opts.onToggle = args[0] as OnToggleCallback;
+    }
+    if (typeof args[1] === "boolean") opts.checked = args[1];
+    if (typeof args[2] === "string") opts.label = args[2];
+    if (typeof args[3] === "object" && args[3] !== null) {
+      Object.assign(opts, args[3]);
+    }
+  }
+
+  const {
+    onToggle = () => {},
     checked = false,
     disabled = false,
     id = "",
     label = "",
-  }: ToggleSwitchOptions = {}
-): HTMLLabelElement => {
-  // Fallback unique ID generation if no ID is passed
-  const switchId = id || `toggle-${Math.random().toString(36).substring(2, 9)}`;
+    classes = "",
+    styles = {},
+    ...rest
+  } = opts;
+
+  // Generate fallback unique ID if omitted
+  const switchId =
+    id ||
+    `toggle-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).substring(2, 9)}`;
 
   const inputAttributes: Record<string, unknown> = {
     type: "checkbox",
     id: switchId,
     checked: Boolean(checked),
     disabled: Boolean(disabled),
-    "aria-checked": String(Boolean(checked)),
     class: "sr-only",
     events: {
       change: (e: Event) => {
         const target = e.target as HTMLInputElement;
-        target.setAttribute("aria-checked", String(target.checked));
-        onToggle(target.checked);
+        if (typeof onToggle === "function") {
+          onToggle(target.checked);
+        }
       },
     },
   };
@@ -49,11 +74,10 @@ const ToggleSwitch = (
     "aria-hidden": "true",
   });
 
-  const trackWrapper = createElement(
-    "span",
-    { class: "toggle-track" },
-    [input, slider]
-  );
+  const trackWrapper = createElement("span", { class: "toggle-track" }, [
+    input,
+    slider,
+  ]);
 
   const labelChildren: (HTMLElement | string)[] = [trackWrapper];
 
@@ -66,18 +90,26 @@ const ToggleSwitch = (
     input.setAttribute("aria-label", "Toggle switch");
   }
 
-  const labelAttributes: Record<string, unknown> = {
-    class: `toggle-switch${disabled ? " toggle-disabled" : ""}`,
-    htmlFor: switchId,
-  };
+  const containerClasses = [
+    "toggle-switch",
+    disabled ? "toggle-disabled" : "",
+    classes,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const toggleContainer = createElement(
+  return createElement(
     "label",
-    labelAttributes,
+    {
+      class: containerClasses,
+      htmlFor: switchId,
+      style: styles,
+      ...rest,
+    },
     labelChildren
   ) as HTMLLabelElement;
-
-  return toggleContainer;
 };
 
+export { ToggleSwitch };
 export default ToggleSwitch;
+export { ToggleSwitch as ToggleSwitchComponent };

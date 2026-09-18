@@ -222,7 +222,7 @@
 .crop-card {
   display: flex;
   flex-direction: column;
-  width: calc(50% - (var(--space-md) / 2));
+  width: calc(33% - (var(--space-md) / 2));
   min-width: 0;
   overflow: hidden;
   background: var(--color-card-bg);

@@ -75,12 +75,10 @@
   max-width: 1100px;
   height: 650px;
   margin: 1.5rem auto;
-  background-color: var(--fluent-bg-card);
   border: 1px solid var(--fluent-border-subtle);
   border-radius: var(--fluent-radius-lg);
   box-shadow: var(--fluent-shadow-card);
   font-family: var(--fluent-font-family);
-  color: var(--fluent-fg-primary);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -92,7 +90,6 @@
 .chat-sidebar {
   width: 320px;
   flex-shrink: 0;
-  background-color: var(--fluent-bg-secondary);
   border-right: 1px solid var(--fluent-border-subtle);
   display: flex;
   flex-direction: column;

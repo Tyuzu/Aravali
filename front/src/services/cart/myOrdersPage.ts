@@ -6,15 +6,15 @@ import { getMyOrders } from "./api.js";
 
 /**
  * Renders and coordinates the User Orders page.
- * @param {HTMLElement} container - Target parent node element wrapper.
- * @param {boolean} isLoggedIn - Authentication state.
+ * @param container - Target parent node element wrapper.
+ * @param isLoggedIn - Authentication state.
  */
 export async function displayMyOrders(
   container: HTMLElement | null,
   isLoggedIn?: boolean
 ): Promise<void> {
-  if (!container || !container.nodeType) {
-    console.error("displayMyOrders: Missing DOM container element.");
+  if (!container || !(container instanceof HTMLElement)) {
+    console.error("displayMyOrders: Missing or invalid DOM container element.");
     return;
   }
 
@@ -22,12 +22,12 @@ export async function displayMyOrders(
 
   if (!isLoggedIn) {
     container.append(
-      createElement("p", {}, ["You must be logged in to view your orders."])
+      createElement("p", { class: "auth-warning" }, ["You must be logged in to view your orders."])
     );
     return;
   }
 
-  // Reactive state store (use canonical OrderPageState)
+  // Define initial state typed explicitly
   const state: OrderPageState = {
     orders: [],
     filters: {
@@ -36,34 +36,39 @@ export async function displayMyOrders(
     },
     currentPage: 1,
     expandedOrders: new Set<string>(),
-  } as unknown as OrderPageState;
+    loading: true,
+  };
 
   const render = () => {
     container.replaceChildren(buildOrdersPage(state, render));
   };
 
-  // Initial immediate draw (shows skeleton UI / empty state with current filters)
-  render();
+  // Show a clear loading state first instead of empty orders summary
+  container.replaceChildren(
+    createElement("section", { class: "user-orders-page" }, [
+      createElement("h2", {}, ["My Orders"]),
+      createElement("p", { class: "loading-msg" }, ["Loading your orders..."]),
+    ])
+  );
 
   try {
-    const res: any = await getMyOrders();
+    const res = await getMyOrders();
 
-    // Handle both array response and wrapped object response structure configurations safely
+    // Safely extract orders array from response variations
     const ordersData = Array.isArray(res) ? res : res?.orders;
-    if (!ordersData || !Array.isArray(ordersData)) {
-      throw new Error("Invalid format received from orders data provider engine.");
+    if (!Array.isArray(ordersData)) {
+      throw new Error("Invalid format received from orders API.");
     }
 
-    (state as any).loading = false;
     state.orders = normalizeOrders(ordersData);
-    
-    // SAFE UPDATE: We leave state.filters and state.expandedOrders completely alone 
-    // so any interaction made during transmission isn't erased.
+    state.loading = false;
+
+    // First interactive render after successful data load
     render();
-  } catch (err: any) {
+  } catch (err) {
     console.error("Failed to fetch user orders:", err);
-    (state as any).loading = false;
-    
+    state.loading = false;
+
     container.replaceChildren(
       createElement("section", { class: "user-orders-page" }, [
         createElement("h2", {}, ["My Orders"]),

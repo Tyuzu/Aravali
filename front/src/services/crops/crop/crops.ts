@@ -224,7 +224,7 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
   const tabsWrapper = createElement("div", { id: "catalogue-container" });
 
   mainContent.append(
-    createElement("h2", {}, ["All Crops"]),
+    createElement("h3", {}, ["All Crops"]),
     controls,
     tabButtons,
     tabsWrapper

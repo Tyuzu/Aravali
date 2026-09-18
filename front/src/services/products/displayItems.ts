@@ -9,20 +9,22 @@ import { renderSearchAndSortUI } from "./renderSearchAndSortUI.js";
 import { renderPagination } from "./renderPagination.js";
 import { DisplayItemsOptions, FarmItem, ItemType } from "./types.js";
 
-export function sortItems(items: FarmItem[], sort: string): void {
+/**
+ * Returns a sorted shallow copy of the items array without mutating the original.
+ */
+export function sortItems(items: FarmItem[], sort: string): FarmItem[] {
+  const sorted = [...items];
   switch (sort) {
     case "price_asc":
-      items.sort((a, b) => a.price - b.price);
-      break;
+      return sorted.sort((a, b) => a.price - b.price);
     case "price_desc":
-      items.sort((a, b) => b.price - a.price);
-      break;
+      return sorted.sort((a, b) => b.price - a.price);
     case "name_asc":
-      items.sort((a, b) => a.name.localeCompare(b.name));
-      break;
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
     case "name_desc":
-      items.sort((a, b) => b.name.localeCompare(a.name));
-      break;
+      return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    default:
+      return sorted;
   }
 }
 
@@ -30,46 +32,37 @@ export async function displayItems(
   type: ItemType,
   content: HTMLElement,
   isLoggedIn: boolean,
-  { limit = 10, offset = 0, search = "", category = "", sort = "" }: DisplayItemsOptions = {}
+  options: DisplayItemsOptions = {}
 ): Promise<void> {
-  const container = createElement("div", { class: "protoolspage" }, []);
-  content.replaceChildren();
-  content.appendChild(container);
+  const { limit = 10, offset = 0, search = "", category = "", sort = "" } = options;
 
-  const refresh = () =>
-    displayItems(type, content, isLoggedIn, { limit, offset, search, category, sort });
+  const updateOptions = (overrides: Partial<DisplayItemsOptions>) =>
+    displayItems(type, content, isLoggedIn, {
+      limit,
+      offset,
+      search,
+      category,
+      sort,
+      ...overrides,
+    });
 
-  container.appendChild(createElement("h2", { class: "page-title" }, [`${capitalize(type)}s`]));
+  const refresh = () => updateOptions({});
 
-  // Setup dedicated sub-container for category chips
+  const container = createElement("div", { class: "protoolspage" }, [
+    createElement("h2", { class: "page-title" }, [`${capitalize(type)}s`]),
+  ]);
+
   const chipsWrapper = createElement("div", { class: "chips-wrapper" });
   container.appendChild(chipsWrapper);
 
-  const { sortSelect, searchInput } = renderSearchAndSortUI(type, sort, search, (newSort, newSearch) =>
-    displayItems(type, content, isLoggedIn, {
-      limit,
-      offset: 0,
-      search: newSearch,
-      category,
-      sort: newSort,
-    })
+  const { sortSelect, searchInput } = renderSearchAndSortUI(
+    type,
+    sort,
+    search,
+    (newSort, newSearch) => updateOptions({ sort: newSort, search: newSearch, offset: 0 })
   );
 
-  await renderCategoryChips(
-    chipsWrapper,
-    category,
-    (newCategory) =>
-      displayItems(type, content, isLoggedIn, {
-        limit,
-        offset: 0,
-        search,
-        category: newCategory,
-        sort,
-      }),
-    type
-  );
-
-  const topBar = createElement("div", { class: "items-topbar" }, [
+  const topBarChildren: (HTMLElement | null)[] = [
     searchInput,
     sortSelect,
     isLoggedIn
@@ -82,43 +75,49 @@ export async function displayItems(
           },
         })
       : null,
-  ].filter(Boolean) as HTMLElement[]);
+  ];
 
-  container.appendChild(topBar);
+  container.appendChild(
+    createElement("div", { class: "items-topbar" }, topBarChildren.filter(Boolean) as HTMLElement[])
+  );
 
-  let items: FarmItem[] = [];
-  let total = 0;
+  // Trigger category chips rendering & items data fetching in parallel
+  const chipsPromise = renderCategoryChips(
+    chipsWrapper,
+    category,
+    (newCategory) => updateOptions({ category: newCategory, offset: 0 }),
+    type
+  );
 
   try {
-    const result = await fetchFarmItems(type, { limit, offset, search, category });
-    items = result.items || [];
-    total = result.total ?? items.length;
+    const [result] = await Promise.all([
+      fetchFarmItems(type, { limit, offset, search, category }),
+      chipsPromise,
+    ]);
+
+    const rawItems = result.items || [];
+    const total = result.total ?? rawItems.length;
+
+    if (rawItems.length === 0) {
+      container.appendChild(createElement("p", { class: "no-results" }, [`No ${type}s found.`]));
+    } else {
+      const sortedItems = sortItems(rawItems, sort);
+      const grid = createElement("div", { class: `${type}-grid items-grid` });
+
+      sortedItems.forEach((item) => {
+        grid.appendChild(renderItemCard(item, type, isLoggedIn, container, refresh));
+      });
+
+      container.appendChild(grid);
+
+      renderPagination(container, total, limit, offset, (currentPage) =>
+        updateOptions({ offset: (currentPage - 1) * limit })
+      );
+    }
   } catch (err) {
+    console.error(`Failed to load ${type}s:`, err);
     container.appendChild(createElement("p", { class: "error-message" }, [`Failed to load ${type}s.`]));
-    return;
   }
 
-  if (items.length === 0) {
-    container.appendChild(createElement("p", { class: "no-results" }, [`No ${type}s found.`]));
-    return;
-  }
-
-  sortItems(items, sort);
-
-  const grid = createElement("div", { class: `${type}-grid items-grid` });
-  items.forEach((item) => {
-    grid.appendChild(renderItemCard(item, type, isLoggedIn, container, refresh));
-  });
-
-  container.appendChild(grid);
-
-  renderPagination(container, total, limit, offset, (currentPage) =>
-    displayItems(type, content, isLoggedIn, {
-      limit,
-      offset: (currentPage - 1) * limit,
-      search,
-      category,
-      sort,
-    })
-  );
+  content.replaceChildren(container);
 }

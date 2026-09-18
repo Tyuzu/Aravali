@@ -65,7 +65,7 @@ export async function displayRecipes(container: HTMLElement, isLoggedIn: boolean
   }
 
   const mainHeader = [
-    createElement("h1", {}, [t("recipes.recipes", {}, "Recipes")]),
+    createElement("h2", {}, [t("recipes.recipes", {}, "Recipes")]),
     mainActions,
     adspace("inbody", PAGE_NAME, {
       layout: "horizontal",
