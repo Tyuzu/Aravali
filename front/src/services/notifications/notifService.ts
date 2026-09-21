@@ -10,21 +10,27 @@ export interface NotificationItem {
   isRead?: boolean;
 }
 
+function SafeTimestamp(dateInput?: string | number | Date): number {
+  if (!dateInput) return 0;
+  const t = new Date(dateInput).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
 export async function getNotifications(): Promise<NotificationItem[]> {
   try {
-    const response: any = await apiFetch("/notifs", "GET");
+    const response = await apiFetch("/notifs", "GET");
     const rawList: NotificationItem[] = Array.isArray(response)
       ? response
       : response?.notifications || response?.data || [];
 
-    return rawList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    return rawList.sort((a: NotificationItem, b: NotificationItem) => SafeTimestamp(b.createdAt) - SafeTimestamp(a.createdAt));
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
     return [];
   }
 }
 
-export async function markNotificationAsRead(id: string | number | undefined): Promise<unknown> {
+export async function markNotificationAsRead(id: string | number): Promise<unknown> {
   if (!id) throw new Error("Notification ID is required.");
   try {
     return await apiFetch(`/notifs/notif/${id}/read`, "PUT");

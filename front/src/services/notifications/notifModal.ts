@@ -1,7 +1,7 @@
 import "../../../css/subpages/notifications.css";
 import Modal from "../../components/ui/Modal.js";
 import { createElement } from "../../components/createElement.js";
-import { getNotifications } from "./notifService.js";
+import { getNotifications, NotificationItem } from "./notifService.js";
 import * as idxDB from "../../utils/idxDB.js";
 import { getUserId } from "../../utils/getUserID.js";
 import {
@@ -13,15 +13,14 @@ import {
   filterSystemLogs,
   renderEmptyState,
   renderSummaryChips,
-  type NotificationFilter,
-  type SystemFilter,
-  type SystemLog,
+  SummaryChip,
+  SystemLog
 } from "./notifRender.js";
 
 const UI_STATE = {
   search: "",
-  activityFilter: "all" as NotificationFilter,
-  systemFilter: "all" as SystemFilter,
+  activityFilter: "all",
+  systemFilter: "all",
 };
 
 export async function openNotificationsModal(): Promise<void> {
@@ -42,14 +41,14 @@ export async function openNotificationsModal(): Promise<void> {
   }) as HTMLInputElement;
 
   const filterGroup = createElement("div", { class: "notification-filter-group" });
-  const filterButtons = {
+  const filterButtons: Record<string, HTMLElement> = {
     all: createElement("button", { class: "notification-filter-btn is-active", type: "button" }, ["All"]),
     unread: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Unread"]),
   };
 
   Object.entries(filterButtons).forEach(([key, button]) => {
     button.addEventListener("click", () => {
-      UI_STATE.activityFilter = key as NotificationFilter;
+      UI_STATE.activityFilter = key;
       applyActivityFilterState();
       renderActivityTab();
     });
@@ -69,7 +68,8 @@ export async function openNotificationsModal(): Promise<void> {
   Modal({ title: "📬 Notifications & Logs", content, size: "medium", showCloseButton: true });
 
   searchInput.addEventListener("input", (event: Event) => {
-    UI_STATE.search = (event.target as HTMLInputElement).value;
+    const target = event.target as HTMLInputElement | null;
+    UI_STATE.search = target ? target.value : "";
     if (activeTab === "activity") renderActivityTab();
     else renderSystemTab();
   });
@@ -98,7 +98,7 @@ export async function openNotificationsModal(): Promise<void> {
   }
 
   function applySystemFilterState(): void {
-    const systemFilters = {
+    const systemFilters: Record<string, HTMLElement> = {
       all: createElement("button", { class: "notification-filter-btn is-active", type: "button" }, ["All"]),
       unread: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Unread"]),
       error: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Errors"]),
@@ -108,7 +108,7 @@ export async function openNotificationsModal(): Promise<void> {
     filterGroup.innerHTML = "";
     Object.entries(systemFilters).forEach(([key, button]) => {
       button.addEventListener("click", () => {
-        UI_STATE.systemFilter = key as SystemFilter;
+        UI_STATE.systemFilter = key;
         applySystemFilterState();
         renderSystemTab();
       });
@@ -136,14 +136,15 @@ export async function openNotificationsModal(): Promise<void> {
     summaryHost.innerHTML = '<div class="notification-loading">Loading activity...</div>';
 
     try {
-      const notifications = (await getNotifications()) || [];
+      const notifications: NotificationItem[] = (await getNotifications()) || [];
       const filtered = filterNotifications(notifications, UI_STATE.activityFilter, UI_STATE.search);
       const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-      renderSummaryChips(summaryHost, [
+      const summaryChips: SummaryChip[] = [
         { label: "Total", value: notifications.length },
         { label: "Unread", value: unreadCount, tone: "warning" },
-      ]);
+      ];
+      renderSummaryChips(summaryHost, summaryChips);
 
       const actionBar = createActionBar(userId, filtered, renderActivityTab);
       if (actionBar) tabContentView.appendChild(actionBar);
@@ -154,7 +155,7 @@ export async function openNotificationsModal(): Promise<void> {
       }
 
       const listContainer = createElement("div", { class: "notification-list" });
-      filtered.forEach((notification) => {
+      filtered.forEach((notification: NotificationItem) => {
         listContainer.appendChild(createNotificationCard(notification, userId, renderActivityTab));
       });
       tabContentView.appendChild(listContainer);
@@ -182,11 +183,12 @@ export async function openNotificationsModal(): Promise<void> {
     const unreadCount = logs.filter((log) => !log.isRead).length;
     const errorCount = logs.filter((log) => String(log.type || "info").toLowerCase() === "error").length;
 
-    renderSummaryChips(summaryHost, [
+    const summaryChips: SummaryChip[] = [
       { label: "Total", value: logs.length },
       { label: "Unread", value: unreadCount, tone: "warning" },
       { label: "Errors", value: errorCount, tone: "error" },
-    ]);
+    ];
+    renderSummaryChips(summaryHost, summaryChips);
 
     if (!filtered.length) {
       renderEmptyState(tabContentView, "No matching system logs found.");

@@ -1,6 +1,3 @@
-const SOUND_KEY = 'app-sound-settings';
-const CHAT_SOUND_KEY = 'app-chat-sound-settings';
-
 export interface SoundSettings {
   enabled: boolean;
   messageEnabled: boolean;
@@ -9,48 +6,40 @@ export interface SoundSettings {
   notificationTone: string;
 }
 
-export interface ChatPreferences {
-  messageEnabled?: boolean;
-  notificationEnabled?: boolean;
-  messageTone?: string;
-  notificationTone?: string;
-}
-
-export interface SoundPreferenceOptions {
-  type?: 'message' | 'notification';
+export interface SoundOptions {
+  type?: "message" | "notification";
   chatId?: string;
 }
+
+const SOUND_KEY = "app-sound-settings";
+const CHAT_SOUND_KEY = "app-chat-sound-settings";
 
 const DEFAULT_SETTINGS: SoundSettings = {
   enabled: true,
   messageEnabled: true,
   notificationEnabled: true,
-  messageTone: 'default',
-  notificationTone: 'default',
+  messageTone: "default",
+  notificationTone: "default",
 };
 
 let audioContext: AudioContext | null = null;
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   const unlockAudio = () => {
     if (!audioContext) {
-      // Fixed type casting via unknown double-assertion
-      const AudioCtor =
-        window.AudioContext ||
-        ((window as unknown as Record<string, unknown>).webkitAudioContext as typeof AudioContext);
-
+      const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtor) audioContext = new AudioCtor();
     }
-    if (audioContext && audioContext.state === 'suspended') {
+    if (audioContext && audioContext.state === "suspended") {
       audioContext.resume();
     }
-    ['click', 'touchstart', 'keydown'].forEach((evt) =>
+    ["click", "touchstart", "keydown"].forEach((evt) =>
       document.removeEventListener(evt, unlockAudio, true)
     );
   };
 
-  ['click', 'touchstart', 'keydown'].forEach((evt) =>
-    document.addEventListener(evt, unlockAudio, { capture: true, passive: true })
+  ["click", "touchstart", "keydown"].forEach((evt) =>
+    document.addEventListener(evt, unlockAudio, { capture: true })
   );
 }
 
@@ -67,7 +56,7 @@ function setItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    console.warn('Failed to save sound settings:', e);
+    console.warn("Failed to save sound settings:", e);
   }
 }
 
@@ -81,26 +70,27 @@ export function setSoundSettings(partial: Partial<SoundSettings> = {}): SoundSet
   return updated;
 }
 
-export function setChatSoundPreference(chatId: string, preferences: ChatPreferences = {}): Record<string, ChatPreferences> | void {
-  if (!chatId) return;
-  const allChatSettings = getItem<Record<string, ChatPreferences>>(CHAT_SOUND_KEY, {});
+export function setChatSoundPreference(chatId: string, preferences: Record<string, unknown> = {}): Record<string, unknown> {
+  if (!chatId) return {};
+  const allChatSettings = getItem<Record<string, Record<string, unknown>>>(CHAT_SOUND_KEY, {});
   allChatSettings[chatId] = { ...allChatSettings[chatId], ...preferences };
   setItem(CHAT_SOUND_KEY, allChatSettings);
   return allChatSettings;
 }
 
-export function resolveSoundPreference({ type = 'message', chatId }: SoundPreferenceOptions = {}): { enabled: boolean; tone: string } {
+export function resolveSoundPreference({ type = "message", chatId }: SoundOptions = {}): { enabled: boolean; tone: string } {
   const globalSettings = getSoundSettings();
-  const chatSettings = chatId ? getItem<Record<string, ChatPreferences>>(CHAT_SOUND_KEY, {})[chatId] || {} : {};
+  const chatSettings = chatId ? getItem<Record<string, Record<string, unknown>>>(CHAT_SOUND_KEY, {})[chatId] || {} : {};
 
-  const toneKey = type === 'notification' ? 'notificationTone' : 'messageTone';
-  const enabledKey = type === 'notification' ? 'notificationEnabled' : 'messageEnabled';
+  const toneKey = type === "notification" ? "notificationTone" : "messageTone";
+  const enabledKey = type === "notification" ? "notificationEnabled" : "messageEnabled";
 
-  const enabled =
+  const enabled = Boolean(
     (globalSettings.enabled ?? true) &&
-    (chatSettings[enabledKey] ?? globalSettings[enabledKey] ?? true);
+    (chatSettings[enabledKey] ?? globalSettings[enabledKey] ?? true)
+  );
 
-  const tone = chatSettings[toneKey] || globalSettings[toneKey] || 'default';
+  const tone = String(chatSettings[toneKey] || globalSettings[toneKey] || "default");
 
   return { enabled, tone };
 }
@@ -112,10 +102,10 @@ export function resetSoundSettings(): void {
   } catch {}
 }
 
-export function playSoundAlert({ type = 'message', chatId }: SoundPreferenceOptions = {}): boolean {
+export function playSoundAlert({ type = "message", chatId }: SoundOptions = {}): boolean {
   const { enabled, tone } = resolveSoundPreference({ type, chatId });
 
-  if (!enabled || !audioContext || audioContext.state !== 'running') {
+  if (!enabled || !audioContext || audioContext.state !== "running") {
     return false;
   }
 
@@ -126,17 +116,19 @@ export function playSoundAlert({ type = 'message', chatId }: SoundPreferenceOpti
     const frequencies: Record<string, number> = { chime: 880, sharp: 1320, default: 660 };
     osc.frequency.value = frequencies[tone] || frequencies.default;
 
-    gain.gain.setValueAtTime(0.04, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.25);
+    const now = audioContext.currentTime;
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     osc.connect(gain);
     gain.connect(audioContext.destination);
 
-    osc.start();
-    osc.stop(audioContext.currentTime + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.3);
 
     return true;
-  } catch {
+  } catch (err) {
+    console.error("Audio playback error:", err);
     return false;
   }
 }

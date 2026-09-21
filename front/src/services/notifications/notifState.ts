@@ -1,6 +1,6 @@
 import { getState, setState } from "../../state/state.js";
 
-export function syncUnreadNotificationState(count: number): void {
+export function syncUnreadNotificationState(count: number | string): void {
   const numericCount = Number(count);
   const nextCount = Math.max(0, Number.isFinite(numericCount) ? numericCount : 0);
 
@@ -14,7 +14,7 @@ export function decrementUnreadNotificationState(): void {
   syncUnreadNotificationState(safeCount - 1);
 }
 
-export function incrementUnreadNotificationState(step: number = 1): void {
+export function incrementUnreadNotificationState(step = 1): void {
   const currentCount = Number(getState("unreadNotifications") || 0);
   const safeCount = Number.isFinite(currentCount) ? currentCount : 0;
 
