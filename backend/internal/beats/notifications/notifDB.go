@@ -59,8 +59,12 @@ func updateMarkAsRead(
 	ctx context.Context,
 	database db.Database,
 	notificationID string,
+	userID string,
 ) (any, error) {
-	filter := map[string]any{"notificationid": notificationID}
+	filter := map[string]any{
+		"notificationid": notificationID,
+		"userid":         userID,
+	}
 	update := map[string]any{
 		"$set": map[string]any{
 			"is_read": true,
@@ -96,11 +100,15 @@ func deleteNotificationByID(
 	ctx context.Context,
 	database db.Database,
 	notificationID string,
+	userID string,
 ) (int64, error) {
 	return database.Delete(
 		ctx,
 		notifsCollection,
-		map[string]any{"notificationid": notificationID},
+		map[string]any{
+			"notificationid": notificationID,
+			"userid":         userID,
+		},
 	)
 }
 

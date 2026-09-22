@@ -251,3 +251,8 @@
 #lang-toggle:focus {
   border-color: var(--color-input-focus);
 }
+
+.aside-actions-group {
+  display: grid;
+  gap: 16px;
+}

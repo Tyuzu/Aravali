@@ -1,6 +1,7 @@
 package filemgr
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"path/filepath"
@@ -23,7 +24,7 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// FIX 1: Pass 'w' (http.ResponseWriter) to MaxBytesReader instead of 'nil' to prevent runtime panic
+		// Enforce maximum upload body size
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 
 		if err := r.ParseMultipartForm(maxUploadBytes); err != nil { // #nosec G120
@@ -31,7 +32,7 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// FIX 2: Always clean up temporary files created on disk by ParseMultipartForm
+		// Clean up temporary files when handler finishes
 		if r.MultipartForm != nil {
 			defer func() {
 				if err := r.MultipartForm.RemoveAll(); err != nil {
@@ -98,7 +99,7 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		// FIX 3: Populate MQ event payload with actual metadata instead of an empty struct
+		// Publish FileCreated event
 		payload := mqevent.FileCreatedPayload{
 			UserID:     userid,
 			EntityType: entityType,
@@ -106,16 +107,20 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 			Count:      len(attachments),
 		}
 
-		mqpayload, _ := json.Marshal(payload)
+		if mqpayload, err := json.Marshal(payload); err == nil {
+			if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.FileCreatedEvent, mqpayload); err != nil {
+				log.Printf("[Filedrop] failed to publish FileCreatedEvent: %v", err)
+			}
+		}
 
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.FileCreatedEvent, mqpayload)
-
-		// Enqueue metadata extraction jobs for image attachments so workers handle heavy IO.
+		// Enqueue media jobs in a single loop
 		for _, att := range attachments {
 			picType := PictureType(att.Key)
+			savedPath := filepath.Join(ResolvePath(EntityType(entityType), picType), att.Filename+att.Extension)
+
 			if isImageType(picType) {
-				savedPath := filepath.Join(ResolvePath(EntityType(entityType), picType), att.Filename+att.Extension)
-				job := mediaworker.MediaJob{
+				// Metadata Extraction Job
+				metaJob := mediaworker.MediaJob{
 					JobID:      generateUniqueID(),
 					Type:       "image_metadata",
 					SavedPath:  savedPath,
@@ -126,47 +131,51 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 					ThumbWidth: defaultThumbWidth,
 					UserID:     userid,
 				}
-				_ = mq.PublishWithMeta(ctx, app.MQ, "media.jobs", job)
-			}
-		}
-		// Enqueue thumbnail and poster jobs for attachments so workers generate them asynchronously.
-		for _, att := range attachments {
-			picType := PictureType(att.Key)
-			savedPath := filepath.Join(ResolvePath(EntityType(entityType), picType), att.Filename+att.Extension)
-			if isImageType(picType) {
-				thumbDir := ResolvePath(EntityType(entityType), PicThumb)
-				job := mediaworker.MediaJob{
+				publishJob(ctx, app, metaJob)
+
+				// Thumbnail Job
+				thumbJob := mediaworker.MediaJob{
 					JobID:      generateUniqueID(),
 					Type:       "image",
 					SavedPath:  savedPath,
-					UploadDir:  thumbDir, // thumbDir used by worker as dest for thumbnail
+					UploadDir:  ResolvePath(EntityType(entityType), PicThumb),
 					UniqueID:   att.Filename,
 					Filename:   att.Filename,
 					Ext:        att.Extension,
 					ThumbWidth: defaultThumbWidth,
 					UserID:     userid,
 				}
-				_ = mq.PublishWithMeta(ctx, app.MQ, "media.jobs", job)
-			}
-			if picType == PicVideo {
-				posterDir := ResolvePath(EntityType(entityType), PicThumb)
-				uploadDir := ResolvePath(EntityType(entityType), picType)
-				job := mediaworker.MediaJob{
+				publishJob(ctx, app, thumbJob)
+			} else if picType == PicVideo {
+				// Video Poster Job
+				videoJob := mediaworker.MediaJob{
 					JobID:      generateUniqueID(),
 					Type:       "video",
 					SavedPath:  savedPath,
-					UploadDir:  uploadDir,
-					PosterDir:  posterDir,
+					UploadDir:  ResolvePath(EntityType(entityType), picType),
+					PosterDir:  ResolvePath(EntityType(entityType), PicThumb),
 					UniqueID:   att.Filename,
 					Filename:   att.Filename,
 					Ext:        att.Extension,
 					ThumbWidth: defaultThumbWidth,
 					UserID:     userid,
 				}
-				_ = mq.PublishWithMeta(ctx, app.MQ, "media.jobs", job)
+				publishJob(ctx, app, videoJob)
 			}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, convertToAttachments(attachments))
+	}
+}
+
+// Helper to marshal and publish media jobs safely
+func publishJob(ctx context.Context, app *infra.Deps, job mediaworker.MediaJob) {
+	data, err := json.Marshal(job)
+	if err != nil {
+		log.Printf("[Filedrop] failed to marshal job %s: %v", job.JobID, err)
+		return
+	}
+	if err := mq.PublishWithMeta(ctx, app.MQ, "media.jobs", data); err != nil {
+		log.Printf("[Filedrop] failed to publish media job %s: %v", job.JobID, err)
 	}
 }

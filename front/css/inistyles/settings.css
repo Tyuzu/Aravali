@@ -3,7 +3,7 @@
 ========================= */
 
 #settings-container {
-    max-width: 1000px;
+    max-width: 640px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -16,7 +16,6 @@
 
 .settings-category {
     border-radius: 18px;
-    padding: 20px;
     box-shadow:
         0 4px 12px rgb(0 0 0 / 4%),
         0 1px 3px rgb(0 0 0 / 8%);
@@ -223,11 +222,10 @@
 @media (width <= 768px) {
     #settings-container {
         gap: 16px;
-        padding: 0 12px 24px;
+        padding: 0  8px 16px;
     }
 
     .settings-category {
-        padding: 16px;
         border-radius: 14px;
     }
 
@@ -240,7 +238,7 @@
         flex-direction: column;
         align-items: stretch;
         gap: 14px;
-        padding: 16px;
+        padding: 10px;
     }
 
     .setting-info {

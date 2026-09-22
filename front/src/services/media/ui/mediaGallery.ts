@@ -26,6 +26,7 @@ export interface MediaItem {
   url: string;
   creatorid?: string | number;
   type?: string;
+  mimeType?: string;
   caption?: string;
   extn?: string;
   [key: string]: unknown;
@@ -42,7 +43,6 @@ function isMediaItem(item: unknown): item is MediaItem {
     item !== null &&
     "mediaid" in item &&
     "url" in item &&
-    "creatorid" in item &&
     typeof (item as MediaItem).url === "string"
   );
 }
@@ -51,18 +51,29 @@ function isMediaItem(item: unknown): item is MediaItem {
    Helper: Determine media type
 ------------------------------------------------------ */
 function getFileType(media: MediaItem): MediaType {
-  if (!media?.type) {
-    if (media.url && /\.(mp4|webm|ogg)$/i.test(media.url)) {
-      return "video";
-    }
-    if (media.url && /\.(jpg|jpeg|png|gif|webp)$/i.test(media.url)) {
-      return "image";
-    }
-    return "unknown";
+  const typeStr = (media?.type || "").toLowerCase();
+  const mimeStr = (media?.mimeType || "").toLowerCase();
+  const urlStr = media?.url || "";
+  const ext = (media?.extn || "").toLowerCase();
+
+  // Check type property
+  if (typeStr.startsWith("image")) return "image";
+  if (typeStr.startsWith("video")) return "video";
+
+  // Check mimeType property
+  if (mimeStr.startsWith("image/")) return "image";
+  if (mimeStr.startsWith("video/")) return "video";
+
+  // Check extensions
+  if (/\.(mp4|webm|ogg)$/i.test(urlStr) || [".mp4", ".webm", ".ogg"].includes(ext)) {
+    return "video";
   }
-  if (media.type.startsWith("image")) return "image";
-  if (media.type.startsWith("video")) return "video";
-  return "unknown";
+  if (/\.(jpg|jpeg|png|gif|webp)$/i.test(urlStr) || [".jpg", ".jpeg", ".png", ".gif", ".webp"].includes(ext)) {
+    return "image";
+  }
+
+  // Fallback default: assume image if type is "unknown" so it attempts thumbnail rendering
+  return "image";
 }
 
 /* ------------------------------------------------------
@@ -82,7 +93,7 @@ function buildMediaFragment(
     const wrapper = createElement("div", { class: `${prefix}-group` });
 
     group.forEach((media, i) => {
-      if (!media.url) return;
+      if (!media.url && !media.mediaid) return;
 
       const mediaType = getFileType(media);
       const figure = createElement("figure", {
@@ -90,9 +101,18 @@ function buildMediaFragment(
         "data-id": String(media.mediaid)
       });
 
-      const thumbSrc = resolveImagePath(EntityType.MEDIA, PictureType.THUMB, `${media.url}.jpg`);
+      // Construct resource filename (prefer mediaid, fallback to url/UUID)
+      const resourceName = String(media.mediaid || media.url);
+      const ext = media.extn ? media.extn : ".jpg";
+
+      const thumbSrc = resolveImagePath(
+        EntityType.MEDIA,
+        PictureType.THUMB,
+        `${resourceName}.jpg`
+      );
+
       const captionText = media.caption ?? "";
-      const mediaEl = buildMediaElement(media, thumbSrc, i, prefix, mediaType);
+      const mediaEl = buildMediaElement(media, thumbSrc, resourceName, ext, i, prefix, mediaType);
       const caption = createElement("figcaption", { class: `${prefix}-caption` }, [captionText]);
 
       const translation = buildTranslationSection(captionText);
@@ -128,18 +148,26 @@ function buildMediaFragment(
 function buildMediaElement(
   media: MediaItem,
   thumbSrc: string,
+  resourceName: string,
+  ext: string,
   index: number,
   prefix: string,
   type: MediaType
 ): HTMLElement {
   if (type === "image") {
+    const fullImgSrc = resolveImagePath(
+      EntityType.MEDIA,
+      PictureType.PHOTO,
+      `${resourceName}${ext}`
+    );
+
     const img = Imagex({
       "data-src": thumbSrc,
       classes: `${prefix}-img`,
       "data-index": String(index)
     });
 
-    img.addEventListener("click", () => Sightbox(thumbSrc, "image"));
+    img.addEventListener("click", () => Sightbox(fullImgSrc || thumbSrc, "image"));
     lazyMediaObserver.observe(img);
     return img;
   }
@@ -148,7 +176,7 @@ function buildMediaElement(
     const videoSrc = resolveImagePath(
       EntityType.MEDIA,
       PictureType.VIDEO,
-      `${media.url}${media.extn || ".mp4"}`
+      `${resourceName}${ext.startsWith(".") ? ext : ".mp4"}`
     );
 
     const img = Imagex({
@@ -163,7 +191,7 @@ function buildMediaElement(
     // Lazy load video player directly into Lightbox on click
     img.addEventListener("click", async () => {
       try {
-        const videoPlayer = await generateVideoPlayer(videoSrc, thumbSrc, [], [], media.url);
+        const videoPlayer = await generateVideoPlayer(videoSrc, thumbSrc, [], [], String(media.mediaid));
         if (videoPlayer) {
           const container = createElement("div", { class: "lightbox-video-container" }, [videoPlayer]);
           LightBox(container);

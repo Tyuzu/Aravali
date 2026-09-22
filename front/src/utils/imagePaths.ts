@@ -179,6 +179,7 @@ export function resolveImagePath(
     switch (validPictureType) {
       case PictureType.THUMB:
       case PictureType.POSTER:
+      case PictureType.PHOTO:
         finalName += ".jpg";
         break;
       default:
@@ -188,6 +189,7 @@ export function resolveImagePath(
         break;
     }
   }
-
-  return `${baseUrl}/uploads/${validEntityType}/${folder}/${finalName}`;
+  finalName = `${baseUrl}/uploads/${validEntityType}/${folder}/${finalName}`
+  console.log(finalName);
+  return finalName;
 }

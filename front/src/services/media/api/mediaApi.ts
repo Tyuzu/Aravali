@@ -53,6 +53,16 @@ export interface MediaApi {
 }
 
 /* =========================
+   HELPERS
+========================= */
+
+function getFileTypeKey(file: File): string {
+    if (file.type.startsWith("image/")) return "image";
+    if (file.type.startsWith("video/")) return "video";
+    return "file";
+}
+
+/* =========================
    API - Service endpoint factory
 ========================= */
 
@@ -104,7 +114,8 @@ export function uploadFile(u: UploadItem): Promise<MediaUploadResult> {
         UploadStore.controllers[u.id] = xhr;
 
         const formData = new FormData();
-        const key = (u.key || "file").toLowerCase();
+        // Fallback dynamically to getFileTypeKey(u.file) if u.key is not provided
+        const key = (u.key || getFileTypeKey(u.file)).toLowerCase();
 
         formData.append(key, u.file);
         formData.append("entityType", u.entityType);
@@ -265,7 +276,7 @@ export async function uploadFiles(
             file,
             entityType,
             entityId,
-            key: typeof key === "function" ? key(file) : key || "file"
+            key: typeof key === "function" ? key(file) : key || getFileTypeKey(file)
         };
     });
 
@@ -281,7 +292,6 @@ export async function uploadFiles(
    Cancel Helpers
 ========================= */
 
-// Define the shape of your controllers map if not typed elsewhere:
 type ControllersMap = Record<string, XMLHttpRequest | undefined>;
 
 export function cancelUpload(id: string): void {

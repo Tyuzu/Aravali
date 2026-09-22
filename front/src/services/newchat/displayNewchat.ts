@@ -290,15 +290,37 @@ function createUploadElements(): UploadElements {
     {
       class: "drop-zone",
       events: {
+        click: (() => {
+          fileInput.click();
+        }) as EventListener,
+        dragenter: ((e: DragEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add("drag-over");
+        }) as EventListener,
         dragover: ((e: DragEvent) => {
           e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add("drag-over");
+        }) as EventListener,
+        dragleave: ((e: DragEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove("drag-over");
         }) as EventListener,
         drop: ((e: DragEvent) => {
           e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove("drag-over");
+
+          if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+          }
         }) as EventListener
       }
     },
-    ["Drag & drop files here"]
+    ["Drag & drop files here or click to browse"]
   ) as HTMLElement;
 
   const progressBar = createElement("progress", {

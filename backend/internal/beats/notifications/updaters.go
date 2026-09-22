@@ -1,4 +1,3 @@
-// updaters.go
 package notifications
 
 import (
@@ -18,13 +17,19 @@ func MarkAsRead(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		userID := utils.GetUserIDFromRequest(r)
+		if userID == "" {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
 		notificationID := utils.GetParam(r, "notificationid")
 		if notificationID == "" {
 			utils.RespondWithError(w, http.StatusBadRequest, "Invalid notification ID")
 			return
 		}
 
-		if _, err := updateMarkAsRead(ctx, app.DB, notificationID); err != nil {
+		if _, err := updateMarkAsRead(ctx, app.DB, notificationID, userID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to mark as read")
 			return
 		}
@@ -78,13 +83,19 @@ func DeleteNotification(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		userID := utils.GetUserIDFromRequest(r)
+		if userID == "" {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
 		notificationID := utils.GetParam(r, "notificationid")
 		if notificationID == "" {
 			utils.RespondWithError(w, http.StatusBadRequest, "Invalid ID")
 			return
 		}
 
-		count, err := deleteNotificationByID(ctx, app.DB, notificationID)
+		count, err := deleteNotificationByID(ctx, app.DB, notificationID, userID)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Delete failed")
 			return

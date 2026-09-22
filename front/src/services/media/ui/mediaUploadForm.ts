@@ -24,6 +24,7 @@ export interface CustomUploadItem extends UploadProgressItem {
     uploading: boolean;
     fileType: FileType;
     mediaEntity: string;
+    key?: string;
     entityType: string;
     entityId: string;
     extension: string;
@@ -205,19 +206,23 @@ function handleFiles(
         Notify(error.message, { type: "error" });
     }
 
-    const newUploads: CustomUploadItem[] = files.map((f) => ({
-        id: uid(),
-        file: f,
-        previewURL: URL.createObjectURL(f),
-        progress: 0,
-        status: "queued",
-        uploading: true,
-        fileType: getFileType(f),
-        mediaEntity: "media",
-        entityType: entityType || "media",
-        entityId: entityId ? String(entityId) : "",
-        extension: getFileExtension(f)
-    }));
+    const newUploads: CustomUploadItem[] = files.map((f) => {
+        const type = getFileType(f);
+        return {
+            id: uid(),
+            file: f,
+            previewURL: URL.createObjectURL(f),
+            progress: 0,
+            status: "queued",
+            uploading: true,
+            fileType: type,
+            mediaEntity: type,
+            key: type, // Explicitly pass key as 'image' or 'video'
+            entityType: entityType || "media",
+            entityId: entityId ? String(entityId) : "",
+            extension: getFileExtension(f)
+        };
+    });
 
     UploadStore.uploads.push(...newUploads);
     renderUploads(uploadsDiv, submit);
