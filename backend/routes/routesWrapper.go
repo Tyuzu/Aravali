@@ -15,9 +15,7 @@ import (
 	"scav/internal/beats/autocomplete"
 	"scav/internal/beats/follows"
 	"scav/internal/beats/hashtags"
-	"scav/internal/beats/likes"
 	"scav/internal/beats/notifications"
-	"scav/internal/beats/subscribe"
 	"scav/internal/beats/suggestions"
 	"scav/internal/beats/userdata"
 	"scav/internal/cart"
@@ -83,7 +81,7 @@ func RoutesWrapper(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	hashtags.AddHashtagRoutes(router, app, rateLimiter)
 	itinerary.AddItineraryRoutes(router, app, rateLimiter)
 	jobs.AddJobRoutes(router, app, rateLimiter)
-	likes.AddLikesRoutes(router, app, rateLimiter)
+	// likes.AddLikesRoutes(router, app, rateLimiter)
 	maps.AddMapRoutes(router, app, rateLimiter)
 	media.AddMediaRoutes(router, app, rateLimiter)
 	menu.AddMenuRoutes(router, app, rateLimiter)
@@ -104,7 +102,7 @@ func RoutesWrapper(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	settings.AddSettingsRoutes(router, app, rateLimiter)
 	songs.AddSongsRoutes(router, app, rateLimiter)
 	stripe.AddStripeRoutes(router, app, rateLimiter)
-	subscribe.AddSubscribeRoutes(router, app, rateLimiter)
+	// subscribe.AddSubscribeRoutes(router, app, rateLimiter)
 	suggestions.AddSuggestionsRoutes(router, app, rateLimiter)
 	tickets.AddTicketRoutes(router, app, rateLimiter)
 	tracking.AddTrackingRoutes(router, app, rateLimiter)
