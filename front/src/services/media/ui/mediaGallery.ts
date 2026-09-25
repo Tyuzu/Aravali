@@ -3,14 +3,7 @@ import "../../../../css/subpages/media.css";
 import { createElement } from "../../../components/createElement.js";
 import { fetchMedia } from "../api/mediaApi.js";
 import { showMediaUploadForm } from "./mediaUploadForm.js";
-import {
-  lazyMediaObserver,
-  clear,
-  groupMedia,
-  createAddMediaButton,
-  createMediaActions,
-  confirmDelete
-} from "../mediaCommon.js";
+import { lazyMediaObserver, clear, groupMedia, createAddMediaButton, createMediaActions, confirmDelete } from "../mediaCommon.js";
 import { resolveImagePath, PictureType, EntityType } from "../../../utils/imagePaths.js";
 import Imagex from "../../../components/base/Imagex.js";
 import { handleTranslationToggle } from "../../fanmade/translate.js";
@@ -254,7 +247,8 @@ export async function displayMedia(
 
   const addBtn = createAddMediaButton(
     isLoggedIn,
-    String(entityType),
+    // String(entityType),
+    "media",
     entityId,
     list,
     showMediaUploadForm
