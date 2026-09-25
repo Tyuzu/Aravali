@@ -8,15 +8,15 @@ import (
 	"scav/internal/verticals/media"
 )
 
-var fanmadeMediaCollection = config.Collections.MediaCollection
+var fanmadeMediaTable = config.Tables.MediaTable
 
 func insertFanMedia(ctx context.Context, app *infra.Deps, media media.Media) error {
-	return app.DB.Insert(ctx, fanmadeMediaCollection, media)
+	return app.DB.Insert(ctx, fanmadeMediaTable, media)
 }
 
 func getFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (media.Media, error) {
 	var media media.Media
-	err := app.DB.FindOne(ctx, fanmadeMediaCollection, map[string]string{
+	err := app.DB.FindOne(ctx, fanmadeMediaTable, map[string]string{
 		"entityid":   entityID,
 		"entitytype": entityType,
 		"mediaid":    mediaID,
@@ -27,7 +27,7 @@ func getFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID,
 func listFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]media.Media, error) {
 	var medias []media.Media
 	opts := db.FindManyOptions{}
-	err := app.DB.FindManyWithOptions(ctx, fanmadeMediaCollection, map[string]string{
+	err := app.DB.FindManyWithOptions(ctx, fanmadeMediaTable, map[string]string{
 		"entityid":   entityID,
 		"entitytype": entityType,
 	}, opts, &medias)
@@ -57,16 +57,16 @@ func listFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType
 }
 
 func updateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, update map[string]any) ([]media.Media, error) {
-	if _, err := app.DB.UpdateMany(ctx, fanmadeMediaCollection, map[string]string{"mediaGroupId": mediaGroupID}, map[string]any{"$set": update}); err != nil {
+	if _, err := app.DB.UpdateMany(ctx, fanmadeMediaTable, map[string]string{"mediaGroupId": mediaGroupID}, map[string]any{"$set": update}); err != nil {
 		return nil, err
 	}
 
 	var updatedMedias []media.Media
 	opts := db.FindManyOptions{}
-	err := app.DB.FindManyWithOptions(ctx, fanmadeMediaCollection, map[string]string{"mediaGroupId": mediaGroupID}, opts, &updatedMedias)
+	err := app.DB.FindManyWithOptions(ctx, fanmadeMediaTable, map[string]string{"mediaGroupId": mediaGroupID}, opts, &updatedMedias)
 	return updatedMedias, err
 }
 
 func deleteFanMediaByID(ctx context.Context, app *infra.Deps, mediaID string) (int64, error) {
-	return app.DB.DeleteOne(ctx, fanmadeMediaCollection, map[string]string{"mediaid": mediaID})
+	return app.DB.DeleteOne(ctx, fanmadeMediaTable, map[string]string{"mediaid": mediaID})
 }

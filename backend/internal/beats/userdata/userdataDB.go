@@ -4,7 +4,6 @@ import (
 	"context"
 	"scav/config"
 	"scav/infra"
-	"time"
 )
 
 var userdataCollection = config.Collections.UserDataCollection
@@ -27,21 +26,6 @@ func InsertUserDataMany(ctx context.Context, app *infra.Deps, docs []any) error 
 // FindUserData finds user data for a given filter.
 func FindUserData(ctx context.Context, app *infra.Deps, filter map[string]any, out *[]UserData) error {
 	return app.DB.FindMany(ctx, userdataCollection, filter, out)
-}
-
-// Data Models
-type postDoc struct {
-	PostID    string    `bson:"postid"`
-	Title     string    `bson:"title"`
-	Thumb     string    `bson:"thumb"`
-	CreatedBy string    `bson:"createdBy"`
-	Username  string    `bson:"username"`
-	CreatedAt time.Time `bson:"createdAt"`
-	Blocks    []struct {
-		Type    string `bson:"type"`
-		URL     string `bson:"url"`
-		Caption string `bson:"caption"`
-	} `bson:"blocks"`
 }
 
 // Database Helpers
