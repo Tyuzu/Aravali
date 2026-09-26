@@ -2,14 +2,11 @@ package mechat
 
 import (
 	"context"
-	"regexp"
 	"time"
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/db"
-
-	"go.mongodb.org/mongo-driver/bson"
+	"scav/infra/sqldb"
 )
 
 var (
@@ -17,40 +14,39 @@ var (
 	MereChatTable = config.Tables.MerechatTable
 )
 
-// ================= REPOSITORY (MONGODB LOGIC) =================
+// ================= REPOSITORY (POSTGRESQL LOGIC) =================
+
 func SQLdbEnsureChatAccess(ctx context.Context, app *infra.Deps, chatID, user string) error {
-	return app.DB.FindOne(ctx, MereChatTable, map[string]any{
-		"chatid":       chatID,
-		"participants": user,
-	}, &struct{}{})
+	query := "chatid = $1 AND $2 = ANY(participants)"
+	args := []any{chatID, user}
+
+	return app.SQLDB.FindOne(ctx, MereChatTable, query, args, &struct{}{})
 }
 
-func SQLdbFindChat(ctx context.Context, app *infra.Deps, filter map[string]any, out *Chat) error {
-	return app.DB.FindOne(ctx, MereChatTable, filter, out)
+func SQLdbFindChat(ctx context.Context, app *infra.Deps, query string, args []any, out *Chat) error {
+	return app.SQLDB.FindOne(ctx, MereChatTable, query, args, out)
 }
 
 func SQLdbInsertChat(ctx context.Context, app *infra.Deps, chat Chat) error {
-	return app.DB.InsertOne(ctx, MereChatTable, chat)
+	return app.SQLDB.InsertOne(ctx, MereChatTable, chat)
 }
 
-func SQLdbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID string, user string, limit, skip int) ([]Message, error) {
-	if err := dbEnsureChatAccess(ctx, app, chatID, user); err != nil {
+func SQLdbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID string, user string, limit, offset int) ([]Message, error) {
+	if err := SQLdbEnsureChatAccess(ctx, app, chatID, user); err != nil {
 		return nil, err
 	}
 
-	filter := map[string]any{
-		"chatid":     chatID,
-		"deleted_ne": true,
-	}
+	query := "chatid = $1 AND deleted IS NOT TRUE"
+	args := []any{chatID}
 
-	opts := db.FindManyOptions{
-		Limit: limit,
-		Skip:  skip,
-		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+	opts := sqldb.FindManyOptions{
+		Limit:   limit,
+		Offset:  offset,
+		OrderBy: "created_at DESC",
 	}
 
 	var msgs []Message
-	if err := app.DB.FindManyWithOptions(ctx, MessagesTable, filter, opts, &msgs); err != nil {
+	if err := app.SQLDB.FindManyWithOptions(ctx, MessagesTable, query, args, opts, &msgs); err != nil {
 		return nil, err
 	}
 	if msgs == nil {
@@ -61,30 +57,27 @@ func SQLdbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID strin
 
 func SQLdbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user string) (Chat, error) {
 	var chat Chat
-	if err := app.DB.FindOne(ctx, MereChatTable, map[string]any{
-		"chatid":       chatID,
-		"participants": user,
-	}, &chat); err != nil {
+	query := "chatid = $1 AND $2 = ANY(participants)"
+	args := []any{chatID, user}
+
+	if err := app.SQLDB.FindOne(ctx, MereChatTable, query, args, &chat); err != nil {
 		return Chat{}, err
 	}
 	return chat, nil
 }
 
-func SQLdbFindUserChats(ctx context.Context, app *infra.Deps, user string, skip, limit int) ([]Chat, error) {
-	opts := db.FindManyOptions{
-		Skip:  skip,
-		Limit: limit,
-		Sort:  []bson.E{{Key: "updatedAt", Value: -1}},
+func SQLdbFindUserChats(ctx context.Context, app *infra.Deps, user string, offset, limit int) ([]Chat, error) {
+	query := "$1 = ANY(participants)"
+	args := []any{user}
+
+	opts := sqldb.FindManyOptions{
+		Offset:  offset,
+		Limit:   limit,
+		OrderBy: "updated_at DESC",
 	}
 
 	var chats []Chat
-	if err := app.DB.FindManyWithOptions(
-		ctx,
-		MereChatTable,
-		map[string]any{"participants": user},
-		opts,
-		&chats,
-	); err != nil {
+	if err := app.SQLDB.FindManyWithOptions(ctx, MereChatTable, query, args, opts, &chats); err != nil {
 		return nil, err
 	}
 	if chats == nil {
@@ -94,27 +87,26 @@ func SQLdbFindUserChats(ctx context.Context, app *infra.Deps, user string, skip,
 }
 
 func SQLdbPersistAttachmentMessage(ctx context.Context, app *infra.Deps, chatID, user string, msg *Message) error {
-	if err := app.DB.InsertOne(ctx, MessagesTable, msg); err != nil {
+	if err := app.SQLDB.InsertOne(ctx, MessagesTable, msg); err != nil {
 		return err
 	}
 
-	_, _ = app.DB.UpdateOne(
-		ctx,
-		MereChatTable,
-		map[string]any{"chatid": chatID},
-		map[string]any{
-			"updatedAt": nowUTC(),
-			"lastMessage": map[string]any{
-				"text":      "[attachment]",
-				"senderId":  user,
-				"timestamp": time.Now(),
-			},
+	query := "chatid = $1"
+	args := []any{chatID}
+	update := map[string]any{
+		"updated_at": SQLnowUTC(),
+		"last_message": map[string]any{
+			"text":      "[attachment]",
+			"sender_id": user,
+			"timestamp": time.Now(),
 		},
-	)
+	}
+
+	_, _ = app.SQLDB.UpdateOne(ctx, MereChatTable, query, args, update)
 	return nil
 }
 
-func SQLnowUTC() time.Time { return time.Now() }
+func SQLnowUTC() time.Time { return time.Now().UTC() }
 
 func SQLdbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, msg *Message) {
 	if msg == nil {
@@ -127,108 +119,80 @@ func SQLdbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string,
 		Timestamp: msg.CreatedAt,
 	}
 
-	_, _ = app.DB.UpdateOne(ctx,
-		MereChatTable,
-		map[string]any{"chatid": chatID},
-		map[string]any{
-			"$set": map[string]any{
-				"lastMessage": preview,
-				"updatedAt":   time.Now(),
-			},
-		},
-	)
+	query := "chatid = $1"
+	args := []any{chatID}
+	update := map[string]any{
+		"last_message": preview,
+		"updated_at":   time.Now(),
+	}
+
+	_, _ = app.SQLDB.UpdateOne(ctx, MereChatTable, query, args, update)
 }
 
 func SQLdbInsertMessage(ctx context.Context, app *infra.Deps, msg *Message) error {
-	return app.DB.InsertOne(ctx, MessagesTable, msg)
+	return app.SQLDB.InsertOne(ctx, MessagesTable, msg)
 }
 
 func SQLdbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newContent string) (*Message, error) {
 	now := time.Now()
-	filter := map[string]any{
-		"messageid": msgID,
-		"userid":    userID,
-		"deleted":   map[string]any{"$ne": true},
-	}
+	query := "messageid = $1 AND userid = $2 AND deleted IS NOT TRUE"
+	args := []any{msgID, userID}
+
 	update := map[string]any{
-		"$set": map[string]any{
-			"content":  newContent,
-			"editedAt": now,
-		},
+		"content":   newContent,
+		"edited_at": now,
 	}
 
 	var msg Message
-	if err := app.DB.FindOneAndUpdate(ctx, MessagesTable, filter, update, &msg); err != nil {
+	if err := app.SQLDB.FindOneAndUpdate(ctx, MessagesTable, query, args, update, &msg); err != nil {
 		return nil, err
 	}
 
-	dbUpdateLastMessage(ctx, app, msg.ChatID, &msg)
+	SQLdbUpdateLastMessage(ctx, app, msg.ChatID, &msg)
 	return &msg, nil
 }
 
 func SQLdbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID string) (*Message, error) {
-	filter := map[string]any{
-		"messageid": msgID,
-		"userid":    userID,
-	}
-	update := map[string]any{
-		"$set": map[string]any{"deleted": true},
-	}
+	query := "messageid = $1 AND userid = $2"
+	args := []any{msgID, userID}
+	update := map[string]any{"deleted": true}
 
 	var msg Message
-	if err := app.DB.FindOneAndUpdate(ctx, MessagesTable, filter, update, &msg); err != nil {
+	if err := app.SQLDB.FindOneAndUpdate(ctx, MessagesTable, query, args, update, &msg); err != nil {
 		return nil, err
 	}
 
-	// Clear last message in chat preview if this was the last message
-	_, _ = app.DB.UpdateOne(
-		ctx,
-		MereChatTable,
-		map[string]any{
-			"chatid":               msg.ChatID,
-			"lastMessage.senderId": msg.UserID,
-		},
-		map[string]any{"$set": map[string]any{"lastMessage": nil}},
-	)
+	// Clear last message preview if this deleted message matches the current sender
+	clearQuery := "chatid = $1 AND (last_message->>'sender_id') = $2"
+	clearArgs := []any{msg.ChatID, msg.UserID}
+	clearUpdate := map[string]any{"last_message": nil}
+
+	_, _ = app.SQLDB.UpdateOne(ctx, MereChatTable, clearQuery, clearArgs, clearUpdate)
 
 	return &msg, nil
 }
 
 func SQLdbMarkAsRead(ctx context.Context, app *infra.Deps, msgID, userID string) error {
-	return app.DB.AddToSet(
-		ctx,
-		MessagesTable,
-		map[string]any{"messageid": msgID},
-		"readBy",
-		userID,
-	)
+	rawQuery := "UPDATE " + MessagesTable + " SET read_by = ARRAY_APPEND(read_by, $2) WHERE messageid = $1 AND NOT ($2 = ANY(read_by))"
+	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{msgID, userID}, nil)
 }
 
 func SQLdbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string, add bool) error {
 	if add {
-		return app.DB.AddToSet(
-			ctx,
-			MessagesTable,
-			map[string]any{"messageid": msgID},
-			"reactions",
-			userID,
-		)
+		rawQuery := "UPDATE " + MessagesTable + " SET reactions = ARRAY_APPEND(reactions, $2) WHERE messageid = $1 AND NOT ($2 = ANY(reactions))"
+		return app.SQLDB.QueryRaw(ctx, rawQuery, []any{msgID, userID}, nil)
 	}
 
-	_, err := app.DB.UpdateOne(
-		ctx,
-		MessagesTable,
-		map[string]any{"messageid": msgID},
-		map[string]any{
-			"$pull": map[string]any{"reactions": userID},
-		},
-	)
-	return err
+	rawQuery := "UPDATE " + MessagesTable + " SET reactions = ARRAY_REMOVE(reactions, $2) WHERE messageid = $1"
+	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{msgID, userID}, nil)
 }
 
 func SQLdbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID string) ([]string, error) {
 	var chat Chat
-	if err := app.DB.FindOne(ctx, MereChatTable, map[string]any{"chatid": chatID}, &chat); err != nil {
+	query := "chatid = $1"
+	args := []any{chatID}
+
+	if err := app.SQLDB.FindOne(ctx, MereChatTable, query, args, &chat); err != nil {
 		return nil, err
 	}
 	return chat.Participants, nil
@@ -236,38 +200,33 @@ func SQLdbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID strin
 
 func SQLdbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string) ([]Chat, map[string]int64, error) {
 	var chats []Chat
-	if err := app.DB.FindMany(ctx, MereChatTable, map[string]any{
-		"participants": user,
-	}, &chats); err != nil {
+	chatQuery := "$1 = ANY(participants)"
+	chatArgs := []any{user}
+
+	if err := app.SQLDB.FindMany(ctx, MereChatTable, chatQuery, chatArgs, &chats); err != nil {
 		return nil, nil, err
 	}
 
-	chatIDs := make([]string, 0, len(chats))
-	for _, c := range chats {
-		chatIDs = append(chatIDs, c.ChatID)
+	countsMap := make(map[string]int64)
+	if len(chats) == 0 {
+		return chats, countsMap, nil
 	}
 
-	pipeline := bson.A{
-		map[string]any{
-			"$match": map[string]any{
-				"chatid":  map[string]any{"$in": chatIDs},
-				"userid":  map[string]any{"$ne": user},
-				"deleted": map[string]any{"$ne": true},
-				"readBy":  map[string]any{"$ne": user},
-			},
-		},
-		map[string]any{
-			"$group": map[string]any{
-				"_id":   "$chatid",
-				"count": map[string]any{"$sum": 1},
-			},
-		},
-	}
+	rawQuery := `
+		SELECT chatid, COUNT(*) AS count
+		FROM ` + MessagesTable + `
+		WHERE $1 = ANY(chat_ids)
+		  AND userid != $1
+		  AND deleted IS NOT TRUE
+		  AND NOT ($1 = ANY(read_by))
+		GROUP BY chatid
+	`
 
 	var results []UnreadCountResult
-	_ = app.DB.Aggregate(ctx, MessagesTable, pipeline, &results)
+	if err := app.SQLDB.QueryRaw(ctx, rawQuery, []any{user}, &results); err != nil {
+		return chats, countsMap, nil
+	}
 
-	countsMap := make(map[string]int64)
 	for _, res := range results {
 		countsMap[res.ChatID] = res.Count
 	}
@@ -275,27 +234,23 @@ func SQLdbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user stri
 	return chats, countsMap, nil
 }
 
-func SQLdbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string, limit, skip int) ([]Message, error) {
-	filter := map[string]any{
-		"chatid":  chatID,
-		"deleted": map[string]any{"$ne": true},
-	}
+func SQLdbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string, limit, offset int) ([]Message, error) {
+	query := "chatid = $1 AND deleted IS NOT TRUE"
+	args := []any{chatID}
 
 	if term != "" {
-		filter["content"] = map[string]any{
-			"$regex":   regexp.QuoteMeta(term),
-			"$options": "i",
-		}
+		query += " AND content ILIKE $2"
+		args = append(args, "%"+term+"%")
 	}
 
-	opts := db.FindManyOptions{
-		Limit: limit,
-		Skip:  skip,
-		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+	opts := sqldb.FindManyOptions{
+		Limit:   limit,
+		Offset:  offset,
+		OrderBy: "created_at DESC",
 	}
 
 	var msgs []Message
-	if err := app.DB.FindManyWithOptions(ctx, MessagesTable, filter, opts, &msgs); err != nil {
+	if err := app.SQLDB.FindManyWithOptions(ctx, MessagesTable, query, args, opts, &msgs); err != nil {
 		return nil, err
 	}
 

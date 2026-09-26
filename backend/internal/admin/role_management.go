@@ -104,7 +104,7 @@ func ProcessApplyForRole(ctx context.Context, app *infra.Deps, userID string, pa
 	}
 
 	var existing RoleApplication
-	if err := FindPendingRoleApplication(ctx, app.DB, userID, role, &existing); err == nil {
+	if err := FindPendingRoleApplication(ctx, app, userID, role, &existing); err == nil {
 		return nil, ErrPendingRequestExists
 	}
 
@@ -118,7 +118,7 @@ func ProcessApplyForRole(ctx context.Context, app *infra.Deps, userID string, pa
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	if err := InsertRoleApplication(ctx, app.DB, application); err != nil {
+	if err := InsertRoleApplication(ctx, app, application); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +127,7 @@ func ProcessApplyForRole(ctx context.Context, app *infra.Deps, userID string, pa
 
 func FetchUserRoleRequests(ctx context.Context, app *infra.Deps, userID string) ([]RoleApplication, error) {
 	var applications []RoleApplication
-	if err := FindRoleApplicationsByUser(ctx, app.DB, userID, &applications); err != nil {
+	if err := FindRoleApplicationsByUser(ctx, app, userID, &applications); err != nil {
 		return nil, err
 	}
 	return applications, nil
@@ -141,7 +141,7 @@ func FetchAllRoleRequests(ctx context.Context, app *infra.Deps, rawStatus string
 		filter["status"] = status
 	}
 
-	if err := ListRoleApplicationsDB(ctx, app.DB, filter, &applications); err != nil {
+	if err := ListRoleApplicationsDB(ctx, app, filter, &applications); err != nil {
 		return nil, err
 	}
 	return applications, nil
@@ -149,7 +149,7 @@ func FetchAllRoleRequests(ctx context.Context, app *infra.Deps, rawStatus string
 
 func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, appID string) (string, error) {
 	var application RoleApplication
-	if err := GetRoleApplicationByID(ctx, app.DB, appID, &application); err != nil {
+	if err := GetRoleApplicationByID(ctx, app, appID, &application); err != nil {
 		return "", ErrApplicationNotFound
 	}
 
@@ -160,16 +160,16 @@ func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, appID strin
 	var user struct {
 		Role []string `json:"role" bson:"role"`
 	}
-	if err := GetUserRoles(ctx, app.DB, application.UserID, &user); err != nil {
+	if err := GetUserRoles(ctx, app, application.UserID, &user); err != nil {
 		return "", ErrUserNotFound
 	}
 
 	user.Role = MergeRoleList(user.Role, application.Role)
-	if _, err := UpdateUserRoles(ctx, app.DB, application.UserID, user.Role); err != nil {
+	if _, err := UpdateUserRoles(ctx, app, application.UserID, user.Role); err != nil {
 		return "", err
 	}
 
-	if _, err := UpdateRoleApplicationStatus(ctx, app.DB, appID, "approved"); err != nil {
+	if _, err := UpdateRoleApplicationStatus(ctx, app, appID, "approved"); err != nil {
 		return "", err
 	}
 
@@ -178,7 +178,7 @@ func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, appID strin
 
 func ProcessRejectRoleRequest(ctx context.Context, app *infra.Deps, appID string) error {
 	var application RoleApplication
-	if err := GetRoleApplicationByID(ctx, app.DB, appID, &application); err != nil {
+	if err := GetRoleApplicationByID(ctx, app, appID, &application); err != nil {
 		return ErrApplicationNotFound
 	}
 
@@ -186,7 +186,7 @@ func ProcessRejectRoleRequest(ctx context.Context, app *infra.Deps, appID string
 		return ErrAlreadyResolved
 	}
 
-	if _, err := UpdateRoleApplicationStatus(ctx, app.DB, appID, "rejected"); err != nil {
+	if _, err := UpdateRoleApplicationStatus(ctx, app, appID, "rejected"); err != nil {
 		return err
 	}
 

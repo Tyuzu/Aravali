@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"scav/config"
-	db "scav/infra/db"
+	"scav/infra"
 	"scav/internal/auth"
 	"scav/internal/places"
 )
@@ -13,22 +13,16 @@ var (
 	AutocompleteTable = config.Tables.AutocompleteTable
 )
 
-func SQLfindPlacesByQuery(ctx context.Context, database db.Database, query string, places *[]places.Place) error {
-	filter := map[string]any{
-		"name": map[string]any{
-			"$regex":   "^" + query,
-			"$options": "i",
-		},
-	}
-	return database.FindMany(ctx, AutocompleteTable, filter, places)
+func SQLfindPlacesByQuery(ctx context.Context, app *infra.Deps, query string, places *[]places.Place) error {
+	where := "name ILIKE $1"
+	args := []any{query + "%"}
+
+	return app.SQLDB.FindMany(ctx, AutocompleteTable, where, args, places)
 }
 
-func SQLfindUsersByQuery(ctx context.Context, database db.Database, query string, users *[]auth.User) error {
-	filter := map[string]any{
-		"username": map[string]any{
-			"$regex":   "^" + query,
-			"$options": "i",
-		},
-	}
-	return database.FindMany(ctx, AutocompleteTable, filter, users)
+func SQLfindUsersByQuery(ctx context.Context, app *infra.Deps, query string, users *[]auth.User) error {
+	where := "username ILIKE $1"
+	args := []any{query + "%"}
+
+	return app.SQLDB.FindMany(ctx, AutocompleteTable, where, args, users)
 }

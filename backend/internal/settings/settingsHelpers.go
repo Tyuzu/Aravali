@@ -1,18 +1,11 @@
 package settings
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
 	"scav/config"
-	"scav/config/mqevent"
-	"scav/infra"
-	"scav/infra/mq"
-	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -20,25 +13,25 @@ import (
 ------------------------- */
 
 type UserSettings struct {
-	UserID string `json:"-" bson:"userID"`
+	UserID string `json:"-" db:"user_id"`
 
-	Theme string `json:"theme" bson:"theme"`
+	Theme string `json:"theme" db:"theme"`
 
-	Notifications      bool `json:"notifications" bson:"notifications"`
-	EmailNotifications bool `json:"email_notifications" bson:"email_notifications"`
-	PushNotifications  bool `json:"push_notifications" bson:"push_notifications"`
+	Notifications      bool `json:"notifications" db:"notifications"`
+	EmailNotifications bool `json:"email_notifications" db:"email_notifications"`
+	PushNotifications  bool `json:"push_notifications" db:"push_notifications"`
 
-	PrivacyMode       bool   `json:"privacy_mode" bson:"privacy_mode"`
-	ProfileVisibility string `json:"profile_visibility" bson:"profile_visibility"`
+	PrivacyMode       bool   `json:"privacy_mode" db:"privacy_mode"`
+	ProfileVisibility string `json:"profile_visibility" db:"profile_visibility"`
 
-	AutoLogout     bool `json:"auto_logout" bson:"auto_logout"`
-	SessionTimeout int  `json:"session_timeout" bson:"session_timeout"`
+	AutoLogout     bool `json:"auto_logout" db:"auto_logout"`
+	SessionTimeout int  `json:"session_timeout" db:"session_timeout"`
 
-	Language string `json:"language" bson:"language"`
-	TimeZone string `json:"time_zone" bson:"time_zone"`
-	Currency string `json:"currency" bson:"currency"`
+	Language string `json:"language" db:"language"`
+	TimeZone string `json:"time_zone" db:"time_zone"`
+	Currency string `json:"currency" db:"currency"`
 
-	DailyReminder string `json:"daily_reminder" bson:"daily_reminder"`
+	DailyReminder string `json:"daily_reminder" db:"daily_reminder"`
 }
 
 type SettingSchema struct {
@@ -51,7 +44,7 @@ type SettingSchema struct {
 }
 
 /* -------------------------
-   Defaults
+   Defaults & Schema
 ------------------------- */
 
 func DefaultSettings(userID string) UserSettings {
@@ -302,24 +295,6 @@ func validateSetting(key string, value any) error {
 	return errors.New("invalid setting type")
 }
 
-func settingsToMap(s UserSettings) bson.M {
-	return bson.M{
-		"userID":              s.UserID,
-		"theme":               s.Theme,
-		"notifications":       s.Notifications,
-		"email_notifications": s.EmailNotifications,
-		"push_notifications":  s.PushNotifications,
-		"privacy_mode":        s.PrivacyMode,
-		"profile_visibility":  s.ProfileVisibility,
-		"auto_logout":         s.AutoLogout,
-		"session_timeout":     s.SessionTimeout,
-		"language":            s.Language,
-		"time_zone":           s.TimeZone,
-		"currency":            s.Currency,
-		"daily_reminder":      s.DailyReminder,
-	}
-}
-
 func applyPatch(target *UserSettings, key string, value any) {
 	switch key {
 	case "theme":
@@ -348,200 +323,5 @@ func applyPatch(target *UserSettings, key string, value any) {
 		target.Currency, _ = value.(string)
 	case "daily_reminder":
 		target.DailyReminder, _ = value.(string)
-	}
-}
-
-/* -------------------------
-   Handlers
-------------------------- */
-
-func GetSettings(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		userID, ok := getUserID(r)
-		if !ok {
-			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{
-				"error": "unauthorized",
-			})
-			return
-		}
-
-		var settings UserSettings
-		err := app.DB.FindOne(
-			ctx,
-			settingsCollection,
-			bson.M{"userID": userID},
-			&settings,
-		)
-
-		if err != nil {
-			settings = DefaultSettings(userID)
-			_ = app.DB.Insert(ctx, settingsCollection, settings)
-		}
-
-		utils.RespondWithJSON(w, http.StatusOK, settings)
-	}
-}
-
-func GetSettingsSchema(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		utils.RespondWithJSON(w, http.StatusOK, settingsSchema)
-	}
-}
-
-func UpdateSettings(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		userID, ok := getUserID(r)
-		if !ok {
-			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{
-				"error": "unauthorized",
-			})
-			return
-		}
-
-		var payload map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			utils.RespondWithJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "invalid payload",
-			})
-			return
-		}
-
-		allowed := map[string]bool{
-			"theme":               true,
-			"notifications":       true,
-			"email_notifications": true,
-			"push_notifications":  true,
-			"privacy_mode":        true,
-			"profile_visibility":  true,
-			"auto_logout":         true,
-			"session_timeout":     true,
-			"language":            true,
-			"time_zone":           true,
-			"currency":            true,
-			"daily_reminder":      true,
-		}
-
-		filter := bson.M{"userID": userID}
-		updateFields := bson.M{}
-
-		for key, value := range payload {
-			if !allowed[key] {
-				utils.RespondWithJSON(w, http.StatusBadRequest, map[string]string{
-					"error": "invalid setting type: " + key,
-				})
-				return
-			}
-
-			if err := validateSetting(key, value); err != nil {
-				utils.RespondWithJSON(w, http.StatusBadRequest, map[string]string{
-					"error": err.Error(),
-				})
-				return
-			}
-
-			updateFields[key] = value
-		}
-
-		if len(updateFields) == 0 {
-			utils.RespondWithJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "empty update payload",
-			})
-			return
-		}
-
-		if _, err := app.DB.Update(ctx, settingsCollection, filter, updateFields); err != nil {
-			settings := DefaultSettings(userID)
-			doc := settingsToMap(settings)
-
-			for k, v := range updateFields {
-				doc[k] = v
-				applyPatch(&settings, k, v)
-			}
-
-			_ = app.DB.Insert(ctx, settingsCollection, doc)
-		}
-
-		mqpayload, _ := json.Marshal(mqevent.UserSettingsUpdatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsUpdatedEvent, mqpayload)
-
-		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
-			"status":  "success",
-			"message": "settings updated",
-			"data":    updateFields,
-		})
-	}
-}
-
-func ResetSettings(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		userID, ok := getUserID(r)
-		if !ok {
-			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{
-				"error": "unauthorized",
-			})
-			return
-		}
-
-		defaults := DefaultSettings(userID)
-		filter := bson.M{"userID": userID}
-		update := settingsToMap(defaults)
-
-		if _, err := app.DB.Update(ctx, settingsCollection, filter, update); err != nil {
-			_ = app.DB.Insert(ctx, settingsCollection, update)
-		}
-
-		mqpayload, _ := json.Marshal(mqevent.UserSettingsResetPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsResetEvent, mqpayload)
-
-		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
-			"status":  "success",
-			"message": "settings reset to defaults",
-		})
-	}
-}
-
-func InitUserSettings(app *infra.Deps) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		userID, ok := getUserID(r)
-		if !ok {
-			utils.RespondWithJSON(w, http.StatusUnauthorized, map[string]string{
-				"error": "unauthorized",
-			})
-			return
-		}
-
-		var existing UserSettings
-		err := app.DB.FindOne(
-			ctx,
-			settingsCollection,
-			bson.M{"userID": userID},
-			&existing,
-		)
-
-		if err == nil {
-			utils.RespondWithJSON(w, http.StatusOK, false)
-			return
-		}
-
-		defaults := DefaultSettings(userID)
-		if err := app.DB.Insert(ctx, settingsCollection, defaults); err != nil {
-			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
-				"error": "failed to initialize settings",
-			})
-			return
-		}
-
-		mqpayload, _ := json.Marshal(mqevent.UserSettingsInitiatedPayload{})
-		mq.PublishWithMeta(ctx, app.MQ, mqevent.UserSettingsInitiatedEvent, mqpayload)
-
-		utils.RespondWithJSON(w, http.StatusOK, true)
 	}
 }

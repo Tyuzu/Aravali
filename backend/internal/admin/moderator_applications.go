@@ -51,7 +51,7 @@ func ProcessApplyModerator(ctx context.Context, app *infra.Deps, payload ApplyMo
 	}
 
 	var existing ModeratorApplication
-	if err := FindModeratorApplicationByUser(ctx, app.DB, userID, &existing); err == nil {
+	if err := FindModeratorApplicationByUser(ctx, app, userID, &existing); err == nil {
 		return nil, ErrAlreadyApplied
 	}
 
@@ -65,7 +65,7 @@ func ProcessApplyModerator(ctx context.Context, app *infra.Deps, payload ApplyMo
 		UpdatedAt: now,
 	}
 
-	if err := InsertModeratorApplication(ctx, app.DB, appx); err != nil {
+	if err := InsertModeratorApplication(ctx, app, appx); err != nil {
 		return nil, err
 	}
 
@@ -82,7 +82,7 @@ func FetchModeratorApplications(ctx context.Context, app *infra.Deps, status str
 	}
 
 	var applications []ModeratorApplication
-	if err := ListModeratorApplicationsDB(ctx, app.DB, filter, &applications); err != nil {
+	if err := ListModeratorApplicationsDB(ctx, app, filter, &applications); err != nil {
 		return nil, err
 	}
 
@@ -91,7 +91,7 @@ func FetchModeratorApplications(ctx context.Context, app *infra.Deps, status str
 
 func ProcessApproveModerator(ctx context.Context, app *infra.Deps, id string) error {
 	now := time.Now().UTC()
-	if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "approved"); err != nil {
+	if _, err := UpdateModeratorApplicationStatus(ctx, app, id, "approved"); err != nil {
 		return ErrModAppNotFound
 	}
 
@@ -106,7 +106,7 @@ func ProcessApproveModerator(ctx context.Context, app *infra.Deps, id string) er
 
 func ProcessRejectModerator(ctx context.Context, app *infra.Deps, id string) error {
 	now := time.Now().UTC()
-	if _, err := UpdateModeratorApplicationStatus(ctx, app.DB, id, "rejected"); err != nil {
+	if _, err := UpdateModeratorApplicationStatus(ctx, app, id, "rejected"); err != nil {
 		return ErrModAppNotFound
 	}
 

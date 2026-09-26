@@ -3,6 +3,7 @@ package stripe
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"scav/config"
@@ -19,7 +20,7 @@ func SQLupdatePaymentStatus(
 	amount int64,
 	paymentIntentId string,
 	app *infra.Deps,
-) (any, error) {
+) (int64, error) {
 	var collection string
 	var idField string
 
@@ -31,8 +32,11 @@ func SQLupdatePaymentStatus(
 		collection = stripeOrdersCollection
 		idField = "orderid"
 	default:
-		return nil, errors.New("invalid entityType")
+		return 0, errors.New("invalid entityType")
 	}
+
+	query := fmt.Sprintf("%s = $1", idField)
+	args := []any{entityId}
 
 	update := map[string]any{
 		"paid":            true,
@@ -41,10 +45,11 @@ func SQLupdatePaymentStatus(
 		"paidAt":          time.Now().UTC(),
 	}
 
-	return app.DB.Update(
+	return app.SQLDB.Update(
 		ctx,
 		collection,
-		map[string]any{idField: entityId},
+		query,
+		args,
 		update,
 	)
 }

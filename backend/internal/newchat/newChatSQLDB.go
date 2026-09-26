@@ -3,13 +3,11 @@ package newchat
 import (
 	"context"
 	"errors"
-	"scav/config"
-	"scav/infra"
-	"scav/infra/db"
-	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"scav/config"
+	"scav/infra"
+	"scav/infra/sqldb"
 )
 
 var (
@@ -19,7 +17,10 @@ var (
 
 func SQLgetChatByID(ctx context.Context, app *infra.Deps, chatID string) (Chat, error) {
 	var chat Chat
-	if err := app.DB.FindOne(ctx, chatsTable, map[string]any{"chatid": chatID}, &chat); err != nil {
+	query := "chatid = $1"
+	args := []any{chatID}
+
+	if err := app.SQLDB.FindOne(ctx, chatsTable, query, args, &chat); err != nil {
 		return Chat{}, err
 	}
 	return chat, nil
@@ -27,10 +28,10 @@ func SQLgetChatByID(ctx context.Context, app *infra.Deps, chatID string) (Chat, 
 
 func SQLgetChatForUser(ctx context.Context, app *infra.Deps, chatID, userID string) (Chat, error) {
 	var chat Chat
-	if err := app.DB.FindOne(ctx, chatsTable, map[string]any{
-		"chatid": chatID,
-		"users":  map[string]any{"$in": []string{userID}},
-	}, &chat); err != nil {
+	query := "chatid = $1 AND $2 = ANY(users)"
+	args := []any{chatID, userID}
+
+	if err := app.SQLDB.FindOne(ctx, chatsTable, query, args, &chat); err != nil {
 		return Chat{}, err
 	}
 	return chat, nil
@@ -38,10 +39,13 @@ func SQLgetChatForUser(ctx context.Context, app *infra.Deps, chatID, userID stri
 
 func SQLgetChatMessages(ctx context.Context, app *infra.Deps, chatID string) ([]Message, error) {
 	var messages []Message
-	opts := db.FindManyOptions{
-		Sort: []bson.E{{Key: "createdAt", Value: 1}},
+	query := "chatid = $1"
+	args := []any{chatID}
+
+	opts := sqldb.FindManyOptions{
+		OrderBy: "created_at ASC",
 	}
-	if err := app.DB.FindManyWithOptions(ctx, messagesTable, map[string]any{"chatid": chatID}, opts, &messages); err != nil {
+	if err := app.SQLDB.FindManyWithOptions(ctx, messagesTable, query, args, opts, &messages); err != nil {
 		return nil, err
 	}
 	return messages, nil
@@ -49,35 +53,41 @@ func SQLgetChatMessages(ctx context.Context, app *infra.Deps, chatID string) ([]
 
 func SQLgetRoomMessages(ctx context.Context, app *infra.Deps, room string) ([]Message, error) {
 	var messages []Message
-	opts := db.FindManyOptions{
-		Sort:  []bson.E{{Key: "timestamp", Value: -1}},
-		Limit: 20,
+	query := "room = $1"
+	args := []any{room}
+
+	opts := sqldb.FindManyOptions{
+		OrderBy: "timestamp DESC",
+		Limit:   20,
 	}
-	if err := app.DB.FindManyWithOptions(ctx, messagesTable, map[string]any{"room": room}, opts, &messages); err != nil {
+	if err := app.SQLDB.FindManyWithOptions(ctx, messagesTable, query, args, opts, &messages); err != nil {
 		return nil, err
 	}
 	return messages, nil
 }
 
 func SQLinsertMessage(ctx context.Context, app *infra.Deps, msg Message) error {
-	return app.DB.InsertOne(ctx, messagesTable, msg)
+	return app.SQLDB.InsertOne(ctx, messagesTable, msg)
 }
 
 func SQLupdateChatLastMessage(ctx context.Context, app *infra.Deps, chatID, userID string, timestamp time.Time, previewText string) error {
 	if previewText == "" {
 		return nil
 	}
+
+	query := "chatid = $1"
+	args := []any{chatID}
+
 	update := map[string]any{
-		"$set": map[string]any{
-			"lastMessage": MessagePreview{
-				Text:      previewText,
-				UserID:    userID,
-				Timestamp: timestamp,
-			},
-			"updatedAt": timestamp,
+		"last_message": MessagePreview{
+			Text:      previewText,
+			UserID:    userID,
+			Timestamp: timestamp,
 		},
+		"updated_at": timestamp,
 	}
-	_, err := app.DB.UpdateOne(ctx, chatsTable, map[string]any{"chatid": chatID}, update)
+
+	_, err := app.SQLDB.UpdateOne(ctx, chatsTable, query, args, update)
 	return err
 }
 
@@ -85,20 +95,16 @@ func SQLUpdatexMessage(userID string, id string, newContent string, app *infra.D
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter := map[string]any{
-		"messageid": id,
-		"senderid":  userID,
-	}
-	update := map[string]any{
-		"$set": map[string]any{"content": newContent},
-	}
+	query := "messageid = $1 AND senderid = $2"
+	args := []any{id, userID}
+	update := map[string]any{"content": newContent}
 
-	_, err := app.DB.UpdateOne(ctx, messagesTable, filter, update)
+	rowsAffected, err := app.SQLDB.UpdateOne(ctx, messagesTable, query, args, update)
 	if err != nil {
-		if strings.Contains(err.Error(), "no documents") {
-			return errors.New("message not found or unauthorized")
-		}
 		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("message not found or unauthorized")
 	}
 	return nil
 }
@@ -107,17 +113,15 @@ func SQLDeletexMessage(userID string, id string, app *infra.Deps) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter := map[string]any{
-		"messageid": id,
-		"senderid":  userID,
-	}
+	query := "messageid = $1 AND senderid = $2"
+	args := []any{id, userID}
 
-	_, err := app.DB.DeleteOne(ctx, messagesTable, filter)
+	rowsAffected, err := app.SQLDB.DeleteOne(ctx, messagesTable, query, args)
 	if err != nil {
-		if strings.Contains(err.Error(), "no documents") {
-			return errors.New("message not found or unauthorized")
-		}
 		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("message not found or unauthorized")
 	}
 	return nil
 }
@@ -127,7 +131,10 @@ func SQLfindMessageRoom(id string, app *infra.Deps) (string, error) {
 	defer cancel()
 
 	var msg Message
-	err := app.DB.FindOne(ctx, messagesTable, map[string]any{"messageid": id}, &msg)
+	query := "messageid = $1"
+	args := []any{id}
+
+	err := app.SQLDB.FindOne(ctx, messagesTable, query, args, &msg)
 	if err != nil {
 		return "", err
 	}
@@ -136,49 +143,66 @@ func SQLfindMessageRoom(id string, app *infra.Deps) (string, error) {
 
 func SQLfindMessageByID(ctx context.Context, app *infra.Deps, msgID string) (Message, error) {
 	var msg Message
-	if err := app.DB.FindOne(ctx, messagesTable, map[string]any{"messageid": msgID}, &msg); err != nil {
+	query := "messageid = $1"
+	args := []any{msgID}
+
+	if err := app.SQLDB.FindOne(ctx, messagesTable, query, args, &msg); err != nil {
 		return Message{}, err
 	}
 	return msg, nil
 }
 
 func SQLupdateMessageText(ctx context.Context, app *infra.Deps, msgID, text string) error {
-	update := map[string]any{"$set": map[string]any{"text": text}}
-	_, err := app.DB.UpdateOne(ctx, messagesTable, map[string]any{"messageid": msgID}, update)
+	query := "messageid = $1"
+	args := []any{msgID}
+	update := map[string]any{"text": text}
+
+	_, err := app.SQLDB.UpdateOne(ctx, messagesTable, query, args, update)
 	return err
 }
 
 func SQLdeleteMessageByID(ctx context.Context, app *infra.Deps, msgID string) error {
-	_, err := app.DB.DeleteOne(ctx, messagesTable, map[string]any{"messageid": msgID})
+	query := "messageid = $1"
+	args := []any{msgID}
+
+	_, err := app.SQLDB.DeleteOne(ctx, messagesTable, query, args)
 	return err
 }
 
 func SQLtouchChatUpdatedAt(ctx context.Context, app *infra.Deps, chatID string) error {
-	_, err := app.DB.UpdateOne(ctx, chatsTable, map[string]any{"chatid": chatID}, map[string]any{
-		"$set": map[string]any{"updatedAt": time.Now()},
-	})
+	query := "chatid = $1"
+	args := []any{chatID}
+	update := map[string]any{"updated_at": time.Now()}
+
+	_, err := app.SQLDB.UpdateOne(ctx, chatsTable, query, args, update)
 	return err
 }
 
 func SQLfindChatByUsers(ctx context.Context, app *infra.Deps, users []string) (Chat, error) {
 	var chat Chat
-	if err := app.DB.FindOne(ctx, chatsTable, map[string]any{"users": users}, &chat); err != nil {
+	query := "users = $1"
+	args := []any{users}
+
+	if err := app.SQLDB.FindOne(ctx, chatsTable, query, args, &chat); err != nil {
 		return Chat{}, err
 	}
 	return chat, nil
 }
 
 func SQLcreateChat(ctx context.Context, app *infra.Deps, chat Chat) error {
-	return app.DB.InsertOne(ctx, chatsTable, chat)
+	return app.SQLDB.InsertOne(ctx, chatsTable, chat)
 }
 
 func SQLgetUserChats(ctx context.Context, app *infra.Deps, userID string) ([]Chat, error) {
 	var chats []Chat
-	opts := db.FindManyOptions{
-		Sort:  []bson.E{{Key: "updatedAt", Value: -1}},
-		Limit: 15,
+	query := "$1 = ANY(users)"
+	args := []any{userID}
+
+	opts := sqldb.FindManyOptions{
+		OrderBy: "updated_at DESC",
+		Limit:   15,
 	}
-	if err := app.DB.FindManyWithOptions(ctx, chatsTable, map[string]any{"users": map[string]any{"$in": []string{userID}}}, opts, &chats); err != nil {
+	if err := app.SQLDB.FindManyWithOptions(ctx, chatsTable, query, args, opts, &chats); err != nil {
 		return nil, err
 	}
 	if chats == nil {

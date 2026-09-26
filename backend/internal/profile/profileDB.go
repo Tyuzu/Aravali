@@ -2,6 +2,7 @@ package profile
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -56,4 +57,28 @@ func RespondWithUserProfile(w http.ResponseWriter, userid string, database db.Da
 	}
 
 	utils.RespondWithJSON(w, http.StatusOK, userProfile)
+}
+
+/* -------------------------------------------------------
+   Apply updates / Delete user
+------------------------------------------------------- */
+
+func ApplyProfileUpdates(
+	ctx context.Context,
+	database db.Database,
+	userID string,
+	updates map[string]any,
+) (any, error) {
+	s, err := database.UpdateOne(ctx, usersCollection, map[string]any{"userid": userID}, updates)
+	log.Println(";;;;;;;;;;;;;;;;;;;;;;;;;;", updates)
+	log.Println(";;;;;;;;;;;;;;;;;;;;;;;;;;", s)
+	return s, err
+}
+
+func DeleteUserByID(
+	ctx context.Context,
+	database db.Database,
+	userID string,
+) (int64, error) {
+	return database.DeleteOne(ctx, usersCollection, map[string]any{"userid": userID})
 }

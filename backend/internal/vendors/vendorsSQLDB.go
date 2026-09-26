@@ -18,13 +18,16 @@ var (
 
 // InsertVendor inserts a vendor document into the vendor table.
 func SQLInsertVendor(ctx context.Context, app *infra.Deps, vendor *Vendor) error {
-	return app.DB.InsertOne(ctx, vendorTable, vendor)
+	return app.SQLDB.InsertOne(ctx, vendorTable, vendor)
 }
 
 // FindVendorByID returns a vendor by vendorID. Returns ErrVendorNotFound if not found.
 func SQLFindVendorByID(ctx context.Context, app *infra.Deps, vendorID string) (*Vendor, error) {
 	var vendor Vendor
-	err := app.DB.FindOne(ctx, vendorTable, map[string]any{"vendorid": vendorID, "available": true}, &vendor)
+	query := "vendorid = $1 AND available = $2"
+	args := []any{vendorID, true}
+
+	err := app.SQLDB.FindOne(ctx, vendorTable, query, args, &vendor)
 	if err != nil {
 		return nil, ErrVendorNotFound
 	}
@@ -34,32 +37,47 @@ func SQLFindVendorByID(ctx context.Context, app *infra.Deps, vendorID string) (*
 // FindVendorByUserID returns a vendor by userID. Returns nil,err when FindOne fails.
 func SQLFindVendorByUserID(ctx context.Context, app *infra.Deps, userID string) (*Vendor, error) {
 	var vendor Vendor
-	err := app.DB.FindOne(ctx, vendorTable, map[string]any{"userid": userID, "available": true}, &vendor)
+	query := "userid = $1 AND available = $2"
+	args := []any{userID, true}
+
+	err := app.SQLDB.FindOne(ctx, vendorTable, query, args, &vendor)
 	if err != nil {
 		return nil, err
 	}
 	return &vendor, nil
 }
 
-// FindVendors finds many vendors using provided filter.
-func SQLFindVendors(ctx context.Context, app *infra.Deps, filter map[string]any, out *[]Vendor) error {
-	return app.DB.FindMany(ctx, vendorTable, filter, out)
+// FindVendors finds many vendors using provided query and args.
+func SQLFindVendors(ctx context.Context, app *infra.Deps, query string, args []any, out *[]Vendor) error {
+	return app.SQLDB.FindMany(ctx, vendorTable, query, args, out)
 }
 
-// UpdateVendorDB updates vendor documents matching filter with update doc.
-func SQLUpdateVendorDB(ctx context.Context, app *infra.Deps, filter map[string]any, update map[string]any) (any, error) {
-	return app.DB.Update(ctx, vendorTable, filter, update)
+// UpdateVendorDB updates vendor documents matching query with update map.
+func SQLUpdateVendorDB(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (int64, error) {
+	return app.SQLDB.Update(ctx, vendorTable, query, args, update)
 }
 
 // DeleteVendorDB marks a vendor as unavailable.
-func SQLDeleteVendorDB(ctx context.Context, app *infra.Deps, vendorID string) (any, error) {
-	return app.DB.Update(ctx, vendorTable, map[string]any{"vendorid": vendorID}, map[string]any{"$set": map[string]any{"available": false, "updated_at": time.Now()}})
+func SQLDeleteVendorDB(ctx context.Context, app *infra.Deps, vendorID string) (int64, error) {
+	query := "vendorid = $1"
+	args := []any{vendorID}
+
+	update := map[string]any{
+		"available":  false,
+		"updated_at": time.Now(),
+	}
+
+	return app.SQLDB.Update(ctx, vendorTable, query, args, update)
 }
 
 // --- Hiring related DB helpers ---
+
 func SQLFindHiringByID(ctx context.Context, app *infra.Deps, hiringID string) (*VendorHiring, error) {
 	var h VendorHiring
-	err := app.DB.FindOne(ctx, hiringTable, map[string]any{"hiringid": hiringID}, &h)
+	query := "hiringid = $1"
+	args := []any{hiringID}
+
+	err := app.SQLDB.FindOne(ctx, hiringTable, query, args, &h)
 	if err != nil {
 		return nil, ErrVendorNotFound
 	}
@@ -68,7 +86,10 @@ func SQLFindHiringByID(ctx context.Context, app *infra.Deps, hiringID string) (*
 
 func SQLFindHiringByEventAndVendor(ctx context.Context, app *infra.Deps, eventID, vendorID string) (*VendorHiring, error) {
 	var h VendorHiring
-	err := app.DB.FindOne(ctx, hiringTable, map[string]any{"eventid": eventID, "vendorid": vendorID, "status": map[string]any{"$ne": "rejected"}}, &h)
+	query := "eventid = $1 AND vendorid = $2 AND status != $3"
+	args := []any{eventID, vendorID, "rejected"}
+
+	err := app.SQLDB.FindOne(ctx, hiringTable, query, args, &h)
 	if err != nil {
 		return nil, ErrVendorNotInEvent
 	}
@@ -76,25 +97,35 @@ func SQLFindHiringByEventAndVendor(ctx context.Context, app *infra.Deps, eventID
 }
 
 func SQLInsertHiring(ctx context.Context, app *infra.Deps, hiring *VendorHiring) error {
-	return app.DB.InsertOne(ctx, hiringTable, hiring)
+	return app.SQLDB.InsertOne(ctx, hiringTable, hiring)
 }
 
 func SQLFindHiringsByEvent(ctx context.Context, app *infra.Deps, eventID string, out *[]VendorHiring) error {
-	return app.DB.FindMany(ctx, hiringTable, map[string]any{"eventid": eventID, "status": map[string]any{"$ne": "rejected"}}, out)
+	query := "eventid = $1 AND status != $2"
+	args := []any{eventID, "rejected"}
+
+	return app.SQLDB.FindMany(ctx, hiringTable, query, args, out)
 }
 
 func SQLFindHiringsByVendorID(ctx context.Context, app *infra.Deps, vendorID string, out *[]VendorHiring) error {
-	return app.DB.FindMany(ctx, hiringTable, map[string]any{"vendorid": vendorID, "status": map[string]any{"$ne": "rejected"}}, out)
+	query := "vendorid = $1 AND status != $2"
+	args := []any{vendorID, "rejected"}
+
+	return app.SQLDB.FindMany(ctx, hiringTable, query, args, out)
 }
 
-func SQLUpdateHiringDB(ctx context.Context, app *infra.Deps, filter map[string]any, update map[string]any) (any, error) {
-	return app.DB.Update(ctx, hiringTable, filter, update)
+func SQLUpdateHiringDB(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (int64, error) {
+	return app.SQLDB.Update(ctx, hiringTable, query, args, update)
 }
 
 // --- Availability related DB helpers ---
+
 func SQLFindAvailabilitySlots(ctx context.Context, app *infra.Deps, vendorID string) ([]AvailabilitySlot, error) {
 	var slots []AvailabilitySlot
-	err := app.DB.FindMany(ctx, config.Tables.VendorAvailabilityTable, map[string]any{"vendorid": vendorID}, &slots)
+	query := "vendorid = $1"
+	args := []any{vendorID}
+
+	err := app.SQLDB.FindMany(ctx, config.Tables.VendorAvailabilityTable, query, args, &slots)
 	if err != nil {
 		return nil, err
 	}
@@ -105,18 +136,24 @@ func SQLFindAvailabilitySlots(ctx context.Context, app *infra.Deps, vendorID str
 }
 
 func SQLInsertAvailabilitySlotDB(ctx context.Context, app *infra.Deps, slot AvailabilitySlot) error {
-	return app.DB.InsertOne(ctx, config.Tables.VendorAvailabilityTable, slot)
+	return app.SQLDB.InsertOne(ctx, config.Tables.VendorAvailabilityTable, slot)
 }
 
 func SQLFindAvailabilitySlotByID(ctx context.Context, app *infra.Deps, slotID, vendorID string) (*AvailabilitySlot, error) {
 	var slot AvailabilitySlot
-	err := app.DB.FindOne(ctx, config.Tables.VendorAvailabilityTable, map[string]any{"slotid": slotID, "vendorid": vendorID}, &slot)
+	query := "slotid = $1 AND vendorid = $2"
+	args := []any{slotID, vendorID}
+
+	err := app.SQLDB.FindOne(ctx, config.Tables.VendorAvailabilityTable, query, args, &slot)
 	if err != nil {
 		return nil, err
 	}
 	return &slot, nil
 }
 
-func SQLDeleteAvailabilitySlotDB(ctx context.Context, app *infra.Deps, slotID string) (any, error) {
-	return app.DB.DeleteOne(ctx, config.Tables.VendorAvailabilityTable, map[string]any{"slotid": slotID})
+func SQLDeleteAvailabilitySlotDB(ctx context.Context, app *infra.Deps, slotID string) (int64, error) {
+	query := "slotid = $1"
+	args := []any{slotID}
+
+	return app.SQLDB.DeleteOne(ctx, config.Tables.VendorAvailabilityTable, query, args)
 }

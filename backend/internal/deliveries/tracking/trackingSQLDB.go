@@ -13,9 +13,11 @@ var deliveryEventsTable = config.Tables.DeliveryEventsTable
 
 func sqlgetTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (map[string]any, error) {
 	var result map[string]any
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
+	where := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
 	proj := []string{"status", "status_history", "current_location"}
-	if err := app.DB.FindOneWithProjection(ctx, deliveriesTable, filter, proj, &result); err != nil {
+
+	if err := app.SQLDB.FindOneWithProjection(ctx, deliveriesTable, proj, where, args, &result); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -23,8 +25,10 @@ func sqlgetTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, ten
 
 func sqlgetDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
 	var events []map[string]any
-	filter := map[string]any{"deliveryid": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindMany(ctx, deliveryEventsTable, filter, &events); err != nil {
+	where := "deliveryid = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	if err := app.SQLDB.FindMany(ctx, deliveryEventsTable, where, args, &events); err != nil {
 		return nil, err
 	}
 	if len(events) == 0 {
@@ -35,26 +39,45 @@ func sqlgetDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tena
 
 func sqlgetStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.StatusHistoryItem, error) {
 	var res struct {
-		StatusHistory []deliveries.StatusHistoryItem `bson:"status_history" json:"status_history"`
+		StatusHistory []deliveries.StatusHistoryItem `db:"status_history" json:"status_history"`
 	}
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindOneWithProjection(ctx, deliveriesTable, filter, []string{"status_history"}, &res); err != nil {
+	where := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	if err := app.SQLDB.FindOneWithProjection(ctx, deliveriesTable, []string{"status_history"}, where, args, &res); err != nil {
 		return nil, err
 	}
 	return res.StatusHistory, nil
 }
 
 func sqladdProofToDelivery(ctx context.Context, app *infra.Deps, deliveryID, tenantID string, proof deliveries.Proof) error {
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-	return app.DB.AddToSet(ctx, deliveriesTable, filter, "proofs", proof)
+	where := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	var res struct {
+		Proofs []deliveries.Proof `db:"proofs" json:"proofs"`
+	}
+	if err := app.SQLDB.FindOneWithProjection(ctx, deliveriesTable, []string{"proofs"}, where, args, &res); err != nil {
+		return err
+	}
+
+	updatedProofs := append(res.Proofs, proof)
+	update := map[string]any{
+		"proofs": updatedProofs,
+	}
+
+	_, err := app.SQLDB.UpdateOne(ctx, deliveriesTable, where, args, update)
+	return err
 }
 
 func sqlgetProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.Proof, error) {
 	var res struct {
-		Proofs []deliveries.Proof `bson:"proofs" json:"proofs"`
+		Proofs []deliveries.Proof `db:"proofs" json:"proofs"`
 	}
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindOneWithProjection(ctx, deliveriesTable, filter, []string{"proofs"}, &res); err != nil {
+	where := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	if err := app.SQLDB.FindOneWithProjection(ctx, deliveriesTable, []string{"proofs"}, where, args, &res); err != nil {
 		return nil, err
 	}
 	return res.Proofs, nil
@@ -62,9 +85,11 @@ func sqlgetProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID str
 
 func sqlgetPublicTrackingInfo(ctx context.Context, app *infra.Deps, token string) (map[string]any, error) {
 	var res map[string]any
-	filter := map[string]any{"public_tracking_token": token}
+	where := "public_tracking_token = $1"
+	args := []any{token}
 	proj := []string{"status", "pickup_loc", "dropoff_loc", "estimated_arrival"}
-	if err := app.DB.FindOneWithProjection(ctx, deliveriesTable, filter, proj, &res); err != nil {
+
+	if err := app.SQLDB.FindOneWithProjection(ctx, deliveriesTable, proj, where, args, &res); err != nil {
 		return nil, err
 	}
 	return res, nil

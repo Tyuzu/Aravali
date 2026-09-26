@@ -38,7 +38,7 @@ func (ctv *ContentTypeValidator) ValidateContentType(contentType string) bool {
 	}
 
 	// Extract media type without charset
-	mediaType := strings.Split(contentType, ";")[0]
+	mediaType, _, _ := strings.Cut(contentType, ";")
 	mediaType = strings.TrimSpace(mediaType)
 
 	return ctv.allowedTypes[mediaType]

@@ -4,25 +4,24 @@ import (
 	"context"
 
 	"scav/infra"
-	"scav/infra/db"
-
-	"go.mongodb.org/mongo-driver/bson"
+	"scav/infra/sqldb"
 )
 
-func SQLfetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string, skip, limit int) ([]HomeCard, error) {
-	collection, projector := categoryProjection(category)
-	if collection == "" || projector == nil {
+func SQLfetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string, offset, limit int) ([]HomeCard, error) {
+	table, projector := categoryProjection(category)
+	if table == "" || projector == nil {
 		return []HomeCard{}, nil
 	}
 
-	opts := db.FindManyOptions{
-		Skip:  skip,
-		Limit: limit,
-		Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+	opts := sqldb.FindManyOptions{
+		Offset:  offset,
+		Limit:   limit,
+		OrderBy: "created_at DESC",
 	}
 
 	var docs []map[string]any
-	if err := app.DB.FindManyWithOptions(ctx, collection, map[string]any{}, opts, &docs); err != nil {
+	// Passing empty query and empty args to select all records
+	if err := app.SQLDB.FindManyWithOptions(ctx, table, "", nil, opts, &docs); err != nil {
 		return nil, err
 	}
 

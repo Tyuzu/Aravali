@@ -15,21 +15,24 @@ var placesTable = config.Tables.PlacesTable
 
 func SQLfindFollowDataByUserID(ctx context.Context, app *infra.Deps, userID string) (follows.UserFollow, error) {
 	var followData follows.UserFollow
-	err := app.DB.FindOne(ctx, followingsTable, map[string]any{"userid": userID}, &followData)
+	where := "userid = $1"
+	args := []any{userID}
+
+	err := app.SQLDB.FindOne(ctx, followingsTable, where, args, &followData)
 	if err != nil {
 		return follows.UserFollow{}, err
 	}
 	return followData, nil
 }
 
-func SQLfindSuggestedUsers(ctx context.Context, app *infra.Deps, filter map[string]any) ([]UserSuggest, error) {
+func SQLfindSuggestedUsers(ctx context.Context, app *infra.Deps, where string, args []any) ([]UserSuggest, error) {
 	var users []UserSuggest
-	err := app.DB.FindMany(ctx, usersTable, filter, &users)
+	err := app.SQLDB.FindMany(ctx, usersTable, where, args, &users)
 	return users, err
 }
 
-func SQLfindNearbyPlaces(ctx context.Context, app *infra.Deps, filter map[string]any) ([]places.Place, error) {
+func SQLfindNearbyPlaces(ctx context.Context, app *infra.Deps, where string, args []any) ([]places.Place, error) {
 	var nearbyPlaces []places.Place
-	err := app.DB.FindMany(ctx, placesTable, filter, &nearbyPlaces)
+	err := app.SQLDB.FindMany(ctx, placesTable, where, args, &nearbyPlaces)
 	return nearbyPlaces, err
 }

@@ -10,32 +10,29 @@ import (
 var mediaTable = config.Tables.MediaTable
 
 func SQLinsertMedia(ctx context.Context, app *infra.Deps, media Media) error {
-	return app.DB.Insert(ctx, mediaTable, media)
+	return app.SQLDB.Insert(ctx, mediaTable, media)
 }
 
 func SQLgetMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (Media, error) {
 	var media Media
-	err := app.DB.FindOne(ctx, mediaTable, map[string]any{
-		"entityid":   entityID,
-		"entitytype": entityType,
-		"mediaid":    mediaID,
-	}, &media)
+	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
+	args := []any{entityID, entityType, mediaID}
+
+	err := app.SQLDB.FindOne(ctx, mediaTable, query, args, &media)
 	return media, err
 }
 
 func SQLlistMediaByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Media, error) {
-	filter := map[string]any{
-		"entityid":   entityID,
-		"entitytype": entityType,
-	}
+	query := "entityid = $1 AND entitytype = $2"
+	args := []any{entityID, entityType}
 
 	var medias []Media
-	err := app.DB.FindMany(ctx, mediaTable, filter, &medias)
+	err := app.SQLDB.FindMany(ctx, mediaTable, query, args, &medias)
 	return medias, err
 }
 
 func SQLgetMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]map[string]any, error) {
-	medias, err := listMediaByEntity(ctx, app, entityType, entityID)
+	medias, err := SQLlistMediaByEntity(ctx, app, entityType, entityID)
 	if err != nil {
 		return nil, err
 	}
@@ -57,11 +54,14 @@ func SQLgetMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType,
 }
 
 func SQLupdateMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, updateFields map[string]any) ([]Media, error) {
-	if _, err := app.DB.UpdateMany(ctx, mediaTable, map[string]any{"mediaGroupId": mediaGroupID}, map[string]any{"$set": updateFields}); err != nil {
+	query := "mediagroupid = $1"
+	args := []any{mediaGroupID}
+
+	if _, err := app.SQLDB.UpdateMany(ctx, mediaTable, query, args, updateFields); err != nil {
 		return nil, err
 	}
 
 	var updatedMedias []Media
-	err := app.DB.FindMany(ctx, mediaTable, map[string]any{"mediaGroupId": mediaGroupID}, &updatedMedias)
+	err := app.SQLDB.FindMany(ctx, mediaTable, query, args, &updatedMedias)
 	return updatedMedias, err
 }

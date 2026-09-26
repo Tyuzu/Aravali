@@ -4,38 +4,47 @@ import (
 	"context"
 
 	"scav/config"
-	db "scav/infra/db"
+	"scav/infra"
+	"scav/infra/sqldb"
 )
 
 var commentsTable = config.Tables.CommentsTable
 
-func SQLinsertComment(ctx context.Context, database db.Database, comment Comment) error {
-	return database.Insert(ctx, commentsTable, comment)
+func SQLinsertComment(ctx context.Context, app *infra.Deps, comment Comment) error {
+	return app.SQLDB.Insert(ctx, commentsTable, comment)
 }
 
-func SQLfindCommentByID(ctx context.Context, database db.Database, commentID string, comment *Comment) error {
-	return database.FindOne(ctx, commentsTable, map[string]any{"commentid": commentID}, comment)
+func SQLfindCommentByID(ctx context.Context, app *infra.Deps, commentID string, comment *Comment) error {
+	query := "commentid = $1"
+	args := []any{commentID}
+
+	return app.SQLDB.FindOne(ctx, commentsTable, query, args, comment)
 }
 
-func SQLupdateCommentContent(ctx context.Context, database db.Database, commentID string, update map[string]any) (any, error) {
-	return database.UpdateOne(ctx, commentsTable, map[string]any{"commentid": commentID}, update)
+func SQLupdateCommentContent(ctx context.Context, app *infra.Deps, commentID string, update map[string]any) (int64, error) {
+	query := "commentid = $1"
+	args := []any{commentID}
+
+	return app.SQLDB.UpdateOne(ctx, commentsTable, query, args, update)
 }
 
-func SQLdeleteComment(ctx context.Context, database db.Database, commentID, userID string) (int64, error) {
-	return database.Delete(ctx, commentsTable, map[string]any{"commentid": commentID, "createdby": userID})
+func SQLdeleteComment(ctx context.Context, app *infra.Deps, commentID, userID string) (int64, error) {
+	query := "commentid = $1 AND createdby = $2"
+	args := []any{commentID, userID}
+
+	return app.SQLDB.Delete(ctx, commentsTable, query, args)
 }
 
 func SQLfindCommentsByEntity(
 	ctx context.Context,
-	database db.Database,
+	app *infra.Deps,
 	entityType string,
 	entityID string,
-	opts db.FindManyOptions,
+	opts sqldb.FindManyOptions,
 	comments *[]Comment,
 ) error {
-	filter := map[string]any{
-		"entity_type": entityType,
-		"entity_id":   entityID,
-	}
-	return database.FindManyWithOptions(ctx, commentsTable, filter, opts, comments)
+	query := "entity_type = $1 AND entity_id = $2"
+	args := []any{entityType, entityID}
+
+	return app.SQLDB.FindManyWithOptions(ctx, commentsTable, query, args, opts, comments)
 }

@@ -2,43 +2,42 @@ package userdata
 
 import (
 	"context"
+
 	"scav/config"
 	"scav/infra"
 )
 
 var userdataTable = config.Tables.UserDataTable
 
-// InsertUserData inserts a single user data document.
+// SQLInsertUserData inserts a single user data document.
 func SQLInsertUserData(ctx context.Context, app *infra.Deps, content UserData) error {
-	return app.DB.InsertOne(ctx, userdataTable, content)
+	return app.SQLDB.InsertOne(ctx, userdataTable, content)
 }
 
-// DeleteUserData removes user data matching filter.
-func SQLDeleteUserData(ctx context.Context, app *infra.Deps, filter map[string]any) error {
-	return app.DB.DeleteMany(ctx, userdataTable, filter)
+// SQLDeleteUserData removes user data matching a SQL WHERE condition.
+func SQLDeleteUserData(ctx context.Context, app *infra.Deps, where string, args []any) (int64, error) {
+	return app.SQLDB.DeleteMany(ctx, userdataTable, where, args)
 }
 
-// InsertUserDataMany inserts many user data documents.
+// SQLInsertUserDataMany inserts many user data documents.
 func SQLInsertUserDataMany(ctx context.Context, app *infra.Deps, docs []any) error {
-	return app.DB.InsertMany(ctx, userdataTable, docs)
+	return app.SQLDB.InsertMany(ctx, userdataTable, docs)
 }
 
-// FindUserData finds user data for a given filter.
-func SQLFindUserData(ctx context.Context, app *infra.Deps, filter map[string]any, out *[]UserData) error {
-	return app.DB.FindMany(ctx, userdataTable, filter, out)
+// SQLFindUserData finds user data for a given SQL WHERE query and arguments.
+func SQLFindUserData(ctx context.Context, app *infra.Deps, where string, args []any, out *[]UserData) error {
+	return app.SQLDB.FindMany(ctx, userdataTable, where, args, out)
 }
 
 // Database Helpers
 
-// FetchUserDataByEntity queries user data based on entity type and user ID.
+// SQLFetchUserDataByEntity queries user data based on entity type and user ID.
 func SQLFetchUserDataByEntity(ctx context.Context, app *infra.Deps, entityType, username string) ([]UserData, error) {
-	filter := map[string]any{
-		"entity_type": entityType,
-		"userid":      username,
-	}
+	where := "entity_type = $1 AND userid = $2"
+	args := []any{entityType, username}
 
 	var results []UserData
-	if err := FindUserData(ctx, app, filter, &results); err != nil {
+	if err := SQLFindUserData(ctx, app, where, args, &results); err != nil {
 		return nil, err
 	}
 
@@ -49,17 +48,13 @@ func SQLFetchUserDataByEntity(ctx context.Context, app *infra.Deps, entityType, 
 	return results, nil
 }
 
-// FetchOtherUserFeedPosts retrieves posts for a given user from the database.
+// SQLFetchOtherUserFeedPosts retrieves posts for a given user from the database.
 func SQLFetchOtherUserFeedPosts(ctx context.Context, app *infra.Deps, username string) ([]postDoc, error) {
-	filter := map[string]any{
-		"$or": []map[string]any{
-			{"createdBy": username},
-			{"username": username},
-		},
-	}
+	where := "created_by = $1 OR username = $1"
+	args := []any{username}
 
 	var posts []postDoc
-	if err := app.DB.FindMany(ctx, config.Tables.FeedPostsTable, filter, &posts); err != nil {
+	if err := app.SQLDB.FindMany(ctx, config.Tables.FeedPostsTable, where, args, &posts); err != nil {
 		return nil, err
 	}
 

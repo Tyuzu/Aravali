@@ -7,8 +7,6 @@ import (
 
 	"scav/config"
 	"scav/infra"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -17,14 +15,11 @@ var (
 )
 
 func SQLFetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
-	if app == nil || app.DB == nil {
-		return nil, nil
-	}
-
 	var dbAds []Ad
-	filter := map[string]any{"status": "active"}
+	where := "status = $1"
+	args := []any{"active"}
 
-	err := app.DB.FindMany(ctx, adsTable, filter, &dbAds)
+	err := app.SQLDB.FindMany(ctx, adsTable, where, args, &dbAds)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +29,10 @@ func SQLFetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error)
 
 func SQLListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	var ads []Ad
-	if err := app.DB.FindMany(ctx, adsTable, map[string]any{}, &ads); err != nil {
+	where := "1=1"
+	args := []any{}
+
+	if err := app.SQLDB.FindMany(ctx, adsTable, where, args, &ads); err != nil {
 		return nil, err
 	}
 	if ads == nil {
@@ -54,26 +52,24 @@ func SQLCreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
 		ad.Type = TypeExternal
 	}
 
-	return app.DB.InsertOne(ctx, adsTable, ad)
+	return app.SQLDB.InsertOne(ctx, adsTable, ad)
 }
 
 // PromotePost creates an Ad entry sourced directly from an existing post.
 func SQLPromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, position, category string) (*Ad, error) {
-	objID, err := primitive.ObjectIDFromHex(postID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid post ID format")
-	}
-
 	// Fetch target post to derive ad details
 	var post struct {
-		ID       string `bson:"_id"`
-		Title    string `bson:"title"`
-		Summary  string `bson:"summary"`
-		CoverImg string `bson:"coverImage"`
-		Category string `bson:"category"`
+		ID       string `db:"id"`
+		Title    string `db:"title"`
+		Summary  string `db:"summary"`
+		CoverImg string `db:"cover_image"`
+		Category string `db:"category"`
 	}
 
-	err = app.DB.FindOne(ctx, postsTable, map[string]any{"_id": objID}, &post)
+	where := "id = $1"
+	args := []any{postID}
+
+	err := app.SQLDB.FindOne(ctx, postsTable, where, args, &post)
 	if err != nil {
 		return nil, fmt.Errorf("post not found: %w", err)
 	}
@@ -97,7 +93,7 @@ func SQLPromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, posi
 		UpdatedAt:   time.Now(),
 	}
 
-	err = app.DB.InsertOne(ctx, adsTable, ad)
+	err = app.SQLDB.InsertOne(ctx, adsTable, ad)
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +103,10 @@ func SQLPromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, posi
 
 func SQLGetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, error) {
 	var ad Ad
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
-	}
+	where := "id = $1"
+	args := []any{id}
 
-	err = app.DB.FindOne(ctx, adsTable, map[string]any{"_id": objID}, &ad)
+	err := app.SQLDB.FindOne(ctx, adsTable, where, args, &ad)
 	if err != nil {
 		return nil, err
 	}
@@ -120,25 +114,20 @@ func SQLGetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, e
 	return &ad, nil
 }
 
-func SQLUpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData map[string]interface{}) error {
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
+func SQLUpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData map[string]any) error {
+	where := "id = $1"
+	args := []any{id}
 
-	updateData["updatedAt"] = time.Now()
-	update := map[string]any{"$set": updateData}
-	_, err = app.DB.UpdateOne(ctx, adsTable, map[string]any{"_id": objID}, update)
+	updateData["updated_at"] = time.Now()
+
+	_, err := app.SQLDB.UpdateOne(ctx, adsTable, where, args, updateData)
 	return err
 }
 
 func SQLDeleteAdInDB(ctx context.Context, app *infra.Deps, id string) error {
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
+	where := "id = $1"
+	args := []any{id}
 
-	_, err = app.DB.DeleteOne(ctx, adsTable, map[string]any{"_id": objID})
-
+	_, err := app.SQLDB.DeleteOne(ctx, adsTable, where, args)
 	return err
 }

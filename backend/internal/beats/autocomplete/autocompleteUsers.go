@@ -27,7 +27,7 @@ func AutocompleteUsers(app *infra.Deps) http.HandlerFunc {
 
 		var users []auth.User
 
-		err := findUsersByQuery(ctx, app.DB, query, &users)
+		err := findUsersByQuery(ctx, app, query, &users)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to fetch suggestions"})
 			return

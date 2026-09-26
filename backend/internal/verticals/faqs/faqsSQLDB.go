@@ -4,38 +4,47 @@ import (
 	"context"
 
 	"scav/config"
-	db "scav/infra/db"
+	"scav/infra"
+	"scav/infra/sqldb"
 )
 
 var faqsTable = config.Tables.FAQsTable
 
-func SQLinsertFAQ(ctx context.Context, database db.Database, faq FAQ) error {
-	return database.Insert(ctx, faqsTable, faq)
+func SQLinsertFAQ(ctx context.Context, app *infra.Deps, faq FAQ) error {
+	return app.SQLDB.Insert(ctx, faqsTable, faq)
 }
 
-func SQLfindFAQByID(ctx context.Context, database db.Database, faqID string, faq *FAQ) error {
-	return database.FindOne(ctx, faqsTable, map[string]any{"faqid": faqID}, faq)
+func SQLfindFAQByID(ctx context.Context, app *infra.Deps, faqID string, faq *FAQ) error {
+	query := "faqid = $1"
+	args := []any{faqID}
+
+	return app.SQLDB.FindOne(ctx, faqsTable, query, args, faq)
 }
 
-func SQLupdateFAQContent(ctx context.Context, database db.Database, faqID string, update map[string]any) (any, error) {
-	return database.UpdateOne(ctx, faqsTable, map[string]any{"faqid": faqID}, update)
+func SQLupdateFAQContent(ctx context.Context, app *infra.Deps, faqID string, update map[string]any) (int64, error) {
+	query := "faqid = $1"
+	args := []any{faqID}
+
+	return app.SQLDB.UpdateOne(ctx, faqsTable, query, args, update)
 }
 
-func SQLdeleteFAQ(ctx context.Context, database db.Database, faqID, userID string) (int64, error) {
-	return database.Delete(ctx, faqsTable, map[string]any{"faqid": faqID, "createdby": userID})
+func SQLdeleteFAQ(ctx context.Context, app *infra.Deps, faqID, userID string) (int64, error) {
+	query := "faqid = $1 AND createdby = $2"
+	args := []any{faqID, userID}
+
+	return app.SQLDB.Delete(ctx, faqsTable, query, args)
 }
 
 func SQLfindFAQsByEntity(
 	ctx context.Context,
-	database db.Database,
+	app *infra.Deps,
 	entityType string,
 	entityID string,
-	opts db.FindManyOptions,
+	opts sqldb.FindManyOptions,
 	faqs *[]FAQ,
 ) error {
-	filter := map[string]any{
-		"entity_type": entityType,
-		"entity_id":   entityID,
-	}
-	return database.FindManyWithOptions(ctx, faqsTable, filter, opts, faqs)
+	query := "entity_type = $1 AND entity_id = $2"
+	args := []any{entityType, entityID}
+
+	return app.SQLDB.FindManyWithOptions(ctx, faqsTable, query, args, opts, faqs)
 }

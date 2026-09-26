@@ -5,7 +5,7 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/internal/auth"
 	"scav/internal/cart"
 	"scav/internal/farms"
@@ -21,68 +21,92 @@ var (
 
 // Products
 func SQLGetProductByID(ctx context.Context, app *infra.Deps, id string, out *farms.Product) error {
-	return app.DB.FindOne(ctx, productsTable, map[string]any{"productid": id}, out)
+	query := "productid = $1"
+	args := []any{id}
+
+	return app.SQLDB.FindOne(ctx, productsTable, query, args, out)
 }
 
-func SQLFindProductsWithOptions(ctx context.Context, app *infra.Deps, filter map[string]any, opts db.FindManyOptions, out *[]farms.Product) error {
-	return app.DB.FindManyWithOptions(ctx, productsTable, filter, opts, out)
+func SQLFindProductsWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, out *[]farms.Product) error {
+	return app.SQLDB.FindManyWithOptions(ctx, productsTable, query, args, opts, out)
 }
 
-func SQLCountProducts(ctx context.Context, app *infra.Deps, filter map[string]any) (int64, error) {
-	return app.DB.CountDocuments(ctx, productsTable, filter)
+func SQLCountProducts(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
+	return app.SQLDB.CountDocuments(ctx, productsTable, query, args)
 }
 
 func SQLInsertProduct(ctx context.Context, app *infra.Deps, item farms.Product) error {
-	return app.DB.InsertOne(ctx, productsTable, item)
+	return app.SQLDB.InsertOne(ctx, productsTable, item)
 }
 
-func SQLUpdateProductByID(ctx context.Context, app *infra.Deps, id string, update any) (any, error) {
-	return app.DB.UpdateOne(ctx, productsTable, map[string]any{"productid": id}, update)
+func SQLUpdateProductByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
+	query := "productid = $1"
+	args := []any{id}
+
+	return app.SQLDB.UpdateOne(ctx, productsTable, query, args, update)
 }
 
 func SQLDeleteProductByID(ctx context.Context, app *infra.Deps, id string) (int64, error) {
-	return app.DB.DeleteOne(ctx, productsTable, map[string]any{"productid": id})
+	query := "productid = $1"
+	args := []any{id}
+
+	return app.SQLDB.DeleteOne(ctx, productsTable, query, args)
 }
 
 // Orders
 func SQLGetFarmOrderByID(ctx context.Context, app *infra.Deps, id string, out *cart.FarmOrder) error {
-	return app.DB.FindOne(ctx, farmOrdersTable, map[string]any{"orderid": id}, out)
+	query := "orderid = $1"
+	args := []any{id}
+
+	return app.SQLDB.FindOne(ctx, farmOrdersTable, query, args, out)
 }
 
-func SQLFindFarmOrders(ctx context.Context, app *infra.Deps, filter map[string]any, out *[]cart.FarmOrder) error {
-	return app.DB.FindMany(ctx, farmOrdersTable, filter, out)
+func SQLFindFarmOrders(ctx context.Context, app *infra.Deps, query string, args []any, out *[]cart.FarmOrder) error {
+	return app.SQLDB.FindMany(ctx, farmOrdersTable, query, args, out)
 }
 
-func SQLUpdateFarmOrderByID(ctx context.Context, app *infra.Deps, id string, update any) (any, error) {
-	return app.DB.UpdateOne(ctx, farmOrdersTable, map[string]any{"orderid": id}, update)
+func SQLUpdateFarmOrderByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
+	query := "orderid = $1"
+	args := []any{id}
+
+	return app.SQLDB.UpdateOne(ctx, farmOrdersTable, query, args, update)
 }
 
 // Farms, users, crops
-func SQLFindFarmsByFilter(ctx context.Context, app *infra.Deps, filter map[string]any, out *[]farms.Farm) error {
-	return app.DB.FindMany(ctx, farmsTable, filter, out)
+func SQLFindFarmsByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out *[]farms.Farm) error {
+	return app.SQLDB.FindMany(ctx, farmsTable, query, args, out)
 }
 
 func SQLGetFarmByID(ctx context.Context, app *infra.Deps, id string, out *farms.Farm) error {
-	return app.DB.FindOne(ctx, farmsTable, map[string]any{"farmid": id}, out)
+	query := "farmid = $1"
+	args := []any{id}
+
+	return app.SQLDB.FindOne(ctx, farmsTable, query, args, out)
 }
 
 func SQLGetUserByID(ctx context.Context, app *infra.Deps, id string, out *auth.User) error {
-	return app.DB.FindOne(ctx, usersTable, map[string]any{"userid": id}, out)
+	query := "userid = $1"
+	args := []any{id}
+
+	return app.SQLDB.FindOne(ctx, usersTable, query, args, out)
 }
 
 func SQLGetCropByID(ctx context.Context, app *infra.Deps, id string, out *farms.Crop) error {
-	return app.DB.FindOne(ctx, cropsTable, map[string]any{"cropid": id}, out)
+	query := "cropid = $1"
+	args := []any{id}
+
+	return app.SQLDB.FindOne(ctx, cropsTable, query, args, out)
 }
 
-func SQLFindTransactions(ctx context.Context, app *infra.Deps, filter map[string]any, out any) error {
-	return app.DB.FindMany(ctx, "transactions", filter, out)
+func SQLFindTransactions(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+	return app.SQLDB.FindMany(ctx, "transactions", query, args, out)
 }
 
 // Crop atomic update
-func SQLFindOneAndUpdateCrop(ctx context.Context, app *infra.Deps, filter any, update any, out any) error {
-	return app.DB.FindOneAndUpdate(ctx, cropsTable, filter, update, out)
+func SQLFindOneAndUpdateCrop(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any, out any) error {
+	return app.SQLDB.FindOneAndUpdate(ctx, cropsTable, query, args, update, out)
 }
 
-func SQLUpdateCropByFilter(ctx context.Context, app *infra.Deps, filter any, update any) (any, error) {
-	return app.DB.UpdateOne(ctx, cropsTable, filter, update)
+func SQLUpdateCropByFilter(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (int64, error) {
+	return app.SQLDB.UpdateOne(ctx, cropsTable, query, args, update)
 }

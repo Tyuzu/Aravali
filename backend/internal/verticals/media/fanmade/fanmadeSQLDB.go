@@ -2,40 +2,40 @@ package fanmade
 
 import (
 	"context"
+
 	"scav/config"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/internal/verticals/media"
 )
 
 var fanmadeMediaCollection = config.Collections.MediaCollection
 
 func SQLinsertFanMedia(ctx context.Context, app *infra.Deps, media media.Media) error {
-	return app.DB.Insert(ctx, fanmadeMediaCollection, media)
+	return app.SQLDB.Insert(ctx, fanmadeMediaCollection, media)
 }
 
 func SQLgetFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (media.Media, error) {
 	var media media.Media
-	err := app.DB.FindOne(ctx, fanmadeMediaCollection, map[string]string{
-		"entityid":   entityID,
-		"entitytype": entityType,
-		"mediaid":    mediaID,
-	}, &media)
+	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
+	args := []any{entityID, entityType, mediaID}
+
+	err := app.SQLDB.FindOne(ctx, fanmadeMediaCollection, query, args, &media)
 	return media, err
 }
 
 func SQLlistFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]media.Media, error) {
 	var medias []media.Media
-	opts := db.FindManyOptions{}
-	err := app.DB.FindManyWithOptions(ctx, fanmadeMediaCollection, map[string]string{
-		"entityid":   entityID,
-		"entitytype": entityType,
-	}, opts, &medias)
+	query := "entityid = $1 AND entitytype = $2"
+	args := []any{entityID, entityType}
+
+	opts := sqldb.FindManyOptions{}
+	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaCollection, query, args, opts, &medias)
 	return medias, err
 }
 
 func SQLlistFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]map[string]any, error) {
-	medias, err := listFanMediasByEntity(ctx, app, entityType, entityID)
+	medias, err := SQLlistFanMediasByEntity(ctx, app, entityType, entityID)
 	if err != nil {
 		return nil, err
 	}
@@ -57,16 +57,22 @@ func SQLlistFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityT
 }
 
 func SQLupdateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, update map[string]any) ([]media.Media, error) {
-	if _, err := app.DB.UpdateMany(ctx, fanmadeMediaCollection, map[string]string{"mediaGroupId": mediaGroupID}, map[string]any{"$set": update}); err != nil {
+	query := "mediagroupid = $1"
+	args := []any{mediaGroupID}
+
+	if _, err := app.SQLDB.UpdateMany(ctx, fanmadeMediaCollection, query, args, update); err != nil {
 		return nil, err
 	}
 
 	var updatedMedias []media.Media
-	opts := db.FindManyOptions{}
-	err := app.DB.FindManyWithOptions(ctx, fanmadeMediaCollection, map[string]string{"mediaGroupId": mediaGroupID}, opts, &updatedMedias)
+	opts := sqldb.FindManyOptions{}
+	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaCollection, query, args, opts, &updatedMedias)
 	return updatedMedias, err
 }
 
 func SQLdeleteFanMediaByID(ctx context.Context, app *infra.Deps, mediaID string) (int64, error) {
-	return app.DB.DeleteOne(ctx, fanmadeMediaCollection, map[string]string{"mediaid": mediaID})
+	query := "mediaid = $1"
+	args := []any{mediaID}
+
+	return app.SQLDB.DeleteOne(ctx, fanmadeMediaCollection, query, args)
 }

@@ -2,57 +2,87 @@ package admin
 
 import (
 	"context"
+	"scav/infra"
 	"time"
-
-	"scav/infra/db"
 )
 
 // Role applications
-func SQLFindPendingRoleApplication(ctx context.Context, d db.Database, userID, role string, result *RoleApplication) error {
-	return d.FindOne(ctx, roleApplicationsCollection, map[string]any{"userid": userID, "role": role, "status": "pending"}, result)
+func SQLFindPendingRoleApplication(ctx context.Context, app *infra.Deps, userID, role string, result *RoleApplication) error {
+	query := "userid = $1 AND role = $2 AND status = $3"
+	args := []any{userID, role, "pending"}
+	return app.SQLDB.FindOne(ctx, roleApplicationsCollection, query, args, result)
 }
 
-func SQLInsertRoleApplication(ctx context.Context, d db.Database, application RoleApplication) error {
-	return d.Insert(ctx, roleApplicationsCollection, application)
+func SQLInsertRoleApplication(ctx context.Context, app *infra.Deps, application RoleApplication) error {
+	return app.SQLDB.Insert(ctx, roleApplicationsCollection, application)
 }
 
-func SQLFindRoleApplicationsByUser(ctx context.Context, d db.Database, userID string, result *[]RoleApplication) error {
-	return d.FindMany(ctx, roleApplicationsCollection, map[string]any{"userid": userID}, result)
+func SQLFindRoleApplicationsByUser(ctx context.Context, app *infra.Deps, userID string, result *[]RoleApplication) error {
+	query := "userid = $1"
+	args := []any{userID}
+	return app.SQLDB.FindMany(ctx, roleApplicationsCollection, query, args, result)
 }
 
-func SQLListRoleApplicationsDB(ctx context.Context, d db.Database, filter map[string]any, result *[]RoleApplication) error {
-	return d.FindMany(ctx, roleApplicationsCollection, filter, result)
+func SQLListRoleApplicationsDB(ctx context.Context, app *infra.Deps, query string, args []any, result *[]RoleApplication) error {
+	return app.SQLDB.FindMany(ctx, roleApplicationsCollection, query, args, result)
 }
 
-func SQLGetRoleApplicationByID(ctx context.Context, d db.Database, id string, result *RoleApplication) error {
-	return d.FindOne(ctx, roleApplicationsCollection, map[string]any{"id": id}, result)
+func SQLGetRoleApplicationByID(ctx context.Context, app *infra.Deps, id string, result *RoleApplication) error {
+	query := "id = $1"
+	args := []any{id}
+	return app.SQLDB.FindOne(ctx, roleApplicationsCollection, query, args, result)
 }
 
-func SQLGetUserRoles(ctx context.Context, d db.Database, userID string, result any) error {
-	return d.FindOne(ctx, usersCollection, map[string]any{"userid": userID}, result)
+func SQLGetUserRoles(ctx context.Context, app *infra.Deps, userID string, result any) error {
+	query := "userid = $1"
+	args := []any{userID}
+	return app.SQLDB.FindOne(ctx, usersCollection, query, args, result)
 }
 
-func SQLUpdateUserRoles(ctx context.Context, d db.Database, userID string, roles []string) (any, error) {
-	return d.UpdateOne(ctx, usersCollection, map[string]any{"userid": userID}, map[string]any{"$set": map[string]any{"role": roles, "updated_at": time.Now().UTC()}})
+func SQLUpdateUserRoles(ctx context.Context, app *infra.Deps, userID string, roles []string) (int64, error) {
+	query := "userid = $1"
+	args := []any{userID}
+
+	updateValues := map[string]any{
+		"role":       roles,
+		"updated_at": time.Now().UTC(),
+	}
+	return app.SQLDB.UpdateOne(ctx, usersCollection, query, args, updateValues)
 }
 
-func SQLUpdateRoleApplicationStatus(ctx context.Context, d db.Database, appID, status string) (any, error) {
-	return d.UpdateOne(ctx, roleApplicationsCollection, map[string]any{"id": appID}, map[string]any{"$set": map[string]any{"status": status, "updated_at": time.Now().UTC()}})
+func SQLUpdateRoleApplicationStatus(ctx context.Context, app *infra.Deps, appID, status string) (int64, error) {
+	query := "id = $1"
+	args := []any{appID}
+
+	updateValues := map[string]any{
+		"status":     status,
+		"updated_at": time.Now().UTC(),
+	}
+	return app.SQLDB.UpdateOne(ctx, roleApplicationsCollection, query, args, updateValues)
 }
 
 // Moderator applications
-func SQLFindModeratorApplicationByUser(ctx context.Context, d db.Database, userID string, result *ModeratorApplication) error {
-	return d.FindOne(ctx, moderatorApplicationsCollection, map[string]any{"userid": userID}, result)
+func SQLFindModeratorApplicationByUser(ctx context.Context, app *infra.Deps, userID string, result *ModeratorApplication) error {
+	query := "userid = $1"
+	args := []any{userID}
+	return app.SQLDB.FindOne(ctx, moderatorApplicationsCollection, query, args, result)
 }
 
-func SQLInsertModeratorApplication(ctx context.Context, d db.Database, application ModeratorApplication) error {
-	return d.Insert(ctx, moderatorApplicationsCollection, application)
+func SQLInsertModeratorApplication(ctx context.Context, app *infra.Deps, application ModeratorApplication) error {
+	return app.SQLDB.Insert(ctx, moderatorApplicationsCollection, application)
 }
 
-func SQLListModeratorApplicationsDB(ctx context.Context, d db.Database, filter map[string]any, result *[]ModeratorApplication) error {
-	return d.FindMany(ctx, moderatorApplicationsCollection, filter, result)
+func SQLListModeratorApplicationsDB(ctx context.Context, app *infra.Deps, query string, args []any, result *[]ModeratorApplication) error {
+	return app.SQLDB.FindMany(ctx, moderatorApplicationsCollection, query, args, result)
 }
 
-func SQLUpdateModeratorApplicationStatus(ctx context.Context, d db.Database, id, status string) (any, error) {
-	return d.UpdateOne(ctx, moderatorApplicationsCollection, map[string]any{"id": id}, map[string]any{"$set": map[string]any{"status": status, "updatedAt": time.Now().UTC(), "updated_at": time.Now().UTC()}})
+func SQLUpdateModeratorApplicationStatus(ctx context.Context, app *infra.Deps, id, status string) (any, error) {
+	query := "id = $1"
+	args := []any{id}
+
+	updateValues := map[string]any{
+		"status":     status,
+		"updated_at": time.Now().UTC(),
+	}
+	return app.SQLDB.UpdateOne(ctx, moderatorApplicationsCollection, query, args, updateValues)
 }

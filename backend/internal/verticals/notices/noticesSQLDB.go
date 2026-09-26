@@ -5,31 +5,37 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 )
 
 var noticesTable = config.Tables.NoticesTable
 
 func SQLcreateNotice(ctx context.Context, app *infra.Deps, notice Notice) error {
-	return app.DB.Insert(ctx, noticesTable, notice)
+	return app.SQLDB.Insert(ctx, noticesTable, notice)
 }
 
 func SQLfindNoticeByID(ctx context.Context, app *infra.Deps, noticeID string) (Notice, error) {
 	var notice Notice
-	err := app.DB.FindOne(ctx, noticesTable, map[string]any{"noticeid": noticeID}, &notice)
+	query := "noticeid = $1"
+	args := []any{noticeID}
+	err := app.SQLDB.FindOne(ctx, noticesTable, query, args, &notice)
 	return notice, err
 }
 
-func SQLlistNoticesWithOptions(ctx context.Context, app *infra.Deps, filter map[string]any, opts db.FindManyOptions, out *[]Notice) error {
-	return app.DB.FindManyWithOptions(ctx, noticesTable, filter, opts, out)
+func SQLlistNoticesWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, out *[]Notice) error {
+	return app.SQLDB.FindManyWithOptions(ctx, noticesTable, query, args, opts, out)
 }
 
 func SQLupdateNoticeByID(ctx context.Context, app *infra.Deps, noticeID string, update map[string]any) error {
-	_, err := app.DB.Update(ctx, noticesTable, map[string]any{"noticeid": noticeID}, update)
+	query := "noticeid = $1"
+	args := []any{noticeID}
+	_, err := app.SQLDB.Update(ctx, noticesTable, query, args, update)
 	return err
 }
 
 func SQLdeleteNoticeByID(ctx context.Context, app *infra.Deps, noticeID string) error {
-	_, err := app.DB.Delete(ctx, noticesTable, map[string]any{"noticeid": noticeID})
+	query := "noticeid = $1"
+	args := []any{noticeID}
+	_, err := app.SQLDB.Delete(ctx, noticesTable, query, args)
 	return err
 }

@@ -2,13 +2,12 @@ package notifications
 
 import (
 	"context"
+	"database/sql"
 	"errors"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 
 	"scav/config"
-	db "scav/infra/db"
+	"scav/infra/sqldb"
 )
 
 var (
@@ -20,11 +19,11 @@ var (
    DATABASE OPERATIONS
 ========================= */
 
-func SQLinsertNotification(ctx context.Context, database db.Database, notif Notification) error {
-	return database.Insert(ctx, notifsTable, notif)
+func SQLinsertNotification(ctx context.Context, database sqldb.Database, notif Notification) error {
+	return database.InsertOne(ctx, notifsTable, notif)
 }
 
-func SQLinsertBulkNotifications(ctx context.Context, database db.Database, notifs []Notification) error {
+func SQLinsertBulkNotifications(ctx context.Context, database sqldb.Database, notifs []Notification) error {
 	docs := make([]any, len(notifs))
 	for i, v := range notifs {
 		docs[i] = v
@@ -34,118 +33,102 @@ func SQLinsertBulkNotifications(ctx context.Context, database db.Database, notif
 
 func SQLfindNotificationsByUser(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	userID string,
-	opts db.FindManyOptions,
+	opts sqldb.FindManyOptions,
 	notifs *[]Notification,
 ) error {
-	filter := map[string]any{"userid": userID}
-	return database.FindManyWithOptions(ctx, notifsTable, filter, opts, notifs)
+	where := "userid = $1"
+	args := []any{userID}
+
+	return database.FindManyWithOptions(ctx, notifsTable, where, args, opts, notifs)
 }
 
 func SQLcountUnreadNotifications(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	userID string,
 ) (int64, error) {
-	filter := map[string]any{
-		"userid":  userID,
-		"is_read": false,
-	}
-	return database.CountDocuments(ctx, notifsTable, filter)
+	where := "userid = $1 AND is_read = false"
+	args := []any{userID}
+
+	return database.Count(ctx, notifsTable, where, args)
 }
 
 func SQLupdateMarkAsRead(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	notificationID string,
 	userID string,
-) (any, error) {
-	filter := map[string]any{
-		"notificationid": notificationID,
-		"userid":         userID,
+) (int64, error) {
+	where := "notificationid = $1 AND userid = $2"
+	args := []any{notificationID, userID}
+
+	updateValues := map[string]any{
+		"is_read":    true,
+		"updated_at": time.Now(),
 	}
-	update := map[string]any{
-		"$set": map[string]any{
-			"is_read": true,
-		},
-		"$currentDate": map[string]any{
-			"updated_at": true,
-		},
-	}
-	return database.UpdateOne(ctx, notifsTable, filter, update)
+
+	return database.UpdateOne(ctx, notifsTable, where, args, updateValues)
 }
 
 func SQLupdateMarkAllAsRead(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	userID string,
-) (any, error) {
-	filter := map[string]any{
-		"userid":  userID,
-		"is_read": false,
+) (int64, error) {
+	where := "userid = $1 AND is_read = false"
+	args := []any{userID}
+
+	updateValues := map[string]any{
+		"is_read":    true,
+		"updated_at": time.Now(),
 	}
-	update := map[string]any{
-		"$set": map[string]any{
-			"is_read": true,
-		},
-		"$currentDate": map[string]any{
-			"updated_at": true,
-		},
-	}
-	return database.UpdateMany(ctx, notifsTable, filter, update)
+
+	return database.UpdateMany(ctx, notifsTable, where, args, updateValues)
 }
 
 func SQLdeleteNotificationByID(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	notificationID string,
 	userID string,
 ) (int64, error) {
-	return database.Delete(
-		ctx,
-		notifsTable,
-		map[string]any{
-			"notificationid": notificationID,
-			"userid":         userID,
-		},
-	)
+	where := "notificationid = $1 AND userid = $2"
+	args := []any{notificationID, userID}
+
+	return database.DeleteOne(ctx, notifsTable, where, args)
 }
 
 func SQLdeleteAllNotificationsByUser(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	userID string,
-) error {
-	return database.DeleteMany(
-		ctx,
-		notifsTable,
-		map[string]any{"userid": userID},
-	)
+) (int64, error) {
+	where := "userid = $1"
+	args := []any{userID}
+
+	return database.DeleteMany(ctx, notifsTable, where, args)
 }
 
 func SQLfindPreferencesByUser(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	userID string,
 	pref *NotificationPreferences,
 ) error {
-	return database.FindOne(
-		ctx,
-		preferencesTable,
-		map[string]any{"userid": userID},
-		pref,
-	)
+	where := "userid = $1"
+	args := []any{userID}
+
+	return database.FindOne(ctx, preferencesTable, where, args, pref)
 }
 
 func SQLupsertPreferences(
 	ctx context.Context,
-	database db.Database,
+	database sqldb.Database,
 	pref NotificationPreferences,
-) (any, error) {
-	filter := map[string]any{"userid": pref.UserID}
-	update := map[string]any{"$set": pref}
-	return database.UpdateOne(ctx, preferencesTable, filter, update)
+) error {
+	return database.Upsert(ctx, preferencesTable, "userid", pref)
 }
 
 /* =========================
@@ -153,12 +136,9 @@ func SQLupsertPreferences(
 ========================= */
 
 func SQLisNoDocumentsError(err error) bool {
-	return errors.Is(err, mongo.ErrNoDocuments)
+	return errors.Is(err, sql.ErrNoRows)
 }
 
-func SQLnotificationSort() []bson.E {
-	return []bson.E{
-		{Key: "created_at", Value: -1},
-		{Key: "notificationid", Value: -1},
-	}
+func SQLnotificationSort() string {
+	return "created_at DESC, notificationid DESC"
 }

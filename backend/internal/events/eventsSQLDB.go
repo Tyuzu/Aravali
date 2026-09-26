@@ -5,14 +5,19 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/utils"
 )
 
-var eventsTable = config.Tables.EventsTable
+var (
+	eventsTable = config.Tables.EventsTable
+	ticksTable  = config.Tables.TicketsTable
+	mediaTable  = config.Tables.MediaTable
+	merchTable  = config.Tables.MerchTable
+)
 
 func sqlSQLinsertEvent(ctx context.Context, app *infra.Deps, event Event) error {
-	return app.DB.Insert(ctx, eventsTable, event)
+	return app.SQLDB.InsertOne(ctx, eventsTable, event)
 }
 
 func sqlSQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Event) {
@@ -22,67 +27,55 @@ func sqlSQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Even
 
 	event.EventID = utils.GenerateRandomString(14)
 	var existingEvent Event
-	if err := app.DB.FindOne(ctx, eventsTable, map[string]string{"eventid": event.EventID}, &existingEvent); err == nil {
+	query := "eventid = $1"
+	args := []any{event.EventID}
+
+	if err := app.SQLDB.FindOne(ctx, eventsTable, query, args, &existingEvent); err == nil {
 		event.EventID = utils.GenerateRandomString(14)
 	}
 }
 
 func sqlSQLfindEventByID(ctx context.Context, app *infra.Deps, eventID string, event *Event) error {
-	return app.DB.FindOne(ctx, eventsTable, map[string]string{"eventid": eventID}, event)
+	query := "eventid = $1"
+	args := []any{eventID}
+
+	return app.SQLDB.FindOne(ctx, eventsTable, query, args, event)
 }
 
-func sqlSQLupdateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (any, error) {
-	return app.DB.UpdateOne(ctx, eventsTable, map[string]string{"eventid": eventID}, map[string]any{"$set": updates})
+func sqlSQLupdateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (int64, error) {
+	query := "eventid = $1"
+	args := []any{eventID}
+
+	return app.SQLDB.UpdateOne(ctx, eventsTable, query, args, updates)
 }
 
 func sqlSQLaggregateEvent(ctx context.Context, app *infra.Deps, eventID string, result *[]Event) error {
-	pipeline := []any{
-		map[string]any{"$match": map[string]any{"eventid": eventID}},
-		map[string]any{"$lookup": map[string]any{
-			"from":         "ticks",
-			"localField":   "eventid",
-			"foreignField": "eventid",
-			"as":           "tickets",
-		}},
-		map[string]any{"$lookup": map[string]any{
-			"from": "media",
-			"let":  map[string]any{"eid": "$eventid"},
-			"pipeline": []any{
-				map[string]any{"$match": map[string]any{
-					"$expr": map[string]any{
-						"$and": []any{
-							map[string]any{"$eq": []any{"$entityid", "$$eid"}},
-							map[string]any{"$eq": []any{"$entitytype", "event"}},
-						},
-					},
-				}},
-			},
-			"as": "media",
-		}},
-		map[string]any{"$lookup": map[string]any{
-			"from": "merch",
-			"let":  map[string]any{"eid": "$eventid"},
-			"pipeline": []any{
-				map[string]any{"$match": map[string]any{
-					"$expr": map[string]any{
-						"$and": []any{
-							map[string]any{"$eq": []any{"$entity_id", "$$eid"}},
-							map[string]any{"$eq": []any{"$entity_type", "event"}},
-						},
-					},
-				}},
-			},
-			"as": "merch",
-		}},
-	}
+	rawQuery := `
+		SELECT 
+			e.*,
+			COALESCE(
+				(SELECT json_agg(t.*) FROM ` + ticksTable + ` t WHERE t.eventid = e.eventid),
+				'[]'
+			) AS tickets,
+			COALESCE(
+				(SELECT json_agg(m.*) FROM ` + mediaTable + ` m WHERE m.entityid = e.eventid AND m.entitytype = 'event'),
+				'[]'
+			) AS media,
+			COALESCE(
+				(SELECT json_agg(mc.*) FROM ` + merchTable + ` mc WHERE mc.entity_id = e.eventid AND mc.entity_type = 'event'),
+				'[]'
+			) AS merch
+		FROM ` + eventsTable + ` e
+		WHERE e.eventid = $1
+	`
 
-	return app.DB.Aggregate(ctx, eventsTable, pipeline, result)
+	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{eventID}, result)
 }
 
-func sqlSQLlistEvents(ctx context.Context, app *infra.Deps, filter map[string]any, opts db.FindManyOptions, result *[]Event) error {
-	return app.DB.FindManyWithOptions(ctx, eventsTable, filter, opts, result)
+func sqlSQLlistEvents(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, result *[]Event) error {
+	return app.SQLDB.FindManyWithOptions(ctx, eventsTable, query, args, opts, result)
 }
 
-func sqlSQLcountEvents(ctx context.Context, app *infra.Deps, filter map[string]any) (int64, error) {
-	return app.DB.CountDocuments(ctx, eventsTable, filter)
+func sqlSQLcountEvents(ctx context.Context, app *infra.Deps, whereClause string, args []any) (int64, error) {
+	return app.SQLDB.Count(ctx, eventsTable, whereClause, args)
 }

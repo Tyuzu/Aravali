@@ -3,15 +3,13 @@ package pay
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"scav/config"
 	"scav/internal/auth"
 	"scav/internal/verticals/tickets"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var journalTable = config.Tables.JournalTable
@@ -33,13 +31,13 @@ var webhookTable = config.Tables.DeliveryWebhooksTable
 
 func (p *PaymentService) SQLgetOrCreateAccount(ctx context.Context, userID string) (string, error) {
 	var acc Account
-	err := p.app.DB.FindOne(ctx, accountsTable, map[string]any{"userid": userID}, &acc)
+	err := p.app.SQLDB.FindOne(ctx, accountsTable, "userid = $1", []any{userID}, &acc)
 	if err == nil {
 		return acc.ID, nil
 	}
 
 	if userID != "merchant" && userID != "external" {
-		if !p.userExists(ctx, userID) {
+		if !p.SQLuserExists(ctx, userID) {
 			return "", errors.New("user_not_found")
 		}
 	}
@@ -55,9 +53,9 @@ func (p *PaymentService) SQLgetOrCreateAccount(ctx context.Context, userID strin
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := p.app.DB.InsertOne(ctx, accountsTable, newAcc); err != nil {
+	if err := p.app.SQLDB.InsertOne(ctx, accountsTable, newAcc); err != nil {
 		// race: retry read
-		err = p.app.DB.FindOne(ctx, accountsTable, map[string]any{"userid": userID}, &acc)
+		err = p.app.SQLDB.FindOne(ctx, accountsTable, "userid = $1", []any{userID}, &acc)
 		return acc.ID, err
 	}
 
@@ -70,90 +68,70 @@ func (p *PaymentService) SQLuserExists(ctx context.Context, userID string) bool 
 	}
 
 	var user auth.User
-	return p.app.DB.FindOne(ctx, usersTable, map[string]any{"userid": userID}, &user) == nil
+	return p.app.SQLDB.FindOne(ctx, usersTable, "userid = $1", []any{userID}, &user) == nil
 }
 
 func (p *PaymentService) SQLgetAccountByID(ctx context.Context, accountID string) (Account, error) {
 	var acc Account
-	err := p.app.DB.FindOne(ctx, accountsTable, map[string]any{"_id": accountID}, &acc)
+	err := p.app.SQLDB.FindOne(ctx, accountsTable, "id = $1", []any{accountID}, &acc)
 	return acc, err
 }
 
 func (p *PaymentService) SQLgetAccountByUserID(ctx context.Context, userID string) (Account, error) {
 	var acc Account
-	err := p.app.DB.FindOne(ctx, accountsTable, map[string]any{"userid": userID}, &acc)
+	err := p.app.SQLDB.FindOne(ctx, accountsTable, "userid = $1", []any{userID}, &acc)
 	return acc, err
 }
 
 func (p *PaymentService) SQLlistUserTransactions(ctx context.Context, userID string, skip int64, limit int64) ([]Transaction, error) {
 	var txns []Transaction
-	filter := map[string]any{
-		"$or": []map[string]any{
-			{"userid": userID},
-			{"meta.recipient": userID},
-		},
-	}
+	query := "(userid = $1 OR meta->>'recipient' = $1) ORDER BY created_at DESC OFFSET $2 LIMIT $3"
+	args := []any{userID, skip, limit}
 
-	err := p.app.DB.FindMany(
-		ctx,
-		transactionsTable,
-		filter,
-		&txns,
-		options.Find().
-			SetSort(map[string]int{"created_at": -1}).
-			SetSkip(skip).
-			SetLimit(limit),
-	)
+	err := p.app.SQLDB.FindMany(ctx, transactionsTable, query, args, &txns)
 	return txns, err
 }
 
 func (p *PaymentService) SQLfetchPriceByField(ctx context.Context, tableName string, fieldName string, entityID string) (int64, error) {
 	var v struct{ Price int64 }
-	err := p.app.DB.FindOne(ctx, tableName, map[string]any{fieldName: entityID}, &v)
+	query := fmt.Sprintf("%s = $1", fieldName)
+	err := p.app.SQLDB.FindOne(ctx, tableName, query, []any{entityID}, &v)
 	return v.Price, err
 }
 
 func (p *PaymentService) SQLfindOrderTotalByUser(ctx context.Context, orderID string, userID string) (string, int64, error) {
 	var regularOrder struct {
-		Total int64 `bson:"total"`
+		Total int64 `db:"total"`
 	}
-	err := p.app.DB.FindOne(ctx, ordersTable, map[string]any{"orderId": orderID, "userid": userID}, &regularOrder)
+	err := p.app.SQLDB.FindOne(ctx, ordersTable, "orderid = $1 AND userid = $2", []any{orderID, userID}, &regularOrder)
 	if err == nil {
 		return "regular", regularOrder.Total, nil
 	}
-	if err != mongo.ErrNoDocuments {
-		return "", 0, err
-	}
 
 	var farmOrder struct {
-		Total int64 `bson:"total"`
+		Total int64 `db:"total"`
 	}
-	err = p.app.DB.FindOne(ctx, farmOrdersTable, map[string]any{"orderid": orderID, "userid": userID}, &farmOrder)
+	err = p.app.SQLDB.FindOne(ctx, farmOrdersTable, "orderid = $1 AND userid = $2", []any{orderID, userID}, &farmOrder)
 	if err == nil {
 		return "farm", farmOrder.Total, nil
 	}
-	if err == mongo.ErrNoDocuments {
-		return "", 0, mongo.ErrNoDocuments
-	}
+
 	return "", 0, err
 }
 
 func (p *PaymentService) SQLfindOrderTotalByID(ctx context.Context, id string) (int64, error) {
 	var o struct {
-		Total int64 `bson:"total"`
+		Total int64 `db:"total"`
 	}
-	err := p.app.DB.FindOne(ctx, ordersTable, map[string]any{"orderId": id}, &o)
+	err := p.app.SQLDB.FindOne(ctx, ordersTable, "orderid = $1", []any{id}, &o)
 	if err == nil {
 		return o.Total, nil
 	}
-	if err != mongo.ErrNoDocuments {
-		return 0, err
-	}
 
 	var fo struct {
-		PriceAtPurchase float64 `bson:"priceAtPurchase"`
+		PriceAtPurchase float64 `db:"priceatpurchase"`
 	}
-	err = p.app.DB.FindOne(ctx, farmOrdersTable, map[string]any{"orderid": id}, &fo)
+	err = p.app.SQLDB.FindOne(ctx, farmOrdersTable, "orderid = $1", []any{id}, &fo)
 	if err != nil {
 		return 0, err
 	}
@@ -162,70 +140,59 @@ func (p *PaymentService) SQLfindOrderTotalByID(ctx context.Context, id string) (
 
 func (p *PaymentService) SQLfindRefundRequestByOrderID(ctx context.Context, orderID string) (OrderRefundRequest, error) {
 	var refund OrderRefundRequest
-	err := p.app.DB.FindOne(ctx, RefundsTable, map[string]any{
-		"order_id": orderID,
-		"status":   map[string]any{"$in": []string{"pending", "approved"}},
-	}, &refund)
+	query := "order_id = $1 AND status IN ('pending', 'approved')"
+	err := p.app.SQLDB.FindOne(ctx, RefundsTable, query, []any{orderID}, &refund)
 	return refund, err
 }
 
 func (p *PaymentService) SQLfindActiveRefundRequestByOrderID(ctx context.Context, orderID string) (OrderRefundRequest, error) {
 	var refund OrderRefundRequest
-	err := p.app.DB.FindOne(ctx, RefundsTable, map[string]any{
-		"order_id": orderID,
-		"status":   map[string]any{"$in": []string{"pending", "approved"}},
-	}, &refund)
+	query := "order_id = $1 AND status IN ('pending', 'approved')"
+	err := p.app.SQLDB.FindOne(ctx, RefundsTable, query, []any{orderID}, &refund)
 	return refund, err
 }
 
 func (p *PaymentService) SQLcreateRefundRequestRecord(ctx context.Context, refundReq OrderRefundRequest) error {
-	return p.app.DB.InsertOne(ctx, RefundsTable, refundReq)
+	return p.app.SQLDB.InsertOne(ctx, RefundsTable, refundReq)
 }
 
 func (p *PaymentService) SQLcountRefundRequestsByUser(ctx context.Context, userID string) (int64, error) {
-	return p.app.DB.Count(ctx, RefundsTable, map[string]any{"userid": userID})
+	return p.app.SQLDB.Count(ctx, RefundsTable, "userid = $1", []any{userID})
 }
 
 func (p *PaymentService) SQLlistRefundRequestsByUser(ctx context.Context, userID string, skip int, limit int) ([]tickets.RefundRequest, error) {
 	var refunds []tickets.RefundRequest
-	err := p.app.DB.FindMany(
-		ctx,
-		RefundsTable,
-		map[string]any{"userid": userID},
-		&refunds,
-		options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(map[string]any{"created_at": -1}),
-	)
+	query := "userid = $1 ORDER BY created_at DESC OFFSET $2 LIMIT $3"
+	args := []any{userID, skip, limit}
+
+	err := p.app.SQLDB.FindMany(ctx, RefundsTable, query, args, &refunds)
 	return refunds, err
 }
 
-func (p *PaymentService) SQLcountRefundRequests(ctx context.Context, filter map[string]any) (int64, error) {
-	return p.app.DB.Count(ctx, RefundsTable, filter)
+func (p *PaymentService) SQLcountRefundRequests(ctx context.Context, query string, args []any) (int64, error) {
+	return p.app.SQLDB.Count(ctx, RefundsTable, query, args)
 }
 
-func (p *PaymentService) SQLlistRefundRequests(ctx context.Context, filter map[string]any, skip int, limit int) ([]tickets.RefundRequest, error) {
+func (p *PaymentService) SQLlistRefundRequests(ctx context.Context, query string, args []any, skip int, limit int) ([]tickets.RefundRequest, error) {
 	var refunds []tickets.RefundRequest
-	err := p.app.DB.FindMany(
-		ctx,
-		RefundsTable,
-		filter,
-		&refunds,
-		options.Find().SetSkip(int64(skip)).SetLimit(int64(limit)).SetSort(map[string]any{"created_at": -1}),
-	)
+	fullQuery := fmt.Sprintf("%s ORDER BY created_at DESC OFFSET %d LIMIT %d", query, skip, limit)
+
+	err := p.app.SQLDB.FindMany(ctx, RefundsTable, fullQuery, args, &refunds)
 	return refunds, err
 }
 
 func (p *PaymentService) SQLfindRefundRequestByID(ctx context.Context, refundID string) (OrderRefundRequest, error) {
 	var refund OrderRefundRequest
-	err := p.app.DB.FindOne(ctx, RefundsTable, map[string]any{"_id": refundID}, &refund)
+	err := p.app.SQLDB.FindOne(ctx, RefundsTable, "id = $1", []any{refundID}, &refund)
 	return refund, err
 }
 
 func (p *PaymentService) SQLcreateRefundTransactionRecord(ctx context.Context, refundTxn Transaction) error {
-	return p.app.DB.InsertOne(ctx, transactionsTable, refundTxn)
+	return p.app.SQLDB.InsertOne(ctx, transactionsTable, refundTxn)
 }
 
 func (p *PaymentService) SQLupdateRefundRequestStatus(ctx context.Context, refundID string, update map[string]any) error {
-	_, err := p.app.DB.UpdateOne(ctx, RefundsTable, map[string]any{"_id": refundID}, map[string]any{"$set": update})
+	_, err := p.app.SQLDB.UpdateOne(ctx, RefundsTable, "id = $1", []any{refundID}, update)
 	return err
 }
 
@@ -241,63 +208,59 @@ func (p *PaymentService) SQLcreateWalletAccount(ctx context.Context, userID stri
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := p.app.DB.InsertOne(ctx, accountsTable, newAcc); err != nil {
+	if err := p.app.SQLDB.InsertOne(ctx, accountsTable, newAcc); err != nil {
 		return Account{}, err
 	}
 	return newAcc, nil
 }
 
 func (p *PaymentService) SQLcreateTransactionRecord(ctx context.Context, txn Transaction) error {
-	return p.app.DB.InsertOne(ctx, transactionsTable, txn)
+	return p.app.SQLDB.InsertOne(ctx, transactionsTable, txn)
 }
 
 func (p *PaymentService) SQLcreateJournalEntryRecord(ctx context.Context, entry JournalEntry) error {
-	return p.app.DB.InsertOne(ctx, journalTable, entry)
+	return p.app.SQLDB.InsertOne(ctx, journalTable, entry)
 }
 
 func (p *PaymentService) SQLapplyBalanceDelta(ctx context.Context, accountID string, delta int64) error {
-	return p.app.DB.Inc(ctx, accountsTable, map[string]any{"_id": accountID}, "cached_balance", delta)
+	return p.app.SQLDB.Inc(ctx, accountsTable, "id = $1", []any{accountID}, "cached_balance", delta)
 }
 
 func (p *PaymentService) SQLsetTransactionStatus(ctx context.Context, txnID string, status string) error {
-	_, err := p.app.DB.UpdateOne(ctx, transactionsTable,
-		map[string]any{"_id": txnID},
-		map[string]any{"$set": map[string]any{"status": status, "updated_at": time.Now()}},
-	)
+	update := map[string]any{
+		"status":     status,
+		"updated_at": time.Now(),
+	}
+	_, err := p.app.SQLDB.UpdateOne(ctx, transactionsTable, "id = $1", []any{txnID}, update)
 	return err
 }
 
 func (p *PaymentService) SQLupdateTransactionStatus(ctx context.Context, txnID string, status string, updatedAt time.Time) error {
-	_, err := p.app.DB.UpdateOne(ctx, transactionsTable,
-		map[string]any{"_id": txnID},
-		map[string]any{"$set": map[string]any{"status": status, "updated_at": updatedAt}},
-	)
+	update := map[string]any{
+		"status":     status,
+		"updated_at": updatedAt,
+	}
+	_, err := p.app.SQLDB.UpdateOne(ctx, transactionsTable, "id = $1", []any{txnID}, update)
 	return err
 }
 
 func (p *PaymentService) SQLfindTransactionByID(ctx context.Context, txnID string) (Transaction, error) {
 	var txn Transaction
-	err := p.app.DB.FindOne(ctx, transactionsTable, map[string]any{"_id": txnID}, &txn)
+	err := p.app.SQLDB.FindOne(ctx, transactionsTable, "id = $1", []any{txnID}, &txn)
 	return txn, err
 }
 
 func (p *PaymentService) SQLmarkTransactionReversed(ctx context.Context, txnID string, updatedAt time.Time) error {
-	_, err := p.app.DB.UpdateOne(
-		ctx,
-		transactionsTable,
-		map[string]any{"_id": txnID},
-		map[string]any{
-			"$set": map[string]any{
-				"status":     "reversed",
-				"updated_at": updatedAt,
-			},
-		},
-	)
+	update := map[string]any{
+		"status":     "reversed",
+		"updated_at": updatedAt,
+	}
+	_, err := p.app.SQLDB.UpdateOne(ctx, transactionsTable, "id = $1", []any{txnID}, update)
 	return err
 }
 
 func (p *PaymentService) SQLcreateTransferViews(ctx context.Context, txnID string, senderID string, recipientID string, amount int64, now time.Time) error {
-	return p.app.DB.InsertMany(ctx, transactionsTable, []interface{}{
+	return p.app.SQLDB.InsertMany(ctx, transactionsTable, []any{
 		Transaction{
 			ID:        utils.GetUUID(),
 			ParentTxn: txnID,
@@ -320,57 +283,52 @@ func (p *PaymentService) SQLcreateTransferViews(ctx context.Context, txnID strin
 }
 
 func (p *PaymentService) SQLrecordWebhookProcessing(ctx context.Context, payload *PaymentWebhookPayload) error {
-	return p.app.DB.InsertOne(ctx, webhookTable, map[string]any{
-		"transactionId": payload.TransactionID,
-		"orderId":       payload.OrderID,
+	return p.app.SQLDB.InsertOne(ctx, webhookTable, map[string]any{
+		"transactionid": payload.TransactionID,
+		"orderid":       payload.OrderID,
 		"userid":        payload.UserID,
 		"status":        payload.Status,
 		"amount":        payload.Amount,
-		"processedAt":   time.Now(),
+		"processedat":   time.Now(),
 	})
 }
 
 func (p *PaymentService) SQLhasWebhookBeenProcessed(ctx context.Context, transactionID string) (bool, error) {
 	var existingWebhook map[string]any
-	err := p.app.DB.FindOne(ctx, webhookTable, map[string]any{
-		"transactionId": transactionID,
-	}, &existingWebhook)
+	err := p.app.SQLDB.FindOne(ctx, webhookTable, "transactionid = $1", []any{transactionID}, &existingWebhook)
 	return err == nil, err
 }
 
 func (p *PaymentService) SQLincrementTopupBalanceByUser(ctx context.Context, userID string, amount float64, updatedAt time.Time) error {
-	_, err := p.app.DB.UpdateOne(ctx, accountsTable, map[string]any{
-		"userid": userID,
-	}, map[string]any{
-		"$inc": map[string]any{
-			"cached_balance": int64(amount),
-		},
-		"$set": map[string]any{
-			"updated_at": updatedAt,
-		},
+	err := p.app.SQLDB.Inc(ctx, accountsTable, "userid = $1", []any{userID}, "cached_balance", int64(amount))
+	if err != nil {
+		return err
+	}
+
+	_, err = p.app.SQLDB.UpdateOne(ctx, accountsTable, "userid = $1", []any{userID}, map[string]any{
+		"updated_at": updatedAt,
 	})
 	return err
 }
 
 func (p *PaymentService) SQLsetTransactionStatusByID(ctx context.Context, txnID string, status string, updatedAt time.Time) error {
-	_, err := p.app.DB.UpdateOne(ctx, transactionsTable, map[string]any{
-		"_id": txnID,
-	}, map[string]any{
-		"$set": map[string]any{
-			"status":     status,
-			"updated_at": updatedAt,
-		},
-	})
+	update := map[string]any{
+		"status":     status,
+		"updated_at": updatedAt,
+	}
+	_, err := p.app.SQLDB.UpdateOne(ctx, transactionsTable, "id = $1", []any{txnID}, update)
 	return err
 }
 
 func (p *PaymentService) SQLupdateOrderStatus(ctx context.Context, tableName string, lookupField string, orderID string, status string) error {
-	_, err := p.app.DB.UpdateOne(ctx, tableName, map[string]any{lookupField: orderID}, map[string]any{"$set": map[string]any{"status": status}})
+	query := fmt.Sprintf("%s = $1", lookupField)
+	_, err := p.app.SQLDB.UpdateOne(ctx, tableName, query, []any{orderID}, map[string]any{"status": status})
 	return err
 }
 
 func (p *PaymentService) SQLupdateOrderSet(ctx context.Context, tableName string, lookupField string, orderID string, update map[string]any) error {
-	_, err := p.app.DB.UpdateOne(ctx, tableName, map[string]any{lookupField: orderID}, map[string]any{"$set": update})
+	query := fmt.Sprintf("%s = $1", lookupField)
+	_, err := p.app.SQLDB.UpdateOne(ctx, tableName, query, []any{orderID}, update)
 	return err
 }
 
@@ -378,26 +336,27 @@ func (p *PaymentService) SQLdecrementInventory(ctx context.Context, tableName st
 	if itemID == "" || qty <= 0 {
 		return nil
 	}
-	_, err := p.app.DB.UpdateOne(ctx, tableName, map[string]any{lookupField: itemID}, map[string]any{"$inc": map[string]any{incField: -qty}})
-	return err
+	query := fmt.Sprintf("%s = $1", lookupField)
+	return p.app.SQLDB.Inc(ctx, tableName, query, []any{itemID}, incField, int64(-qty))
 }
 
 func (p *PaymentService) SQLfindOrderByID(ctx context.Context, tableName string, lookupField string, orderID string, out any) error {
-	return p.app.DB.FindOne(ctx, tableName, map[string]any{lookupField: orderID}, out)
+	query := fmt.Sprintf("%s = $1", lookupField)
+	return p.app.SQLDB.FindOne(ctx, tableName, query, []any{orderID}, out)
 }
 
 func (p *PaymentService) SQLfailTxn(ctx context.Context, txnID string) {
-	_, _ = p.app.DB.UpdateOne(ctx, transactionsTable,
-		map[string]any{"_id": txnID},
-		map[string]any{"$set": map[string]any{"status": "failed", "updated_at": time.Now()}},
-	)
+	_, _ = p.app.SQLDB.UpdateOne(ctx, transactionsTable, "id = $1", []any{txnID}, map[string]any{
+		"status":     "failed",
+		"updated_at": time.Now(),
+	})
 }
 
 func (p *PaymentService) SQLsuccessTxn(ctx context.Context, txnID string) {
-	_, _ = p.app.DB.UpdateOne(ctx, transactionsTable,
-		map[string]any{"_id": txnID},
-		map[string]any{"$set": map[string]any{"status": "success", "updated_at": time.Now()}},
-	)
+	_, _ = p.app.SQLDB.UpdateOne(ctx, transactionsTable, "id = $1", []any{txnID}, map[string]any{
+		"status":     "success",
+		"updated_at": time.Now(),
+	})
 }
 
 func (p *PaymentService) SQLrecordGlobalLedger(ctx context.Context, txnID string, journalEntryID string, ledgerType string, reason string, amount int64, accountID string, userID string) error {
@@ -406,9 +365,7 @@ func (p *PaymentService) SQLrecordGlobalLedger(ctx context.Context, txnID string
 	totalAdditions := int64(0)
 	totalDeletions := int64(0)
 
-	err := p.app.DB.FindMany(ctx, globalLedgerTable,
-		map[string]any{},
-		&entries)
+	err := p.app.SQLDB.FindMany(ctx, globalLedgerTable, "1=1 ORDER BY created_at ASC", []any{}, &entries)
 
 	if err == nil && len(entries) > 0 {
 		lastEntry := entries[len(entries)-1]
@@ -439,5 +396,5 @@ func (p *PaymentService) SQLrecordGlobalLedger(ctx context.Context, txnID string
 		CreatedAt:          time.Now(),
 	}
 
-	return p.app.DB.InsertOne(ctx, globalLedgerTable, entry)
+	return p.app.SQLDB.InsertOne(ctx, globalLedgerTable, entry)
 }

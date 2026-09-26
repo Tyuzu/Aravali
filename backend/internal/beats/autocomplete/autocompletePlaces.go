@@ -27,7 +27,7 @@ func AutocompletePlaces(app *infra.Deps) http.HandlerFunc {
 
 		var places []places.Place
 
-		err := findPlacesByQuery(ctx, app.DB, query, &places)
+		err := findPlacesByQuery(ctx, app, query, &places)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to fetch suggestions"})
 			return

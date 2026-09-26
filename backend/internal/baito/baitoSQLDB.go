@@ -5,7 +5,7 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 )
 
 var UsersTable = config.Tables.UserTable
@@ -13,26 +13,21 @@ var BaitoTable = config.Tables.BaitoTable
 var BaitoAppTable = config.Tables.BaitoApplicationsTable
 
 func SQLdeleteBaitoRecord(ctx context.Context, app *infra.Deps, baitoID, userID string) (int64, error) {
-	rows, err := app.DB.DeleteOne(ctx, BaitoTable, map[string]any{
-		"baitoid": baitoID,
-		"ownerid": userID,
-	})
-	return rows, err
+	query := "baitoid = $1 AND ownerid = $2"
+	args := []any{baitoID, userID}
+
+	return app.SQLDB.DeleteOne(ctx, BaitoTable, query, args)
 }
 
 func SQLsaveBaitoApplication(ctx context.Context, app *infra.Deps, application BaitoApplication) error {
-	return app.DB.Insert(ctx, BaitoAppTable, application)
+	return app.SQLDB.Insert(ctx, BaitoAppTable, application)
 }
 
 func SQLincrementBaitoApplicationCount(ctx context.Context, app *infra.Deps, baitoID string) error {
-	var baito Baito
-	if err := app.DB.FindOne(ctx, BaitoTable, map[string]any{"baitoid": baitoID}, &baito); err != nil {
-		return err
-	}
+	query := "baitoid = $1"
+	args := []any{baitoID}
 
-	baito.ApplicationCount++
-	_, err := app.DB.UpdateOne(ctx, BaitoTable, map[string]any{"baitoid": baitoID}, baito)
-	return err
+	return app.SQLDB.Inc(ctx, BaitoTable, query, args, "application_count", 1)
 }
 
 func SQLbuildMyApplicationsResult(applications []map[string]any, jobs []Baito) []map[string]any {
@@ -70,28 +65,27 @@ func SQLbuildMyApplicationsResult(applications []map[string]any, jobs []Baito) [
 }
 
 func SQLcreateBaitoRecord(ctx context.Context, app *infra.Deps, baito Baito) error {
-	return app.DB.Insert(ctx, BaitoTable, baito)
+	return app.SQLDB.Insert(ctx, BaitoTable, baito)
 }
 
 func SQLupdateBaitoRecord(ctx context.Context, app *infra.Deps, baitoID, userID string, update map[string]any) (int64, error) {
-	_, err := app.DB.UpdateOne(ctx, BaitoTable, map[string]any{
-		"baitoid": baitoID,
-		"ownerid": userID,
-	}, update)
-	return 0, err
+	query := "baitoid = $1 AND ownerid = $2"
+	args := []any{baitoID, userID}
+
+	return app.SQLDB.UpdateOne(ctx, BaitoTable, query, args, update)
 }
 
-func SQLfindLatestBaitosFromDB(ctx context.Context, app *infra.Deps, filter any, limit int) ([]BaitosResponse, error) {
+func SQLfindLatestBaitosFromDB(ctx context.Context, app *infra.Deps, query string, args []any, limit int) ([]BaitosResponse, error) {
 	var baitos []BaitosResponse
-	err := app.DB.FindManyWithOptions(ctx, BaitoTable, filter, db.FindManyOptions{
+	err := app.SQLDB.FindManyWithOptions(ctx, BaitoTable, query, args, sqldb.FindManyOptions{
 		Limit: limit,
 	}, &baitos)
 	return baitos, err
 }
 
-func SQLfindRelatedBaitosFromDB(ctx context.Context, app *infra.Deps, filter any, limit int) ([]BaitosResponse, error) {
+func SQLfindRelatedBaitosFromDB(ctx context.Context, app *infra.Deps, query string, args []any, limit int) ([]BaitosResponse, error) {
 	var baitos []BaitosResponse
-	err := app.DB.FindManyWithOptions(ctx, BaitoTable, filter, db.FindManyOptions{
+	err := app.SQLDB.FindManyWithOptions(ctx, BaitoTable, query, args, sqldb.FindManyOptions{
 		Limit: limit,
 	}, &baitos)
 	return baitos, err
@@ -99,29 +93,44 @@ func SQLfindRelatedBaitosFromDB(ctx context.Context, app *infra.Deps, filter any
 
 func SQLfindBaitoByIDFromDB(ctx context.Context, app *infra.Deps, baitoID string) (Baito, error) {
 	var baito Baito
-	err := app.DB.FindOne(ctx, BaitoTable, map[string]any{"baitoid": baitoID}, &baito)
+	query := "baitoid = $1"
+	args := []any{baitoID}
+
+	err := app.SQLDB.FindOne(ctx, BaitoTable, query, args, &baito)
 	return baito, err
 }
 
 func SQLfindMyBaitosFromDB(ctx context.Context, app *infra.Deps, userID string) ([]BaitosResponse, error) {
 	var baitos []BaitosResponse
-	err := app.DB.FindManyWithOptions(ctx, BaitoTable, map[string]any{"ownerId": userID}, db.FindManyOptions{}, &baitos)
+	query := "ownerid = $1"
+	args := []any{userID}
+
+	err := app.SQLDB.FindManyWithOptions(ctx, BaitoTable, query, args, sqldb.FindManyOptions{}, &baitos)
 	return baitos, err
 }
 
 func SQLcountApplicationsForBaito(ctx context.Context, app *infra.Deps, baitoID string) (int64, error) {
-	return app.DB.CountDocuments(ctx, BaitoAppTable, map[string]any{"baitoid": baitoID})
+	query := "baitoid = $1"
+	args := []any{baitoID}
+
+	return app.SQLDB.CountDocuments(ctx, BaitoAppTable, query, args)
 }
 
 func SQLfindBaitoApplicantsFromDB(ctx context.Context, app *infra.Deps, baitoID string) ([]map[string]any, error) {
 	var results []map[string]any
-	err := app.DB.FindMany(ctx, BaitoAppTable, map[string]any{"baitoid": baitoID}, &results)
+	query := "baitoid = $1"
+	args := []any{baitoID}
+
+	err := app.SQLDB.FindMany(ctx, BaitoAppTable, query, args, &results)
 	return results, err
 }
 
 func SQLfindMyApplicationsFromDB(ctx context.Context, app *infra.Deps, userID string) ([]map[string]any, error) {
 	var applications []map[string]any
-	if err := app.DB.FindMany(ctx, BaitoAppTable, map[string]any{"userid": userID}, &applications); err != nil {
+	query := "userid = $1"
+	args := []any{userID}
+
+	if err := app.SQLDB.FindMany(ctx, BaitoAppTable, query, args, &applications); err != nil {
 		return nil, err
 	}
 	if len(applications) == 0 {
@@ -145,7 +154,10 @@ func SQLfindMyApplicationsFromDB(ctx context.Context, app *infra.Deps, userID st
 	jobs := make([]Baito, 0, len(jobIDs))
 	for _, jobID := range jobIDs {
 		var job Baito
-		if err := app.DB.FindOne(ctx, BaitoTable, map[string]any{"baitoid": jobID}, &job); err != nil {
+		jobQuery := "baitoid = $1"
+		jobArgs := []any{jobID}
+
+		if err := app.SQLDB.FindOne(ctx, BaitoTable, jobQuery, jobArgs, &job); err != nil {
 			continue
 		}
 		jobs = append(jobs, job)

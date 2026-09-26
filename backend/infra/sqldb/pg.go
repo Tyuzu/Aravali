@@ -617,6 +617,23 @@ func (p *PostgresDatabase) CountDocuments(ctx context.Context, table string, whe
 	return count, err
 }
 
+func (p *PostgresDatabase) Aggregate(
+	ctx context.Context,
+	table string,
+	whereClause string,
+	args []any,
+	out any, // Pointer to destination variable (e.g. *int64 or struct pointer)
+) error {
+	// 1. Construct valid SQL query
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+	if whereClause != "" {
+		query += " WHERE " + whereClause
+	}
+
+	// 2. Execute query and scan directly into the 'out' target pointer
+	return p.db.QueryRow(ctx, query, args...).Scan(out)
+}
+
 func (p *PostgresDatabase) EstimatedDocumentCount(ctx context.Context, table string) (int64, error) {
 	var count int64
 	query := "SELECT reltuples::bigint FROM pg_class WHERE relname = $1"

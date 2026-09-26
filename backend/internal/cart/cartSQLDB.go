@@ -3,6 +3,7 @@ package cart
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,15 +24,18 @@ var (
 
 func SQLfindUserByID(ctx context.Context, app *infra.Deps, userID string) (auth.User, bool) {
 	var user auth.User
-	if err := app.DB.FindOne(ctx, "users", map[string]any{"userid": userID}, &user); err != nil {
+	query := "userid = $1"
+	args := []any{userID}
+
+	if err := app.SQLDB.FindOne(ctx, "users", query, args, &user); err != nil {
 		return auth.User{}, false
 	}
 	return user, true
 }
 
-func SQLfindCouponByFilter(ctx context.Context, app *infra.Deps, filter map[string]any) (Coupon, error) {
+func SQLfindCouponByFilter(ctx context.Context, app *infra.Deps, query string, args []any) (Coupon, error) {
 	var coupon Coupon
-	if err := app.DB.FindOne(ctx, couponTable, filter, &coupon); err != nil {
+	if err := app.SQLDB.FindOne(ctx, couponTable, query, args, &coupon); err != nil {
 		return Coupon{}, err
 	}
 	return coupon, nil
@@ -39,7 +43,10 @@ func SQLfindCouponByFilter(ctx context.Context, app *infra.Deps, filter map[stri
 
 func SQLfindCouponByCode(ctx context.Context, app *infra.Deps, code string) (Coupon, error) {
 	var coupon Coupon
-	if err := app.DB.FindOne(ctx, couponTable, map[string]any{"code": code}, &coupon); err != nil {
+	query := "code = $1"
+	args := []any{code}
+
+	if err := app.SQLDB.FindOne(ctx, couponTable, query, args, &coupon); err != nil {
 		return Coupon{}, err
 	}
 	return coupon, nil
@@ -51,7 +58,7 @@ func SQLvalidateCouponServer(ctx context.Context, code string, subtotal int64, a
 		return &CouponResult{DiscountAmount: 0}, nil
 	}
 
-	coupon, err := findCouponByCode(ctx, app, code)
+	coupon, err := SQLfindCouponByCode(ctx, app, code)
 	if err != nil || !coupon.Active {
 		return nil, errors.New("invalid coupon")
 	}
@@ -74,11 +81,11 @@ func SQLvalidateCouponServer(ctx context.Context, code string, subtotal int64, a
 }
 
 func SQLinsertFarmOrderRecord(ctx context.Context, app *infra.Deps, order FarmOrder) error {
-	return app.DB.Insert(ctx, farmOrdersTable, order)
+	return app.SQLDB.InsertOne(ctx, farmOrdersTable, order)
 }
 
 func SQLinsertGeneralOrderRecord(ctx context.Context, app *infra.Deps, order Order) error {
-	return app.DB.Insert(ctx, ordersTable, order)
+	return app.SQLDB.InsertOne(ctx, ordersTable, order)
 }
 
 func SQLfetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderIDs []string) map[string]pay.Transaction {
@@ -87,11 +94,11 @@ func SQLfetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderI
 		return txnMap
 	}
 
+	query := "entity_type = $1 AND entity_id = ANY($2)"
+	args := []any{"order", orderIDs}
+
 	var txns []pay.Transaction
-	if err := app.DB.FindMany(ctx, "transactions", map[string]any{
-		"entity_type": "order",
-		"entity_id":   map[string]any{"$in": orderIDs},
-	}, &txns); err != nil {
+	if err := app.SQLDB.FindMany(ctx, "transactions", query, args, &txns); err != nil {
 		return txnMap
 	}
 
@@ -114,8 +121,11 @@ func SQLfetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[st
 		ids = append(ids, id)
 	}
 
+	query := "userid = ANY($1)"
+	args := []any{ids}
+
 	var users []auth.User
-	if err := app.DB.FindMany(ctx, "users", map[string]any{"userid": map[string]any{"$in": ids}}, &users); err != nil {
+	if err := app.SQLDB.FindMany(ctx, "users", query, args, &users); err != nil {
 		return nameMap
 	}
 
@@ -137,11 +147,14 @@ func SQLgetCartItemsFromDB(
 	}
 
 	items := make([]CartItem, 0)
+	query := "userid = $1"
+	args := []any{userID}
 
-	err := app.DB.FindMany(
+	err := app.SQLDB.FindMany(
 		ctx,
 		cartTable,
-		map[string]any{"userid": userID},
+		query,
+		args,
 		&items,
 	)
 
@@ -162,23 +175,14 @@ func SQLreplaceCartItemsInDB(
 		return errors.New("invalid user id")
 	}
 
-	/*
-		IMPORTANT:
+	query := "userid = $1"
+	args := []any{userID}
 
-		This operation is still delete + insert because the current DB
-		abstraction shown in your code does not expose Mongo transactions.
-
-		For a production system, the preferred implementation is a MongoDB
-		transaction.
-
-		We at least validate the complete document set before reaching here,
-		so malformed data does not partially enter the cart.
-	*/
-
-	if _, err := app.DB.Delete(
+	if _, err := app.SQLDB.DeleteMany(
 		ctx,
 		cartTable,
-		map[string]any{"userid": userID},
+		query,
+		args,
 	); err != nil {
 		return err
 	}
@@ -187,7 +191,7 @@ func SQLreplaceCartItemsInDB(
 		return nil
 	}
 
-	return app.DB.InsertMany(
+	return app.SQLDB.InsertMany(
 		ctx,
 		cartTable,
 		docs,
@@ -212,15 +216,7 @@ func SQLupsertCartItemInDB(
 		return errors.New("invalid quantity")
 	}
 
-	/*
-		Cart identity is:
-
-		    user + item + category + entity
-
-		This prevents two unrelated entities using the same item ID from
-		colliding in the cart.
-	*/
-	filter := buildCartFilter(
+	whereClause, args := SQLbuildCartFilter(
 		userID,
 		item.ItemID,
 		item.Category,
@@ -230,11 +226,14 @@ func SQLupsertCartItemInDB(
 
 	now := time.Now()
 
-	update := map[string]any{
-		"$inc": map[string]any{
-			"quantity": item.Quantity,
-		},
-		"$set": map[string]any{
+	// Check if item exists to handle increment ($inc) vs set on insert ($setOnInsert)
+	var existing CartItem
+	err := app.SQLDB.FindOne(ctx, cartTable, whereClause, args, &existing)
+
+	if err == nil {
+		// Existing record: Increment quantity and update metadata
+		updateValues := map[string]any{
+			"quantity":   existing.Quantity + item.Quantity,
 			"userid":     userID,
 			"itemId":     item.ItemID,
 			"itemName":   item.ItemName,
@@ -246,18 +245,29 @@ func SQLupsertCartItemInDB(
 			"price":      item.Price,
 			"discount":   item.Discount,
 			"updatedAt":  now,
-		},
-		"$setOnInsert": map[string]any{
-			"addedAt": now,
-		},
+		}
+		_, err = app.SQLDB.UpdateOne(ctx, cartTable, whereClause, args, updateValues)
+		return err
 	}
 
-	return app.DB.Upsert(
-		ctx,
-		cartTable,
-		filter,
-		update,
-	)
+	// New record: Insert with addedAt timestamp
+	newCartItem := map[string]any{
+		"userid":     userID,
+		"itemId":     item.ItemID,
+		"itemName":   item.ItemName,
+		"itemType":   item.ItemType,
+		"quantity":   item.Quantity,
+		"unit":       item.Unit,
+		"category":   item.Category,
+		"entityId":   item.EntityID,
+		"entityType": item.EntityType,
+		"price":      item.Price,
+		"discount":   item.Discount,
+		"addedAt":    now,
+		"updatedAt":  now,
+	}
+
+	return app.SQLDB.InsertOne(ctx, cartTable, newCartItem)
 }
 
 func SQLupdateCartItemQuantityInDB(
@@ -269,12 +279,12 @@ func SQLupdateCartItemQuantityInDB(
 	entityID string,
 	entityType string,
 	app *infra.Deps,
-) (any, error) {
+) (int64, error) {
 	if quantity <= 0 || quantity > maxCartQuantity {
-		return nil, errors.New("invalid quantity")
+		return 0, errors.New("invalid quantity")
 	}
 
-	filter := buildCartFilter(
+	whereClause, args := SQLbuildCartFilter(
 		userID,
 		itemID,
 		category,
@@ -282,18 +292,17 @@ func SQLupdateCartItemQuantityInDB(
 		entityType,
 	)
 
-	update := map[string]any{
-		"$set": map[string]any{
-			"quantity":  quantity,
-			"updatedAt": time.Now(),
-		},
+	updateValues := map[string]any{
+		"quantity":  quantity,
+		"updatedAt": time.Now(),
 	}
 
-	return app.DB.Update(
+	return app.SQLDB.UpdateOne(
 		ctx,
 		cartTable,
-		filter,
-		update,
+		whereClause,
+		args,
+		updateValues,
 	)
 }
 
@@ -306,7 +315,7 @@ func SQLdeleteCartItemFromDB(
 	entityType string,
 	app *infra.Deps,
 ) error {
-	filter := buildCartFilter(
+	whereClause, args := SQLbuildCartFilter(
 		userID,
 		itemID,
 		category,
@@ -314,10 +323,11 @@ func SQLdeleteCartItemFromDB(
 		entityType,
 	)
 
-	_, err := app.DB.Delete(
+	_, err := app.SQLDB.DeleteMany(
 		ctx,
 		cartTable,
-		filter,
+		whereClause,
+		args,
 	)
 
 	return err
@@ -332,10 +342,14 @@ func SQLclearCartForUser(
 		return errors.New("invalid user id")
 	}
 
-	_, err := app.DB.Delete(
+	query := "userid = $1"
+	args := []any{userID}
+
+	_, err := app.SQLDB.DeleteMany(
 		ctx,
 		cartTable,
-		map[string]any{"userid": userID},
+		query,
+		args,
 	)
 
 	return err
@@ -347,7 +361,7 @@ func SQLgetGroupedCart(
 	category string,
 	app *infra.Deps,
 ) (map[string][]CartItem, error) {
-	items, err := getCartItemsFromDB(ctx, userID, app)
+	items, err := SQLgetCartItemsFromDB(ctx, userID, app)
 	if err != nil {
 		return nil, err
 	}
@@ -376,11 +390,14 @@ func SQLfetchUserOrdersFromDB(
 	app *infra.Deps,
 ) ([]Order, []FarmOrder, error) {
 	regularOrders := make([]Order, 0)
+	query := "userid = $1"
+	args := []any{userID}
 
-	if err := app.DB.FindMany(
+	if err := app.SQLDB.FindMany(
 		ctx,
 		ordersTable,
-		map[string]any{"userid": userID},
+		query,
+		args,
 		&regularOrders,
 	); err != nil {
 		return nil, nil, err
@@ -388,17 +405,13 @@ func SQLfetchUserOrdersFromDB(
 
 	farmOrders := make([]FarmOrder, 0)
 
-	if err := app.DB.FindMany(
+	if err := app.SQLDB.FindMany(
 		ctx,
 		farmOrdersTable,
-		map[string]any{"userid": userID},
+		query,
+		args,
 		&farmOrders,
 	); err != nil {
-		/*
-				Preserve your existing compatibility behaviour here.
-			 Ideally this should eventually return the error instead of
-			 silently pretending there are no farm orders.
-		*/
 		return regularOrders, farmOrders, nil
 	}
 
@@ -406,18 +419,6 @@ func SQLfetchUserOrdersFromDB(
 }
 
 /* ───────────────────────── Item Resolution ───────────────────────── */
-
-/*
-	NEVER resolve an item by searching every table.
-
-	The caller knows the item type. Use that information.
-
-	This prevents:
-
-	    productid == cropid
-
-	from accidentally resolving a crop as a product.
-*/
 
 func SQLresolveLookupTypeAlias(itemType string, category string) string {
 	itemType = strings.ToLower(strings.TrimSpace(itemType))
@@ -460,38 +461,32 @@ func SQLlookupItemDetailsByType(
 		return nil, errors.New("item id is required")
 	}
 
-	lookupType := resolveLookupTypeAlias(itemType, category)
+	lookupType := SQLresolveLookupTypeAlias(itemType, category)
 
 	switch lookupType {
 	case "crop":
-		return lookupCrop(ctx, itemID, app)
+		return SQLlookupCrop(ctx, itemID, app)
 	case "product":
-		return lookupProduct(ctx, itemID, app)
+		return SQLlookupProduct(ctx, itemID, app)
 	case "menu":
-		return lookupMenu(ctx, itemID, app)
+		return SQLlookupMenu(ctx, itemID, app)
 	case "merch":
-		return lookupMerchandise(ctx, itemID, app)
+		return SQLlookupMerchandise(ctx, itemID, app)
 	default:
 		return nil, errors.New("unsupported item type")
 	}
 }
 
-/*
-Compatibility helper.
-
-Do not use this for security-sensitive operations when itemType is
-available. It remains useful for old internal callers.
-*/
 func SQLlookupItemDetails(
 	ctx context.Context,
 	itemID string,
 	app *infra.Deps,
 ) (*ItemDetails, error) {
 	lookups := []func(context.Context, string, *infra.Deps) (*ItemDetails, error){
-		lookupCrop,
-		lookupProduct,
-		lookupMenu,
-		lookupMerchandise,
+		SQLlookupCrop,
+		SQLlookupProduct,
+		SQLlookupMenu,
+		SQLlookupMerchandise,
 	}
 
 	for _, lookup := range lookups {
@@ -511,21 +506,25 @@ func SQLlookupProduct(
 	app *infra.Deps,
 ) (*ItemDetails, error) {
 	var product struct {
-		ProductID string  `bson:"productid"`
-		Name      string  `bson:"name"`
-		Type      string  `bson:"type"`
-		Category  string  `bson:"category"`
-		Price     float64 `bson:"price"`
-		Discount  float64 `bson:"discount"`
-		Unit      string  `bson:"unit"`
-		Quantity  int     `bson:"quantity"`
-		UserID    string  `bson:"userid"`
+		ProductID string  `db:"productid"`
+		Name      string  `db:"name"`
+		Type      string  `db:"type"`
+		Category  string  `db:"category"`
+		Price     float64 `db:"price"`
+		Discount  float64 `db:"discount"`
+		Unit      string  `db:"unit"`
+		Quantity  int     `db:"quantity"`
+		UserID    string  `db:"userid"`
 	}
 
-	if err := app.DB.FindOne(
+	query := "productid = $1"
+	args := []any{productID}
+
+	if err := app.SQLDB.FindOne(
 		ctx,
 		"products",
-		map[string]any{"productid": productID},
+		query,
+		args,
 		&product,
 	); err != nil {
 		return nil, err
@@ -554,7 +553,7 @@ func SQLlookupProduct(
 		Type:       itemType,
 		Category:   category,
 		Price:      product.Price,
-		Discount:   clampDiscount(product.Discount),
+		Discount:   SQLclampDiscount(product.Discount),
 		Unit:       product.Unit,
 		EntityID:   product.UserID,
 		EntityType: "vendor",
@@ -570,21 +569,25 @@ func SQLlookupCrop(
 	app *infra.Deps,
 ) (*ItemDetails, error) {
 	var crop struct {
-		CropID       string  `bson:"cropid"`
-		Name         string  `bson:"name"`
-		Category     string  `bson:"category"`
-		Price        float64 `bson:"price"`
-		Discount     float64 `bson:"discount"`
-		AvailableQty int     `bson:"quantity"`
-		Unit         string  `bson:"unit"`
-		FarmID       string  `bson:"farmid"`
-		FarmName     string  `bson:"farmname"`
+		CropID       string  `db:"cropid"`
+		Name         string  `db:"name"`
+		Category     string  `db:"category"`
+		Price        float64 `db:"price"`
+		Discount     float64 `db:"discount"`
+		AvailableQty int     `db:"quantity"`
+		Unit         string  `db:"unit"`
+		FarmID       string  `db:"farmid"`
+		FarmName     string  `db:"farmname"`
 	}
 
-	if err := app.DB.FindOne(
+	query := "cropid = $1"
+	args := []any{cropID}
+
+	if err := app.SQLDB.FindOne(
 		ctx,
 		"crops",
-		map[string]any{"cropid": cropID},
+		query,
+		args,
 		&crop,
 	); err != nil {
 		return nil, err
@@ -602,13 +605,17 @@ func SQLlookupCrop(
 
 	if farmName == "" && crop.FarmID != "" {
 		var farm struct {
-			Name string `bson:"name"`
+			Name string `db:"name"`
 		}
 
-		if err := app.DB.FindOne(
+		farmQuery := "farmid = $1"
+		farmArgs := []any{crop.FarmID}
+
+		if err := app.SQLDB.FindOne(
 			ctx,
 			"farms",
-			map[string]any{"farmid": crop.FarmID},
+			farmQuery,
+			farmArgs,
 			&farm,
 		); err == nil {
 			farmName = farm.Name
@@ -630,7 +637,7 @@ func SQLlookupCrop(
 		Type:       itemType,
 		Category:   "crops",
 		Price:      crop.Price,
-		Discount:   clampDiscount(crop.Discount),
+		Discount:   SQLclampDiscount(crop.Discount),
 		Unit:       unit,
 		EntityID:   crop.FarmID,
 		EntityName: farmName,
@@ -647,19 +654,23 @@ func SQLlookupMenu(
 	app *infra.Deps,
 ) (*ItemDetails, error) {
 	var menu struct {
-		MenuID   string  `bson:"menuid"`
-		Name     string  `bson:"name"`
-		Price    float64 `bson:"price"`
-		Discount float64 `bson:"discount"`
-		Stock    int     `bson:"stock"`
-		PlaceID  string  `bson:"placeid"`
-		Place    string  `bson:"place"`
+		MenuID   string  `db:"menuid"`
+		Name     string  `db:"name"`
+		Price    float64 `db:"price"`
+		Discount float64 `db:"discount"`
+		Stock    int     `db:"stock"`
+		PlaceID  string  `db:"placeid"`
+		Place    string  `db:"place"`
 	}
 
-	if err := app.DB.FindOne(
+	query := "menuid = $1"
+	args := []any{menuID}
+
+	if err := app.SQLDB.FindOne(
 		ctx,
 		"menu",
-		map[string]any{"menuid": menuID},
+		query,
+		args,
 		&menu,
 	); err != nil {
 		return nil, err
@@ -678,7 +689,7 @@ func SQLlookupMenu(
 		Type:       "menu",
 		Category:   "menu",
 		Price:      menu.Price,
-		Discount:   clampDiscount(menu.Discount),
+		Discount:   SQLclampDiscount(menu.Discount),
 		Unit:       "unit",
 		EntityID:   menu.PlaceID,
 		EntityName: menu.Place,
@@ -695,19 +706,23 @@ func SQLlookupMerchandise(
 	app *infra.Deps,
 ) (*ItemDetails, error) {
 	var merch struct {
-		MerchID    string  `bson:"merchid"`
-		Name       string  `bson:"name"`
-		Price      float64 `bson:"price"`
-		Discount   float64 `bson:"discount"`
-		Stock      int     `bson:"stock"`
-		EntityID   string  `bson:"entity_id"`
-		EntityType string  `bson:"entity_type"`
+		MerchID    string  `db:"merchid"`
+		Name       string  `db:"name"`
+		Price      float64 `db:"price"`
+		Discount   float64 `db:"discount"`
+		Stock      int     `db:"stock"`
+		EntityID   string  `db:"entity_id"`
+		EntityType string  `db:"entity_type"`
 	}
 
-	if err := app.DB.FindOne(
+	query := "merchid = $1"
+	args := []any{merchID}
+
+	if err := app.SQLDB.FindOne(
 		ctx,
 		"merchandise",
-		map[string]any{"merchid": merchID},
+		query,
+		args,
 		&merch,
 	); err != nil {
 		return nil, err
@@ -726,7 +741,7 @@ func SQLlookupMerchandise(
 		Type:       "merchandise",
 		Category:   "merchandise",
 		Price:      merch.Price,
-		Discount:   clampDiscount(merch.Discount),
+		Discount:   SQLclampDiscount(merch.Discount),
 		Unit:       "unit",
 		EntityID:   merch.EntityID,
 		EntityType: merch.EntityType,
@@ -754,23 +769,28 @@ func SQLbuildCartFilter(
 	category,
 	entityID,
 	entityType string,
-) map[string]any {
-	filter := map[string]any{
-		"userid": userID,
-		"itemId": itemID,
-	}
+) (string, []any) {
+	conditions := []string{"userid = $1", "itemId = $2"}
+	args := []any{userID, itemID}
+	argIdx := 3
 
 	if category != "" {
-		filter["category"] = category
+		conditions = append(conditions, fmt.Sprintf("category = $%d", argIdx))
+		args = append(args, category)
+		argIdx++
 	}
 
 	if entityID != "" {
-		filter["entityId"] = entityID
+		conditions = append(conditions, fmt.Sprintf("entityId = $%d", argIdx))
+		args = append(args, entityID)
+		argIdx++
 	}
 
 	if entityType != "" {
-		filter["entityType"] = entityType
+		conditions = append(conditions, fmt.Sprintf("entityType = $%d", argIdx))
+		args = append(args, entityType)
+		argIdx++
 	}
 
-	return filter
+	return strings.Join(conditions, " AND "), args
 }

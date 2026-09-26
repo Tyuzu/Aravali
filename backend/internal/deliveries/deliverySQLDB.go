@@ -11,14 +11,16 @@ import (
 
 var deliveriesTable = config.Tables.DeliveriesTable
 
-func SQLfindDeliveryByFilter(ctx context.Context, app *infra.Deps, filter map[string]any, out any) error {
-	return app.DB.FindOne(ctx, deliveriesTable, filter, out)
+func SQLfindDeliveryByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+	return app.SQLDB.FindOne(ctx, deliveriesTable, query, args, out)
 }
 
 func SQLfindMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID string) ([]Delivery, error) {
-	filter := map[string]any{"userid": userID, "tenantid": tenantID}
+	query := "userid = $1 AND tenantid = $2"
+	args := []any{userID, tenantID}
+
 	var deliveries []Delivery
-	if err := app.DB.FindMany(ctx, deliveriesTable, filter, &deliveries); err != nil {
+	if err := app.SQLDB.FindMany(ctx, deliveriesTable, query, args, &deliveries); err != nil {
 		return nil, err
 	}
 	if len(deliveries) == 0 {
@@ -28,12 +30,16 @@ func SQLfindMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID 
 }
 
 func SQLsaveDelivery(ctx context.Context, app *infra.Deps, delivery Delivery) error {
-	return app.DB.InsertOne(ctx, deliveriesTable, delivery)
+	return app.SQLDB.InsertOne(ctx, deliveriesTable, delivery)
 }
 
-func SQLfindDeliveryAndUpdate(ctx context.Context, app *infra.Deps, filter map[string]any, update map[string]any) (Delivery, error) {
+func SQLfindDeliveryAndUpdate(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (Delivery, error) {
+	if _, err := app.SQLDB.UpdateOne(ctx, deliveriesTable, query, args, update); err != nil {
+		return Delivery{}, err
+	}
+
 	var updated Delivery
-	if err := app.DB.FindOneAndUpdate(ctx, deliveriesTable, filter, update, &updated); err != nil {
+	if err := app.SQLDB.FindOne(ctx, deliveriesTable, query, args, &updated); err != nil {
 		return Delivery{}, err
 	}
 	return updated, nil
@@ -41,8 +47,10 @@ func SQLfindDeliveryAndUpdate(ctx context.Context, app *infra.Deps, filter map[s
 
 func SQLfetchDeliveryForRead(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
 	var delivery Delivery
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindOne(ctx, deliveriesTable, filter, &delivery); err != nil {
+	query := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	if err := app.SQLDB.FindOne(ctx, deliveriesTable, query, args, &delivery); err != nil {
 		return Delivery{}, err
 	}
 	return delivery, nil
@@ -58,23 +66,28 @@ func SQLsetDeliveryStatusWithHistory(ctx context.Context, app *infra.Deps, deliv
 	}
 
 	now := time.Now()
-	update := map[string]any{
-		"$set": map[string]any{
-			"status":     newStatus,
-			"updated_at": now,
-		},
-		"$push": map[string]any{
-			"status_history": StatusHistoryItem{
-				Status:    newStatus,
-				Timestamp: now,
-				UpdatedBy: userID,
-			},
-		},
+	newHistoryItem := StatusHistoryItem{
+		Status:    newStatus,
+		Timestamp: now,
+		UpdatedBy: userID,
 	}
-	updated, err := findDeliveryAndUpdate(ctx, app, map[string]any{"id": deliveryID, "tenantid": tenantID}, update)
+
+	updatedHistory := append(current.StatusHistory, newHistoryItem)
+
+	update := map[string]any{
+		"status":         newStatus,
+		"updated_at":     now,
+		"status_history": updatedHistory,
+	}
+
+	query := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	updated, err := SQLfindDeliveryAndUpdate(ctx, app, query, args, update)
 	if err != nil {
 		return nil, err
 	}
+
 	_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
 	_ = app.NatsConn.Publish(fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
 	return &updated, nil
@@ -86,8 +99,10 @@ func SQLfindDeliveryByIDTenant(ctx context.Context, app *infra.Deps, deliveryID,
 
 func SQLlistDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
 	var events []map[string]any
-	filter := map[string]any{"deliveryid": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindMany(ctx, "delivery_events", filter, &events); err != nil {
+	query := "deliveryid = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	if err := app.SQLDB.FindMany(ctx, "delivery_events", query, args, &events); err != nil {
 		return nil, err
 	}
 	if len(events) == 0 {
@@ -106,27 +121,33 @@ func SQLupsertDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryI
 	}
 
 	now := time.Now()
-	update := map[string]any{
-		"$set": map[string]any{
-			"driverid":   driverID,
-			"status":     StatusAssigned,
-			"updated_at": now,
-		},
-		"$push": map[string]any{
-			"status_history": StatusHistoryItem{
-				Status:    StatusAssigned,
-				Timestamp: now,
-				UpdatedBy: userID,
-			},
-		},
+	newHistoryItem := StatusHistoryItem{
+		Status:    StatusAssigned,
+		Timestamp: now,
+		UpdatedBy: userID,
 	}
-	return findDeliveryAndUpdate(ctx, app, map[string]any{"id": deliveryID, "tenantid": tenantID}, update)
+
+	updatedHistory := append(current.StatusHistory, newHistoryItem)
+
+	update := map[string]any{
+		"driverid":       driverID,
+		"status":         StatusAssigned,
+		"updated_at":     now,
+		"status_history": updatedHistory,
+	}
+
+	query := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	return SQLfindDeliveryAndUpdate(ctx, app, query, args, update)
 }
 
 func SQLupdateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
 	var currentDelivery Delivery
-	filter := map[string]any{"id": deliveryID, "tenantid": tenantID}
-	if err := app.DB.FindOne(ctx, deliveriesTable, filter, &currentDelivery); err != nil {
+	query := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
+
+	if err := app.SQLDB.FindOne(ctx, deliveriesTable, query, args, &currentDelivery); err != nil {
 		return nil, fmt.Errorf("delivery not found")
 	}
 	if err := ValidateTransition(currentDelivery.Status, newStatus); err != nil {
@@ -134,24 +155,25 @@ func SQLupdateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliver
 	}
 
 	now := time.Now()
-	update := map[string]any{
-		"$set": map[string]any{
-			"status":     newStatus,
-			"updated_at": now,
-		},
-		"$push": map[string]any{
-			"status_history": StatusHistoryItem{
-				Status:    newStatus,
-				Timestamp: now,
-				UpdatedBy: userID,
-			},
-		},
+	newHistoryItem := StatusHistoryItem{
+		Status:    newStatus,
+		Timestamp: now,
+		UpdatedBy: userID,
 	}
 
-	var updatedDelivery Delivery
-	if err := app.DB.FindOneAndUpdate(ctx, deliveriesTable, filter, update, &updatedDelivery); err != nil {
+	updatedHistory := append(currentDelivery.StatusHistory, newHistoryItem)
+
+	update := map[string]any{
+		"status":         newStatus,
+		"updated_at":     now,
+		"status_history": updatedHistory,
+	}
+
+	updatedDelivery, err := SQLfindDeliveryAndUpdate(ctx, app, query, args, update)
+	if err != nil {
 		return nil, err
 	}
+
 	_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
 	_ = app.NatsConn.Publish(fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
 	return &updatedDelivery, nil

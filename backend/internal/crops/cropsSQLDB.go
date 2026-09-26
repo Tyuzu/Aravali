@@ -2,8 +2,9 @@ package crops
 
 import (
 	"context"
+
 	"scav/config"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/internal/farms"
 )
 
@@ -13,18 +14,21 @@ var (
 	catalogueTable  = config.Tables.CatalogueTable
 )
 
-func SQLinsertCrop(ctx context.Context, database db.Database, crop farms.Crop) error {
+func SQLinsertCrop(ctx context.Context, database sqldb.Database, crop farms.Crop) error {
 	return database.InsertOne(ctx, cropsTable, crop)
 }
 
-func SQLupdateCrop(ctx context.Context, database db.Database, cropID string, update map[string]any) error {
-	_, err := database.UpdateOne(ctx, cropsTable, map[string]any{"cropid": cropID}, map[string]any{"$set": update})
+func SQLupdateCrop(ctx context.Context, database sqldb.Database, cropID string, update map[string]any) error {
+	query := "cropid = $1"
+	args := []any{cropID}
+
+	_, err := database.UpdateOne(ctx, cropsTable, query, args, update)
 	return err
 }
 
-func SQLfindFilteredCrops(ctx context.Context, database db.Database, filter map[string]any) ([]farms.Crop, error) {
+func SQLfindFilteredCrops(ctx context.Context, database sqldb.Database, query string, args []any) ([]farms.Crop, error) {
 	var crops []farms.Crop
-	if err := database.FindMany(ctx, cropsTable, filter, &crops); err != nil {
+	if err := database.FindMany(ctx, cropsTable, query, args, &crops); err != nil {
 		return nil, err
 	}
 	if crops == nil {
@@ -33,9 +37,9 @@ func SQLfindFilteredCrops(ctx context.Context, database db.Database, filter map[
 	return crops, nil
 }
 
-func SQLfindCatalogueItems(ctx context.Context, database db.Database, filter map[string]any) ([]farms.CropCatalogueItem, error) {
+func SQLfindCatalogueItems(ctx context.Context, database sqldb.Database, query string, args []any) ([]farms.CropCatalogueItem, error) {
 	var items []farms.CropCatalogueItem
-	if err := database.FindMany(ctx, catalogueTable, filter, &items); err != nil {
+	if err := database.FindMany(ctx, catalogueTable, query, args, &items); err != nil {
 		return nil, err
 	}
 	if items == nil {
@@ -44,9 +48,9 @@ func SQLfindCatalogueItems(ctx context.Context, database db.Database, filter map
 	return items, nil
 }
 
-func SQLgetAllCrops(ctx context.Context, database db.Database) ([]farms.Crop, error) {
+func SQLgetAllCrops(ctx context.Context, database sqldb.Database) ([]farms.Crop, error) {
 	var crops []farms.Crop
-	if err := database.FindMany(ctx, cropsTable, map[string]any{}, &crops); err != nil {
+	if err := database.FindMany(ctx, cropsTable, "", nil, &crops); err != nil {
 		return nil, err
 	}
 	if crops == nil {
@@ -55,21 +59,24 @@ func SQLgetAllCrops(ctx context.Context, database db.Database) ([]farms.Crop, er
 	return crops, nil
 }
 
-func SQLcreateCropAbout(ctx context.Context, database db.Database, crop *CropAbout) error {
+func SQLcreateCropAbout(ctx context.Context, database sqldb.Database, crop *CropAbout) error {
 	return database.InsertOne(ctx, cropsAboutTable, crop)
 }
 
-func SQLgetCropAboutByID(ctx context.Context, database db.Database, cropID string) (*CropAbout, error) {
+func SQLgetCropAboutByID(ctx context.Context, database sqldb.Database, cropID string) (*CropAbout, error) {
 	var crop CropAbout
-	if err := database.FindOne(ctx, cropsAboutTable, map[string]any{"id": cropID}, &crop); err != nil {
+	query := "id = $1"
+	args := []any{cropID}
+
+	if err := database.FindOne(ctx, cropsAboutTable, query, args, &crop); err != nil {
 		return nil, err
 	}
 	return &crop, nil
 }
 
-func SQLgetAllCropAbouts(ctx context.Context, database db.Database) ([]CropAbout, error) {
+func SQLgetAllCropAbouts(ctx context.Context, database sqldb.Database) ([]CropAbout, error) {
 	var crops []CropAbout
-	if err := database.FindMany(ctx, cropsAboutTable, map[string]any{}, &crops); err != nil {
+	if err := database.FindMany(ctx, cropsAboutTable, "", nil, &crops); err != nil {
 		return nil, err
 	}
 	if crops == nil {
@@ -77,12 +84,36 @@ func SQLgetAllCropAbouts(ctx context.Context, database db.Database) ([]CropAbout
 	}
 	return crops, nil
 }
+func SQLupdateCropAbout(ctx context.Context, database sqldb.Database, cropID string, crop *CropAbout) (int64, error) {
+	if crop == nil {
+		return 0, nil
+	}
 
-func SQLupdateCropAbout(ctx context.Context, database db.Database, cropID string, crop *CropAbout) (any, error) {
-	return database.UpdateOne(ctx, cropsAboutTable, map[string]any{"id": cropID}, map[string]any{"$set": crop})
+	query := "id = $1"
+	args := []any{cropID}
+
+	updateValues := map[string]any{
+		"commonName":         crop.CommonName,
+		"scientificName":     crop.ScientificName,
+		"image":              crop.Image,
+		"imageAlt":           crop.ImageAlt,
+		"description":        crop.Description,
+		"nutritionalValues":  crop.NutritionalValues,
+		"growingConditions":  crop.GrowingConditions,
+		"plantingHarvesting": crop.PlantingHarvesting,
+		"careTips":           crop.CareTips,
+		"varieties":          crop.Varieties,
+		"usage":              crop.Usage,
+		"funFacts":           crop.FunFacts,
+	}
+
+	return database.UpdateOne(ctx, cropsAboutTable, query, args, updateValues)
 }
 
-func SQLdeleteCropAbout(ctx context.Context, database db.Database, cropID string) error {
-	_, err := database.DeleteOne(ctx, cropsAboutTable, map[string]any{"id": cropID})
+func SQLdeleteCropAbout(ctx context.Context, database sqldb.Database, cropID string) error {
+	query := "id = $1"
+	args := []any{cropID}
+
+	_, err := database.DeleteOne(ctx, cropsAboutTable, query, args)
 	return err
 }

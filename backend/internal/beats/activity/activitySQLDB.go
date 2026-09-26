@@ -6,13 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
-	"scav/config"
-	"scav/infra"
-	"scav/infra/db"
 	"strconv"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"scav/config"
+	"scav/infra"
+	"scav/infra/sqldb"
 )
 
 var (
@@ -26,27 +25,25 @@ func SQLinsertActivities(ctx context.Context, app *infra.Deps, activities []Acti
 		docs[i] = activities[i]
 	}
 
-	return app.DB.WithDB(ctx, func(ctx context.Context) error {
-		return app.DB.InsertMany(ctx, ActivitiesTable, docs)
-	})
+	return app.SQLDB.InsertMany(ctx, ActivitiesTable, docs)
 }
 
 func SQLgetActivities(ctx context.Context, app *infra.Deps, userID string, cursor time.Time, limit int) ([]Activity, error) {
-	filter := map[string]any{
-		"userid": userID,
-	}
+	where := "userid = $1"
+	args := []any{userID}
 
 	if !cursor.IsZero() {
-		filter["timestamp"] = map[string]any{"$lt": cursor}
+		where += " AND timestamp < $2"
+		args = append(args, cursor)
 	}
 
-	opts := db.FindManyOptions{
-		Limit: limit,
-		Sort:  []bson.E{{Key: "timestamp", Value: -1}},
+	opts := sqldb.FindManyOptions{
+		Limit:   limit,
+		OrderBy: "timestamp DESC",
 	}
 
 	var activities []Activity
-	err := app.DB.FindManyWithOptions(ctx, ActivitiesTable, filter, opts, &activities)
+	err := app.SQLDB.FindManyWithOptions(ctx, ActivitiesTable, where, args, opts, &activities)
 	return activities, err
 }
 
@@ -57,35 +54,35 @@ func SQLinsertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload Anal
 	session, _ := meta["session"].(string)
 	url, _ := meta["url"].(string)
 
-	err := app.DB.WithDB(ctx, func(ctx context.Context) error {
-		for _, ev := range payload.Events {
-			key := analyticsIdempotencyKey(ev)
+	for _, ev := range payload.Events {
+		key := analyticsIdempotencyKey(ev)
 
-			ok, err := app.Cache.SetNX(ctx, key, []byte("1"), analyticsIdemTTL)
-			if err != nil || !ok {
-				continue
-			}
-
-			doc := map[string]any{
-				"type":      ev["type"],
-				"data":      ev["data"],
-				"url":       url,
-				"user":      user,
-				"session":   session,
-				"timestamp": time.Now(),
-				"ip":        remoteAddr,
-			}
-
-			docsToInsert = append(docsToInsert, doc)
+		ok, err := app.Cache.SetNX(ctx, key, []byte("1"), analyticsIdemTTL)
+		if err != nil || !ok {
+			continue
 		}
 
-		if len(docsToInsert) == 0 {
-			return nil
+		// Marshal nested map/interface data into JSON for SQL JSONB/TEXT columns if required
+		eventDataRaw, _ := json.Marshal(ev["data"])
+
+		doc := map[string]any{
+			"type":      ev["type"],
+			"data":      string(eventDataRaw),
+			"url":       url,
+			"user":      user,
+			"session":   session,
+			"timestamp": time.Now(),
+			"ip":        remoteAddr,
 		}
 
-		return app.DB.InsertMany(ctx, AnalyticsTable, docsToInsert)
-	})
+		docsToInsert = append(docsToInsert, doc)
+	}
 
+	if len(docsToInsert) == 0 {
+		return 0, nil
+	}
+
+	err := app.SQLDB.InsertMany(ctx, AnalyticsTable, docsToInsert)
 	return len(docsToInsert), err
 }
 
@@ -111,6 +108,7 @@ func SQLparseCursor(r *http.Request) (time.Time, int) {
 
 	return cursor, limit
 }
+
 func SQLanalyticsIdempotencyKey(ev map[string]any) string {
 	raw, _ := json.Marshal(ev)
 	sum := sha256.Sum256(raw)
