@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"scav/subscribers/python"
 	"time"
 
 	"github.com/google/uuid"
@@ -106,7 +105,7 @@ func PublishWithMeta(ctx context.Context, m MQ, subject string, payload any, ret
 	// ------------------------------------------------------------------
 	// FIRE AND FORGET: Dispatches request to Flask asynchronously
 	// ------------------------------------------------------------------
-	python.SendToFlaskServerAsync(data)
+	// python.SendToFlaskServerAsync(data)
 	// ------------------------------------------------------------------
 
 	backoff := cfg.InitialWait

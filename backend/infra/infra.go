@@ -1,6 +1,4 @@
 // File: infra/infra.go
-
-// infra/infra.go
 package infra
 
 import (
@@ -12,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -26,14 +23,13 @@ import (
 )
 
 type Deps struct {
-	SQLDB    sqldb.Database
-	DB       db.Database
-	Cache    cache.Cache
-	MQ       mq.MQ
-	NatsConn *nats.Conn
-	Config   config.Config
+	SQLDB  sqldb.Database
+	DB     db.Database
+	Cache  cache.Cache
+	MQ     mq.MQ
+	Config config.Config
 
-	// Underlying raw clients for graceful shutdown
+	// Underlying raw clients for graceful shutdown.
 	PGPool      *pgxpool.Pool
 	MongoClient *mongo.Client
 	RedisClient *redis.Client
@@ -50,62 +46,130 @@ func New(cfg *config.Config) (*Deps, error) {
 		Config: *cfg,
 	}
 
-	// Helper to cleanup partially initialized resources on error
+	// Helper to clean up partially initialized resources on error.
 	cleanup := func() {
 		_ = d.Close(context.Background())
 	}
 
 	/* -------- Mongo -------- */
-	mongoURI := env("MONGO_URI", "mongodb://localhost:27017")
-	mongoDB := env("MONGO_DB", "eventdb")
 
-	client, database, err := NewMongo(mongoURI, mongoDB)
+	mongoURI := env(
+		"MONGO_URI",
+		"mongodb://localhost:27017",
+	)
+
+	mongoDB := env(
+		"MONGO_DB",
+		"eventdb",
+	)
+
+	mongoClient, database, err := NewMongo(
+		mongoURI,
+		mongoDB,
+	)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("mongo setup: %w", err)
 	}
-	d.MongoClient = client
-	d.DB = db.NewMongoDatabase(database, client, 100)
+
+	d.MongoClient = mongoClient
+	d.DB = db.NewMongoDatabase(
+		database,
+		mongoClient,
+		100,
+	)
 
 	/* -------- Redis -------- */
-	redisAddr := env("REDIS_ADDR", "localhost:6379")
-	redisPassword := env("REDIS_PASSWORD", "")
+
+	redisAddr := env(
+		"REDIS_ADDR",
+		"localhost:6379",
+	)
+
+	redisPassword := env(
+		"REDIS_PASSWORD",
+		"",
+	)
+
 	redisDB := 0
 
-	rclient, err := NewRedis(redisAddr, redisPassword, redisDB)
+	redisClient, err := NewRedis(
+		redisAddr,
+		redisPassword,
+		redisDB,
+	)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("redis setup: %w", err)
 	}
-	d.RedisClient = rclient
-	d.Cache = cache.NewRedisCache(rclient)
 
-	/* -------- NATS JetStream (optional) -------- */
-	natsURL := env("NATS_URL", "")
-	if natsURL != "" {
-		conn, js, err := NewJetStream(natsURL)
-		if err != nil {
-			cleanup()
-			return nil, fmt.Errorf("nats setup: %w", err)
-		}
-		d.NatsConn = conn
-		d.MQ = mq.NewJetStreamMQ(js)
+	d.RedisClient = redisClient
+
+	// Redis cache uses the same go-redis client.
+	d.Cache = cache.NewRedisCache(redisClient)
+
+	/*
+		Redis Pub/Sub is now the application's MQ.
+
+		The same Redis server can safely be used for:
+		- Cache
+		- Pub/Sub
+
+		go-redis handles the required Pub/Sub connections
+		internally.
+	*/
+	d.MQ = mq.NewRedisMQ(redisClient)
+
+	if d.MQ == nil {
+		cleanup()
+		return nil, errors.New("redis MQ initialization returned nil")
 	}
 
 	/* -------- Postgres -------- */
+
 	postgresURL := cfg.DatabaseURL
+
 	if postgresURL == "" {
-		postgresURL = env("POSTGRES_URL", env("DATABASE_URL", ""))
+		postgresURL = env(
+			"POSTGRES_URL",
+			env("DATABASE_URL", ""),
+		)
 	}
 
 	if postgresURL == "" {
-		user := env("POSTGRES_USER", "apeman")
-		pass := env("POSTGRES_PASSWORD", "ningning")
-		host := env("POSTGRES_HOST", "localhost")
-		port := env("POSTGRES_PORT", "5432")
-		dbname := env("POSTGRES_DB", "eventdb")
+		user := env(
+			"POSTGRES_USER",
+			"apeman",
+		)
 
-		postgresURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, pass, host, port, dbname)
+		pass := env(
+			"POSTGRES_PASSWORD",
+			"ningning",
+		)
+
+		host := env(
+			"POSTGRES_HOST",
+			"localhost",
+		)
+
+		port := env(
+			"POSTGRES_PORT",
+			"5432",
+		)
+
+		dbname := env(
+			"POSTGRES_DB",
+			"eventdb",
+		)
+
+		postgresURL = fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s",
+			user,
+			pass,
+			host,
+			port,
+			dbname,
+		)
 	}
 
 	pool, err := NewPostgres(postgresURL)
@@ -113,10 +177,19 @@ func New(cfg *config.Config) (*Deps, error) {
 		cleanup()
 		return nil, fmt.Errorf("postgres setup: %w", err)
 	}
-	d.PGPool = pool
-	d.SQLDB = sqldb.NewPostgresDatabase(pool, 100)
 
-	logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
+	d.PGPool = pool
+	d.SQLDB = sqldb.NewPostgresDatabase(
+		pool,
+		100,
+	)
+
+	logger.L.Sugar().Infow(
+		"infra initialized",
+		"redis_enabled", true,
+		"redis_addr", redisAddr,
+		"mq", "redis_pubsub",
+	)
 
 	return d, nil
 }
@@ -127,54 +200,68 @@ func (d *Deps) Close(ctx context.Context) error {
 	if d == nil {
 		return nil
 	}
+
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	var errs []string
 
-	// 1. Drain NATS first so subscriptions stop receiving new work
-	if d.NatsConn != nil {
-		if err := d.NatsConn.Drain(); err != nil {
-			d.NatsConn.Close()
-			errs = append(errs, fmt.Sprintf("nats drain: %v", err))
-		}
-	}
-
-	// 2. Close Database & Cache Connections
+	/*
+		1. Close PostgreSQL.
+	*/
 	if d.PGPool != nil {
 		d.PGPool.Close()
 	}
 
+	/*
+		2. Close Redis.
+
+		The Redis MQ implementation creates/owns its Pub/Sub
+		connections through the underlying Redis client, so closing
+		the client shuts down the Redis resources as well.
+	*/
 	if d.RedisClient != nil {
 		if err := d.RedisClient.Close(); err != nil {
-			errs = append(errs, fmt.Sprintf("redis close: %v", err))
+			errs = append(
+				errs,
+				fmt.Sprintf("redis close: %v", err),
+			)
 		}
 	}
 
+	/*
+		3. Disconnect MongoDB.
+	*/
 	if d.MongoClient != nil {
 		if err := d.MongoClient.Disconnect(ctx); err != nil {
-			errs = append(errs, fmt.Sprintf("mongo disconnect: %v", err))
+			errs = append(
+				errs,
+				fmt.Sprintf("mongo disconnect: %v", err),
+			)
 		}
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("close errors: %s", strings.Join(errs, "; "))
+		return fmt.Errorf(
+			"close errors: %s",
+			strings.Join(errs, "; "),
+		)
 	}
+
 	return nil
 }
 
-/* -------------------- Helpers -------------------- */
+/* -------------------- Mongo -------------------- */
 
-func env(key string, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}
-
-func NewMongo(uri string, dbName string) (*mongo.Client, *mongo.Database, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func NewMongo(
+	uri string,
+	dbName string,
+) (*mongo.Client, *mongo.Database, error) {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
 	defer cancel()
 
 	client, err := mongo.Connect(
@@ -191,46 +278,55 @@ func NewMongo(uri string, dbName string) (*mongo.Client, *mongo.Database, error)
 
 	if err := client.Ping(ctx, nil); err != nil {
 		_ = client.Disconnect(ctx)
+
 		return nil, nil, err
 	}
 
 	return client, client.Database(dbName), nil
 }
 
-func NewRedis(addr string, password string, dbIndex int) (*redis.Client, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       dbIndex,
-	})
+/* -------------------- Redis -------------------- */
+
+func NewRedis(
+	addr string,
+	password string,
+	dbIndex int,
+) (*redis.Client, error) {
+	if strings.TrimSpace(addr) == "" {
+		return nil, errors.New("redis address is empty")
+	}
+
+	client := redis.NewClient(
+		&redis.Options{
+			Addr:     addr,
+			Password: password,
+			DB:       dbIndex,
+		},
+	)
 
 	ctx, cancel := cancelTimeout(5 * time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
 		_ = client.Close()
+
 		return nil, err
 	}
 
 	return client, nil
 }
 
-func NewJetStream(url string) (*nats.Conn, nats.JetStreamContext, error) {
-	nc, err := nats.Connect(url)
-	if err != nil {
-		return nil, nil, err
+/* -------------------- Postgres -------------------- */
+
+func NewPostgres(
+	uri string,
+) (*pgxpool.Pool, error) {
+	if strings.TrimSpace(uri) == "" {
+		return nil, errors.New(
+			"postgres URL is empty",
+		)
 	}
 
-	js, err := nc.JetStream()
-	if err != nil {
-		_ = nc.Drain()
-		return nil, nil, err
-	}
-
-	return nc, js, nil
-}
-
-func NewPostgres(uri string) (*pgxpool.Pool, error) {
 	ctx, cancel := cancelTimeout(10 * time.Second)
 	defer cancel()
 
@@ -247,6 +343,24 @@ func NewPostgres(uri string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func cancelTimeout(d time.Duration) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), d)
+/* -------------------- Helpers -------------------- */
+
+func env(
+	key string,
+	fallback string,
+) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+
+	return fallback
+}
+
+func cancelTimeout(
+	duration time.Duration,
+) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(
+		context.Background(),
+		duration,
+	)
 }

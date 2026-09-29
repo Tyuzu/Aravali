@@ -167,7 +167,7 @@ func AcceptJob(app *infra.Deps) http.HandlerFunc {
 		}
 
 		_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
-		_ = app.NatsConn.Publish(fmt.Sprintf("deliveries.status.%s", deliveries.StatusAccepted), []byte(deliveryID))
+		_ = app.MQ.Publish(ctx, fmt.Sprintf("deliveries.status.%s", deliveries.StatusAccepted), []byte(deliveryID))
 
 		utils.RespondWithJSON(w, http.StatusOK, delivery)
 	}
@@ -200,7 +200,7 @@ func SendGPSLocation(app *infra.Deps) http.HandlerFunc {
 		bytes, _ := json.Marshal(loc)
 
 		_ = app.Cache.Set(ctx, fmt.Sprintf("gps:driver:%s", driverID), bytes, 1*time.Hour)
-		_ = app.NatsConn.Publish(fmt.Sprintf("drivers.location.%s", driverID), bytes)
+		_ = app.MQ.Publish(ctx, fmt.Sprintf("drivers.location.%s", driverID), bytes)
 
 		utils.RespondWithJSON(w, http.StatusAccepted, map[string]string{"status": "location_updated"})
 	}

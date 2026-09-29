@@ -168,7 +168,7 @@ func CreateDelivery(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		_ = app.NatsConn.Publish("deliveries.created", []byte(delivery.DeliveryID))
+		_ = app.MQ.Publish(ctx, "deliveries.created", []byte(delivery.DeliveryID))
 		utils.RespondWithJSON(w, http.StatusCreated, delivery)
 	}
 }

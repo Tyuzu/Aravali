@@ -78,7 +78,7 @@ func setDeliveryStatusWithHistory(ctx context.Context, app *infra.Deps, delivery
 		return nil, err
 	}
 	_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
-	_ = app.NatsConn.Publish(fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
+	_ = app.MQ.Publish(ctx, fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
 	return &updated, nil
 }
 
@@ -155,6 +155,6 @@ func updateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID
 		return nil, err
 	}
 	_ = app.Cache.Del(ctx, fmt.Sprintf("delivery:%s", deliveryID))
-	_ = app.NatsConn.Publish(fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
+	_ = app.MQ.Publish(ctx, fmt.Sprintf("deliveries.status.%s", newStatus), []byte(deliveryID))
 	return &updatedDelivery, nil
 }

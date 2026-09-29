@@ -102,11 +102,12 @@ func DeleteWebhook(app *infra.Deps) http.HandlerFunc {
 
 func TestWebhook(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 		whID := utils.GetParam(r, "webhookid")
 
 		payload := map[string]string{"event": "ping", "webhookid": whID}
 		data, _ := json.Marshal(payload)
-		_ = app.NatsConn.Publish("webhooks.test", data)
+		_ = app.MQ.Publish(ctx, "webhooks.test", data)
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{"status": "test_triggered"})
 	}

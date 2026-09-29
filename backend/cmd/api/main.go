@@ -60,16 +60,33 @@ func main() {
 		)
 	}
 
+	// Ensure infrastructure is eventually closed even if main
+	// returns unexpectedly after initialization.
+	defer func() {
+		closeCtx, cancel := context.WithTimeout(
+			context.Background(),
+			10*time.Second,
+		)
+		defer cancel()
+
+		if err := app.Close(closeCtx); err != nil {
+			logger.L.Sugar().Errorw(
+				"failed to close infrastructure",
+				"error", err,
+			)
+		}
+	}()
+
 	// =====================
 	// Application Lifecycle
 	// =====================
 	//
 	// This context is shared by background workers and MQ subscribers.
-	// When appCancel() is called during shutdown, subscribers and workers drain.
+	// When appCancel() is called during shutdown, subscribers and workers stop.
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
-	// media worker subscription (set if MQ available)
+	// Media worker subscription.
 	var mediaSub mq.Subscription
 
 	// =====================
@@ -83,14 +100,26 @@ func main() {
 			)
 		}
 
-		logger.L.Sugar().Infow("MQ subscribers registered")
+		logger.L.Sugar().Infow(
+			"MQ subscribers registered",
+			"mq", "redis_pubsub",
+		)
 
-		// Start media worker consumer so background workers process media.jobs
-		if sub, err := workers.StartMediaWorker(appCtx, app.MQ); err != nil {
-			logger.L.Sugar().Errorw("failed to start media worker", "error", err)
+		// Start media worker consumer so background workers process media.jobs.
+		if sub, err := workers.StartMediaWorker(
+			appCtx,
+			app.MQ,
+		); err != nil {
+			logger.L.Sugar().Errorw(
+				"failed to start media worker",
+				"error", err,
+			)
 		} else {
 			mediaSub = sub
-			logger.L.Sugar().Infow("media worker started")
+
+			logger.L.Sugar().Infow(
+				"media worker started",
+			)
 		}
 	} else {
 		logger.L.Sugar().Warnw(
@@ -160,12 +189,20 @@ func main() {
 			// Relational / SQL DB Check
 			if app.SQLDB != nil {
 				if err := app.SQLDB.Ping(ctx); err != nil {
-					http.Error(w, "sqldb_unavailable", http.StatusServiceUnavailable)
+					http.Error(
+						w,
+						"sqldb_unavailable",
+						http.StatusServiceUnavailable,
+					)
 					return
 				}
 			} else if app.DB != nil {
 				if err := app.DB.Ping(ctx); err != nil {
-					http.Error(w, "db_unavailable", http.StatusServiceUnavailable)
+					http.Error(
+						w,
+						"db_unavailable",
+						http.StatusServiceUnavailable,
+					)
 					return
 				}
 			}
@@ -173,7 +210,11 @@ func main() {
 			// Cache Check
 			if app.Cache != nil {
 				if _, err := app.Cache.Ping(ctx); err != nil {
-					http.Error(w, "cache_unavailable", http.StatusServiceUnavailable)
+					http.Error(
+						w,
+						"cache_unavailable",
+						http.StatusServiceUnavailable,
+					)
 					return
 				}
 			}
@@ -181,7 +222,11 @@ func main() {
 			// Message Queue Check
 			if app.MQ != nil {
 				if err := app.MQ.Ping(ctx); err != nil {
-					http.Error(w, "mq_unavailable", http.StatusServiceUnavailable)
+					http.Error(
+						w,
+						"mq_unavailable",
+						http.StatusServiceUnavailable,
+					)
 					return
 				}
 			}
@@ -258,6 +303,7 @@ func main() {
 	// Wait for Shutdown Signal
 	// =====================
 	sigCh := make(chan os.Signal, 1)
+
 	signal.Notify(
 		sigCh,
 		os.Interrupt,
@@ -266,7 +312,9 @@ func main() {
 
 	<-sigCh
 
-	logger.L.Sugar().Infow("Shutting down server...")
+	logger.L.Sugar().Infow(
+		"Shutting down server...",
+	)
 
 	// =====================
 	// Graceful Shutdown
@@ -277,6 +325,7 @@ func main() {
 	)
 	defer shutdownCancel()
 
+	// Stop accepting new HTTP requests first.
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.L.Sugar().Errorw(
 			"HTTP server shutdown error",
@@ -287,33 +336,55 @@ func main() {
 	// =====================
 	// Stop MQ Subscribers & Background Workers
 	// =====================
-	logger.L.Sugar().Infow("Stopping MQ subscribers and background workers...")
+	logger.L.Sugar().Infow(
+		"Stopping MQ subscribers and background workers...",
+	)
+
 	appCancel()
 
-	// Unsubscribe media worker explicitly if active
+	// Unsubscribe media worker explicitly if active.
 	if mediaSub != nil {
 		if err := mediaSub.Unsubscribe(); err != nil {
-			logger.L.Sugar().Errorw("media worker unsubscribe failed", "error", err)
+			logger.L.Sugar().Errorw(
+				"media worker unsubscribe failed",
+				"error", err,
+			)
 		}
 	}
 
+	// Stop application-level background components.
 	rateLimiter.Stop()
 	hub.Stop()
 	mehub.Stop()
 
 	// =====================
-	// Drain NATS Connection
+	// Close Infrastructure
 	// =====================
-	if app.NatsConn != nil {
-		logger.L.Sugar().Infow("Draining NATS connection...")
-		if err := app.NatsConn.Drain(); err != nil {
-			logger.L.Sugar().Errorw(
-				"NATS drain error",
-				"error", err,
-			)
-		}
-		app.NatsConn.Close()
+	//
+	// This closes:
+	// - PostgreSQL
+	// - Redis (including Redis Pub/Sub resources)
+	// - MongoDB
+	//
+	// There is no NATS connection anymore.
+	logger.L.Sugar().Infow(
+		"Closing infrastructure...",
+	)
+
+	closeCtx, closeCancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer closeCancel()
+
+	if err := app.Close(closeCtx); err != nil {
+		logger.L.Sugar().Errorw(
+			"infrastructure shutdown error",
+			"error", err,
+		)
 	}
 
-	logger.L.Sugar().Infow("Server stopped successfully")
+	logger.L.Sugar().Infow(
+		"Server stopped successfully",
+	)
 }
