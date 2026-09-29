@@ -64,22 +64,9 @@ func main() {
 	// Application Lifecycle
 	// =====================
 	//
-	// This context is shared by background workers and
-	// MQ subscribers.
-	//
-	// When appCancel() is called during shutdown:
-	//
-	//     appCancel()
-	//          |
-	//          v
-	//     ctx.Done()
-	//          |
-	//          v
-	//     MQ subscribers stop
-	//
-	appCtx, appCancel := context.WithCancel(
-		context.Background(),
-	)
+	// This context is shared by background workers and MQ subscribers.
+	// When appCancel() is called during shutdown, subscribers and workers drain.
+	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
 	// media worker subscription (set if MQ available)
@@ -88,18 +75,6 @@ func main() {
 	// =====================
 	// MQ Subscribers
 	// =====================
-	//
-	// Register all MQ consumers ONCE during application startup.
-	//
-	// Example:
-	//
-	//     chat.message.created
-	//             |
-	//             v
-	//     handleChatMessageCreated()
-	//
-	// We do NOT subscribe every time an event is published.
-	//
 	if app.MQ != nil {
 		if err := subscribers.RegisterAll(appCtx, app); err != nil {
 			logger.L.Sugar().Fatalw(
@@ -108,9 +83,7 @@ func main() {
 			)
 		}
 
-		logger.L.Sugar().Infow(
-			"MQ subscribers registered",
-		)
+		logger.L.Sugar().Infow("MQ subscribers registered")
 
 		// Start media worker consumer so background workers process media.jobs
 		if sub, err := workers.StartMediaWorker(appCtx, app.MQ); err != nil {
@@ -184,34 +157,31 @@ func main() {
 			)
 			defer cancel()
 
-			// Database
-			if err := app.DB.Ping(ctx); err != nil {
-				http.Error(
-					w,
-					"db_unavailable",
-					http.StatusServiceUnavailable,
-				)
-				return
+			// Relational / SQL DB Check
+			if app.SQLDB != nil {
+				if err := app.SQLDB.Ping(ctx); err != nil {
+					http.Error(w, "sqldb_unavailable", http.StatusServiceUnavailable)
+					return
+				}
+			} else if app.DB != nil {
+				if err := app.DB.Ping(ctx); err != nil {
+					http.Error(w, "db_unavailable", http.StatusServiceUnavailable)
+					return
+				}
 			}
 
-			// Cache
-			if _, err := app.Cache.Ping(ctx); err != nil {
-				http.Error(
-					w,
-					"cache_unavailable",
-					http.StatusServiceUnavailable,
-				)
-				return
+			// Cache Check
+			if app.Cache != nil {
+				if _, err := app.Cache.Ping(ctx); err != nil {
+					http.Error(w, "cache_unavailable", http.StatusServiceUnavailable)
+					return
+				}
 			}
 
-			// Message Queue
+			// Message Queue Check
 			if app.MQ != nil {
 				if err := app.MQ.Ping(ctx); err != nil {
-					http.Error(
-						w,
-						"mq_unavailable",
-						http.StatusServiceUnavailable,
-					)
+					http.Error(w, "mq_unavailable", http.StatusServiceUnavailable)
 					return
 				}
 			}
@@ -230,7 +200,6 @@ func main() {
 
 	corsOpts := cors.Options{
 		AllowedOrigins: cfg.AllowedOrigins,
-
 		AllowedMethods: []string{
 			"HEAD",
 			"GET",
@@ -240,7 +209,6 @@ func main() {
 			"DELETE",
 			"OPTIONS",
 		},
-
 		AllowedHeaders: []string{
 			"Content-Type",
 			"Authorization",
@@ -249,10 +217,8 @@ func main() {
 			"Accept",
 			"Origin",
 		},
-
 		AllowCredentials: cfg.AllowCredentials,
-
-		MaxAge: 300,
+		MaxAge:           300,
 	}
 
 	corsHandler := cors.New(corsOpts).Handler(handler)
@@ -261,9 +227,8 @@ func main() {
 	// HTTP Server
 	// =====================
 	server := &http.Server{
-		Addr:    cfg.HTTPPort,
-		Handler: corsHandler,
-
+		Addr:              cfg.HTTPPort,
+		Handler:           corsHandler,
 		ReadTimeout:       7 * time.Second,
 		ReadHeaderTimeout: 2 * time.Second,
 		IdleTimeout:       120 * time.Second,
@@ -293,7 +258,6 @@ func main() {
 	// Wait for Shutdown Signal
 	// =====================
 	sigCh := make(chan os.Signal, 1)
-
 	signal.Notify(
 		sigCh,
 		os.Interrupt,
@@ -302,18 +266,11 @@ func main() {
 
 	<-sigCh
 
-	logger.L.Sugar().Infow(
-		"Shutting down server...",
-	)
+	logger.L.Sugar().Infow("Shutting down server...")
 
 	// =====================
 	// Graceful Shutdown
 	// =====================
-
-	// Give HTTP handlers time to finish.
-	//
-	// This is important because an HTTP handler might currently
-	// be publishing an event to NATS.
 	shutdownCtx, shutdownCancel := context.WithTimeout(
 		context.Background(),
 		15*time.Second,
@@ -328,66 +285,35 @@ func main() {
 	}
 
 	// =====================
-	// Stop MQ Subscribers
+	// Stop MQ Subscribers & Background Workers
 	// =====================
-	//
-	// This cancels appCtx.
-	//
-	// Your MQ subscription code should be doing:
-	//
-	//     go func() {
-	//         <-ctx.Done()
-	//         sub.Drain()
-	//     }()
-	//
-	// Therefore all subscribers begin shutting down here.
-	logger.L.Sugar().Infow(
-		"Stopping MQ subscribers...",
-	)
-
+	logger.L.Sugar().Infow("Stopping MQ subscribers and background workers...")
 	appCancel()
 
-	// =====================
-	// Stop Application Workers
-	// =====================
-
-	// Unsubscribe media worker if running
+	// Unsubscribe media worker if active
 	if mediaSub != nil {
 		if err := mediaSub.Unsubscribe(); err != nil {
 			logger.L.Sugar().Errorw("media worker unsubscribe failed", "error", err)
 		}
 	}
-	logger.L.Sugar().Infow(
-		"Stopping application workers...",
-	)
 
 	rateLimiter.Stop()
 	hub.Stop()
 	mehub.Stop()
 
 	// =====================
-	// Drain NATS
+	// Drain NATS Connection
 	// =====================
-	//
-	// Subscribers have already received the cancellation signal.
-	//
-	// Now drain the underlying NATS connection.
-	logger.L.Sugar().Infow(
-		"Draining NATS connection...",
-	)
-
 	if app.NatsConn != nil {
+		logger.L.Sugar().Infow("Draining NATS connection...")
 		if err := app.NatsConn.Drain(); err != nil {
 			logger.L.Sugar().Errorw(
 				"NATS drain error",
 				"error", err,
 			)
 		}
-
 		app.NatsConn.Close()
 	}
 
-	logger.L.Sugar().Infow(
-		"Server stopped successfully",
-	)
+	logger.L.Sugar().Infow("Server stopped successfully")
 }

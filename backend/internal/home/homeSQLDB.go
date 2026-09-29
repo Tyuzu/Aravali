@@ -14,8 +14,8 @@ func SQLfetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category stri
 	}
 
 	opts := sqldb.FindManyOptions{
-		Offset:  offset,
-		Limit:   limit,
+		Offset:  int64(offset),
+		Limit:   int64(limit),
 		OrderBy: "created_at DESC",
 	}
 

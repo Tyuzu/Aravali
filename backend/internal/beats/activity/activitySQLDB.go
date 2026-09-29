@@ -38,7 +38,7 @@ func SQLgetActivities(ctx context.Context, app *infra.Deps, userID string, curso
 	}
 
 	opts := sqldb.FindManyOptions{
-		Limit:   limit,
+		Limit:   int64(limit),
 		OrderBy: "timestamp DESC",
 	}
 

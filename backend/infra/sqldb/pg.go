@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,7 +14,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var errNotImplemented = errors.New("postgres database adapter: operation not implemented for the current relational schema")
+var ErrNotImplemented = errors.New("postgres database adapter: operation not implemented for the current relational schema")
+
+// SortItem defines column sorting parameters for queries.
+type SortItem struct {
+	Column     string
+	Descending bool
+}
 
 // PostgresDatabase provides a pure PostgreSQL driver implementation using pgxpool.
 type PostgresDatabase struct {
@@ -49,7 +56,7 @@ func (p *PostgresDatabase) WithDB(ctx context.Context, op func(ctx context.Conte
 		}
 		return err
 	}
-	return errNotImplemented
+	return ErrNotImplemented
 }
 
 func (p *PostgresDatabase) RunTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
@@ -95,16 +102,28 @@ func (p *PostgresDatabase) InsertMany(ctx context.Context, table string, records
 	if len(records) == 0 {
 		return nil
 	}
-	for _, rec := range records {
-		if err := p.InsertOne(ctx, table, rec); err != nil {
-			return err
+	return p.RunTransaction(ctx, func(tx pgx.Tx) error {
+		for _, rec := range records {
+			cols, vals, placeholders, err := extractColumnsAndValues(rec)
+			if err != nil {
+				return err
+			}
+			query := fmt.Sprintf(
+				"INSERT INTO %s (%s) VALUES (%s)",
+				quoteIdent(table),
+				strings.Join(cols, ", "),
+				strings.Join(placeholders, ", "),
+			)
+			if _, err := tx.Exec(ctx, query, vals...); err != nil {
+				return err
+			}
 		}
-	}
-	return nil
+		return nil
+	})
 }
 
 func (p *PostgresDatabase) BulkWrite(ctx context.Context, table string, operations []any) error {
-	return errNotImplemented
+	return ErrNotImplemented
 }
 
 /* ---------------- Read ---------------- */
@@ -143,7 +162,6 @@ func (p *PostgresDatabase) FindOneWithProjection(ctx context.Context, table stri
 		return err
 	}
 
-	// collect column names
 	fds := rows.FieldDescriptions()
 	colsNames := make([]string, len(fds))
 	for i, fd := range fds {
@@ -207,23 +225,17 @@ func (p *PostgresDatabase) FindManyWithProjection(
 	}
 	defer rows.Close()
 
-	// prepare column names
 	fds := rows.FieldDescriptions()
 	colsNames := make([]string, len(fds))
 	for i, fd := range fds {
 		colsNames[i] = string(fd.Name)
 	}
 
-	// result must be pointer to slice
 	rv := reflect.ValueOf(result)
-	if rv.Kind() != reflect.Ptr {
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Slice {
 		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
 	}
 	sv := rv.Elem()
-	if sv.Kind() != reflect.Slice {
-		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
-	}
-
 	elemType := sv.Type().Elem()
 
 	for rows.Next() {
@@ -232,13 +244,11 @@ func (p *PostgresDatabase) FindManyWithProjection(
 			return err
 		}
 
-		// create new element
 		newElem := reflect.New(elemType).Interface()
 		if err := mapRowToDest(newElem, colsNames, vals); err != nil {
 			return err
 		}
 
-		// append dereferenced element if slice element is not a pointer
 		var toAppend reflect.Value
 		if elemType.Kind() == reflect.Ptr {
 			toAppend = reflect.ValueOf(newElem)
@@ -248,10 +258,7 @@ func (p *PostgresDatabase) FindManyWithProjection(
 		sv.Set(reflect.Append(sv, toAppend))
 	}
 
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	return nil
+	return rows.Err()
 }
 
 func (p *PostgresDatabase) Distinct(ctx context.Context, table string, column string, whereClause string, args []any, result any) error {
@@ -267,49 +274,37 @@ func (p *PostgresDatabase) Distinct(ctx context.Context, table string, column st
 	}
 	defer rows.Close()
 
-	// result must be pointer to slice
 	rv := reflect.ValueOf(result)
-	if rv.Kind() != reflect.Ptr {
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Slice {
 		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
 	}
 	sv := rv.Elem()
-	if sv.Kind() != reflect.Slice {
-		return fmt.Errorf("result argument must be a pointer to a slice, got %T", result)
-	}
+	elemType := sv.Type().Elem()
 
 	for rows.Next() {
 		vals, err := rows.Values()
-		if err != nil {
-			return err
-		}
-		if len(vals) == 0 {
+		if err != nil || len(vals) == 0 {
 			continue
 		}
 
-		// append first column value
 		v := vals[0]
-		valrv := reflect.ValueOf(v)
-		// create convertible value for slice element
-		elemType := sv.Type().Elem()
 		var toAppend reflect.Value
 		if v == nil {
 			toAppend = reflect.Zero(elemType)
-		} else if valrv.Type().AssignableTo(elemType) {
-			toAppend = valrv
-		} else if valrv.Type().ConvertibleTo(elemType) {
-			toAppend = valrv.Convert(elemType)
-		} else if b, ok := v.([]byte); ok && elemType.Kind() == reflect.String {
-			toAppend = reflect.ValueOf(string(b))
 		} else {
-			toAppend = reflect.Zero(elemType)
+			valrv := reflect.ValueOf(v)
+			if valrv.Type().AssignableTo(elemType) {
+				toAppend = valrv
+			} else if valrv.Type().ConvertibleTo(elemType) {
+				toAppend = valrv.Convert(elemType)
+			} else {
+				toAppend = reflect.Zero(elemType)
+			}
 		}
 		sv.Set(reflect.Append(sv, toAppend))
 	}
 
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	return nil
+	return rows.Err()
 }
 
 /* ---------------- Update ---------------- */
@@ -337,13 +332,9 @@ func (p *PostgresDatabase) UpdateMany(ctx context.Context, table string, whereCl
 		argIdx++
 	}
 
-	// Adjust parameter indices for WHERE clause args
-	adjustedWhere := whereClause
-	for i := range args {
-		adjustedWhere = strings.ReplaceAll(adjustedWhere, fmt.Sprintf("$%d", i+1), fmt.Sprintf("$%d", argIdx))
-		queryArgs = append(queryArgs, args[i])
-		argIdx++
-	}
+	// Safely re-index placeholders ($1, $2) inside WHERE clause without corrupting indexes > 9
+	adjustedWhere := reindexPlaceholders(whereClause, argIdx-1)
+	queryArgs = append(queryArgs, args...)
 
 	where := "TRUE"
 	if strings.TrimSpace(adjustedWhere) != "" {
@@ -388,7 +379,7 @@ func (p *PostgresDatabase) Upsert(ctx context.Context, table string, conflictCol
 func (p *PostgresDatabase) Inc(ctx context.Context, table string, whereClause string, args []any, column string, value int64) error {
 	where := "TRUE"
 	if strings.TrimSpace(whereClause) != "" {
-		where = whereClause
+		where = reindexPlaceholders(whereClause, 1)
 	}
 
 	query := fmt.Sprintf("UPDATE %s SET %s = %s + $1 WHERE %s", quoteIdent(table), quoteIdent(column), quoteIdent(column), where)
@@ -400,10 +391,9 @@ func (p *PostgresDatabase) Inc(ctx context.Context, table string, whereClause st
 func (p *PostgresDatabase) AddToSet(ctx context.Context, table string, whereClause string, args []any, arrayColumn string, value any) error {
 	where := "TRUE"
 	if strings.TrimSpace(whereClause) != "" {
-		where = whereClause
+		where = reindexPlaceholders(whereClause, 1)
 	}
 
-	// Appends to a PostgreSQL array column if the element does not already exist
 	col := quoteIdent(arrayColumn)
 	query := fmt.Sprintf(
 		"UPDATE %s SET %s = CASE WHEN $1 = ANY(%s) THEN %s ELSE array_append(%s, $1) END WHERE %s",
@@ -441,10 +431,8 @@ func (p *PostgresDatabase) DeleteMany(ctx context.Context, table string, whereCl
 /* ---------------- Atomic & Aggregations ---------------- */
 
 func (p *PostgresDatabase) FindOneAndUpdate(ctx context.Context, table string, whereClause string, args []any, updateValues map[string]any, result any) error {
-	var rowCount int64
-	err := p.RunTransaction(ctx, func(tx pgx.Tx) error {
-		var err error
-		rowCount, err = p.UpdateOne(ctx, table, whereClause, args, updateValues)
+	return p.RunTransaction(ctx, func(tx pgx.Tx) error {
+		rowCount, err := p.UpdateOne(ctx, table, whereClause, args, updateValues)
 		if err != nil {
 			return err
 		}
@@ -453,7 +441,6 @@ func (p *PostgresDatabase) FindOneAndUpdate(ctx context.Context, table string, w
 		}
 		return p.FindOne(ctx, table, whereClause, args, result)
 	})
-	return err
 }
 
 func (p *PostgresDatabase) QueryRaw(ctx context.Context, sqlQuery string, args []any, result any) error {
@@ -463,19 +450,18 @@ func (p *PostgresDatabase) QueryRaw(ctx context.Context, sqlQuery string, args [
 	}
 	defer rows.Close()
 
-	// prepare column names
 	fds := rows.FieldDescriptions()
 	colsNames := make([]string, len(fds))
 	for i, fd := range fds {
 		colsNames[i] = string(fd.Name)
 	}
 
-	// if result is pointer to slice -> behave like FindMany
 	rv := reflect.ValueOf(result)
 	if rv.Kind() != reflect.Ptr {
 		return fmt.Errorf("result must be a pointer, got %T", result)
 	}
 	ev := rv.Elem()
+
 	if ev.Kind() == reflect.Slice {
 		elemType := ev.Type().Elem()
 		for rows.Next() {
@@ -495,13 +481,9 @@ func (p *PostgresDatabase) QueryRaw(ctx context.Context, sqlQuery string, args [
 			}
 			ev.Set(reflect.Append(ev, toAppend))
 		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		return nil
+		return rows.Err()
 	}
 
-	// otherwise behave like FindOne
 	if !rows.Next() {
 		if rows.Err() != nil {
 			return rows.Err()
@@ -515,6 +497,47 @@ func (p *PostgresDatabase) QueryRaw(ctx context.Context, sqlQuery string, args [
 	return mapRowToDest(result, colsNames, vals)
 }
 
+func (p *PostgresDatabase) Count(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	return p.CountDocuments(ctx, table, whereClause, args)
+}
+
+func (p *PostgresDatabase) CountDocuments(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
+	where := "TRUE"
+	if strings.TrimSpace(whereClause) != "" {
+		where = whereClause
+	}
+
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", quoteIdent(table), where)
+	var count int64
+	err := p.db.QueryRow(ctx, query, args...).Scan(&count)
+	return count, err
+}
+
+func (p *PostgresDatabase) Aggregate(ctx context.Context, table string, whereClause string, args []any, out any) error {
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", quoteIdent(table))
+	if strings.TrimSpace(whereClause) != "" {
+		query += " WHERE " + whereClause
+	}
+	return p.db.QueryRow(ctx, query, args...).Scan(out)
+}
+
+func (p *PostgresDatabase) EstimatedDocumentCount(ctx context.Context, table string) (int64, error) {
+	var count int64
+	query := "SELECT reltuples::bigint FROM pg_class WHERE relname = $1"
+	err := p.db.QueryRow(ctx, query, table).Scan(&count)
+	return count, err
+}
+
+/* ---------------- Helpers ---------------- */
+
+func reindexPlaceholders(whereClause string, offset int) string {
+	re := regexp.MustCompile(`\$(\d+)`)
+	return re.ReplaceAllStringFunc(whereClause, func(match string) string {
+		idx, _ := strconv.Atoi(match[1:])
+		return fmt.Sprintf("$%d", idx+offset)
+	})
+}
+
 func mapRowToDest(dest any, cols []string, vals []any) error {
 	if dest == nil {
 		return fmt.Errorf("nil destination")
@@ -525,45 +548,30 @@ func mapRowToDest(dest any, cols []string, vals []any) error {
 	}
 	ev := rv.Elem()
 
-	// map into map[string]any
 	if ev.Kind() == reflect.Map {
 		if ev.IsNil() {
 			ev.Set(reflect.MakeMap(ev.Type()))
 		}
 		for i, c := range cols {
-			key := reflect.ValueOf(c)
-			ev.SetMapIndex(key, reflect.ValueOf(vals[i]))
+			ev.SetMapIndex(reflect.ValueOf(c), reflect.ValueOf(vals[i]))
 		}
 		return nil
 	}
 
-	// single column into non-struct
 	if ev.Kind() != reflect.Struct {
-		if len(vals) == 0 {
-			return nil
-		}
-		v := vals[0]
-		if v == nil {
+		if len(vals) == 0 || vals[0] == nil {
 			ev.Set(reflect.Zero(ev.Type()))
 			return nil
 		}
-		valrv := reflect.ValueOf(v)
+		valrv := reflect.ValueOf(vals[0])
 		if valrv.Type().AssignableTo(ev.Type()) {
 			ev.Set(valrv)
-			return nil
-		}
-		if valrv.Type().ConvertibleTo(ev.Type()) {
+		} else if valrv.Type().ConvertibleTo(ev.Type()) {
 			ev.Set(valrv.Convert(ev.Type()))
-			return nil
 		}
-		if b, ok := v.([]byte); ok && ev.Kind() == reflect.String {
-			ev.SetString(string(b))
-			return nil
-		}
-		return fmt.Errorf("cannot assign %T to %T", v, dest)
+		return nil
 	}
 
-	// map into struct fields by `db` tag or field name (case-insensitive)
 	typ := ev.Type()
 	for i, c := range cols {
 		for j := 0; j < ev.NumField(); j++ {
@@ -585,63 +593,15 @@ func mapRowToDest(dest any, cols []string, vals []any) error {
 				valrv := reflect.ValueOf(v)
 				if valrv.Type().AssignableTo(fv.Type()) {
 					fv.Set(valrv)
-					break
-				}
-				if valrv.Type().ConvertibleTo(fv.Type()) {
+				} else if valrv.Type().ConvertibleTo(fv.Type()) {
 					fv.Set(valrv.Convert(fv.Type()))
-					break
 				}
-				if b, ok := v.([]byte); ok && fv.Kind() == reflect.String {
-					fv.SetString(string(b))
-					break
-				}
+				break
 			}
 		}
 	}
 	return nil
 }
-
-func (p *PostgresDatabase) Count(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
-	return p.CountDocuments(ctx, table, whereClause, args)
-}
-
-func (p *PostgresDatabase) CountDocuments(ctx context.Context, table string, whereClause string, args []any) (int64, error) {
-	where := "TRUE"
-	if strings.TrimSpace(whereClause) != "" {
-		where = whereClause
-	}
-
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", quoteIdent(table), where)
-	var count int64
-	err := p.db.QueryRow(ctx, query, args...).Scan(&count)
-	return count, err
-}
-
-func (p *PostgresDatabase) Aggregate(
-	ctx context.Context,
-	table string,
-	whereClause string,
-	args []any,
-	out any, // Pointer to destination variable (e.g. *int64 or struct pointer)
-) error {
-	// 1. Construct valid SQL query
-	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-	if whereClause != "" {
-		query += " WHERE " + whereClause
-	}
-
-	// 2. Execute query and scan directly into the 'out' target pointer
-	return p.db.QueryRow(ctx, query, args...).Scan(out)
-}
-
-func (p *PostgresDatabase) EstimatedDocumentCount(ctx context.Context, table string) (int64, error) {
-	var count int64
-	query := "SELECT reltuples::bigint FROM pg_class WHERE relname = $1"
-	err := p.db.QueryRow(ctx, query, table).Scan(&count)
-	return count, err
-}
-
-/* ---------------- Helpers ---------------- */
 
 func extractColumnsAndValues(record any) ([]string, []any, []string, error) {
 	val := reflect.ValueOf(record)
@@ -694,7 +654,8 @@ func isRetryablePostgres(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), "connection refused") ||
-		strings.Contains(err.Error(), "timeout") ||
-		strings.Contains(err.Error(), "too many clients")
+	s := err.Error()
+	return strings.Contains(s, "connection refused") ||
+		strings.Contains(s, "timeout") ||
+		strings.Contains(s, "too many clients")
 }

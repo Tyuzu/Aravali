@@ -2,7 +2,8 @@ package sqldb
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // OrderBy defines sorting criteria for queries.
@@ -13,21 +14,22 @@ type OrderBy struct {
 
 // FindManyOptions provides pagination, sorting, and field selection.
 type FindManyOptions struct {
-	Limit   int
-	Offset  int
-	OrderBy string    // Updated to support string formats like "created_at ASC"
-	Sort    []OrderBy // Kept for structured multi-column sorting if needed
+	Limit   int64
+	Offset  int64
+	OrderBy string    // Supports string formats like "created_at ASC"
+	Sort    []OrderBy // Supports structured multi-column sorting
 	Columns []string
 }
 
-// Database defines a standard PostgreSQL database abstraction layer.
+// Database defines a standard PostgreSQL database abstraction layer using pgx.
 type Database interface {
 	/* Lifecycle & Transactions */
 	Ping(ctx context.Context) error
 	WithDB(ctx context.Context, op func(ctx context.Context) error) error
-	RunTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error
+	RunTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
 
 	/* Create */
+	Insert(ctx context.Context, table string, record any) error
 	InsertOne(ctx context.Context, table string, record any) error
 	InsertMany(ctx context.Context, table string, records []any) error
 	BulkWrite(ctx context.Context, table string, operations []any) error
@@ -51,12 +53,15 @@ type Database interface {
 	Distinct(ctx context.Context, table string, column string, query string, args []any, result any) error
 
 	/* Update */
+	Update(ctx context.Context, table string, query string, args []any, updateValues map[string]any) (int64, error)
 	UpdateOne(ctx context.Context, table string, query string, args []any, updateValues map[string]any) (int64, error)
 	UpdateMany(ctx context.Context, table string, query string, args []any, updateValues map[string]any) (int64, error)
 	Upsert(ctx context.Context, table string, conflictColumn string, record any) error
 	Inc(ctx context.Context, table string, query string, args []any, column string, value int64) error
+	AddToSet(ctx context.Context, table string, query string, args []any, arrayColumn string, value any) error
 
 	/* Delete */
+	Delete(ctx context.Context, table string, query string, args []any) (int64, error)
 	DeleteOne(ctx context.Context, table string, query string, args []any) (int64, error)
 	DeleteMany(ctx context.Context, table string, query string, args []any) (int64, error)
 
@@ -67,5 +72,6 @@ type Database interface {
 	QueryRaw(ctx context.Context, sqlQuery string, args []any, result any) error
 	Count(ctx context.Context, table string, query string, args []any) (int64, error)
 	CountDocuments(ctx context.Context, table string, query string, args []any) (int64, error)
-	Aggregate(ctx context.Context, table string, query string, args []any) error
+	Aggregate(ctx context.Context, table string, query string, args []any, out any) error
+	EstimatedDocumentCount(ctx context.Context, table string) (int64, error)
 }

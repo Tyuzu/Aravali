@@ -78,7 +78,7 @@ func SQLupdateBaitoRecord(ctx context.Context, app *infra.Deps, baitoID, userID 
 func SQLfindLatestBaitosFromDB(ctx context.Context, app *infra.Deps, query string, args []any, limit int) ([]BaitosResponse, error) {
 	var baitos []BaitosResponse
 	err := app.SQLDB.FindManyWithOptions(ctx, BaitoTable, query, args, sqldb.FindManyOptions{
-		Limit: limit,
+		Limit: int64(limit),
 	}, &baitos)
 	return baitos, err
 }
@@ -86,7 +86,7 @@ func SQLfindLatestBaitosFromDB(ctx context.Context, app *infra.Deps, query strin
 func SQLfindRelatedBaitosFromDB(ctx context.Context, app *infra.Deps, query string, args []any, limit int) ([]BaitosResponse, error) {
 	var baitos []BaitosResponse
 	err := app.SQLDB.FindManyWithOptions(ctx, BaitoTable, query, args, sqldb.FindManyOptions{
-		Limit: limit,
+		Limit: int64(limit),
 	}, &baitos)
 	return baitos, err
 }

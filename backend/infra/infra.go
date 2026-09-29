@@ -23,13 +23,14 @@ import (
 )
 
 type Deps struct {
-	SQLDB    sqldb.PostgresDatabase
+	SQLDB    sqldb.Database
 	DB       db.Database
 	Cache    cache.Cache
 	MQ       mq.MQ
 	NatsConn *nats.Conn
 	Config   config.Config
-	// underlying clients for graceful shutdown
+
+	// Underlying raw clients for graceful shutdown
 	PGPool      *pgxpool.Pool
 	MongoClient *mongo.Client
 	RedisClient *redis.Client
@@ -41,54 +42,59 @@ func New(cfg *config.Config) (*Deps, error) {
 	if cfg == nil {
 		return nil, errors.New("nil config provided")
 	}
-	/* -------- Mongo -------- */
 
+	d := &Deps{
+		Config: *cfg,
+	}
+
+	// Helper to cleanup partially initialized resources on error
+	cleanup := func() {
+		_ = d.Close(context.Background())
+	}
+
+	/* -------- Mongo -------- */
 	mongoURI := env("MONGO_URI", "mongodb://localhost:27017")
 	mongoDB := env("MONGO_DB", "eventdb")
 
 	client, database, err := NewMongo(mongoURI, mongoDB)
 	if err != nil {
-		return nil, err
+		cleanup()
+		return nil, fmt.Errorf("mongo setup: %w", err)
 	}
-
-	dbLayer := db.NewMongoDatabase(database, client, 100)
+	d.MongoClient = client
+	d.DB = db.NewMongoDatabase(database, client, 100)
 
 	/* -------- Redis -------- */
-
 	redisAddr := env("REDIS_ADDR", "localhost:6379")
 	redisPassword := env("REDIS_PASSWORD", "")
 	redisDB := 0
 
 	rclient, err := NewRedis(redisAddr, redisPassword, redisDB)
 	if err != nil {
-		return nil, err
+		cleanup()
+		return nil, fmt.Errorf("redis setup: %w", err)
 	}
-	cacheLayer := cache.NewRedisCache(rclient)
+	d.RedisClient = rclient
+	d.Cache = cache.NewRedisCache(rclient)
 
-	// /* -------- NATS JetStream (optional) -------- */
-
-	// var mqLayer mq.MQ
-	// var nc *nats.Conn
-
-	// natsURL := env("NATS_URL", "")
-	// if natsURL != "" {
-	// 	conn, js, err := NewJetStream(natsURL)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	mqLayer = mq.NewJetStreamMQ(js)
-	// 	nc = conn
-	// }
+	/* -------- NATS JetStream (optional) -------- */
+	natsURL := env("NATS_URL", "")
+	if natsURL != "" {
+		conn, js, err := NewJetStream(natsURL)
+		if err != nil {
+			cleanup()
+			return nil, fmt.Errorf("nats setup: %w", err)
+		}
+		d.NatsConn = conn
+		d.MQ = mq.NewJetStreamMQ(js)
+	}
 
 	/* -------- Postgres -------- */
-
 	postgresURL := cfg.DatabaseURL
 	if postgresURL == "" {
 		postgresURL = env("POSTGRES_URL", env("DATABASE_URL", ""))
 	}
 
-	// Construct connection string from discrete env vars if no full URL is provided
 	if postgresURL == "" {
 		user := env("POSTGRES_USER", "apeman")
 		pass := env("POSTGRES_PASSWORD", "ningning")
@@ -101,31 +107,19 @@ func New(cfg *config.Config) (*Deps, error) {
 
 	pool, err := NewPostgres(postgresURL)
 	if err != nil {
-		return nil, err
+		cleanup()
+		return nil, fmt.Errorf("postgres setup: %w", err)
 	}
+	d.PGPool = pool
+	d.SQLDB = sqldb.NewPostgresDatabase(pool, 100)
 
-	sqldbLayer := sqldb.NewPostgresDatabase(pool, 100)
+	logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
 
-	// ---------------
-
-	// logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
-	logger.L.Sugar().Infow("infra initialized")
-
-	return &Deps{
-		SQLDB: *sqldbLayer,
-		DB:    dbLayer,
-		Cache: cacheLayer,
-		// MQ:    mqLayer,
-		// NatsConn: nc,
-		Config:      *cfg,
-		PGPool:      pool,
-		MongoClient: client,
-		RedisClient: rclient,
-	}, nil
+	return d, nil
 }
 
-// Close attempts to gracefully shut down underlying resources. It returns an
-// aggregated error if any shutdown step fails.
+/* -------------------- Graceful Shutdown -------------------- */
+
 func (d *Deps) Close(ctx context.Context) error {
 	if d == nil {
 		return nil
@@ -136,15 +130,15 @@ func (d *Deps) Close(ctx context.Context) error {
 
 	var errs []string
 
+	// 1. Drain NATS first so subscriptions stop receiving new work
 	if d.NatsConn != nil {
 		if err := d.NatsConn.Drain(); err != nil {
 			d.NatsConn.Close()
 			errs = append(errs, fmt.Sprintf("nats drain: %v", err))
-		} else {
-			d.NatsConn.Close()
 		}
 	}
 
+	// 2. Close Database & Cache Connections
 	if d.PGPool != nil {
 		d.PGPool.Close()
 	}
@@ -176,8 +170,6 @@ func env(key string, fallback string) string {
 	return fallback
 }
 
-/* -------------------- Mongo -------------------- */
-
 func NewMongo(uri string, dbName string) (*mongo.Client, *mongo.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -195,13 +187,12 @@ func NewMongo(uri string, dbName string) (*mongo.Client, *mongo.Database, error)
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(ctx)
 		return nil, nil, err
 	}
 
 	return client, client.Database(dbName), nil
 }
-
-/* -------------------- Redis -------------------- */
 
 func NewRedis(addr string, password string, dbIndex int) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
@@ -210,7 +201,7 @@ func NewRedis(addr string, password string, dbIndex int) (*redis.Client, error) 
 		DB:       dbIndex,
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := cancelTimeout(5 * time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
@@ -220,8 +211,6 @@ func NewRedis(addr string, password string, dbIndex int) (*redis.Client, error) 
 
 	return client, nil
 }
-
-/* -------------------- NATS -------------------- */
 
 func NewJetStream(url string) (*nats.Conn, nats.JetStreamContext, error) {
 	nc, err := nats.Connect(url)
@@ -238,10 +227,8 @@ func NewJetStream(url string) (*nats.Conn, nats.JetStreamContext, error) {
 	return nc, js, nil
 }
 
-// /* -------------------- Postgres -------------------- */
-
 func NewPostgres(uri string) (*pgxpool.Pool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := cancelTimeout(10 * time.Second)
 	defer cancel()
 
 	pool, err := pgxpool.New(ctx, uri)
@@ -255,4 +242,8 @@ func NewPostgres(uri string) (*pgxpool.Pool, error) {
 	}
 
 	return pool, nil
+}
+
+func cancelTimeout(d time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), d)
 }

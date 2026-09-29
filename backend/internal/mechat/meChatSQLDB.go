@@ -40,8 +40,8 @@ func SQLdbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID strin
 	args := []any{chatID}
 
 	opts := sqldb.FindManyOptions{
-		Limit:   limit,
-		Offset:  offset,
+		Limit:   int64(limit),
+		Offset:  int64(offset),
 		OrderBy: "created_at DESC",
 	}
 
@@ -71,8 +71,8 @@ func SQLdbFindUserChats(ctx context.Context, app *infra.Deps, user string, offse
 	args := []any{user}
 
 	opts := sqldb.FindManyOptions{
-		Offset:  offset,
-		Limit:   limit,
+		Offset:  int64(offset),
+		Limit:   int64(limit),
 		OrderBy: "updated_at DESC",
 	}
 
@@ -244,8 +244,8 @@ func SQLdbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term stri
 	}
 
 	opts := sqldb.FindManyOptions{
-		Limit:   limit,
-		Offset:  offset,
+		Limit:   int64(limit),
+		Offset:  int64(offset),
 		OrderBy: "created_at DESC",
 	}
 
