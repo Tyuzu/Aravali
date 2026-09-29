@@ -1,3 +1,5 @@
+// File: infra/mq/mq.go
+
 package mq
 
 import "context"

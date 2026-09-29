@@ -1,3 +1,5 @@
+// File: internal/verticals/faqs/faqModels.go
+
 package faqs
 
 import "time"

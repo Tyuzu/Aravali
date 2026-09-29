@@ -1,3 +1,5 @@
+// File: internal/verticals/tickets/verifyTicket.go
+
 package tickets
 
 import (

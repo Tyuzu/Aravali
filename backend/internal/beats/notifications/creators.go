@@ -1,3 +1,5 @@
+// File: internal/beats/notifications/creators.go
+
 package notifications
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/proxy.go
+
 package filemgr
 
 import (

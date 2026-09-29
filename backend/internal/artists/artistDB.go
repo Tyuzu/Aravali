@@ -1,3 +1,5 @@
+// File: internal/artists/artistDB.go
+
 package artists
 
 import (

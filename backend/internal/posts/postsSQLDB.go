@@ -1,3 +1,5 @@
+// File: internal/posts/postsSQLDB.go
+
 package posts
 
 import (

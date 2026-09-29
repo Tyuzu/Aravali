@@ -1,3 +1,5 @@
+// File: middleware/chain.go
+
 package middleware
 
 import (

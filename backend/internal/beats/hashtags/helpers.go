@@ -1,3 +1,5 @@
+// File: internal/beats/hashtags/helpers.go
+
 package hashtags
 
 import (

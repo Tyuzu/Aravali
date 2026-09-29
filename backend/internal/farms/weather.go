@@ -1,3 +1,5 @@
+// File: internal/farms/weather.go
+
 package farms
 
 import (

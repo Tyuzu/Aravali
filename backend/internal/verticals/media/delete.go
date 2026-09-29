@@ -1,3 +1,5 @@
+// File: internal/verticals/media/delete.go
+
 package media
 
 import (

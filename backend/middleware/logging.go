@@ -1,3 +1,5 @@
+// File: middleware/logging.go
+
 package middleware
 
 import (

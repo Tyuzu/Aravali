@@ -1,3 +1,5 @@
+// File: internal/vendors/deleteVendors.go
+
 package vendors
 
 import (

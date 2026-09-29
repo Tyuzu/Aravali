@@ -1,3 +1,5 @@
+// File: internal/beats/autocomplete/autocompleteRoutes.go
+
 package autocomplete
 
 import (

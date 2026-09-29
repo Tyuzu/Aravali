@@ -1,3 +1,5 @@
+// File: internal/beats/follows/GETs_follow.go
+
 package follows
 
 import (

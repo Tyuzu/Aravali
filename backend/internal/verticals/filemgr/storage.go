@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/storage.go
+
 package filemgr
 
 import (

@@ -13,7 +13,7 @@ import (
 	"scav/config"
 	"scav/infra"
 	mq "scav/infra/mq"
-	workers "scav/infra/workers"
+	"scav/infra/workers"
 	"scav/internal/mechat"
 	"scav/internal/newchat"
 	"scav/middleware"
@@ -290,7 +290,7 @@ func main() {
 	logger.L.Sugar().Infow("Stopping MQ subscribers and background workers...")
 	appCancel()
 
-	// Unsubscribe media worker if active
+	// Unsubscribe media worker explicitly if active
 	if mediaSub != nil {
 		if err := mediaSub.Unsubscribe(); err != nil {
 			logger.L.Sugar().Errorw("media worker unsubscribe failed", "error", err)

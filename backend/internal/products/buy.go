@@ -1,3 +1,5 @@
+// File: internal/products/buy.go
+
 package products
 
 import (

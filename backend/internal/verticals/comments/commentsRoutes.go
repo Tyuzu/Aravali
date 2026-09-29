@@ -1,3 +1,5 @@
+// File: internal/verticals/comments/commentsRoutes.go
+
 package comments
 
 import (

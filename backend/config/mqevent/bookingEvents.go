@@ -1,3 +1,5 @@
+// File: config/mqevent/bookingEvents.go
+
 package mqevent
 
 import "time"

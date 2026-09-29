@@ -1,3 +1,5 @@
+// File: internal/reports/moderator.go
+
 package reports
 
 import (

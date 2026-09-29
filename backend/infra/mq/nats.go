@@ -1,8 +1,12 @@
+// File: infra/mq/nats.go
+
+// infra/mq/nats.go
 package mq
 
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nats-io/nats.go"
 )
@@ -55,7 +59,7 @@ func (j *jetStreamMQ) Ping(ctx context.Context) error {
 func (j *jetStreamMQ) Subscribe(ctx context.Context, subject string, handler MessageHandler) (Subscription, error) {
 	cb := j.makeCallback(ctx, handler)
 
-	sub, err := j.js.Subscribe(subject, cb, nats.ManualAck())
+	sub, err := j.js.Subscribe(subject, cb, nats.ManualAck(), nats.AckWait(30*time.Second))
 	if err != nil {
 		return nil, fmt.Errorf("js subscribe: %w", err)
 	}
@@ -66,7 +70,7 @@ func (j *jetStreamMQ) Subscribe(ctx context.Context, subject string, handler Mes
 func (j *jetStreamMQ) QueueSubscribe(ctx context.Context, subject, queue string, handler MessageHandler) (Subscription, error) {
 	cb := j.makeCallback(ctx, handler)
 
-	sub, err := j.js.QueueSubscribe(subject, queue, cb, nats.ManualAck())
+	sub, err := j.js.QueueSubscribe(subject, queue, cb, nats.ManualAck(), nats.AckWait(30*time.Second))
 	if err != nil {
 		return nil, fmt.Errorf("js queue subscribe: %w", err)
 	}

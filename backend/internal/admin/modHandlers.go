@@ -1,3 +1,5 @@
+// File: internal/admin/modHandlers.go
+
 package admin
 
 import (

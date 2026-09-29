@@ -1,3 +1,5 @@
+// File: internal/beats/ads/admin.go
+
 package ads
 
 import (

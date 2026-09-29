@@ -1,3 +1,5 @@
+// File: routes/security_integration.go
+
 package routes
 
 import (

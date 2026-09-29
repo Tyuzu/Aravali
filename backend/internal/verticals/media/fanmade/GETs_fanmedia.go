@@ -1,3 +1,5 @@
+// File: internal/verticals/media/fanmade/GETs_fanmedia.go
+
 package fanmade
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/delete.go
+
 package filemgr
 
 import (

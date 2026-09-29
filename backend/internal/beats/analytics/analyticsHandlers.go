@@ -1,3 +1,5 @@
+// File: internal/beats/analytics/analyticsHandlers.go
+
 package analytics
 
 import (

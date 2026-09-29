@@ -1,3 +1,5 @@
+// File: internal/itinerary/itinerary.go
+
 package itinerary
 
 import (

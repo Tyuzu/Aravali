@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/fileDB.go
+
 package filemgr
 
 import (

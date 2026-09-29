@@ -1,3 +1,5 @@
+// File: config/mqevent/settings.go
+
 package mqevent
 
 import "time"

@@ -1,3 +1,5 @@
+// File: internal/profile/profileRoutes.go
+
 package profile
 
 import (

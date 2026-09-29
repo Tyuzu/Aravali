@@ -1,3 +1,5 @@
+// File: internal/baito/models.go
+
 package baito
 
 type BaitoRequest struct {

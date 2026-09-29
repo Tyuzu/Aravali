@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/filemgrRoutes.go
+
 package filemgr
 
 import (

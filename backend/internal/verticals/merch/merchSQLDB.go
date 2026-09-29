@@ -1,3 +1,5 @@
+// File: internal/verticals/merch/merchSQLDB.go
+
 package merch
 
 import (

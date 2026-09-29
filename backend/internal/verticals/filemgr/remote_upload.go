@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/remote_upload.go
+
 package filemgr
 
 import (

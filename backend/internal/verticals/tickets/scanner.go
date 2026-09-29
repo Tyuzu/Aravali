@@ -1,3 +1,5 @@
+// File: internal/verticals/tickets/scanner.go
+
 // package scanner
 package tickets
 

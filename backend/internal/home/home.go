@@ -1,3 +1,5 @@
+// File: internal/home/home.go
+
 package home
 
 import (

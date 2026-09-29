@@ -1,3 +1,5 @@
+// File: internal/verticals/menu/menuModels.go
+
 package menu
 
 import "time"

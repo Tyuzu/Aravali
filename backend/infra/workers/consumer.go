@@ -1,8 +1,9 @@
+// File: infra/workers/consumer.go
+
 package workers
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -18,7 +19,7 @@ import (
 // MediaJob is the job schema for media processing.
 type MediaJob struct {
 	JobID         string `json:"job_id"`
-	Type          string `json:"type"` // "video" | "audio" | "image"
+	Type          string `json:"type"` // "video" | "audio" | "image" | "image_metadata"
 	SavedPath     string `json:"saved_path"`
 	UploadDir     string `json:"upload_dir"`
 	UniqueID      string `json:"unique_id"`
@@ -39,75 +40,74 @@ func StartMediaWorker(ctx context.Context, mqClient mq.MQ) (mq.Subscription, err
 
 	handler := func(hCtx context.Context, msg mq.Message) error {
 		var job MediaJob
+
 		// Support both enveloped messages (via PublishWithMeta) and raw job JSON.
 		if env, err := mq.UnpackEnvelope(msg.Data); err == nil {
-			var payloadBytes []byte
-			switch p := env.Payload.(type) {
-			case string:
-				if decoded, derr := base64.StdEncoding.DecodeString(p); derr == nil {
-					payloadBytes = decoded
-				} else {
-					payloadBytes = []byte(p)
-				}
-			case []byte:
-				payloadBytes = p
-			default:
-				if b, merr := json.Marshal(p); merr == nil {
-					payloadBytes = b
-				}
+			// Re-inject trace & source metadata into context if present
+			if env.TraceID != "" {
+				hCtx = mq.WithTraceID(hCtx, env.TraceID)
+			}
+			if env.Source != "" {
+				hCtx = mq.WithServiceName(hCtx, env.Source)
 			}
 
-			if err := json.Unmarshal(payloadBytes, &job); err != nil {
-				log.Printf("media worker: invalid envelope payload: %v", err)
+			if err := json.Unmarshal(env.Payload, &job); err != nil {
+				log.L.Sugar().Errorw("media worker: invalid envelope payload", "error", err)
 				return fmt.Errorf("invalid envelope payload: %w", err)
 			}
 		} else {
 			if err := json.Unmarshal(msg.Data, &job); err != nil {
-				log.Printf("media worker: invalid job payload: %v", err)
+				log.L.Sugar().Errorw("media worker: invalid job payload", "error", err)
 				return fmt.Errorf("invalid job payload: %w", err)
 			}
 		}
 
-		log.Printf("media worker: processing job %s type=%s", job.JobID, job.Type)
+		traceID := mq.TraceIDFromContext(hCtx)
+		log.L.Sugar().Infow("media worker: processing job", "job_id", job.JobID, "type", job.Type, "trace_id", traceID)
 
 		switch job.Type {
 		case "video":
 			_, _, err := ProcessVideo(job.SavedPath, job.UploadDir, job.UniqueID, job.PosterDir, job.ThumbnailPath)
 			if err != nil {
-				log.Printf("media worker: video job %s failed: %v", job.JobID, err)
+				log.L.Sugar().Errorw("media worker: video job failed", "job_id", job.JobID, "error", err)
 				return err
 			}
 			return nil
+
 		case "audio":
 			_, _ = ProcessAudio(job.SavedPath, job.UploadDir, job.UniqueID)
 			return nil
+
 		case "image":
 			_, _, err := ProcessImage(job.SavedPath, job.UploadDir, job.Filename, job.Ext, job.ThumbWidth)
 			if err != nil {
-				log.Printf("media worker: image job %s failed: %v", job.JobID, err)
+				log.L.Sugar().Errorw("media worker: image job failed", "job_id", job.JobID, "error", err)
 				return err
 			}
 			return nil
+
 		case "image_metadata":
-			// Open image file and decode
 			f, err := os.Open(job.SavedPath)
 			if err != nil {
-				log.Printf("media worker: cannot open image for metadata job %s: %v", job.JobID, err)
+				log.L.Sugar().Errorw("media worker: cannot open image for metadata job", "job_id", job.JobID, "error", err)
 				return err
 			}
 			defer f.Close()
+
 			img, _, err := image.Decode(f)
 			if err != nil {
-				log.Printf("media worker: decode failed for metadata job %s: %v", job.JobID, err)
+				log.L.Sugar().Errorw("media worker: decode failed for metadata job", "job_id", job.JobID, "error", err)
 				return err
 			}
+
 			if err := ExtractImageMetadata(img, job.UniqueID); err != nil {
-				log.Printf("media worker: ExtractImageMetadata failed for job %s: %v", job.JobID, err)
+				log.L.Sugar().Errorw("media worker: ExtractImageMetadata failed", "job_id", job.JobID, "error", err)
 				return err
 			}
 			return nil
+
 		default:
-			log.Printf("media worker: unknown job type %q", job.Type)
+			log.L.Sugar().Warnw("media worker: unknown job type", "job_type", job.Type)
 			return fmt.Errorf("unknown job type: %s", job.Type)
 		}
 	}
@@ -118,6 +118,14 @@ func StartMediaWorker(ctx context.Context, mqClient mq.MQ) (mq.Subscription, err
 		return nil, fmt.Errorf("failed to subscribe to media.jobs: %w", err)
 	}
 
-	log.Printf("media worker: subscribed to media.jobs")
+	// Automatically unsubscribe when the application lifecycle context stops
+	go func() {
+		<-ctx.Done()
+		if err := sub.Unsubscribe(); err != nil {
+			log.L.Sugar().Warnw("media worker: failed to unsubscribe on context cancellation", "error", err)
+		}
+	}()
+
+	log.L.Sugar().Infow("media worker: subscribed to media.jobs")
 	return sub, nil
 }

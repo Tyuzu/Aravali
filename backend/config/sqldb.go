@@ -1,3 +1,5 @@
+// File: config/sqldb.go
+
 package config
 
 type SQLDB struct {

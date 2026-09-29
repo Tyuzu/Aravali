@@ -1,3 +1,5 @@
+// File: config/mqevent/faqEvents.go
+
 package mqevent
 
 import "time"

@@ -1,3 +1,5 @@
+// File: internal/itinerary/GETs_itinerary.go
+
 package itinerary
 
 import (

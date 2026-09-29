@@ -1,3 +1,5 @@
+// File: internal/vendors/vendorsRoutes.go
+
 package vendors
 
 import (

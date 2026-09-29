@@ -1,3 +1,5 @@
+// File: internal/artists/errors.go
+
 package artists
 
 import "errors"

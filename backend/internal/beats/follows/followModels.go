@@ -1,3 +1,5 @@
+// File: internal/beats/follows/followModels.go
+
 package follows
 
 type UserFollow struct {

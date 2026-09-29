@@ -1,3 +1,5 @@
+// File: internal/recipes/recipe.go
+
 package recipes
 
 type IngredientAlternative struct {

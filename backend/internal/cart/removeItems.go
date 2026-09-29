@@ -1,3 +1,5 @@
+// File: internal/cart/removeItems.go
+
 package cart
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/products/productsDB.go
+
 package products
 
 import (

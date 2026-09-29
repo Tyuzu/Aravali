@@ -1,3 +1,5 @@
+// File: internal/beats/activity/activityRoutes.go
+
 package activity
 
 import (

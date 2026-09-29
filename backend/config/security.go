@@ -1,3 +1,5 @@
+// File: config/security.go
+
 package config
 
 import "time"

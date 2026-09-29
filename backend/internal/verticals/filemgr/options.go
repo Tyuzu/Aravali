@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/options.go
+
 package filemgr
 
 import (

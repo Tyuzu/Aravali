@@ -1,3 +1,5 @@
+// File: internal/profile/editProfile.go
+
 package profile
 
 import (

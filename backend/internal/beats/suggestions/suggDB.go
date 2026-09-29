@@ -1,3 +1,5 @@
+// File: internal/beats/suggestions/suggDB.go
+
 package suggestions
 
 import (

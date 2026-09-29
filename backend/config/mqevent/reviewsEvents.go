@@ -1,3 +1,5 @@
+// File: config/mqevent/reviewsEvents.go
+
 package mqevent
 
 import "time"

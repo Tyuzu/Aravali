@@ -1,3 +1,5 @@
+// File: internal/admin/adminDB.go
+
 package admin
 
 import (

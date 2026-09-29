@@ -1,3 +1,5 @@
+// File: internal/verticals/pay/stripe/stripeRoutes.go
+
 package stripe
 
 import (

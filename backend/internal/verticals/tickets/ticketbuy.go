@@ -1,3 +1,5 @@
+// File: internal/verticals/tickets/ticketbuy.go
+
 package tickets
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/cart/checkout.go
+
 package cart
 
 import (

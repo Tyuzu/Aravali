@@ -1,3 +1,5 @@
+// File: internal/verticals/media/GETs_media.go
+
 package media
 
 import (

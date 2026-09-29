@@ -1,3 +1,5 @@
+// File: routes/setupRouter.go
+
 package routes
 
 import (

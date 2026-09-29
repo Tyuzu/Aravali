@@ -1,3 +1,5 @@
+// File: internal/vendors/vendorHandlers.go
+
 package vendors
 
 import (

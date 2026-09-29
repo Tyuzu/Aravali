@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/constants.go
+
 package filemgr
 
 import "errors"

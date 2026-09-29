@@ -1,3 +1,5 @@
+// File: internal/verticals/pay/service.go
+
 package pay
 
 import (

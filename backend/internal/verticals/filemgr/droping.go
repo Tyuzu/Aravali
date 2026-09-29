@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/droping.go
+
 package filemgr
 
 import (

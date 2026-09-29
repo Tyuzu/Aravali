@@ -1,3 +1,5 @@
+// File: internal/workers/workersRoutes.go
+
 package workers
 
 import (

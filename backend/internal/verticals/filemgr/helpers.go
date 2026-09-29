@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/helpers.go
+
 package filemgr
 
 import (

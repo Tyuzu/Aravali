@@ -1,3 +1,5 @@
+// File: internal/posts/blogpostModels.go
+
 package posts
 
 import "time"

@@ -1,3 +1,5 @@
+// File: config/mqevent/baitoEvents.go
+
 package mqevent
 
 import "time"

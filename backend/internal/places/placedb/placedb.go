@@ -1,3 +1,5 @@
+// File: internal/places/placedb/placedb.go
+
 package placedb
 
 import (

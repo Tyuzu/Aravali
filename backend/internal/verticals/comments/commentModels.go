@@ -1,3 +1,5 @@
+// File: internal/verticals/comments/commentModels.go
+
 package comments
 
 import "time"

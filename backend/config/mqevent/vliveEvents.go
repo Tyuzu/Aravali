@@ -1,3 +1,5 @@
+// File: config/mqevent/vliveEvents.go
+
 package mqevent
 
 import "time"

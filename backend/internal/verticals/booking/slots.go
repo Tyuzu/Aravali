@@ -1,3 +1,5 @@
+// File: internal/verticals/booking/slots.go
+
 package booking
 
 import (

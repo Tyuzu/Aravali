@@ -1,3 +1,5 @@
+// File: internal/workers/workerModels.go
+
 package workers
 
 type BaitoWorker struct {

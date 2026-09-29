@@ -1,3 +1,5 @@
+// File: infra/workers/proxy_helpers.go
+
 package workers
 
 import (

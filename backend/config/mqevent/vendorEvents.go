@@ -1,3 +1,5 @@
+// File: config/mqevent/vendorEvents.go
+
 package mqevent
 
 import "time"

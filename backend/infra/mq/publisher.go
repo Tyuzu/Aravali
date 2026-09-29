@@ -1,4 +1,6 @@
-// mq/publisher.go
+// File: infra/mq/publisher.go
+
+// infra/mq/publisher.go
 package mq
 
 import (
@@ -28,16 +30,30 @@ func WithServiceName(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, serviceNameKey, name)
 }
 
+func TraceIDFromContext(ctx context.Context) string {
+	if v, ok := ctx.Value(traceIDKey).(string); ok {
+		return v
+	}
+	return ""
+}
+
+func ServiceNameFromContext(ctx context.Context) string {
+	if v, ok := ctx.Value(serviceNameKey).(string); ok {
+		return v
+	}
+	return ""
+}
+
 // EventEnvelope is a standardized wrapper for all published events.
 type EventEnvelope struct {
-	ID            string    `json:"id"`
-	Type          string    `json:"type"`
-	Version       int       `json:"version"`
-	Timestamp     time.Time `json:"timestamp"`
-	Source        string    `json:"source,omitempty"`
-	TraceID       string    `json:"trace_id,omitempty"`
-	CorrelationID string    `json:"correlation_id,omitempty"`
-	Payload       any       `json:"payload"`
+	ID            string          `json:"id"`
+	Type          string          `json:"type"`
+	Version       int             `json:"version"`
+	Timestamp     time.Time       `json:"timestamp"`
+	Source        string          `json:"source,omitempty"`
+	TraceID       string          `json:"trace_id,omitempty"`
+	CorrelationID string          `json:"correlation_id,omitempty"`
+	Payload       json.RawMessage `json:"payload"`
 }
 
 // RetryConfig configures retry behavior for publishing messages.
@@ -62,7 +78,7 @@ func PublishWithMeta(ctx context.Context, m MQ, subject string, payload any, ret
 		cfg = retry[0]
 	}
 
-	// 1. Marshal the raw payload first so it can be stored as json.RawMessage
+	// 1. Marshal payload into json.RawMessage to prevent double-encoding base64 strings in json.Marshal(env)
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshal payload: %w", err)
@@ -71,14 +87,15 @@ func PublishWithMeta(ctx context.Context, m MQ, subject string, payload any, ret
 	env := EventEnvelope{
 		ID:        uuid.NewString(),
 		Type:      subject,
+		Version:   1,
 		Timestamp: time.Now().UTC(),
-		Payload:   payloadBytes,
+		Payload:   json.RawMessage(payloadBytes),
 	}
 
-	if v, ok := ctx.Value(traceIDKey).(string); ok && v != "" {
+	if v := TraceIDFromContext(ctx); v != "" {
 		env.TraceID = v
 	}
-	if v, ok := ctx.Value(serviceNameKey).(string); ok && v != "" {
+	if v := ServiceNameFromContext(ctx); v != "" {
 		env.Source = v
 	}
 

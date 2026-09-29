@@ -1,3 +1,5 @@
+// File: internal/verticals/booking/bookingModels.go
+
 package booking
 
 // Tier defines a pricing/capacity tier for bookings

@@ -1,3 +1,5 @@
+// File: middleware/csrf.go
+
 package middleware
 
 import (

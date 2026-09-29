@@ -1,3 +1,5 @@
+// File: internal/vendors/vendorModels.go
+
 package vendors
 
 import "time"

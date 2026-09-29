@@ -1,3 +1,5 @@
+// File: internal/verticals/media/mediaDB.go
+
 package media
 
 import (

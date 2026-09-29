@@ -1,3 +1,5 @@
+// File: internal/artists/GETs_artisttabs.go
+
 package artists
 
 import (

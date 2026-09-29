@@ -1,3 +1,5 @@
+// File: internal/admin/moderator_applications.go
+
 package admin
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/booking/booking.go
+
 package booking
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/beats/notifications/models.go
+
 // models.go
 package notifications
 

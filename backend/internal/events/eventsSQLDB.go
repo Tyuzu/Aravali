@@ -1,3 +1,5 @@
+// File: internal/events/eventsSQLDB.go
+
 package events
 
 import (

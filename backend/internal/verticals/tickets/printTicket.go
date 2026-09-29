@@ -1,3 +1,5 @@
+// File: internal/verticals/tickets/printTicket.go
+
 package tickets
 
 import (

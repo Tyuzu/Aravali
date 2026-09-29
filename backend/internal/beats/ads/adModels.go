@@ -1,3 +1,5 @@
+// File: internal/beats/ads/adModels.go
+
 package ads
 
 import "time"

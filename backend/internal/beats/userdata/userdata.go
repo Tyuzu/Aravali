@@ -1,3 +1,5 @@
+// File: internal/beats/userdata/userdata.go
+
 package userdata
 
 import (

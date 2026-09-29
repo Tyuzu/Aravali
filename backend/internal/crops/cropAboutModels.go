@@ -1,3 +1,5 @@
+// File: internal/crops/cropAboutModels.go
+
 package crops
 
 type CropAbout struct {

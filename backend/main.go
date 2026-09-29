@@ -1,3 +1,6 @@
+// File: main.go
+
+// main.go
 package main
 
 import (
@@ -42,40 +45,12 @@ func main() {
 	// =====================
 	// Application Lifecycle
 	// =====================
-	//
-	// This context is shared by background workers and
-	// MQ subscribers.
-	//
-	// When appCancel() is called during shutdown:
-	//
-	//     appCancel()
-	//          |
-	//          v
-	//     ctx.Done()
-	//          |
-	//          v
-	//     MQ subscribers stop
-	//
-	appCtx, appCancel := context.WithCancel(
-		context.Background(),
-	)
+	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
 	// =====================
 	// MQ Subscribers
 	// =====================
-	//
-	// Register all MQ consumers ONCE during application startup.
-	//
-	// Example:
-	//
-	//     chat.message.created
-	//             |
-	//             v
-	//     handleChatMessageCreated()
-	//
-	// We do NOT subscribe every time an event is published.
-	//
 	if app.MQ != nil {
 		if err := subscribers.RegisterAll(appCtx, app); err != nil {
 			logger.L.Sugar().Fatalw(
@@ -84,13 +59,9 @@ func main() {
 			)
 		}
 
-		logger.L.Sugar().Infow(
-			"MQ subscribers registered",
-		)
+		logger.L.Sugar().Infow("MQ subscribers registered")
 	} else {
-		logger.L.Sugar().Warnw(
-			"MQ is not configured; skipping MQ subscribers",
-		)
+		logger.L.Sugar().Warnw("MQ is not configured; skipping MQ subscribers")
 	}
 
 	// Distributed/Redis rate limiter preferred for multi-instance scaling
@@ -147,7 +118,7 @@ func main() {
 		AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Idempotency-Key", "X-Requested-With", "X-Refresh-Intent", "Accept", "Origin"},
 		ExposedHeaders:   []string{"Authorization", "X-Refresh-Intent"},
-		AllowCredentials: true, // Required for HttpOnly refresh_token cookies
+		AllowCredentials: true,
 		MaxAge:           300,
 	}
 
@@ -159,20 +130,12 @@ func main() {
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 2 * time.Second,
 		IdleTimeout:       120 * time.Second,
-		// WriteTimeout is omitted for WebSocket long-lived connection compatibility
 	}
 
 	go func() {
 		logger.L.Sugar().Infow("API server listening", "addr", cfg.HTTPPort)
 
-		var err error
-		// if !cfg.TerminateTLSAtLB && cfg.TLSCertPath != "" && cfg.TLSKeyPath != "" {
-		// 	err = server.ListenAndServeTLS(cfg.TLSCertPath, cfg.TLSKeyPath)
-		// } else {
-		err = server.ListenAndServe()
-		//}
-
-		if err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.L.Sugar().Fatalw("Server error", "error", err)
 		}
 	}()
@@ -184,7 +147,7 @@ func main() {
 
 	logger.L.Sugar().Infow("Shutting down server...")
 
-	// 1. Stop accepting new HTTP requests and wait for in-flight requests to complete
+	// 1. Stop accepting new HTTP requests
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -192,53 +155,20 @@ func main() {
 		logger.L.Sugar().Errorw("HTTP server shutdown error", "error", err)
 	}
 
-	// =====================
-	// Stop MQ Subscribers
-	// =====================
-	//
-	// This cancels appCtx.
-	//
-	// Your MQ subscription code should be doing:
-	//
-	//     go func() {
-	//         <-ctx.Done()
-	//         sub.Drain()
-	//     }()
-	//
-	// Therefore all subscribers begin shutting down here.
-	logger.L.Sugar().Infow(
-		"Stopping MQ subscribers...",
-	)
-
+	// 2. Cancel appCtx to trigger subscriber unsubscriptions
+	logger.L.Sugar().Infow("Stopping MQ subscribers...")
 	appCancel()
 
-	// =====================
-	// Stop Application Workers
-	// =====================
-	logger.L.Sugar().Infow(
-		"Stopping application workers...",
-	)
-
-	// 2. Stop rate limiter background routines
+	// 3. Stop background workers
+	logger.L.Sugar().Infow("Stopping application workers...")
 	rateLimiter.Stop()
-
-	// 3. Stop internal background hubs
 	hub.Stop()
 	mehub.Stop()
 
-	// 4. Drain and close transport / database resources
-	if app.NatsConn != nil {
-		_ = app.NatsConn.Drain()
-		app.NatsConn.Close()
+	// 4. Drain and close all infrastructure dependencies cleanly
+	if err := app.Close(shutdownCtx); err != nil {
+		logger.L.Sugar().Errorw("Failed to close infrastructure dependencies", "error", err)
 	}
-
-	// if app.DB != nil {
-	// 	_ = app.DB.Close()
-	// }
-
-	// if app.Cache != nil {
-	// 	_ = app.Cache.Close()
-	// }
 
 	logger.L.Sugar().Infow("Server stopped successfully")
 }

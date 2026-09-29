@@ -1,3 +1,5 @@
+// File: middleware/errorhandler.go
+
 package middleware
 
 import (

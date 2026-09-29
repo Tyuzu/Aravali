@@ -1,3 +1,5 @@
+// File: internal/itinerary/itineraryModels.go
+
 package itinerary
 
 // Itinerary represents the travel itinerary

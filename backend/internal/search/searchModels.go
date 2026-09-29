@@ -1,3 +1,5 @@
+// File: internal/search/searchModels.go
+
 package search
 
 import (

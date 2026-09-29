@@ -1,3 +1,5 @@
+// File: internal/verticals/booking/bookingSQLDB.go
+
 package booking
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/beats/notifications/preferences.go
+
 package notifications
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/merch/merchRoutes.go
+
 package merch
 
 import (

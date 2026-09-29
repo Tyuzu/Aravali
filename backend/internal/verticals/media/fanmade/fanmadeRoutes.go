@@ -1,3 +1,5 @@
+// File: internal/verticals/media/fanmade/fanmadeRoutes.go
+
 package fanmade
 
 import (

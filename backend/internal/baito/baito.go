@@ -1,3 +1,5 @@
+// File: internal/baito/baito.go
+
 package baito
 
 import (

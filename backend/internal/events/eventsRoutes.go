@@ -1,3 +1,5 @@
+// File: internal/events/eventsRoutes.go
+
 package events
 
 import (

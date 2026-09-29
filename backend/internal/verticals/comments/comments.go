@@ -1,3 +1,5 @@
+// File: internal/verticals/comments/comments.go
+
 package comments
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/beats/auditlog/log.go
+
 package auditlog
 
 import (

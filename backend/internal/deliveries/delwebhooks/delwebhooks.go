@@ -1,3 +1,5 @@
+// File: internal/deliveries/delwebhooks/delwebhooks.go
+
 package delwebhooks
 
 import (

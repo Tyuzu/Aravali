@@ -1,3 +1,5 @@
+// File: internal/products/getProduct.go
+
 package products
 
 import (

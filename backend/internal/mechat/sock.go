@@ -1,3 +1,5 @@
+// File: internal/mechat/sock.go
+
 package mechat
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/booking/GETs_tiers_slots.go
+
 package booking
 
 import (

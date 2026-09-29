@@ -1,3 +1,5 @@
+// File: internal/posts/postsRoutes.go
+
 package posts
 
 import (

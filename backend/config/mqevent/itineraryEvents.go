@@ -1,3 +1,5 @@
+// File: config/mqevent/itineraryEvents.go
+
 package mqevent
 
 import "time"

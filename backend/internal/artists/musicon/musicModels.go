@@ -1,3 +1,5 @@
+// File: internal/artists/musicon/musicModels.go
+
 package musicon
 
 import "time"

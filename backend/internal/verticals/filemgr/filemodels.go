@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/filemodels.go
+
 package filemgr
 
 import "go.mongodb.org/mongo-driver/bson/primitive"

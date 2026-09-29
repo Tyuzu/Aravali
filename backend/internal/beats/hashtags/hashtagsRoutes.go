@@ -1,3 +1,5 @@
+// File: internal/beats/hashtags/hashtagsRoutes.go
+
 package hashtags
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/beats/userdata/userdataModels.go
+
 package userdata
 
 import "time"

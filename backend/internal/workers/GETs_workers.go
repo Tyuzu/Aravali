@@ -1,3 +1,5 @@
+// File: internal/workers/GETs_workers.go
+
 package workers
 
 import (

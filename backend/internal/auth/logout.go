@@ -1,3 +1,5 @@
+// File: internal/auth/logout.go
+
 package auth
 
 import (

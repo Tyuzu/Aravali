@@ -1,3 +1,5 @@
+// File: internal/settings/settingsHelpers.go
+
 package settings
 
 import (

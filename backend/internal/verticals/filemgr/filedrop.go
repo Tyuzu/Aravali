@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/filedrop.go
+
 package filemgr
 
 import (

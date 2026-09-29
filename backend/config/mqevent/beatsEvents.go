@@ -1,3 +1,5 @@
+// File: config/mqevent/beatsEvents.go
+
 package mqevent
 
 import "time"

@@ -1,3 +1,5 @@
+// File: internal/beats/suggestions/suggestionsRoutes.go
+
 package suggestions
 
 import (

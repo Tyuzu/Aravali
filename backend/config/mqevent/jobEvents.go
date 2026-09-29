@@ -1,3 +1,5 @@
+// File: config/mqevent/jobEvents.go
+
 package mqevent
 
 import "time"

@@ -1,3 +1,5 @@
+// File: internal/places/tabs/events.go
+
 package places
 
 import (

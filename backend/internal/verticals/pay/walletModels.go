@@ -1,3 +1,5 @@
+// File: internal/verticals/pay/walletModels.go
+
 package pay
 
 import "time"

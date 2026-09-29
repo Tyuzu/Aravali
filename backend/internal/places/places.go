@@ -1,3 +1,5 @@
+// File: internal/places/places.go
+
 package places
 
 import (

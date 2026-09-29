@@ -1,3 +1,5 @@
+// File: internal/events/GETs_events.go
+
 package events
 
 import (

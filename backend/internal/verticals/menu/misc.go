@@ -1,3 +1,5 @@
+// File: internal/verticals/menu/misc.go
+
 package menu
 
 import (

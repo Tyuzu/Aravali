@@ -1,3 +1,5 @@
+// File: internal/verticals/media/mediaModels.go
+
 package media
 
 import "time"

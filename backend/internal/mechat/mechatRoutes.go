@@ -1,3 +1,5 @@
+// File: internal/mechat/mechatRoutes.go
+
 package mechat
 
 import (

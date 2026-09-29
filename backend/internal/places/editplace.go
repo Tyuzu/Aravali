@@ -1,3 +1,5 @@
+// File: internal/places/editplace.go
+
 package places
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/tickets/ticketSeats.go
+
 package tickets
 
 import (

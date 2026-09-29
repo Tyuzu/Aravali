@@ -1,3 +1,5 @@
+// File: internal/admin/adminRoutes.go
+
 package admin
 
 import (

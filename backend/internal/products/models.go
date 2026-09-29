@@ -1,3 +1,5 @@
+// File: internal/products/models.go
+
 package products
 
 type OrderDisplay struct {

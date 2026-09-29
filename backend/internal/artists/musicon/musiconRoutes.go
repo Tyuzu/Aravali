@@ -1,3 +1,5 @@
+// File: internal/artists/musicon/musiconRoutes.go
+
 package musicon
 
 import (

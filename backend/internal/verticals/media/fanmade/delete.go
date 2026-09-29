@@ -1,3 +1,5 @@
+// File: internal/verticals/media/fanmade/delete.go
+
 package fanmade
 
 import (

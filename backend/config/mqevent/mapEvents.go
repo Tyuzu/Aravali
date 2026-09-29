@@ -1,3 +1,5 @@
+// File: config/mqevent/mapEvents.go
+
 package mqevent
 
 import "time"

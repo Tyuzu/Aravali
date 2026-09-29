@@ -1,3 +1,5 @@
+// File: internal/places/placesDB.go
+
 package places
 
 import "scav/config"

@@ -1,3 +1,5 @@
+// File: internal/events/eventModels.go
+
 package events
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/comments/commentsSQLDB.go
+
 package comments
 
 import (

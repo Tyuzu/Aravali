@@ -1,3 +1,5 @@
+// File: config/mqevent/newChatEvents.go
+
 package mqevent
 
 import "time"

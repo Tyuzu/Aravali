@@ -1,3 +1,5 @@
+// File: internal/settings/settingsRoutes.go
+
 package settings
 
 import (

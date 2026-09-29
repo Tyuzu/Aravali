@@ -1,3 +1,5 @@
+// File: internal/verticals/pay/paySQLDB.go
+
 package pay
 
 import (

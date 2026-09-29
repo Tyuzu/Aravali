@@ -1,3 +1,5 @@
+// File: config/globals.go
+
 package config
 
 import (

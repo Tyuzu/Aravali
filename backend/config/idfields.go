@@ -1,3 +1,5 @@
+// File: config/idfields.go
+
 package config
 
 type IDFields struct {

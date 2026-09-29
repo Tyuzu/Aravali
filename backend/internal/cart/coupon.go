@@ -1,3 +1,5 @@
+// File: internal/cart/coupon.go
+
 package cart
 
 import (

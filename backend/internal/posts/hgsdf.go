@@ -1,3 +1,5 @@
+// File: internal/posts/hgsdf.go
+
 package posts
 
 import (

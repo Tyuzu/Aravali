@@ -1,3 +1,5 @@
+// File: internal/newchat/chat.go
+
 package newchat
 
 import (

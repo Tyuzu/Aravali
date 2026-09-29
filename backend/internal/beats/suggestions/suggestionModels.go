@@ -1,3 +1,5 @@
+// File: internal/beats/suggestions/suggestionModels.go
+
 package suggestions
 
 import "go.mongodb.org/mongo-driver/bson/primitive"

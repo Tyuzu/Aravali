@@ -1,3 +1,5 @@
+// File: internal/auth/authRoutes.go
+
 package auth
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/newchat/newchatRoutes.go
+
 package newchat
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/maps/map.go
+
 package maps
 
 import (

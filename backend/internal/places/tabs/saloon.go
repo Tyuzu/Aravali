@@ -1,3 +1,5 @@
+// File: internal/places/tabs/saloon.go
+
 package places
 
 import (

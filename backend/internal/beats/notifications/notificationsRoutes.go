@@ -1,3 +1,5 @@
+// File: internal/beats/notifications/notificationsRoutes.go
+
 package notifications
 
 import (

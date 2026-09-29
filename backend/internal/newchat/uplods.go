@@ -1,3 +1,5 @@
+// File: internal/newchat/uplods.go
+
 package newchat
 
 import (

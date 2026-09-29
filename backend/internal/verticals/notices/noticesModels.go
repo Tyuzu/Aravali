@@ -1,3 +1,5 @@
+// File: internal/verticals/notices/noticesModels.go
+
 package notices
 
 import (

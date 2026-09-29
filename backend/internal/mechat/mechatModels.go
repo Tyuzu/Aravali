@@ -1,3 +1,5 @@
+// File: internal/mechat/mechatModels.go
+
 package mechat
 
 import (

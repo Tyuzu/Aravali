@@ -1,3 +1,5 @@
+// File: config/mqevent/musiconEvents.go
+
 package mqevent
 
 import "time"

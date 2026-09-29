@@ -1,3 +1,5 @@
+// File: internal/auth/otp.go
+
 package auth
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/media_upload.go
+
 package filemgr
 
 import (

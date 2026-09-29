@@ -1,3 +1,5 @@
+// File: internal/places/tabs/tabDBs.go
+
 package places
 
 import "scav/config"

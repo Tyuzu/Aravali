@@ -1,3 +1,5 @@
+// File: internal/crops/cropBanners.go
+
 package crops
 
 import "strings"

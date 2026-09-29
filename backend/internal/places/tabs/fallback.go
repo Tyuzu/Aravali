@@ -1,3 +1,5 @@
+// File: internal/places/tabs/fallback.go
+
 package places
 
 import (

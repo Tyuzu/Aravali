@@ -1,3 +1,5 @@
+// File: internal/verticals/menu/menubuy.go
+
 package menu
 
 import (

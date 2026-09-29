@@ -1,3 +1,5 @@
+// File: internal/verticals/notices/noticesRoutes.go
+
 package notices
 
 import (

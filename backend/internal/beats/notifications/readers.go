@@ -1,3 +1,5 @@
+// File: internal/beats/notifications/readers.go
+
 package notifications
 
 import (

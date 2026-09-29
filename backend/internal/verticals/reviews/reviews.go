@@ -1,3 +1,5 @@
+// File: internal/verticals/reviews/reviews.go
+
 package reviews
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/media/fanmade/edit.go
+
 package fanmade
 
 import (

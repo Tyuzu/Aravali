@@ -1,3 +1,5 @@
+// File: internal/verticals/media/mediaRoutes.go
+
 package media
 
 import (

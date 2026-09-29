@@ -1,3 +1,5 @@
+// File: internal/auth/errors.go
+
 package auth
 
 import "errors"

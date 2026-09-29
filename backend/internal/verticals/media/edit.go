@@ -1,3 +1,5 @@
+// File: internal/verticals/media/edit.go
+
 package media
 
 import (

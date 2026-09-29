@@ -1,3 +1,5 @@
+// File: internal/verticals/merch/merchModels.go
+
 package merch
 
 import "time"

@@ -1,3 +1,5 @@
+// File: internal/verticals/merch/merchbuy.go
+
 package merch
 
 import (

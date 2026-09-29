@@ -1,3 +1,5 @@
+// File: internal/mechat/meChatDB.go
+
 package mechat
 
 import (

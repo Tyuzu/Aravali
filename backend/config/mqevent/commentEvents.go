@@ -1,3 +1,5 @@
+// File: config/mqevent/commentEvents.go
+
 package mqevent
 
 import "time"

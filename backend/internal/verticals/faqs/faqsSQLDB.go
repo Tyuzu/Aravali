@@ -1,3 +1,5 @@
+// File: internal/verticals/faqs/faqsSQLDB.go
+
 package faqs
 
 import (

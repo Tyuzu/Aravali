@@ -1,3 +1,5 @@
+// File: internal/artists/musicon/playlists.go
+
 package musicon
 
 import (

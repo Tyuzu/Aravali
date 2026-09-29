@@ -1,3 +1,5 @@
+// File: internal/beats/activity/activitySQLDB.go
+
 package activity
 
 import (

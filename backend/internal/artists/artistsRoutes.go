@@ -1,3 +1,5 @@
+// File: internal/artists/artistsRoutes.go
+
 package artists
 
 import (

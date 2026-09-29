@@ -1,3 +1,5 @@
+// File: internal/mechat/rest.go
+
 package mechat
 
 import (

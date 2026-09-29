@@ -1,3 +1,5 @@
+// File: internal/verticals/menu/menuRoutes.go
+
 package menu
 
 import (

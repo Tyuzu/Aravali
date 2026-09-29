@@ -1,3 +1,5 @@
+// File: internal/vendors/vendorsDB.go
+
 package vendors
 
 import (

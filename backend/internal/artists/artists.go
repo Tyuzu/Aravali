@@ -1,3 +1,5 @@
+// File: internal/artists/artists.go
+
 package artists
 
 import (

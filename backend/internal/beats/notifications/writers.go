@@ -1,3 +1,5 @@
+// File: internal/beats/notifications/writers.go
+
 // writers.go
 package notifications
 

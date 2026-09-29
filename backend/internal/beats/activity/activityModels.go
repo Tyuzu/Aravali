@@ -1,3 +1,5 @@
+// File: internal/beats/activity/activityModels.go
+
 package activity
 
 import "time"

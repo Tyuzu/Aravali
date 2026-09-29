@@ -1,3 +1,5 @@
+// File: internal/auth/reftok.go
+
 package auth
 
 import (

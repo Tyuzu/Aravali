@@ -1,3 +1,5 @@
+// File: internal/verticals/faqs/faqs.go
+
 package faqs
 
 import (

@@ -1,3 +1,5 @@
+// File: internal/verticals/tickets/GETs_tickets.go
+
 package tickets
 
 import (

@@ -1,3 +1,5 @@
+// File: config/mqevent/fanMediaEvents.go
+
 package mqevent
 
 import "time"

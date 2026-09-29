@@ -1,3 +1,5 @@
+// File: config/mqevent/cartEvents.go
+
 package mqevent
 
 import "time"

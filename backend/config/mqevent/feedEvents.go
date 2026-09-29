@@ -1,3 +1,5 @@
+// File: config/mqevent/feedEvents.go
+
 package mqevent
 
 import "time"

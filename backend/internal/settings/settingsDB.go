@@ -1,3 +1,5 @@
+// File: internal/settings/settingsDB.go
+
 package settings
 
 import (

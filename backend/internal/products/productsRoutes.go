@@ -1,3 +1,5 @@
+// File: internal/products/productsRoutes.go
+
 package products
 
 import (

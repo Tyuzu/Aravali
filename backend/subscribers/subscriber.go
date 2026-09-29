@@ -1,3 +1,6 @@
+// File: subscribers/subscriber.go
+
+// subscribers/subscribe.go
 package subscribers
 
 import (
@@ -16,9 +19,6 @@ type registration struct {
 }
 
 // RegisterAll registers all application MQ subscriptions.
-//
-// This keeps the subscription wiring separate from business logic and is
-// intended to be called once during application startup.
 func RegisterAll(
 	ctx context.Context,
 	app *infra.Deps,
@@ -52,21 +52,30 @@ func RegisterAll(
 		},
 	}
 
-	for _, registration := range registrations {
-		if registration.Subject == "" {
+	for _, reg := range registrations {
+		if reg.Subject == "" {
 			return fmt.Errorf("MQ registration has empty subject")
 		}
-		if registration.Handler == nil {
-			return fmt.Errorf("MQ registration %q has nil handler", registration.Subject)
+		if reg.Handler == nil {
+			return fmt.Errorf("MQ registration %q has nil handler", reg.Subject)
 		}
 
-		if _, err := app.MQ.Subscribe(ctx, registration.Subject, registration.Handler); err != nil {
-			return fmt.Errorf("subscribe subject=%q: %w", registration.Subject, err)
+		sub, err := app.MQ.Subscribe(ctx, reg.Subject, reg.Handler)
+		if err != nil {
+			return fmt.Errorf("subscribe subject=%q: %w", reg.Subject, err)
 		}
+
+		// Cleanly unsubscribe when application lifecycle context terminates
+		go func(s mq.Subscription, subject string) {
+			<-ctx.Done()
+			if err := s.Unsubscribe(); err != nil {
+				logger.L.Sugar().Warnw("failed to unsubscribe during context teardown", "subject", subject, "error", err)
+			}
+		}(sub, reg.Subject)
 
 		logger.L.Sugar().Infow(
 			"MQ subscriber registered",
-			"subject", registration.Subject,
+			"subject", reg.Subject,
 		)
 	}
 
@@ -78,31 +87,19 @@ func RegisterAll(
 	return nil
 }
 
-func handleChatCreated(
-	ctx context.Context,
-	msg mq.Message,
-) error {
+func handleChatCreated(ctx context.Context, msg mq.Message) error {
 	return processEvent(ctx, msg, "chat.created")
 }
 
-func handleChatMessageCreated(
-	ctx context.Context,
-	msg mq.Message,
-) error {
+func handleChatMessageCreated(ctx context.Context, msg mq.Message) error {
 	return processEvent(ctx, msg, "chat.message.created")
 }
 
-func handleUserCreated(
-	ctx context.Context,
-	msg mq.Message,
-) error {
+func handleUserCreated(ctx context.Context, msg mq.Message) error {
 	return processEvent(ctx, msg, "user.created")
 }
 
-func handleNotificationCreated(
-	ctx context.Context,
-	msg mq.Message,
-) error {
+func handleNotificationCreated(ctx context.Context, msg mq.Message) error {
 	return processEvent(ctx, msg, "notification.created")
 }
 
@@ -118,6 +115,14 @@ func processEvent(
 	event, err := mq.UnpackEnvelope(msg.Data)
 	if err != nil {
 		return fmt.Errorf("unpack %s event: %w", subject, err)
+	}
+
+	// Re-inject context metadata for downstream propagation
+	if event.TraceID != "" {
+		ctx = mq.WithTraceID(ctx, event.TraceID)
+	}
+	if event.Source != "" {
+		ctx = mq.WithServiceName(ctx, event.Source)
 	}
 
 	logger.L.Sugar().Infow(

@@ -1,3 +1,5 @@
+// File: config/mqevent/ArtistEvents.go
+
 package mqevent
 
 import "time"

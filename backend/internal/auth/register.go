@@ -1,3 +1,5 @@
+// File: internal/auth/register.go
+
 package auth
 
 import (

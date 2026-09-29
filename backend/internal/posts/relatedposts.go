@@ -1,3 +1,5 @@
+// File: internal/posts/relatedposts.go
+
 package posts
 
 import (

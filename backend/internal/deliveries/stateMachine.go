@@ -1,3 +1,5 @@
+// File: internal/deliveries/stateMachine.go
+
 package deliveries
 
 import "errors"

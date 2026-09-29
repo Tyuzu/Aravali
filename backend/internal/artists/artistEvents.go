@@ -1,3 +1,5 @@
+// File: internal/artists/artistEvents.go
+
 package artists
 
 import (

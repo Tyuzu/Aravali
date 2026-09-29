@@ -1,3 +1,5 @@
+// File: internal/verticals/filemgr/subtitle.go
+
 package filemgr
 
 import (

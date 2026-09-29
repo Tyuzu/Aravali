@@ -1,3 +1,5 @@
+// File: config/db.go
+
 package config
 
 type DB struct {

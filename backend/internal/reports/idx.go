@@ -1,3 +1,5 @@
+// File: internal/reports/idx.go
+
 package reports
 
 import (

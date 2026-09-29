@@ -1,3 +1,5 @@
+// File: internal/artists/musicon/musicing.go
+
 package musicon
 
 import (

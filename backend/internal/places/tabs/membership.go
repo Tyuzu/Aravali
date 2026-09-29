@@ -1,3 +1,5 @@
+// File: internal/places/tabs/membership.go
+
 package places
 
 import (

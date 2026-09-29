@@ -1,3 +1,5 @@
+// File: internal/profile/profileModels.go
+
 package profile
 
 import "time"

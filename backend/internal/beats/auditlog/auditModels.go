@@ -1,3 +1,5 @@
+// File: internal/beats/auditlog/auditModels.go
+
 package auditlog
 
 import "time"

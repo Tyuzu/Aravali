@@ -1,3 +1,5 @@
+// File: internal/auth/types.go
+
 package auth
 
 import "time"

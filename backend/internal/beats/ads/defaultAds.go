@@ -1,3 +1,5 @@
+// File: internal/beats/ads/defaultAds.go
+
 package ads
 
 var (

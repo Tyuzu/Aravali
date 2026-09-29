@@ -1,3 +1,5 @@
+// File: internal/cart/cart.go
+
 package cart
 
 import (

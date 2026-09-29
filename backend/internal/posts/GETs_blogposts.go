@@ -1,3 +1,5 @@
+// File: internal/posts/GETs_blogposts.go
+
 package posts
 
 import (

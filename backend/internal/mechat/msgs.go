@@ -1,3 +1,5 @@
+// File: internal/mechat/msgs.go
+
 package mechat
 
 import (

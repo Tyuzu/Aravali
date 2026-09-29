@@ -1,3 +1,5 @@
+// File: internal/farms/weatherModels.go
+
 package farms
 
 type WeatherResponse struct {

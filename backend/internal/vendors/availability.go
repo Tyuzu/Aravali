@@ -1,3 +1,5 @@
+// File: internal/vendors/availability.go
+
 package vendors
 
 import (

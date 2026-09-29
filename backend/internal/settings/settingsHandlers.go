@@ -1,3 +1,5 @@
+// File: internal/settings/settingsHandlers.go
+
 package settings
 
 import (

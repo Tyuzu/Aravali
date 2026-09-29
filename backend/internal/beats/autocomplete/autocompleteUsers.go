@@ -1,3 +1,5 @@
+// File: internal/beats/autocomplete/autocompleteUsers.go
+
 package autocomplete
 
 import (

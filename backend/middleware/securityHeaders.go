@@ -1,3 +1,5 @@
+// File: middleware/securityHeaders.go
+
 package middleware
 
 import (

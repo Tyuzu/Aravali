@@ -1,3 +1,5 @@
+// File: internal/beats/userdata/metadata/metadataDB.go
+
 package metadata
 
 import (

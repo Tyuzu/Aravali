@@ -1,3 +1,5 @@
+// File: internal/artists/songs/models.go
+
 package songs
 
 // songPayload uses pointers so we can differentiate between empty strings ("")
