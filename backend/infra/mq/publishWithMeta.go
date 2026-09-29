@@ -1,6 +1,4 @@
-// File: infra/mq/publisher.go
-
-// infra/mq/publisher.go
+// File: infra/mq/publishWithMeta.go
 package mq
 
 import (
@@ -8,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"scav/python"
+	"scav/subscribers/python"
 	"time"
 
 	"github.com/google/uuid"

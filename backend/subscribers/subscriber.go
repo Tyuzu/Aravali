@@ -1,6 +1,4 @@
 // File: subscribers/subscriber.go
-
-// subscribers/subscribe.go
 package subscribers
 
 import (
