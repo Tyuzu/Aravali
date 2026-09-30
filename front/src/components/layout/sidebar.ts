@@ -32,6 +32,7 @@ export interface UserState {
 export interface ActiveControlCenter {
   dialog: HTMLElement;
   close: () => void;
+  cleanup?: () => void;
 }
 
 /* ---------------------------------- */
@@ -94,7 +95,7 @@ function buildPersonalHub(): HTMLDivElement {
 }
 
 function buildTiles(): HTMLDivElement {
-  const tiles = TILES.map(tile =>
+  const tiles = TILES.map((tile) =>
     createElement("div", { class: "cc-live-tile", role: "region", "aria-label": tile.label }, [
       createElement("div", { class: "cc-tile-label" }, [tile.label]),
       createElement("div", { class: "cc-tile-value" }, [tile.value])
@@ -105,7 +106,7 @@ function buildTiles(): HTMLDivElement {
 }
 
 function buildNavGrid(): HTMLDivElement {
-  const buttons = LINKS.map(link =>
+  const buttons = LINKS.map((link) =>
     createElement(
       "button",
       {
@@ -142,28 +143,27 @@ function handleLogout(): void {
   console.log("Logging out user...");
   silentLogout();
 }
-function attachHandlers(dialog: HTMLElement, closeFn: () => void): void {
+
+function attachHandlers(dialog: HTMLElement, closeFn: () => void): () => void {
   // Delegate click navigation & custom actions
-  dialog.addEventListener("click", (e: MouseEvent) => {
+  const onClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement | null;
     if (!target) return;
 
     const navTarget = target.closest<HTMLElement>("[data-nav]");
-    // Use bracket notation here 👇
-    if (navTarget && navTarget.dataset['nav']) {
-      navigate(navTarget.dataset['nav']);
+    if (navTarget?.dataset.nav) {
+      navigate(navTarget.dataset.nav);
       closeFn();
       return;
     }
 
     const actionTarget = target.closest<HTMLElement>("[data-action]");
-    // Use bracket notation here 👇
-    if (actionTarget?.dataset['action'] === "logout") {
+    if (actionTarget?.dataset.action === "logout") {
       handleLogout();
       closeFn();
       return;
     }
-  });
+  };
 
   /* --- Drag-to-dismiss Gesture --- */
   let startY = 0;
@@ -174,7 +174,6 @@ function attachHandlers(dialog: HTMLElement, closeFn: () => void): void {
     const target = e.target as HTMLElement | null;
     if (!target) return;
 
-    // Avoid initiating drag on interactive elements or if inner area is scrolled down
     const isInteractive = target.closest("button, a, input, select, textarea");
     const scrollContainer = dialog.querySelector<HTMLElement>(".cc-scroll");
     const isScrolled = Boolean(scrollContainer && scrollContainer.scrollTop > 0);
@@ -186,9 +185,12 @@ function attachHandlers(dialog: HTMLElement, closeFn: () => void): void {
     currentY = e.clientY;
     dialog.style.transition = "none";
 
-    // Capture pointer to ensure smooth drag even if cursor leaves bounds
     if (dialog.setPointerCapture) {
-      dialog.setPointerCapture(e.pointerId);
+      try {
+        dialog.setPointerCapture(e.pointerId);
+      } catch {
+        // Fallback for unexpected pointer state
+      }
     }
   };
 
@@ -207,11 +209,11 @@ function attachHandlers(dialog: HTMLElement, closeFn: () => void): void {
     if (!isDragging) return;
     isDragging = false;
 
-    if (dialog.releasePointerCapture && e.pointerId) {
+    if (dialog.hasPointerCapture && dialog.hasPointerCapture(e.pointerId)) {
       try {
         dialog.releasePointerCapture(e.pointerId);
       } catch {
-        // Pointer capture release safeguard
+        // Safe guard against pointer capture release errors
       }
     }
 
@@ -226,10 +228,20 @@ function attachHandlers(dialog: HTMLElement, closeFn: () => void): void {
     }
   };
 
+  dialog.addEventListener("click", onClick);
   dialog.addEventListener("pointerdown", onPointerDown as EventListener);
   dialog.addEventListener("pointermove", onPointerMove as EventListener);
   dialog.addEventListener("pointerup", endDrag as EventListener);
   dialog.addEventListener("pointercancel", endDrag as EventListener);
+
+  // Return explicit cleanup callback
+  return () => {
+    dialog.removeEventListener("click", onClick);
+    dialog.removeEventListener("pointerdown", onPointerDown as EventListener);
+    dialog.removeEventListener("pointermove", onPointerMove as EventListener);
+    dialog.removeEventListener("pointerup", endDrag as EventListener);
+    dialog.removeEventListener("pointercancel", endDrag as EventListener);
+  };
 }
 
 /* ---------------------------------- */
@@ -251,6 +263,9 @@ export function toggleControlCenter(): void {
     flushBody: true,
     content: buildControlCenterContent,
     onAfterClose: () => {
+      if (activeControlCenter?.cleanup) {
+        activeControlCenter.cleanup();
+      }
       if (dialog) {
         dialog.style.transform = "";
         dialog.style.transition = "";
@@ -259,8 +274,8 @@ export function toggleControlCenter(): void {
     }
   });
 
-  activeControlCenter = { dialog, close };
-  attachHandlers(dialog, close);
+  const cleanup = attachHandlers(dialog, close);
+  activeControlCenter = { dialog, close, cleanup };
 }
 
 export function goHome(): void {

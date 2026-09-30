@@ -1,5 +1,5 @@
 import "../../../css/layout/footer.css";
-import { setLanguage, t } from "../../i18n/i18n.js";
+import { getLanguage, setLanguage, t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { webSiteName } from "../../config/env.js";
 import { createElement } from "../createElement.js";
@@ -9,10 +9,11 @@ interface NavPage {
   label: string;
 }
 
+/** Handle navigation cleanly */
 const handleNavigation = (event: MouseEvent, href: string): void => {
   event.preventDefault();
   if (!href) {
-    console.error("handleNavigation received null href");
+    console.error("🚨 handleNavigation received null href");
     return;
   }
   navigate(href);
@@ -32,21 +33,24 @@ const Footer = (): HTMLElement => {
     { href: "/blog", label: t("footer.blog", {}, "Blog") }
   ];
 
-  const navLinks = pages.map(({ href, label }) => {
-    return createElement(
+  const navLinks = pages.map(({ href, label }) =>
+    createElement(
       "a",
       {
         href,
         class: "footer-link",
         events: {
-          click: ((e: MouseEvent) => handleNavigation(e, href)) as EventListener
+          click: (e: Event) => handleNavigation(e as MouseEvent, href)
         }
       },
       [label]
-    );
-  });
+    )
+  );
 
-  const nav = createElement("nav", { class: "footer-nav" }, navLinks);
+  const nav = createElement("nav", { class: "footer-nav", "aria-label": "Footer Navigation" }, navLinks);
+
+  const currentYear = new Date().getFullYear();
+  const currentLang = typeof getLanguage === "function" ? getLanguage() : (localStorage.getItem("lang") || "en");
 
   const langSelect = createElement(
     "select",
@@ -55,13 +59,13 @@ const Footer = (): HTMLElement => {
       class: "lang-select",
       "aria-label": t("footer.languageLabel", {}, "Select Page Language"),
       events: {
-        change: (async (e: Event) => {
+        change: async (e: Event) => {
           const target = e.target as HTMLSelectElement | null;
           const lang = target?.value;
           if (lang) {
             await setLanguage(lang);
           }
-        }) as EventListener
+        }
       }
     },
     [
@@ -74,17 +78,20 @@ const Footer = (): HTMLElement => {
     ]
   ) as HTMLSelectElement;
 
-  const savedLang = localStorage.getItem("lang") || "en";
-  langSelect.value = savedLang;
+  langSelect.value = currentLang;
+
+  const copyrightText = t(
+    "footer.copyright",
+    { year: currentYear, site: webSiteName },
+    `© ${currentYear} ${webSiteName}. All rights reserved.`
+  );
 
   const footerBottom = createElement("div", { class: "footer-bottom" }, [
     langSelect,
-    createElement("p", {}, [
-      t("footer.copyright", { year: new Date().getFullYear(), site: webSiteName }, "© {year} {site}. All rights reserved.")
-    ])
+    createElement("p", { class: "footer-copyright" }, [copyrightText])
   ]);
 
-  return createElement("div", { class: "footer-container" }, [
+  return createElement("footer", { class: "footer-container" }, [
     nav,
     footerBottom
   ]);

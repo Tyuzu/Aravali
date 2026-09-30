@@ -2,8 +2,16 @@ import "../../../css/layout/aside.css";
 import { createElement } from "../../components/createElement.js";
 import { adspace } from "../../services/ads/newads.js";
 
-type PrimitiveContent = Node | string | number | boolean | null | undefined;
+/* =========================================================
+   TYPES & INTERFACES
+========================================================= */
 
+export type PrimitiveContent = Node | string | number | boolean | null | undefined;
+
+/**
+ * Union type supporting up to 4 levels of array nesting.
+ * Avoids infinite type instantiation errors in TypeScript compiler.
+ */
 export type NestedContent =
   | PrimitiveContent
   | PrimitiveContent[]
@@ -32,28 +40,23 @@ export interface AsideContentOptions {
   asContainer?: boolean;
 }
 
+/* =========================================================
+   HELPERS
+========================================================= */
+
 /**
- * Normalizes mixed inputs into a flat array of valid DOM Nodes.
+ * Normalizes mixed nested inputs into a flat array of valid DOM Nodes.
+ * Bypasses recursive type resolution on Array.prototype.flat using explicit casting.
  */
 const normalizeContent = (content: NestedContent): Node[] => {
   if (content == null || content === false) return [];
 
-  const stack: unknown[] = [content];
-  const flatItems: PrimitiveContent[] = [];
-
-  while (stack.length > 0) {
-    const item = stack.pop();
-    if (Array.isArray(item)) {
-      for (let i = item.length - 1; i >= 0; i--) {
-        stack.push(item[i]);
-      }
-    } else {
-      flatItems.push(item as PrimitiveContent);
-    }
-  }
+  const flatItems = (
+    Array.isArray(content) ? (content as any[]).flat(Infinity) : [content]
+  ) as PrimitiveContent[];
 
   return flatItems
-    .filter((item): item is NonNullable<PrimitiveContent> => item != null && item !== false)
+    .filter((item): item is NonNullable<PrimitiveContent> => item != null && item !== false && item !== "")
     .map((item) => (item instanceof Node ? item : document.createTextNode(String(item))));
 };
 
@@ -65,9 +68,11 @@ function renderSection(section: SectionType): HTMLElement | Node | null {
   if (section instanceof Node) return section;
 
   const children: Node[] = [];
+
   if (section.title) {
     children.push(createElement("h3", { class: "aside-section-title" }, [section.title]));
   }
+
   if (section.content) {
     children.push(...normalizeContent(section.content));
   }
@@ -75,6 +80,10 @@ function renderSection(section: SectionType): HTMLElement | Node | null {
   const className = ["aside-section", section.className].filter(Boolean).join(" ");
   return createElement("section", { class: className }, children);
 }
+
+/* =========================================================
+   MAIN COMPONENT BUILDER
+========================================================= */
 
 /**
  * Reusable sidebar element builder with title, actions, sections, custom content, and ad placement.
@@ -107,20 +116,19 @@ export function createAsideContent({
   const normalizedChildren = normalizeContent(children);
 
   // 4. Assemble components based on ad placement
-  const content: Node[] = [
-    adPlacement === "top" ? adNode : null,
-    titleNode,
-    actionsContainer,
-    adPlacement === "middle" ? adNode : null,
-    ...renderedSections,
-    ...normalizedChildren,
-    adPlacement === "bottom" ? adNode : null
-  ].filter((item): item is Node => item !== null);
+  const contentNodes: Node[] = [];
+
+  if (adPlacement === "top" && adNode) contentNodes.push(adNode);
+  if (titleNode) contentNodes.push(titleNode);
+  if (actionsContainer) contentNodes.push(actionsContainer);
+  if (adPlacement === "middle" && adNode) contentNodes.push(adNode);
+  contentNodes.push(...renderedSections, ...normalizedChildren);
+  if (adPlacement === "bottom" && adNode) contentNodes.push(adNode);
 
   // 5. Return container element or array of nodes
   if (asContainer) {
-    return createElement("aside", { class: "aside-container" }, content);
+    return createElement("aside", { class: "aside-container" }, contentNodes);
   }
 
-  return content;
+  return contentNodes;
 }

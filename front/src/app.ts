@@ -3,13 +3,13 @@ import { detectLanguage, setLanguage } from "./i18n/i18n.js";
 import { profileEnvironment, setEnvironment, EnvironmentData } from "./utils/app/env.js";
 import { trackError, showApplicationError } from "./utils/app/errors.js";
 import { setupPerformanceMonitoring } from "./utils/app/performance.js";
-//import { setupServiceWorker } from "./utils/app/sw-register.js";
+// import { setupServiceWorker } from "./utils/app/sw-register.js";
 import { navigate } from "./routes/navigate.js";
 
 /* =========================================================
    ACCESSIBILITY
 ========================================================= */
-function focusMainContent(): void {
+export function focusMainContent(): void {
   const content = document.getElementById("content");
   if (!content) return;
 
@@ -45,12 +45,11 @@ export function isSpecialLink(anchor: HTMLAnchorElement): boolean {
     return true;
   }
 
-  try {
-    const url = new URL(href, window.location.href);
-    if (url.origin !== window.location.origin) return true;
-  } catch {
+  // Cross-origin check using standard HTMLAnchorElement properties
+  if (anchor.origin && anchor.origin !== window.location.origin) {
     return true;
   }
+
   return false;
 }
 
@@ -71,16 +70,21 @@ export function setupGlobalNavigation(): void {
     const href = anchor.getAttribute("href");
     if (!href) return;
 
+    // Ignore hash-only in-page anchors
     if (href.startsWith("#") && !href.startsWith("#/")) return;
     if (!isSpaRoute(href)) return;
 
     event.preventDefault();
-    navigate(href).catch((error: unknown) => {
-      trackError(error, {
-        type: "navigation_failure",
-        path: href
+    navigate(href)
+      .then(() => {
+        focusMainContent();
+      })
+      .catch((error: unknown) => {
+        trackError(error, {
+          type: "navigation_failure",
+          path: href,
+        });
       });
-    });
   });
 }
 
@@ -112,7 +116,6 @@ export function setupHistoryNavigation(): void {
 /* =========================================================
    TYPES & EXTENSIONS
 ========================================================= */
-
 declare global {
   interface Window {
     __env?: EnvironmentData;
@@ -120,21 +123,15 @@ declare global {
 }
 
 /* =========================================================
-   CONSTANTS
-========================================================= */
-
-let offlineTimer: ReturnType<typeof setTimeout> | null = null;
-
-/* =========================================================
    OFFLINE / ONLINE MONITORING
 ========================================================= */
+let offlineTimer: ReturnType<typeof setTimeout> | null = null;
 
 function toggleOfflineBanner(isOffline: boolean): void {
-  // Use existing __env or fall back to profileEnvironment to ensure full EnvironmentData
   const currentEnv = window.__env || profileEnvironment();
   const updatedEnvironment: EnvironmentData = {
     ...currentEnv,
-    online: !isOffline
+    online: !isOffline,
   };
   setEnvironment(updatedEnvironment);
 
@@ -166,11 +163,12 @@ function toggleOfflineBanner(isOffline: boolean): void {
         zIndex: "9999",
         fontSize: "0.9rem",
         fontWeight: "600",
-        boxSizing: "border-box"
+        boxSizing: "border-box",
       });
 
       banner.textContent = "You are offline. Some features may not be available.";
-      document.body.appendChild(banner);
+      document.body.prepend(banner);
+      document.body.style.paddingTop = "2.5rem";
     } else {
       if (!banner) return;
 
@@ -180,6 +178,7 @@ function toggleOfflineBanner(isOffline: boolean): void {
       const targetBanner = banner;
       setTimeout(() => {
         targetBanner?.remove();
+        document.body.style.paddingTop = "";
       }, 1500);
     }
   }, 250);
@@ -191,26 +190,24 @@ window.addEventListener("online", () => toggleOfflineBanner(false));
 /* =========================================================
    GLOBAL ERROR TRACKING
 ========================================================= */
-
 window.addEventListener("error", (event: ErrorEvent) => {
   trackError((event.error as Error) || new Error(event.message || "Unknown error"), {
     type: "uncaught_error",
     filename: event.filename,
     line: event.lineno,
-    column: event.colno
+    column: event.colno,
   });
 });
 
 window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
   trackError((event.reason as Error) || new Error("Unhandled promise rejection"), {
-    type: "unhandled_rejection"
+    type: "unhandled_rejection",
   });
 });
 
 /* =========================================================
    INITIAL APPLICATION STARTUP
 ========================================================= */
-
 async function startApplication(): Promise<void> {
   try {
     if ("scrollRestoration" in history) {
@@ -249,7 +246,7 @@ async function startApplication(): Promise<void> {
 }
 
 /* =========================================================
-   STARTUP
+   STARTUP EXECUTION
 ========================================================= */
 // setupServiceWorker();
 

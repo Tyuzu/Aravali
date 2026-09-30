@@ -2,8 +2,9 @@ import "../../../css/layout/navi.css";
 import { t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { getCurrentAllowedFeatures } from "../../config/domainFeatures.js";
-import { getState } from "../../state/state.js";
+import { getState, subscribe } from "../../state/state.js";
 import { enableDragDrop, getNavOrder } from "./navigationDrag.js";
+import { createElement } from "../createElement.js";
 
 export interface NavItemConfig {
   href: string;
@@ -12,69 +13,51 @@ export interface NavItemConfig {
   roles?: string[];
 }
 
-const normalizeRoles = (value: unknown): string[] => {
-  if (Array.isArray(value)) {
-    return value
-      .filter((role): role is string => typeof role === "string" && role.trim().length > 0)
-      .map((role) => role.trim().toLowerCase());
+/** Get normalized current user roles directly from state.js alias */
+const getCurrentUserRoles = (): string[] => {
+  const roles = getState("roles");
+  if (Array.isArray(roles)) {
+    return roles.map((role) => String(role).toLowerCase());
   }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed ? [trimmed.toLowerCase()] : [];
-  }
-
   return [];
 };
 
-const getCurrentUserRoles = (): string[] => {
-  const state = getState() as Record<string, any> | null;
-  const authRoles = normalizeRoles(state?.auth?.roles ?? state?.roles);
-  const userRoles = normalizeRoles(
-    state?.userProfile?.roles ?? state?.user?.roles ?? state?.user?.role ?? state?.userProfile?.role
-  );
-
-  return [...new Set([...authRoles, ...userRoles])];
-};
-
-/** Highlight current active link */
-export const highlightActiveNav = (path: string): void => {
-  document.querySelectorAll<HTMLAnchorElement>(".navigation__link").forEach((link) => {
+/** Highlight current active link within a target container or entire document */
+export const highlightActiveNav = (path: string, container: ParentNode = document): void => {
+  container.querySelectorAll<HTMLAnchorElement>(".navigation__link").forEach((link) => {
     link.classList.toggle("active", link.getAttribute("href") === path);
   });
 };
 
-/** Handle navigation */
+/** Handle navigation cleanly */
 const handleNavigation = (event: MouseEvent, href: string): void => {
   event.preventDefault();
   if (!href) {
-    console.error("🚨 handleNavigation received null href!");
+    console.error("🚨 handleNavigation received invalid href!");
     return;
   }
   navigate(href);
 };
 
-/** Create one navigation item */
+/** Create individual navigation list item */
 const createNavItem = (href: string, label: string): HTMLLIElement => {
-  const li = document.createElement("li");
-  li.className = "navigation__item";
+  const anchor = createElement("a", {
+    href,
+    class: "navigation__link",
+    events: {
+      click: (e: Event) => handleNavigation(e as MouseEvent, href)
+    }
+  }, [label]);
 
-  // Start as non-draggable so normal clicks fire cleanly
-  li.setAttribute("draggable", "false");
-
-  const anchor = document.createElement("a");
-  anchor.href = href;
-  anchor.className = "navigation__link";
-  anchor.textContent = label;
-  anchor.addEventListener("click", (e: MouseEvent) => handleNavigation(e, href));
-
-  li.appendChild(anchor);
-  return li;
+  return createElement("li", {
+    class: "navigation__item",
+    draggable: "false"
+  }, [anchor]) as HTMLLIElement;
 };
 
-/** Filter nav items according to the active domain's feature flags and user roles */
+/** Filter nav items against domain feature flags & user state roles */
 const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => {
-  const allowed: string[] = getCurrentAllowedFeatures();
+  const allowedFeatures: string[] = getCurrentAllowedFeatures();
   const userRoles = getCurrentUserRoles();
 
   return allNavItems.filter((item) => {
@@ -83,20 +66,17 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
       if (!hasRoleAccess) return false;
     }
 
-    // Domain-level feature gate
-    if (allowed.includes("ALL")) {
+    if (allowedFeatures.includes("ALL")) {
       return true;
     }
 
-    // Shared core items without a feature key are always shown
     if (!item.feature) return true;
-    return allowed.includes(item.feature);
+    return allowedFeatures.includes(item.feature);
   });
 };
 
-/** Create navigation bar */
-const createNav = (): HTMLDivElement => {
-  // 1. Master list of navigation items mapped to feature keys
+/** Build nav links fragment based on master configuration and ordering */
+const buildNavList = (): HTMLUListElement => {
   const allNavItems: NavItemConfig[] = [
     { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
     { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
@@ -104,17 +84,10 @@ const createNav = (): HTMLDivElement => {
     { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
     { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
     { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
-    // { href: "/baitos", label: t("nav.baitos", {}, "Baitos"), feature: "baitos" },
-    // { href: "/baitos/hire", label: t("nav.hire", {}, "Workers"), feature: "baitos" },
-    // { href: "/posts", label: t("nav.posts", {}, "Posts"), feature: "social" },
-    { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" },
-    // { href: "/events", label: t("nav.events", {}, "Events"), feature: "events" },
+    { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" }
   ];
 
-  // 2. Filter available items based on domain permissions
   const defaultNavItems = getPermittedNavItems(allNavItems);
-
-  // 3. Apply custom drag-and-drop ordering (stored in localStorage)
   const savedOrder = getNavOrder();
   let navItems = defaultNavItems;
 
@@ -130,40 +103,62 @@ const createNav = (): HTMLDivElement => {
     });
   }
 
-  const nav = document.createElement("div");
-  nav.className = "navigation";
-
-  const toggle = document.createElement("input");
-  toggle.className = "toggle";
-  toggle.type = "checkbox";
-  toggle.id = "more";
-  toggle.setAttribute("tabindex", "-1");
-
-  const inner = document.createElement("div");
-  inner.className = "navigation__inner";
-
-  const ul = document.createElement("ul");
-  ul.className = "navigation__list horizontal";
-
+  const ul = createElement("ul", { class: "navigation__list horizontal" }) as HTMLUListElement;
   navItems.forEach(({ href, label }) => ul.appendChild(createNavItem(href, label)));
 
+  return ul;
+};
+
+/** Create full navigation bar container with dynamic state re-rendering support */
+const createNav = (): HTMLDivElement => {
+  const toggle = createElement("input", {
+    class: "toggle",
+    type: "checkbox",
+    id: "more",
+    tabindex: "-1"
+  }) as HTMLInputElement;
+
+  let ul = buildNavList();
   enableDragDrop(ul, toggle);
 
-  const toggleLabelWrapper = document.createElement("div");
-  toggleLabelWrapper.className = "navigation__toggle";
+  const toggleLabel = createElement("label", {
+    class: "navigation__link",
+    for: "more"
+  }, [t("nav.more", {}, "More")]);
 
-  const toggleLabel = document.createElement("label");
-  toggleLabel.className = "navigation__link";
-  toggleLabel.setAttribute("for", "more");
-  toggleLabel.innerText = t("nav.more", {}, "More");
+  const toggleLabelWrapper = createElement("div", { class: "navigation__toggle" }, [toggleLabel]);
+  const inner = createElement("div", { class: "navigation__inner" }, [ul, toggleLabelWrapper]);
 
-  toggleLabelWrapper.appendChild(toggleLabel);
-  inner.appendChild(ul);
-  inner.appendChild(toggleLabelWrapper);
-  nav.appendChild(toggle);
-  nav.appendChild(inner);
+  const nav = createElement("div", { class: "navigation" }, [toggle, inner]) as HTMLDivElement;
 
-  highlightActiveNav(window.location.pathname);
+  // Reactively re-render menu items when user updates roles/login state
+  const refreshNavList = () => {
+    const newUl = buildNavList();
+    ul.replaceWith(newUl);
+    ul = newUl;
+    enableDragDrop(ul, toggle);
+    highlightActiveNav(window.location.pathname, nav);
+  };
+
+  const unsubRoles = subscribe("roles", refreshNavList);
+  const unsubAuth = subscribe("isLoggedIn", refreshNavList);
+
+  // Auto-cleanup observer when component is unmounted from document body
+  queueMicrotask(() => {
+    const observer = new MutationObserver(() => {
+      if (!document.body.contains(nav)) {
+        unsubRoles?.();
+        unsubAuth?.();
+        observer.disconnect();
+      }
+    });
+
+    if (document.body) {
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  });
+
+  highlightActiveNav(window.location.pathname, nav);
 
   return nav;
 };

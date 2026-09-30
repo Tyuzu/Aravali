@@ -2,72 +2,40 @@ import "../../../css/layout/header.css";
 import { getState, subscribe } from "../../state/state.js";
 import { webSiteName } from "../../config/env.js";
 import { navigate } from "../../routes/navigate.js";
-import { logout } from "../../services/auth/authService.js";
-import { settingsSVG, moonSVG, profileSVG, shopBagSVG, logoutSVG, cardSVG } from "../svgs/featherSVGs";
+import { moonSVG } from "../svgs/featherSVGs";
 import { createElement } from "../createElement.js";
-import { createDropdownMenu } from "../ui/Dropdown.js";
-import { resolveImagePath, EntityType, PictureType } from "../../utils/imagePaths.js";
+import { createDropdownMenu, DropdownMenuItem } from "../ui/Dropdown.js";
 import Imagex from "../base/Imagex.js";
 import { sticky } from "./sticky.js";
 import Button from "../base/Button.js";
 import { loadTheme, toggleTheme } from "./themeManager.js";
 import createIconButton from "../ui/IconButton.js";
-import { createProfileSection, getUserAvatarSrc, getCurrentUserState } from "./ProfileSection.js";
-
-export interface DropdownMenuItem {
-  href: string;
-  text: string;
-}
-
-export interface ProfileMenuItem extends DropdownMenuItem {
-  icon?: string;
-}
-
-export interface UserState {
-  id?: string;
-  userid?: string;
-  username?: string;
-  name?: string;
-  avatar?: string;
-  profilepicture?: string;
-  profileImage?: string;
-  image?: string;
-  picture?: string;
-  role?: string;
-  [key: string]: unknown;
-}
+import { createProfileSection, getUserAvatarSrc, getCurrentUserState, UserState } from "./ProfileSection.js";
 
 function renderUserSection(): HTMLDivElement {
-  const container = createElement("div", { class: "user-area" }, []) as HTMLDivElement;
+  const container = createElement("div", { class: "user-area" }) as HTMLDivElement;
+  const isLoggedIn = getState("isLoggedIn") ?? Boolean(getState("user")?.id || getState("user")?.userid);
 
-  function update(): void {
-    container.replaceChildren();
-    const isLoggedIn = getState("isLoggedIn") ?? Boolean(getState("user")?.id || getState("user")?.userid);
-
-    if (isLoggedIn) {
-      container.append(createProfileSection());
-    } else {
-      const loginBtn = Button({
-        title: "Login", id: "login-button", events: {
-          click: () => {
-            navigate("/login");
-          }
-        }, classes: "login-btn", styles: { border: "none", cursor: "pointer" }
-      });
-
-      container.append(loginBtn);
-    }
+  if (isLoggedIn) {
+    container.append(createProfileSection());
+  } else {
+    const loginBtn = Button({
+      title: "Login",
+      id: "login-button",
+      events: {
+        click: () => navigate("/login")
+      },
+      classes: "login-btn",
+      styles: { border: "none", cursor: "pointer" }
+    });
+    container.append(loginBtn);
   }
 
-  subscribe("isLoggedIn", update);
-  subscribe("user", update);
-
-  update();
   return container;
 }
 
 function buildNav(): HTMLDivElement {
-  const nav = createElement("div", { class: "header-content" }, []) as HTMLDivElement;
+  const nav = createElement("div", { class: "header-content" }) as HTMLDivElement;
   const isLoggedIn = getState("isLoggedIn") ?? Boolean(getState("user")?.id || getState("user")?.userid);
 
   if (isLoggedIn) {
@@ -86,20 +54,6 @@ function buildNav(): HTMLDivElement {
   return nav;
 }
 
-function enableNavAutoUpdate(initialNavRef: HTMLDivElement): void {
-  let navRef: HTMLDivElement = initialNavRef;
-
-  function updateNav(): void {
-    if (!navRef || !navRef.parentNode) return;
-    const newNav = buildNav();
-    navRef.replaceWith(newNav);
-    navRef = newNav;
-  }
-
-  subscribe("isLoggedIn", updateNav);
-  subscribe("user", updateNav);
-}
-
 function createHeader(): void {
   const header = document.getElementById("pageheader");
   if (!header || header.hasChildNodes()) {
@@ -112,23 +66,38 @@ function createHeader(): void {
     createElement("a", { href: "/home", class: "logo-link" }, [webSiteName])
   ]);
 
-  const user = getCurrentUserState() as UserState;
+  const sky = createElement("div", { class: "hflexcen" });
 
-  const sky = createElement("div", { class: "hflexcen" }, []);
-  sky.append(
-    sticky({
-      imglink: Imagex({
-        src: getUserAvatarSrc(user),
-        alt: "Profile",
-        classes: "profile-pic"
+  const renderSkyProfile = () => {
+    sky.replaceChildren();
+    const user = getCurrentUserState() as UserState;
+    sky.append(
+      sticky({
+        imglink: Imagex({
+          src: getUserAvatarSrc(user),
+          alt: "Profile",
+          classes: "profile-pic"
+        })
       })
-    })
-  );
+    );
+  };
 
-  const nav = buildNav();
-  header.append(logo, sky, nav);
+  renderSkyProfile();
 
-  enableNavAutoUpdate(nav);
+  let navRef = buildNav();
+  header.append(logo, sky, navRef);
+
+  // Single top-level state listener updates navigation DOM cleanly
+  const handleAuthChange = () => {
+    renderSkyProfile();
+    const newNav = buildNav();
+    navRef.replaceWith(newNav);
+    navRef = newNav;
+  };
+
+  subscribe("isLoggedIn", handleAuthChange);
+  subscribe("user", handleAuthChange);
+
   loadTheme();
 }
 

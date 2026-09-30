@@ -2,9 +2,8 @@ import { getState } from "../../state/state.js";
 import { resolveImagePath, EntityType, PictureType } from "../../utils/imagePaths.js";
 import Imagex from "../base/Imagex.js";
 import { createElement } from "../createElement.js";
-import { navigate } from "../../routes/navigate.js";
 import { logout } from "../../services/auth/authService.js";
-import { profileSVG, shopBagSVG, cardSVG, settingsSVG, logoutSVG } from "../svgs/featherSVGs";
+import { profileSVG, shopBagSVG, settingsSVG, logoutSVG } from "../svgs/featherSVGs";
 import { createDropdownMenu, DropdownMenuItem } from "../ui/Dropdown.js";
 
 export interface UserState {
@@ -70,35 +69,35 @@ export function createProfileSection(): HTMLDivElement {
   const links: DropdownMenuItem[] = [
     { href: "/profile", text: username, icon: profileSVG },
     { href: "/my-orders", text: "My Orders", icon: shopBagSVG },
-    // { href: "/wallet", text: "Wallet", icon: cardSVG },
     { href: "/settings", text: "Settings", icon: settingsSVG }
   ];
 
-  const container = createDropdownMenu("profile-menu", username, links, toggle);
+  const container = createDropdownMenu("profile-menu", username, links, toggle) as HTMLDivElement;
 
-  // adjust classes to match previous structure
   container.className = "dropdown";
   const menu = container.querySelector(".menu-content") as HTMLDivElement;
-  if (menu) menu.className = "profile-menu";
+  if (menu) {
+    menu.className = "profile-menu";
 
-  // add logout button to menu
-  const logoutBtn = createElement("button", { class: "profile-menu-item logout" }, []);
-  logoutBtn.innerHTML = logoutSVG;
-  logoutBtn.append(createElement("span", {}, ["Logout"]));
-  logoutBtn.addEventListener("click", () => {
-    if (menu) menu.classList.remove("open");
-    logout();
-  });
-  if (menu) menu.appendChild(logoutBtn as unknown as Node);
+    // Add logout button
+    const logoutBtn = createElement("button", { class: "profile-menu-item logout" }, [
+      createElement("span", {}, ["Logout"])
+    ]);
+    logoutBtn.insertAdjacentHTML("afterbegin", logoutSVG);
+    logoutBtn.addEventListener("click", () => {
+      menu.classList.remove("open");
+      logout();
+    });
+    menu.appendChild(logoutBtn);
+  }
 
-  // keyboard handling for toggle (kept from previous behavior)
-  toggle.addEventListener("keydown", (e: Event) => {
-    const keyboardEvent = e as KeyboardEvent;
-    if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
-      keyboardEvent.preventDefault();
+  // Keyboard accessibility handler
+  toggle.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
       if (menu) menu.classList.toggle("open");
     }
   });
 
-  return container as HTMLDivElement;
+  return container;
 }

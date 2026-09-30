@@ -15,7 +15,9 @@ export interface SkipWaitingMessage {
 ========================================================= */
 let serviceWorkerRefreshing = false;
 
-export function setupServiceWorker(): void {
+export function setupServiceWorker(
+  onUpdateFound?: (registration: ServiceWorkerRegistration) => void
+): void {
   if (!("serviceWorker" in navigator)) {
     console.warn("[SW] Service workers are not supported.");
     return;
@@ -23,23 +25,19 @@ export function setupServiceWorker(): void {
 
   let hadController = Boolean(navigator.serviceWorker.controller);
 
-  window.addEventListener("load", async () => {
+  const register = async () => {
     try {
       const registration = await navigator.serviceWorker.register("/service-worker.js", {
-        updateViaCache: "none"
+        updateViaCache: "none",
       });
       console.log("[SW] Registered:", registration.scope);
 
-      try {
-        await registration.update();
-      } catch (error: unknown) {
-        console.warn("[SW] Update check failed:", error);
-      }
-
+      // Handle a worker already in waiting state (e.g. installed from previous tab)
       if (registration.waiting) {
-        requestServiceWorkerActivation(registration.waiting);
+        handleWaitingWorker(registration, onUpdateFound);
       }
 
+      // Listen for newly installed workers
       registration.addEventListener("updatefound", () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
@@ -47,15 +45,30 @@ export function setupServiceWorker(): void {
         newWorker.addEventListener("statechange", () => {
           if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
             console.log("[SW] New version available.");
-            requestServiceWorkerActivation(newWorker);
+            handleWaitingWorker(registration, onUpdateFound);
           }
         });
       });
+
+      // Check for SW updates
+      try {
+        await registration.update();
+      } catch (error: unknown) {
+        console.warn("[SW] Update check failed:", error);
+      }
     } catch (error: unknown) {
       console.error("[SW] Registration failed:", error);
     }
-  });
+  };
 
+  // Safe load guard for SPAs and bundled code
+  if (document.readyState === "complete") {
+    register();
+  } else {
+    window.addEventListener("load", register, { once: true });
+  }
+
+  // Handle page reload once new SW takes control
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController) {
       hadController = true;
@@ -73,7 +86,20 @@ export function setupServiceWorker(): void {
 /* =========================================================
    HELPER FUNCTIONS
 ========================================================= */
-function requestServiceWorkerActivation(worker: ServiceWorker | null): void {
+function handleWaitingWorker(
+  registration: ServiceWorkerRegistration,
+  onUpdateFound?: (registration: ServiceWorkerRegistration) => void
+): void {
+  if (onUpdateFound) {
+    // Notify application UI to prompt user
+    onUpdateFound(registration);
+  } else {
+    // Fallback: Activate immediately if no callback provided
+    activateServiceWorker(registration.waiting);
+  }
+}
+
+export function activateServiceWorker(worker: ServiceWorker | null): void {
   if (!worker) return;
   const message: SkipWaitingMessage = { type: "SKIP_WAITING" };
   worker.postMessage(message);

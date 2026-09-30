@@ -365,8 +365,7 @@ func main() {
 	// - PostgreSQL
 	// - Redis (including Redis Pub/Sub resources)
 	// - MongoDB
-	//
-	// There is no NATS connection anymore.
+
 	logger.L.Sugar().Infow(
 		"Closing infrastructure...",
 	)

@@ -41,31 +41,30 @@ function createBadge(count: number): HTMLElement {
 ========================================================= */
 
 function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}): void {
-    const isLoggedIn: boolean = !!getState("user") || !!getState("token");
-    const unreadMessages: number = (getState("unreadMessages") as number) || 0;
-    const unreadNotifications: number = (getState("unreadNotifications") as number) || 0;
+    // Aligned with system-wide state auth resolution
+    const isLoggedIn: boolean = Boolean(getState("isLoggedIn"));
+    const unreadMessages: number = Number(getState("unreadMessages") || 0);
+    const unreadNotifications: number = Number(getState("unreadNotifications") || 0);
 
-    // Custom image/profile element passed from caller
     const imglink: ImgLinkOption = extraOptions?.imglink || null;
+    
     // State key snapshot to prevent redundant DOM re-renders
-    const nextStateKey = `${isLoggedIn}-${unreadMessages}-${unreadNotifications}-${!!imglink}`;
+    const nextStateKey = `${isLoggedIn}-${unreadMessages}-${unreadNotifications}-${Boolean(imglink)}`;
 
-    // Use bracket notation here 👇
-    if (container.dataset['stateKey'] === nextStateKey) {
+    if (container.dataset.stateKey === nextStateKey) {
         return;
     }
 
-    // And here 👇
-    container.dataset['stateKey'] = nextStateKey;
+    container.dataset.stateKey = nextStateKey;
     const fragment: DocumentFragment = document.createDocumentFragment();
 
-    // 0. Sidebar Home Button
+    // 0. Home Button
     fragment.appendChild(
         createIconButton({
             classSuffix: "menu",
             svgMarkup: aSVG,
             onClick: goHome,
-            label: "Open menu"
+            label: "Go Home"
         })
     );
 
@@ -79,12 +78,12 @@ function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}
         })
     );
 
-    // // 2. Profile / Custom Image Link Position
+    // // 2. Profile / Custom Image Link
     // if (imglink) {
-    //     if (imglink instanceof Node) {
-    //         fragment.appendChild(imglink);
-    //     } else if (typeof imglink === "function") {
+    //     if (typeof imglink === "function") {
     //         fragment.appendChild(imglink());
+    //     } else if (imglink instanceof Node) {
+    //         fragment.appendChild(imglink);
     //     }
     // }
 
@@ -127,7 +126,6 @@ function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}
         fragment.appendChild(notifBtn);
     }
 
-    // Single DOM update operation
     container.replaceChildren(fragment);
 }
 
@@ -135,13 +133,13 @@ function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}
    STICKY COMPONENT
 ========================================================= */
 
-export function Sticky(divs: StickyExtraOptions = {}): HTMLDivElement {
+export function Sticky(extraOptions: StickyExtraOptions = {}): HTMLDivElement {
     const container = createElement("div", {
         class: "plypzstp"
     }) as HTMLDivElement;
 
     // Initial render
-    updateNav(container, divs);
+    updateNav(container, extraOptions);
 
     let renderAnimationFrame: number | null = null;
 
@@ -150,35 +148,36 @@ export function Sticky(divs: StickyExtraOptions = {}): HTMLDivElement {
             cancelAnimationFrame(renderAnimationFrame);
         }
         renderAnimationFrame = requestAnimationFrame(() => {
-            updateNav(container, divs);
+            updateNav(container, extraOptions);
         });
     };
 
     // Subscriptions
-    const unsubToken: UnsubscribeFn = subscribe("token", scheduleUpdate);
-    const unsubUser: UnsubscribeFn = subscribe("user", scheduleUpdate);
-    const unsubMessages: UnsubscribeFn = subscribe("unreadMessages", scheduleUpdate);
-    const unsubNotifications: UnsubscribeFn = subscribe("unreadNotifications", scheduleUpdate);
+    const unsubscribers: UnsubscribeFn[] = [
+        subscribe("isLoggedIn", scheduleUpdate),
+        subscribe("user", scheduleUpdate),
+        subscribe("unreadMessages", scheduleUpdate),
+        subscribe("unreadNotifications", scheduleUpdate)
+    ];
 
-    // MutationObserver cleanup strategy from the old implementation
-    const observer = new MutationObserver(() => {
-        Promise.resolve().then(() => {
+    // Safe Observer pattern: Wait until microtask queue runs so parent can attach container to DOM
+    queueMicrotask(() => {
+        const observer = new MutationObserver(() => {
             if (!document.body.contains(container)) {
                 if (renderAnimationFrame !== null) {
                     cancelAnimationFrame(renderAnimationFrame);
                 }
-                unsubToken?.();
-                unsubUser?.();
-                unsubMessages?.();
-                unsubNotifications?.();
+                unsubscribers.forEach((unsub) => unsub?.());
                 observer.disconnect();
             }
         });
-    });
 
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
+        if (document.body) {
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
     });
 
     return container;
