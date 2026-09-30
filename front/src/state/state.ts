@@ -1,66 +1,27 @@
-import { apiConfig } from "../config/env.js";
+import {
+    PERSISTED_KEYS,
+    SESSION_KEYS,
+    readSessionStorage,
+    readLocalStorage,
+    writeSessionStorage,
+    writeLocalStorage,
+    removeStorage,
+    readPersistentJSON,
+    readPersistentNumber,
+    migrateLegacyToken,
+    routeCache,
+    routeState
+} from "./storage.js";
 
-/* =========================================================
-    TYPES & INTERFACES
-========================================================= */
-export interface User {
-    id?: string | number;
-    userid?: string | number;
-    username?: string;
-    name?: string;
-    [key: string]: any;
-}
+import {
+    User,
+    AuthState,
+    AppState,
+    StateListener
+} from "./stateTypes.js";
 
-export interface AuthState {
-    isAuthenticated: boolean;
-    loading: boolean;
-    accessToken: string | null;
-    user: User | null;
-    roles: string[];
-    permissions: string[];
-}
-
-export interface AppState {
-    auth: AuthState;
-    userProfile: Record<string, any>;
-    socket: any | null;
-    environment: Record<string, any>;
-    lang: string;
-    lastPath: string;
-    currentRoute: any | null;
-    routeCache: Map<any, any>;
-    routeState: Map<any, any>;
-    currentChatId: string | number | null;
-    isLoading: boolean;
-    unreadMessages: number;
-    unreadNotifications: number;
-    isLoggedIn: boolean;
-    [key: string]: any; // To allow fallback for dynamically accessed properties
-}
-
-export type StateListener = (value: any, state: AppState) => void;
-
-/* =========================================================
-    API CONFIG EXPORTS
-========================================================= */
-export const {
-    MAIN_URL,
-    EMBED_URL,
-    BANNERDROP_URL,
-    API_URL,
-    STRIPE_URL,
-    AD_URL,
-    SEARCH_URL,
-    MERE_URL,
-    MERE_WS,
-    CHAT_URL,
-    CHAT_WS,
-    MUSIC_URL,
-    LIVE_URL,
-    SRC_URL,
-    FILEDROP_URL,
-    CHATDROP_URL
-} = apiConfig;
+// Re-export types and constants from types.js for backward compatibility
+export * from "./stateTypes.js";
 
 /* =========================================================
     STATE KEYS
@@ -74,14 +35,6 @@ const allowedKeys = new Set<string>([
     "unreadNotifications", "isLoggedIn"
 ]);
 
-const PERSISTED_KEYS = new Set<string>([
-    "userProfile", "user", "roles", "permissions",
-    "favFarms",
-    "unreadMessages", "unreadNotifications"
-]);
-
-const SESSION_KEYS = new Set<string>(["token"]);
-
 const AUTH_ALIAS_KEYS = new Set<string>([
     "token", "user", "roles", "permissions", "username", "userid", "isLoggedIn"
 ]);
@@ -89,184 +42,8 @@ const AUTH_ALIAS_KEYS = new Set<string>([
 const ROUTE_CACHE_KEY = "routeCache";
 const ROUTE_STATE_KEY = "routeState";
 
-/* =========================================================
-    STORAGE
-========================================================= */
-function readSessionStorage(key: string): string | null {
-    try {
-        return sessionStorage.getItem(key);
-    } catch {
-        return null;
-    }
-}
-
-function readLocalStorage(key: string): string | null {
-    try {
-        return localStorage.getItem(key);
-    } catch {
-        return null;
-    }
-}
-
-function readStorage(key: string): string | null {
-    if (SESSION_KEYS.has(key)) {
-        return readSessionStorage(key);
-    }
-    return readLocalStorage(key);
-}
-
-function serializeValue(value: any): string | null {
-    if (typeof value === "string") {
-        return value;
-    }
-    try {
-        return JSON.stringify(value);
-    } catch (error) {
-        console.warn(`[STATE] Unable to serialize state key "${String(error)}":`, error);
-        return null;
-    }
-}
-
-function writeSessionStorage(key: string, value: any): boolean {
-    try {
-        if (value === null || value === undefined) {
-            sessionStorage.removeItem(key);
-            return true;
-        }
-        const serialized = serializeValue(value);
-        if (serialized === null) {
-            return false;
-        }
-        sessionStorage.setItem(key, serialized);
-        return true;
-    } catch (error) {
-        console.warn(`[STATE] Failed writing session key "${key}":`, error);
-        return false;
-    }
-}
-
-function writeLocalStorage(key: string, value: any): boolean {
-    try {
-        if (value === null || value === undefined) {
-            localStorage.removeItem(key);
-            return true;
-        }
-        const serialized = serializeValue(value);
-        if (serialized === null) {
-            return false;
-        }
-        localStorage.setItem(key, serialized);
-        return true;
-    } catch (error) {
-        console.warn(`[STATE] Failed writing persistent key "${key}":`, error);
-        return false;
-    }
-}
-
-function writeStorage(key: string, value: any): boolean {
-    if (SESSION_KEYS.has(key)) {
-        return writeSessionStorage(key, value);
-    }
-    if (PERSISTED_KEYS.has(key)) {
-        return writeLocalStorage(key, value);
-    }
-    return false;
-}
-
-function removeStorage(key: string): void {
-    try {
-        sessionStorage.removeItem(key);
-    } catch {
-        // Ignore
-    }
-    try {
-        localStorage.removeItem(key);
-    } catch {
-        // Ignore
-    }
-}
-
-function safeParseFromStorage<T = any>(key: string, fallback: T | null = null): T | string | null {
-    const raw = readStorage(key);
-    if (raw === null || raw === "") {
-        return fallback;
-    }
-    try {
-        return JSON.parse(raw);
-    } catch {
-        return raw;
-    }
-}
-
-function readPersistentJSON<T = any>(key: string, fallback: T | null = null): T | null {
-    const raw = readLocalStorage(key);
-    if (raw === null || raw === "") {
-        return fallback;
-    }
-    try {
-        return JSON.parse(raw);
-    } catch {
-        return fallback;
-    }
-}
-
-function readPersistentNumber(key: string, fallback = 0): number {
-    const value = readPersistentJSON(key, fallback);
-    const number = Number(value);
-    return Number.isFinite(number) ? number : fallback;
-}
-
-/* =========================================================
-    LEGACY TOKEN MIGRATION
-========================================================= */
-function migrateLegacyToken(): void {
-    const sessionToken = readSessionStorage("token");
-    const localToken = readLocalStorage("token");
-    if (!sessionToken && localToken) {
-        try {
-            sessionStorage.setItem("token", localToken);
-        } catch (error) {
-            console.warn("[AUTH] Unable to migrate legacy token:", error);
-        }
-    }
-    try {
-        localStorage.removeItem("token");
-    } catch {
-        // Ignore.
-    }
-}
+// Run token migration at module initialization
 migrateLegacyToken();
-
-/* =========================================================
-    ROUTE CACHE & SCROLL STATE
-========================================================= */
-const routeCache = new Map<any, any>();
-const routeState = new Map<any, any>();
-const scrollPositions = new Map<any, { top: number; left: number }>();
-
-export function saveScroll(container: HTMLElement | null, location: any): void {
-    if (!container) return;
-    scrollPositions.set(location, {
-        top: container.scrollTop || window.scrollY || 0,
-        left: container.scrollLeft || window.scrollX || 0
-    });
-}
-
-export function restoreScroll(container: HTMLElement | null, location: any): void {
-    if (!container) return;
-    const pos = scrollPositions.get(location);
-    if (pos) {
-        if (container === document.body || container === document.documentElement) {
-            window.scrollTo(pos.left, pos.top);
-        } else {
-            container.scrollTop = pos.top;
-            container.scrollLeft = pos.left;
-        }
-    } else {
-        container.scrollTop = 0;
-        window.scrollTo(0, 0);
-    }
-}
 
 /* =========================================================
     LISTENERS
@@ -596,6 +373,7 @@ function isObjectLike(value: any): boolean {
 function shouldProxy(value: any): boolean {
     return (isObjectLike(value) && !(value instanceof Map) && !(value instanceof Set) && !(value instanceof Date) && !(value instanceof RegExp));
 }
+
 function createReactiveObject<T extends object>(obj: T, path: string[] = []): T {
     if (!shouldProxy(obj)) {
         return obj;
