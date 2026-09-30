@@ -1,5 +1,16 @@
 import { apiFetch } from "../../api/api.js";
 
+export interface RegisterPayload {
+  username: string;
+  email: string;
+  password?: string;
+}
+
+export interface LoginPayload {
+  username: string;
+  password?: string;
+}
+
 export async function registerUser(username: string, email: string, password: string) {
   return await apiFetch("/auth/register", "POST", { username, email, password }, { credentials: "include", auth: false });
 }

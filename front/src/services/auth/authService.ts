@@ -84,13 +84,11 @@ export interface SignupPayload {
   username?: string;
   email?: string;
   password?: string;
-  preventDefault?: () => void;
 }
 
 export interface LoginPayload {
   username?: string;
   password?: string;
-  preventDefault?: () => void;
 }
 
 /* =========================================================
@@ -160,7 +158,16 @@ function parseJwtPayload(token: string): JwtPayload | null {
     }
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
     const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-    return JSON.parse(atob(padded)) as JwtPayload;
+    
+    // Safely decode UTF-8 JSON payloads
+    const jsonPayload = decodeURIComponent(
+      atob(padded)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+
+    return JSON.parse(jsonPayload) as JwtPayload;
   } catch {
     return null;
   }
@@ -177,14 +184,11 @@ function extractAuthPayload(response: AuthResponseData, fallbackUsername = ""): 
   const jwt = parseJwtPayload(token) || {};
   const userId =
     response?.userid ??
-    response?.userid ??
     response?.UserID ??
-    data?.userid ??
     data?.userid ??
     data?.UserID ??
     jwt.userid ??
     jwt.userID ??
-    jwt.userid ??
     jwt.sub ??
     "";
 
@@ -237,16 +241,9 @@ function extractAuthPayload(response: AuthResponseData, fallbackUsername = ""): 
 ========================================================= */
 
 export async function signup(payload: SignupPayload = {}): Promise<boolean> {
-  let username = payload?.username;
-  let email = payload?.email;
-  let password = payload?.password;
-
-  if (payload?.preventDefault && typeof document !== "undefined") {
-    payload.preventDefault();
-    username = (document.getElementById("signup-username") as HTMLInputElement)?.value?.trim() || "";
-    email = (document.getElementById("signup-email") as HTMLInputElement)?.value?.trim() || "";
-    password = (document.getElementById("signup-password") as HTMLInputElement)?.value || "";
-  }
+  const username = payload?.username?.trim() || "";
+  const email = payload?.email?.trim() || "";
+  const password = payload?.password || "";
 
   const errors = validateInputs([
     {
@@ -283,7 +280,7 @@ export async function signup(payload: SignupPayload = {}): Promise<boolean> {
   const hideSpinner = LoadingSpinner();
 
   try {
-    await registerUser(username as string, email as string, password as string);
+    await registerUser(username, email, password);
 
     Notify(t("auth.signup.success", {}, "Signup successful! You can now log in."), {
       type: "success",
@@ -314,16 +311,8 @@ export async function signup(payload: SignupPayload = {}): Promise<boolean> {
 ========================================================= */
 
 export async function login(payload: LoginPayload = {}): Promise<boolean> {
-  let username = payload?.username;
-  let password = payload?.password;
-
-  if (payload?.preventDefault && typeof document !== "undefined") {
-    payload.preventDefault();
-    username = (document.getElementById("login-username") as HTMLInputElement)?.value?.trim() || "";
-    password = (document.getElementById("login-password") as HTMLInputElement)?.value || "";
-  }
-
-  username = typeof username === "string" ? username.trim() : "";
+  const username = payload?.username?.trim() || "";
+  const password = payload?.password || "";
 
   if (!username || !password) {
     Notify(t("auth.login.requiredFields", {}, "Username and password are required."), {
@@ -418,7 +407,7 @@ export async function logout(): Promise<void> {
   try {
     await logoutUser();
   } catch {
-    // Logout must clear local authentication even if the server request fails.
+    // Logout must clear local authentication state even if the server request fails.
   } finally {
     silentLogout(true);
   }
@@ -445,7 +434,7 @@ export function silentLogout(broadcast = true): void {
     try {
       sessionStorage.removeItem("redirectAfterLogin");
     } catch {
-      // Ignore storage failures.
+      // Ignore storage access failures.
     }
   }
 

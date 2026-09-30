@@ -5,8 +5,8 @@ import { navigate } from "../../routes/navigate.js";
 import { moonSVG } from "../svgs/featherSVGs";
 import { createElement } from "../createElement.js";
 import { createDropdownMenu, DropdownMenuItem } from "../ui/Dropdown.js";
-import Imagex from "../base/Imagex.js";
-import { sticky } from "./sticky.js";
+// import Imagex from "../base/Imagex.js";
+// import { sticky } from "./sticky.js";
 import Button from "../base/Button.js";
 import { loadTheme, toggleTheme } from "./themeManager.js";
 import createIconButton from "../ui/IconButton.js";
@@ -68,28 +68,28 @@ function createHeader(): void {
 
   const sky = createElement("div", { class: "hflexcen" });
 
-  const renderSkyProfile = () => {
-    sky.replaceChildren();
-    const user = getCurrentUserState() as UserState;
-    sky.append(
-      sticky({
-        imglink: Imagex({
-          src: getUserAvatarSrc(user),
-          alt: "Profile",
-          classes: "profile-pic"
-        })
-      })
-    );
-  };
+  // const renderSkyProfile = () => {
+  //   sky.replaceChildren();
+  //   const user = getCurrentUserState() as UserState;
+  //   sky.append(
+  //     sticky({
+  //       imglink: Imagex({
+  //         src: getUserAvatarSrc(user),
+  //         alt: "Profile",
+  //         classes: "profile-pic"
+  //       })
+  //     })
+  //   );
+  // };
 
-  renderSkyProfile();
+  // renderSkyProfile();
 
   let navRef = buildNav();
   header.append(logo, sky, navRef);
 
   // Single top-level state listener updates navigation DOM cleanly
   const handleAuthChange = () => {
-    renderSkyProfile();
+    // renderSkyProfile();
     const newNav = buildNav();
     navRef.replaceWith(newNav);
     navRef = newNav;

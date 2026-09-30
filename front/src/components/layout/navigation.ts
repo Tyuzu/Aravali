@@ -78,12 +78,13 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 /** Build nav links fragment based on master configuration and ordering */
 const buildNavList = (): HTMLUListElement => {
   const allNavItems: NavItemConfig[] = [
-    { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
-    { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
-    { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
-    { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
-    { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
-    { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
+    // { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
+    // { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
+    // { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
+    // { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
+    // { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
+    // { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
+    // { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" }
     { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" }
   ];
 

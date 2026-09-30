@@ -20,8 +20,9 @@ export function renderAuth(isLoggedIn: boolean, contentContainer: HTMLElement | 
   if (!contentContainer) {
     return;
   }
+
   const stateToken = getState("token");
-  const isAuthenticated = Boolean(isLoggedIn || stateToken || localStorage.getItem("token") || sessionStorage.getItem("token"));
+  const isAuthenticated = Boolean(isLoggedIn || stateToken);
 
   if (isAuthenticated) {
     contentContainer.replaceChildren();
@@ -74,11 +75,9 @@ function createLoginForm(
   const section = createElement("section", { class: "auth-section" });
   const title = createElement("h2", { class: "auth-title" }, t("auth.login.title", {}, "Log In"));
 
-  // Strongly typed as HTMLInputElement via createElement generic map
   const usernameInput = inputField("text", t("auth.login.usernamePlaceholder", {}, "Username"), "login-username", "username");
   const passwordInput = inputField("password", t("auth.login.passwordPlaceholder", {}, "Password"), "login-password", "current-password");
 
-  // Strongly typed as HTMLButtonElement
   const submitBtn = createElement("button", {
     type: "submit",
     class: "btn-primary"
@@ -99,7 +98,6 @@ function createLoginForm(
     }, t("auth.login.signUpLink", {}, "Sign Up"))
   ]);
 
-  // Strongly typed as HTMLFormElement
   const form = createElement("form", { class: "auth-form" }, [
     usernameInput,
     passwordInput,
@@ -114,6 +112,7 @@ function createLoginForm(
     }
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
+
     if (!username || !password) {
       Notify(t("auth.login.requiredFields", {}, "Username and password are required."), {
         type: "error",
@@ -121,8 +120,10 @@ function createLoginForm(
       });
       return;
     }
+
     setSubmitting(true);
     submitBtn.disabled = true;
+
     try {
       const success = await login({ username, password });
       if (!success) {
@@ -151,7 +152,6 @@ function createSignupForm(
   const section = createElement("section", { class: "auth-section" });
   const title = createElement("h2", { class: "auth-title" }, t("auth.signup.title", {}, "Sign Up"));
 
-  // Strongly typed HTMLInputElements
   const usernameInput = inputField("text", t("auth.signup.usernamePlaceholder", {}, "Username"), "signup-username", "username");
   const emailInput = inputField("email", t("auth.signup.emailPlaceholder", {}, "Email"), "signup-email", "email");
   const passwordInput = inputField("password", t("auth.signup.passwordPlaceholder", {}, "Password"), "signup-password", "new-password");
@@ -170,7 +170,6 @@ function createSignupForm(
     ` ${t("auth.signup.terms", {}, "I agree to the Terms & Conditions")}`
   ]);
 
-  // Strongly typed HTMLButtonElement
   const submitBtn = createElement("button", {
     type: "submit",
     class: "btn-primary"
@@ -191,7 +190,6 @@ function createSignupForm(
     }, t("auth.signup.loginLink", {}, "Log In"))
   ]);
 
-  // Strongly typed HTMLFormElement
   const form = createElement("form", { class: "auth-form" }, [
     usernameInput,
     emailInput,
@@ -213,11 +211,14 @@ function createSignupForm(
       });
       return;
     }
+
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
+
     setSubmitting(true);
     submitBtn.disabled = true;
+
     try {
       const success = await signup({ username, email, password });
       if (success) {
@@ -256,6 +257,5 @@ function inputField(
     attrs.autocomplete = autocomplete;
   }
 
-  // Passing "input" directly infers HTMLInputElement return type automatically
-  return createElement("input", attrs);
+  return createElement("input", attrs) as HTMLInputElement;
 }
