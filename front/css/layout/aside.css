@@ -87,10 +87,6 @@
 
 .aside-section {
   margin: var(--space-md) 0;
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-elev-1);
 }
 
 .aside-section h3 {
@@ -98,10 +94,6 @@
   font-size: var(--font-size-base);
 }
 
-.aside-section:hover,
-.layout-aside>div>section:hover {
-  background-color: var(--color-card-hover);
-}
 
 .layout-aside>div {
   display: flex;
