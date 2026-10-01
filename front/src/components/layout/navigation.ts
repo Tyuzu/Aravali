@@ -78,14 +78,19 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 /** Build nav links fragment based on master configuration and ordering */
 const buildNavList = (): HTMLUListElement => {
   const allNavItems: NavItemConfig[] = [
-    // { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
-    // { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
-    // { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
-    // { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
-    // { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
-    // { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
-    // { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" }
-    { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" }
+    { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
+    { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
+    { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
+    { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
+    { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
+    { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
+    { href: "/events", label: t("nav.events", {}, "Events"), feature: "events" },
+    { href: "/posts", label: t("nav.posts", {}, "Posts"), feature: "social" },
+    { href: "/baitos", label: t("nav.baitos", {}, "Baitos"), feature: "baito" },
+    { href: "/merechats", label: t("nav.chats", {}, "Chats"), feature: "chats" },
+    { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" },
+    { href: "/map", label: t("nav.map", {}, "Map"), feature: "places" },
+    { href: "/admin", label: t("nav.admin", {}, "Admin"), feature: "admin", roles: ["admin"] }
   ];
 
   const defaultNavItems = getPermittedNavItems(allNavItems);
