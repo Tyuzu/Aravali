@@ -10,10 +10,8 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- Get notices list (optimized: summary only) ---
@@ -35,27 +33,21 @@ func GetNotices(app *infra.Deps) http.HandlerFunc {
 		}
 
 		sortBy := r.URL.Query().Get("sort")
-		var sort []bson.E
-
+		orderBy := "createdAt DESC"
 		if sortBy == "old" {
-			sort = []bson.E{{Key: "createdAt", Value: 1}}
-		} else {
-			sort = []bson.E{{Key: "createdAt", Value: -1}}
+			orderBy = "createdAt ASC"
 		}
 
-		filter := map[string]any{
-			"entityType": entityType,
-			"entityId":   entityID,
-		}
-
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  (page - 1) * limit,
-			Sort:  sort,
+		query := "entityType = $1 AND entityId = $2"
+		args := []any{entityType, entityID}
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64((page - 1) * limit),
+			OrderBy: orderBy,
 		}
 
 		var notices []Notice
-		if err := listNoticesWithOptions(ctx, app, filter, opts, &notices); err != nil {
+		if err := listNoticesWithOptions(ctx, app, query, args, opts, &notices); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch notices")
 			return
 		}

@@ -2,7 +2,17 @@
 
 package vendors
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrVendorNotFound      = errors.New("vendor not found")
+	ErrVendorAlreadyExists = errors.New("vendor already exists")
+	ErrVendorAlreadyHired  = errors.New("vendor already hired for this event")
+	ErrVendorNotInEvent    = errors.New("vendor not in event")
+)
 
 // Vendor represents a vendor who can be hired for events
 type Vendor struct {

@@ -34,7 +34,7 @@ func GetItineraries(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		itineraries, err := findItineraries(ctx, app, map[string]any{"deleted": map[string]any{"$ne": true}})
+		itineraries, err := findItineraries(ctx, app, "deleted IS NOT TRUE", nil)
 		if err != nil {
 			http.Error(w, "Error fetching itineraries", http.StatusInternalServerError)
 			return
@@ -57,21 +57,21 @@ func SearchItineraries(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 
-		filter := map[string]any{"deleted": map[string]any{"$ne": true}}
+		where := "deleted IS NOT TRUE"
+		args := []any{}
 		if start := query.Get("start_date"); start != "" {
-			filter["start_date"] = start
-		}
-		if location := query.Get("location"); location != "" {
-			filter["days.visits.location"] = map[string]any{"$in": []string{location}}
+			where += " AND start_date = $1"
+			args = append(args, start)
 		}
 		if status := query.Get("status"); status != "" {
-			filter["status"] = status
+			where += " AND status = $2"
+			args = append(args, status)
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		itineraries, err := findItineraries(ctx, app, filter)
+		itineraries, err := findItineraries(ctx, app, where, args)
 		if err != nil {
 			http.Error(w, "Error fetching itineraries", http.StatusInternalServerError)
 			return

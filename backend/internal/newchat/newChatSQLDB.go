@@ -17,7 +17,7 @@ var (
 	messagesTable = config.Tables.MessagesTable
 )
 
-func SQLgetChatByID(ctx context.Context, app *infra.Deps, chatID string) (Chat, error) {
+func getChatByID(ctx context.Context, app *infra.Deps, chatID string) (Chat, error) {
 	var chat Chat
 	query := "chatid = $1"
 	args := []any{chatID}
@@ -28,7 +28,7 @@ func SQLgetChatByID(ctx context.Context, app *infra.Deps, chatID string) (Chat, 
 	return chat, nil
 }
 
-func SQLgetChatForUser(ctx context.Context, app *infra.Deps, chatID, userID string) (Chat, error) {
+func getChatForUser(ctx context.Context, app *infra.Deps, chatID, userID string) (Chat, error) {
 	var chat Chat
 	query := "chatid = $1 AND $2 = ANY(users)"
 	args := []any{chatID, userID}
@@ -39,7 +39,7 @@ func SQLgetChatForUser(ctx context.Context, app *infra.Deps, chatID, userID stri
 	return chat, nil
 }
 
-func SQLgetChatMessages(ctx context.Context, app *infra.Deps, chatID string) ([]Message, error) {
+func getChatMessages(ctx context.Context, app *infra.Deps, chatID string) ([]Message, error) {
 	var messages []Message
 	query := "chatid = $1"
 	args := []any{chatID}
@@ -53,7 +53,7 @@ func SQLgetChatMessages(ctx context.Context, app *infra.Deps, chatID string) ([]
 	return messages, nil
 }
 
-func SQLgetRoomMessages(ctx context.Context, app *infra.Deps, room string) ([]Message, error) {
+func getRoomMessages(ctx context.Context, app *infra.Deps, room string) ([]Message, error) {
 	var messages []Message
 	query := "room = $1"
 	args := []any{room}
@@ -68,11 +68,11 @@ func SQLgetRoomMessages(ctx context.Context, app *infra.Deps, room string) ([]Me
 	return messages, nil
 }
 
-func SQLinsertMessage(ctx context.Context, app *infra.Deps, msg Message) error {
+func insertMessage(ctx context.Context, app *infra.Deps, msg Message) error {
 	return app.SQLDB.InsertOne(ctx, messagesTable, msg)
 }
 
-func SQLupdateChatLastMessage(ctx context.Context, app *infra.Deps, chatID, userID string, timestamp time.Time, previewText string) error {
+func updateChatLastMessage(ctx context.Context, app *infra.Deps, chatID, userID string, timestamp time.Time, previewText string) error {
 	if previewText == "" {
 		return nil
 	}
@@ -93,7 +93,7 @@ func SQLupdateChatLastMessage(ctx context.Context, app *infra.Deps, chatID, user
 	return err
 }
 
-func SQLUpdatexMessage(userID string, id string, newContent string, app *infra.Deps) error {
+func UpdatexMessage(userID string, id string, newContent string, app *infra.Deps) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -111,7 +111,7 @@ func SQLUpdatexMessage(userID string, id string, newContent string, app *infra.D
 	return nil
 }
 
-func SQLDeletexMessage(userID string, id string, app *infra.Deps) error {
+func DeletexMessage(userID string, id string, app *infra.Deps) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -128,7 +128,7 @@ func SQLDeletexMessage(userID string, id string, app *infra.Deps) error {
 	return nil
 }
 
-func SQLfindMessageRoom(id string, app *infra.Deps) (string, error) {
+func findMessageRoom(id string, app *infra.Deps) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -143,7 +143,7 @@ func SQLfindMessageRoom(id string, app *infra.Deps) (string, error) {
 	return msg.Room, nil
 }
 
-func SQLfindMessageByID(ctx context.Context, app *infra.Deps, msgID string) (Message, error) {
+func findMessageByID(ctx context.Context, app *infra.Deps, msgID string) (Message, error) {
 	var msg Message
 	query := "messageid = $1"
 	args := []any{msgID}
@@ -154,7 +154,7 @@ func SQLfindMessageByID(ctx context.Context, app *infra.Deps, msgID string) (Mes
 	return msg, nil
 }
 
-func SQLupdateMessageText(ctx context.Context, app *infra.Deps, msgID, text string) error {
+func updateMessageText(ctx context.Context, app *infra.Deps, msgID, text string) error {
 	query := "messageid = $1"
 	args := []any{msgID}
 	update := map[string]any{"text": text}
@@ -163,7 +163,7 @@ func SQLupdateMessageText(ctx context.Context, app *infra.Deps, msgID, text stri
 	return err
 }
 
-func SQLdeleteMessageByID(ctx context.Context, app *infra.Deps, msgID string) error {
+func deleteMessageByID(ctx context.Context, app *infra.Deps, msgID string) error {
 	query := "messageid = $1"
 	args := []any{msgID}
 
@@ -171,7 +171,7 @@ func SQLdeleteMessageByID(ctx context.Context, app *infra.Deps, msgID string) er
 	return err
 }
 
-func SQLtouchChatUpdatedAt(ctx context.Context, app *infra.Deps, chatID string) error {
+func touchChatUpdatedAt(ctx context.Context, app *infra.Deps, chatID string) error {
 	query := "chatid = $1"
 	args := []any{chatID}
 	update := map[string]any{"updated_at": time.Now()}
@@ -180,7 +180,7 @@ func SQLtouchChatUpdatedAt(ctx context.Context, app *infra.Deps, chatID string) 
 	return err
 }
 
-func SQLfindChatByUsers(ctx context.Context, app *infra.Deps, users []string) (Chat, error) {
+func findChatByUsers(ctx context.Context, app *infra.Deps, users []string) (Chat, error) {
 	var chat Chat
 	query := "users = $1"
 	args := []any{users}
@@ -191,11 +191,11 @@ func SQLfindChatByUsers(ctx context.Context, app *infra.Deps, users []string) (C
 	return chat, nil
 }
 
-func SQLcreateChat(ctx context.Context, app *infra.Deps, chat Chat) error {
+func createChat(ctx context.Context, app *infra.Deps, chat Chat) error {
 	return app.SQLDB.InsertOne(ctx, chatsTable, chat)
 }
 
-func SQLgetUserChats(ctx context.Context, app *infra.Deps, userID string) ([]Chat, error) {
+func getUserChats(ctx context.Context, app *infra.Deps, userID string) ([]Chat, error) {
 	var chats []Chat
 	query := "$1 = ANY(users)"
 	args := []any{userID}

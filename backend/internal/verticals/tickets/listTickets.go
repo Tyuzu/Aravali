@@ -23,7 +23,7 @@ func ListMyTickets(app *infra.Deps) http.HandlerFunc {
 
 		// ---- Fetch purchased tickets ----
 		var tickets []PurchasedTicket
-		if err := FindPurchasedTickets(ctx, app, map[string]any{"eventid": eventID, "userid": requestingUserId}, &tickets); err != nil {
+		if err := FindPurchasedTickets(ctx, app, "eventid = $1 AND userid = $2", []any{eventID, requestingUserId}, &tickets); err != nil {
 			log.Printf("Error fetching tickets: %v", err)
 			http.Error(w, "Failed to fetch tickets", http.StatusInternalServerError)
 			return
@@ -45,7 +45,7 @@ func ListMyTickets(app *infra.Deps) http.HandlerFunc {
 		refundMap := map[string]string{} // uniqueCode -> status
 		if len(canceledCodes) > 0 {
 			var refunds []RefundRequest
-			if err := FindRefunds(ctx, app, map[string]any{"userid": requestingUserId, "eventid": eventID, "uniquecode": map[string]any{"$in": canceledCodes}}, &refunds); err == nil {
+			if err := FindRefunds(ctx, app, "userid = $1 AND eventid = $2 AND uniquecode = ANY($3)", []any{requestingUserId, eventID, canceledCodes}, &refunds); err == nil {
 				for _, r := range refunds {
 					refundMap[r.UniqueCode] = r.Status
 				}

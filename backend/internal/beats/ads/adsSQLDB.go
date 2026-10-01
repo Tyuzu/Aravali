@@ -16,7 +16,7 @@ var (
 	postsTable = config.Tables.FarmsTable
 )
 
-func SQLFetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
+func FetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	var dbAds []Ad
 	where := "status = $1"
 	args := []any{"active"}
@@ -29,7 +29,7 @@ func SQLFetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error)
 	return dbAds, nil
 }
 
-func SQLListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
+func ListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	var ads []Ad
 	where := "1=1"
 	args := []any{}
@@ -43,7 +43,7 @@ func SQLListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	return ads, nil
 }
 
-func SQLCreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
+func CreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
 	ad.CreatedAt = time.Now()
 	ad.UpdatedAt = time.Now()
 
@@ -58,7 +58,7 @@ func SQLCreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
 }
 
 // PromotePost creates an Ad entry sourced directly from an existing post.
-func SQLPromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, position, category string) (*Ad, error) {
+func PromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, position, category string) (*Ad, error) {
 	// Fetch target post to derive ad details
 	var post struct {
 		ID       string `db:"id"`
@@ -103,7 +103,7 @@ func SQLPromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, posi
 	return ad, nil
 }
 
-func SQLGetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, error) {
+func GetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, error) {
 	var ad Ad
 	where := "id = $1"
 	args := []any{id}
@@ -116,7 +116,7 @@ func SQLGetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, e
 	return &ad, nil
 }
 
-func SQLUpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData map[string]any) error {
+func UpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData map[string]any) error {
 	where := "id = $1"
 	args := []any{id}
 
@@ -126,7 +126,7 @@ func SQLUpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData
 	return err
 }
 
-func SQLDeleteAdInDB(ctx context.Context, app *infra.Deps, id string) error {
+func DeleteAdInDB(ctx context.Context, app *infra.Deps, id string) error {
 	where := "id = $1"
 	args := []any{id}
 

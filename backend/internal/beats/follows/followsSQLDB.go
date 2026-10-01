@@ -18,7 +18,7 @@ import (
 var followingsTable = config.Tables.FollowingsTable
 var usersTable = config.Tables.UserTable
 
-func SQLUpdateFollowRelationship(
+func UpdateFollowRelationship(
 	ctx context.Context,
 	currentUserID,
 	targetUserID,
@@ -87,7 +87,7 @@ func SQLUpdateFollowRelationship(
 	})
 }
 
-func SQLCreateFollowEntry(userid string, app *infra.Deps) {
+func CreateFollowEntry(userid string, app *infra.Deps) {
 	follow := UserFollow{
 		UserID:    userid,
 		Follows:   []string{},
@@ -102,21 +102,21 @@ func SQLCreateFollowEntry(userid string, app *infra.Deps) {
 	}
 }
 
-func SQLCountFollowRelationship(ctx context.Context, app *infra.Deps, userID, followedUserID string) (int64, error) {
+func CountFollowRelationship(ctx context.Context, app *infra.Deps, userID, followedUserID string) (int64, error) {
 	where := "userid = $1 AND $2 = ANY(follows)"
 	args := []any{userID, followedUserID}
 
 	return app.SQLDB.Count(ctx, followingsTable, where, args)
 }
 
-func SQLFindFollowEntryByUserID(ctx context.Context, app *infra.Deps, userID string, out *UserFollow) error {
+func FindFollowEntryByUserID(ctx context.Context, app *infra.Deps, userID string, out *UserFollow) error {
 	where := "userid = $1"
 	args := []any{userID}
 
 	return app.SQLDB.FindOne(ctx, followingsTable, where, args, out)
 }
 
-func SQLFindUsersByIDsForFollow(ctx context.Context, app *infra.Deps, userIDs []string, out *[]auth.User) error {
+func FindUsersByIDsForFollow(ctx context.Context, app *infra.Deps, userIDs []string, out *[]auth.User) error {
 	if len(userIDs) == 0 {
 		return nil
 	}

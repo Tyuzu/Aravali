@@ -19,8 +19,9 @@ func GetReportsForMod(app *infra.Deps) http.HandlerFunc {
 			},
 		}
 
+		query, args := buildFilterQuery(filter)
 		var reports []Report
-		err := FindReports(ctx, app, filter, &reports)
+		err := FindReports(ctx, app, query, args, &reports)
 		if err != nil {
 			http.Error(w, `{"error":"Failed to fetch reports"}`, http.StatusInternalServerError)
 			return

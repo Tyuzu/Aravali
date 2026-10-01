@@ -104,7 +104,7 @@ func CreateFarm(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:    time.Now(),
 		}
 
-		if err := insertFarm(ctx, app.DB, farm); err != nil {
+		if err := insertFarm(ctx, app.SQLDB, farm); err != nil {
 			log.Printf("Farm creation failed for user %s: %v", requestingUserID, err)
 
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -165,7 +165,7 @@ func EditFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		farm, err := getFarmByID(ctx, app.DB, farmID)
+		farm, err := getFarmByID(ctx, app.SQLDB, farmID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
@@ -271,7 +271,7 @@ func EditFarm(app *infra.Deps) http.HandlerFunc {
 
 		if _, err := updateOwnedFarm(
 			ctx,
-			app.DB,
+			app.SQLDB,
 			farmID,
 			userID,
 			map[string]any{
@@ -318,7 +318,7 @@ func DeleteFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := deleteFarmByID(ctx, app.DB, farmID); err != nil {
+		if _, err := deleteFarmByID(ctx, app.SQLDB, farmID); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 			})

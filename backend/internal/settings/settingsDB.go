@@ -11,6 +11,22 @@ import (
 var settingsTable = config.Tables.SettingsTable
 
 func sqlGetUserSettingsByUserID(ctx context.Context, app *infra.Deps, userID string) (UserSettings, error) {
+	return GetUserSettingsByUserID(ctx, app, userID)
+}
+
+func sqlInsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
+	return InsertUserSettings(ctx, app, settings)
+}
+
+func sqlUpdateUserSettings(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) error {
+	return UpdateUserSettings(ctx, app, userID, updates)
+}
+
+func sqlUpsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
+	return UpsertUserSettings(ctx, app, settings)
+}
+
+func GetUserSettingsByUserID(ctx context.Context, app *infra.Deps, userID string) (UserSettings, error) {
 	var settings UserSettings
 	where := "user_id = $1"
 	args := []any{userID}
@@ -21,11 +37,11 @@ func sqlGetUserSettingsByUserID(ctx context.Context, app *infra.Deps, userID str
 	return settings, nil
 }
 
-func sqlInsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
+func InsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
 	return app.SQLDB.InsertOne(ctx, settingsTable, settings)
 }
 
-func sqlUpdateUserSettings(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) error {
+func UpdateUserSettings(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) error {
 	where := "user_id = $1"
 	args := []any{userID}
 
@@ -33,7 +49,7 @@ func sqlUpdateUserSettings(ctx context.Context, app *infra.Deps, userID string, 
 	return err
 }
 
-func sqlUpsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
+func UpsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
 	existing, err := sqlGetUserSettingsByUserID(ctx, app, settings.UserID)
 	if err != nil {
 		return sqlInsertUserSettings(ctx, app, settings)

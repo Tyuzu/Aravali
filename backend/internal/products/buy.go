@@ -95,15 +95,11 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 		err := FindOneAndUpdateCrop(
 			ctx,
 			app,
+			"farmid = $1 AND cropid = $2 AND quantity > $3 AND outofstock IS NOT TRUE",
+			[]any{farmID, cropID, 0},
 			map[string]any{
-				"farmid":     farmID,
-				"cropid":     cropID,
-				"quantity":   map[string]any{"$gt": 0},
-				"outOfStock": false,
-			},
-			map[string]any{
-				"$inc": map[string]any{"quantity": -1},
-				"$set": map[string]any{"updatedAt": time.Now()},
+				"quantity":   -1,
+				"updated_at": time.Now(),
 			},
 			&updatedCrop,
 		)
@@ -121,8 +117,9 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 			_, _ = UpdateCropByFilter(
 				ctx,
 				app,
-				map[string]any{"farmid": farmID, "cropid": cropID},
-				map[string]any{"$set": map[string]any{"outOfStock": true, "updatedAt": time.Now()}},
+				"farmid = $1 AND cropid = $2",
+				[]any{farmID, cropID},
+				map[string]any{"outofstock": true, "updated_at": time.Now()},
 			)
 		}
 		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.CropBoughtEvent, mqevent.CropBoughtPayload{}); err != nil {
@@ -321,7 +318,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 	}
 
 	var ownedFarms []farms.Farm
-	if err := FindFarmsByFilter(ctx, app, map[string]any{"createdBy": userID}, &ownedFarms); err != nil {
+	if err := FindFarmsByFilter(ctx, app, "createdby = $1", []any{userID}, &ownedFarms); err != nil {
 		utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 			"success": false,
 			"message": "Failed to fetch farms",

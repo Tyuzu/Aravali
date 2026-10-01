@@ -59,7 +59,7 @@ func Create(ctx context.Context, app *infra.Deps, params CreateNotificationParam
 		UpdatedAt:      time.Now(),
 	}
 
-	if err := insertNotification(ctx, app.DB, notif); err != nil {
+	if err := insertNotification(ctx, app.SQLDB, notif); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func CreateBulk(ctx context.Context, app *infra.Deps, params BulkCreateNotificat
 		return nil, errors.New("no valid userids provided")
 	}
 
-	if err := insertBulkNotifications(ctx, app.DB, notifications); err != nil {
+	if err := insertBulkNotifications(ctx, app.SQLDB, notifications); err != nil {
 		return nil, err
 	}
 

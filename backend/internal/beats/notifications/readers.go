@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"scav/infra"
-	db "scav/infra/db"
+	db "scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -48,16 +48,16 @@ func GetUserNotifications(app *infra.Deps) http.HandlerFunc {
 		skip := (page - 1) * limit
 
 		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  notificationSort(),
+			Limit:   int64(limit),
+			Offset:  int64(skip),
+			OrderBy: notificationSort(),
 		}
 
 		var notifs []Notification
 
 		if err := findNotificationsByUser(
 			ctx,
-			app.DB,
+			app.SQLDB,
 			userID,
 			opts,
 			&notifs,
@@ -92,7 +92,7 @@ func GetUnreadCount(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := countUnreadNotifications(ctx, app.DB, userID)
+		count, err := countUnreadNotifications(ctx, app.SQLDB, userID)
 		if err != nil {
 			utils.RespondWithError(
 				w,
@@ -124,7 +124,7 @@ func GetPreferences(app *infra.Deps) http.HandlerFunc {
 
 		var pref NotificationPreferences
 
-		err := findPreferencesByUser(ctx, app.DB, userID, &pref)
+		err := findPreferencesByUser(ctx, app.SQLDB, userID, &pref)
 
 		if err != nil {
 			if isNoDocumentsError(err) {

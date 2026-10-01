@@ -32,7 +32,7 @@ func CreateArtist(app *infra.Deps) http.HandlerFunc {
 		artist.ArtistID = utils.GenerateRandomString(12)
 		artist.EventIDs = []string{}
 
-		if err := InsertArtist(ctx, app.DB, &artist); err != nil {
+		if err := InsertArtist(ctx, app, &artist); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to create artist")
 			return
 		}
@@ -59,7 +59,7 @@ func UpdateArtist(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing Artist
-		if err := FindArtistByID(ctx, app.DB, idParam, &existing); err != nil {
+		if err := FindArtistByID(ctx, app, idParam, &existing); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
 			return
 		}
@@ -75,7 +75,7 @@ func UpdateArtist(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := UpdateArtistByID(ctx, app.DB, idParam, updateData); err != nil {
+		if _, err := UpdateArtistByID(ctx, app, idParam, updateData); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update artist")
 			return
 		}
@@ -163,12 +163,12 @@ func DeleteArtistByID(app *infra.Deps) http.HandlerFunc {
 		userID := utils.GetUserIDFromRequest(r)
 
 		var artist Artist
-		if err := FindArtistByID(ctx, app.DB, artistID, &artist); err != nil {
+		if err := FindArtistByID(ctx, app, artistID, &artist); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
 			return
 		}
 
-		if _, err := DeleteArtistRecordByID(ctx, app.DB, artistID); err != nil {
+		if _, err := DeleteArtistRecordByID(ctx, app, artistID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete artist")
 			return
 		}

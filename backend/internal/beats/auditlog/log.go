@@ -23,7 +23,7 @@ func LogAction(
 	status string,
 	changes map[string]interface{},
 ) {
-	if app == nil || app.DB == nil {
+	if app == nil || app.SQLDB == nil {
 		return // Skip if DB not available
 	}
 
@@ -66,7 +66,7 @@ func LogActionWithReason(
 	status string,
 	reason string,
 ) {
-	if app == nil || app.DB == nil {
+	if app == nil || app.SQLDB == nil {
 		return
 	}
 

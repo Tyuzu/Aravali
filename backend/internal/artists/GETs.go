@@ -18,7 +18,7 @@ func GetArtistEvents(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var artistevents []ArtistEvent
-		err := FindArtistEvents(ctx, app.DB, utils.GetParam(r, "id"), &artistevents)
+		err := FindArtistEvents(ctx, app, utils.GetParam(r, "id"), &artistevents)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch artist events")
 			return
@@ -41,7 +41,7 @@ func GetArtistByID(app *infra.Deps) http.HandlerFunc {
 		var artist Artist
 
 		// Fetch artist info
-		if err := FindArtistByID(ctx, app.DB, artistId, &artist); err != nil {
+		if err := FindArtistByID(ctx, app, artistId, &artist); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
 			return
 		}
@@ -53,7 +53,7 @@ func GetArtistByID(app *infra.Deps) http.HandlerFunc {
 		currentUserID := utils.GetUserIDFromRequest(r)
 		if currentUserID != "" {
 			// Check if the user has subscribed to this artist
-			subscribed, err := FindSubscribersForArtist(ctx, app.DB, currentUserID, artistId)
+			subscribed, err := FindSubscribersForArtist(ctx, app, currentUserID, artistId)
 			if err == nil {
 				isSubscribed = subscribed
 			}
@@ -77,7 +77,7 @@ func GetArtistsByEvent(app *infra.Deps) http.HandlerFunc {
 		eventID := utils.GetParam(r, "eventid")
 
 		var artists []Artist
-		err := FindArtistsByEventID(ctx, app.DB, eventID, &artists)
+		err := FindArtistsByEventID(ctx, app, eventID, &artists)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Error fetching artists")
 			return
@@ -98,7 +98,7 @@ func GetAllArtists(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var artists []Artist
-		err := FindAllArtists(ctx, app.DB, &artists)
+		err := FindAllArtists(ctx, app, &artists)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Error fetching artists")
 			return

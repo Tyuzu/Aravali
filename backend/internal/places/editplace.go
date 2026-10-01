@@ -39,7 +39,8 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 		if err := placedb.FindOnePlace(
 			ctx,
 			app,
-			map[string]any{"placeid": placeID},
+			"placeid = $1",
+			[]any{placeID},
 			&existing,
 		); err != nil {
 			http.Error(w, "Place not found", http.StatusNotFound)
@@ -70,7 +71,8 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 		if _, err := placedb.UpdatePlace(
 			ctx,
 			app,
-			map[string]any{"placeid": placeID},
+			"placeid = $1",
+			[]any{placeID},
 			updateFields,
 		); err != nil {
 			http.Error(w, "Failed to update place", http.StatusInternalServerError)
@@ -101,8 +103,10 @@ func DeletePlace(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		var existing struct{ CreatedBy string `bson:"createdBy"` }
-		if err := placedb.FindOnePlace(ctx, app, map[string]any{"placeid": placeID}, &existing); err != nil {
+		var existing struct {
+			CreatedBy string `bson:"createdBy"`
+		}
+		if err := placedb.FindOnePlace(ctx, app, "placeid = $1", []any{placeID}, &existing); err != nil {
 			http.Error(w, "Place not found", http.StatusNotFound)
 			return
 		}
@@ -112,7 +116,7 @@ func DeletePlace(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := placedb.DeletePlace(ctx, app, map[string]any{"placeid": placeID}); err != nil {
+		if _, err := placedb.DeletePlace(ctx, app, "placeid = $1", []any{placeID}); err != nil {
 			http.Error(w, "Failed to delete place", http.StatusInternalServerError)
 			return
 		}

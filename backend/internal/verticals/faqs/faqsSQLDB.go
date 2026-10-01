@@ -12,32 +12,32 @@ import (
 
 var faqsTable = config.Tables.FAQsTable
 
-func SQLinsertFAQ(ctx context.Context, app *infra.Deps, faq FAQ) error {
+func insertFAQ(ctx context.Context, app *infra.Deps, faq FAQ) error {
 	return app.SQLDB.Insert(ctx, faqsTable, faq)
 }
 
-func SQLfindFAQByID(ctx context.Context, app *infra.Deps, faqID string, faq *FAQ) error {
+func findFAQByID(ctx context.Context, app *infra.Deps, faqID string, faq *FAQ) error {
 	query := "faqid = $1"
 	args := []any{faqID}
 
 	return app.SQLDB.FindOne(ctx, faqsTable, query, args, faq)
 }
 
-func SQLupdateFAQContent(ctx context.Context, app *infra.Deps, faqID string, update map[string]any) (int64, error) {
+func updateFAQContent(ctx context.Context, app *infra.Deps, faqID string, update map[string]any) (int64, error) {
 	query := "faqid = $1"
 	args := []any{faqID}
 
 	return app.SQLDB.UpdateOne(ctx, faqsTable, query, args, update)
 }
 
-func SQLdeleteFAQ(ctx context.Context, app *infra.Deps, faqID, userID string) (int64, error) {
+func deleteFAQ(ctx context.Context, app *infra.Deps, faqID, userID string) (int64, error) {
 	query := "faqid = $1 AND createdby = $2"
 	args := []any{faqID, userID}
 
 	return app.SQLDB.Delete(ctx, faqsTable, query, args)
 }
 
-func SQLfindFAQsByEntity(
+func findFAQsByEntity(
 	ctx context.Context,
 	app *infra.Deps,
 	entityType string,

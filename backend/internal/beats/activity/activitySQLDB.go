@@ -21,7 +21,13 @@ var (
 	AnalyticsTable  = config.Tables.AnalyticsTable
 )
 
-func SQLinsertActivities(ctx context.Context, app *infra.Deps, activities []Activity) error {
+const (
+	analyticsIdemTTL = time.Minute
+	defaultPageSize  = 20
+	maxPageSize      = 100
+)
+
+func insertActivities(ctx context.Context, app *infra.Deps, activities []Activity) error {
 	docs := make([]any, len(activities))
 	for i := range activities {
 		docs[i] = activities[i]
@@ -30,7 +36,7 @@ func SQLinsertActivities(ctx context.Context, app *infra.Deps, activities []Acti
 	return app.SQLDB.InsertMany(ctx, ActivitiesTable, docs)
 }
 
-func SQLgetActivities(ctx context.Context, app *infra.Deps, userID string, cursor time.Time, limit int) ([]Activity, error) {
+func getActivities(ctx context.Context, app *infra.Deps, userID string, cursor time.Time, limit int) ([]Activity, error) {
 	where := "userid = $1"
 	args := []any{userID}
 
@@ -49,7 +55,7 @@ func SQLgetActivities(ctx context.Context, app *infra.Deps, userID string, curso
 	return activities, err
 }
 
-func SQLinsertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload AnalyticsPayload, remoteAddr string) (int, error) {
+func insertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload AnalyticsPayload, remoteAddr string) (int, error) {
 	var docsToInsert []any
 	meta := payload.Meta
 	user, _ := meta["user"].(string)
@@ -88,7 +94,7 @@ func SQLinsertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload Anal
 	return len(docsToInsert), err
 }
 
-func SQLparseCursor(r *http.Request) (time.Time, int) {
+func parseCursor(r *http.Request) (time.Time, int) {
 	q := r.URL.Query()
 
 	limit := defaultPageSize
@@ -111,7 +117,7 @@ func SQLparseCursor(r *http.Request) (time.Time, int) {
 	return cursor, limit
 }
 
-func SQLanalyticsIdempotencyKey(ev map[string]any) string {
+func analyticsIdempotencyKey(ev map[string]any) string {
 	raw, _ := json.Marshal(ev)
 	sum := sha256.Sum256(raw)
 	return "analytics:idemp:" + hex.EncodeToString(sum[:])

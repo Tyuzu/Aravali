@@ -6,12 +6,9 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
+	"scav/infra/sqldb"
 	"scav/utils"
 	"time"
-
-	"scav/infra/db"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Post struct {
@@ -34,30 +31,28 @@ func GetRelatedPosts(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		// Base filter
-		filter := map[string]any{
-			"postid_ne": postID, // uses your translateFilter(_ne)
-			"$or": []any{
-				map[string]any{"category": category},
-				map[string]any{"subcategory": subcategory},
-			},
+		query := "postid <> $1"
+		args := []any{postID}
+		if category != "" {
+			query += " AND category = $2"
+			args = append(args, category)
 		}
-
-		// Optional tags match
+		if subcategory != "" {
+			query += " AND subcategory = $3"
+			args = append(args, subcategory)
+		}
 		if len(tags) > 0 {
-			filter["$or"] = append(
-				filter["$or"].([]any),
-				map[string]any{"tags": map[string]any{"$in": tags}},
-			)
+			query += " AND tags && $4"
+			args = append(args, tags)
 		}
 
-		opts := db.FindManyOptions{
-			Limit: 10,
-			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+		opts := sqldb.FindManyOptions{
+			Limit:   10,
+			OrderBy: "created_at DESC",
 		}
 
 		var related []Post
-		if err := FindRelatedPostsWithOptions(ctx, app, filter, opts, &related); err != nil {
+		if err := FindRelatedPostsWithOptions(ctx, app, query, args, opts, &related); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

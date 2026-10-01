@@ -163,7 +163,7 @@ func EditTicket(app *infra.Deps) http.HandlerFunc {
 
 		updateFields["updated_at"] = time.Now()
 
-		if _, err := UpdateTicketDB(ctx, app, map[string]any{"eventid": eventID, "ticketid": ticketID}, map[string]any{"$set": updateFields}); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, "eventid = $1 AND ticketid = $2", []any{eventID, ticketID}, updateFields); err != nil {
 			http.Error(w, "Failed to update ticket: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -219,8 +219,8 @@ func DeleteTicket(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// Perform deletion (using hard delete; replace DeleteOne with app.DB.SoftDelete if applicable)
-		if _, err := DeleteTicketDB(ctx, app, map[string]any{"eventid": eventID, "ticketid": ticketID}); err != nil {
+		// Perform deletion (using hard delete; replace DeleteOne with app.SQLDB.SoftDelete if applicable)
+		if _, err := DeleteTicketDB(ctx, app, "eventid = $1 AND ticketid = $2", []any{eventID, ticketID}); err != nil {
 			http.Error(w, "Failed to delete ticket", http.StatusInternalServerError)
 			return
 		}
@@ -276,7 +276,9 @@ func BuyTicket(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := UpdateTicketDB(ctx, app, map[string]any{"eventid": eventID, "ticketid": ticketID}, map[string]any{"$inc": map[string]any{"quantity": -body.Quantity, "available": -body.Quantity}}); err != nil {
+		updatedQty := ticket.Quantity - body.Quantity
+		updatedAvailable := ticket.Available - body.Quantity
+		if _, err := UpdateTicketDB(ctx, app, "eventid = $1 AND ticketid = $2", []any{eventID, ticketID}, map[string]any{"quantity": updatedQty, "available": updatedAvailable}); err != nil {
 			http.Error(w, "Failed to update ticket quantity", http.StatusInternalServerError)
 			return
 		}

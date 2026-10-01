@@ -49,14 +49,15 @@ func StartNewChat(app *infra.Deps) http.HandlerFunc {
 		}
 		sort.Strings(participants)
 
-		filter := map[string]any{
-			"participants": participants,
-			"entitytype":   body.EntityType,
-			"entityid":     body.EntityId,
+		query := "entitytype = $1 AND entityid = $2"
+		args := []any{body.EntityType, body.EntityId}
+		if len(participants) > 0 {
+			query += " AND $3 = ANY(participants)"
+			args = append(args, participants[0])
 		}
 
 		var existing Chat
-		if err := dbFindChat(ctx, app, filter, &existing); err == nil {
+		if err := dbFindChat(ctx, app, query, args, &existing); err == nil {
 			utils.RespondWithJSON(w, http.StatusOK, existing)
 			return
 		}

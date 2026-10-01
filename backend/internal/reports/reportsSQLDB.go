@@ -25,19 +25,19 @@ var (
    DB Wrappers
 ------------------------- */
 
-func SQLFindReportByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out *Report) error {
+func FindReportByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out *Report) error {
 	return app.SQLDB.FindOne(ctx, reportsTable, query, args, out)
 }
 
-func SQLInsertReport(ctx context.Context, app *infra.Deps, report Report) error {
+func InsertReport(ctx context.Context, app *infra.Deps, report Report) error {
 	return app.SQLDB.Insert(ctx, reportsTable, report)
 }
 
-func SQLFindReports(ctx context.Context, app *infra.Deps, query string, args []any, out *[]Report) error {
+func FindReports(ctx context.Context, app *infra.Deps, query string, args []any, out *[]Report) error {
 	return app.SQLDB.FindMany(ctx, reportsTable, query, args, out)
 }
 
-func SQLUpdateReportByID(ctx context.Context, app *infra.Deps, reportID string, update map[string]any) (int64, error) {
+func UpdateReportByID(ctx context.Context, app *infra.Deps, reportID string, update map[string]any) (int64, error) {
 	query := "reportid = $1"
 	args := []any{reportID}
 
@@ -45,33 +45,33 @@ func SQLUpdateReportByID(ctx context.Context, app *infra.Deps, reportID string, 
 }
 
 // Appeals
-func SQLFindAppealByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+func FindAppealByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
 	return app.SQLDB.FindOne(ctx, appealsTable, query, args, out)
 }
 
-func SQLInsertAppeal(ctx context.Context, app *infra.Deps, appeal any) error {
+func InsertAppeal(ctx context.Context, app *infra.Deps, appeal any) error {
 	return app.SQLDB.Insert(ctx, appealsTable, appeal)
 }
 
-func SQLFindAppeals(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+func FindAppeals(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
 	return app.SQLDB.FindMany(ctx, appealsTable, query, args, out)
 }
 
-func SQLGetAppealByID(ctx context.Context, app *infra.Deps, appealID string, out any) error {
+func GetAppealByID(ctx context.Context, app *infra.Deps, appealID string, out any) error {
 	query := "appealid = $1"
 	args := []any{appealID}
 
 	return app.SQLDB.FindOne(ctx, appealsTable, query, args, out)
 }
 
-func SQLUpdateAppealByID(ctx context.Context, app *infra.Deps, appealID string, update map[string]any) (int64, error) {
+func UpdateAppealByID(ctx context.Context, app *infra.Deps, appealID string, update map[string]any) (int64, error) {
 	query := "appealid = $1"
 	args := []any{appealID}
 
 	return app.SQLDB.Update(ctx, appealsTable, query, args, update)
 }
 
-func SQLsetEntityDeletedFlagInDB(ctx context.Context, app *infra.Deps, table, idField, id string, deleted bool, by string) error {
+func setEntityDeletedFlagInDB(ctx context.Context, app *infra.Deps, table, idField, id string, deleted bool, by string) error {
 	now := time.Now().UTC()
 	var deletedAtVal any = nil
 	if deleted {

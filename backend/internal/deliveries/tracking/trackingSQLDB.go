@@ -13,7 +13,7 @@ import (
 var deliveriesTable = config.Tables.DeliveriesTable
 var deliveryEventsTable = config.Tables.DeliveryEventsTable
 
-func sqlgetTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (map[string]any, error) {
+func getTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (map[string]any, error) {
 	var result map[string]any
 	where := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -25,7 +25,7 @@ func sqlgetTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, ten
 	return result, nil
 }
 
-func sqlgetDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
+func getDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
 	var events []map[string]any
 	where := "deliveryid = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -39,7 +39,7 @@ func sqlgetDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tena
 	return events, nil
 }
 
-func sqlgetStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.StatusHistoryItem, error) {
+func getStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.StatusHistoryItem, error) {
 	var res struct {
 		StatusHistory []deliveries.StatusHistoryItem `db:"status_history" json:"status_history"`
 	}
@@ -52,7 +52,7 @@ func sqlgetStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenan
 	return res.StatusHistory, nil
 }
 
-func sqladdProofToDelivery(ctx context.Context, app *infra.Deps, deliveryID, tenantID string, proof deliveries.Proof) error {
+func addProofToDelivery(ctx context.Context, app *infra.Deps, deliveryID, tenantID string, proof deliveries.Proof) error {
 	where := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
 
@@ -72,7 +72,7 @@ func sqladdProofToDelivery(ctx context.Context, app *infra.Deps, deliveryID, ten
 	return err
 }
 
-func sqlgetProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.Proof, error) {
+func getProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.Proof, error) {
 	var res struct {
 		Proofs []deliveries.Proof `db:"proofs" json:"proofs"`
 	}
@@ -85,7 +85,7 @@ func sqlgetProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID str
 	return res.Proofs, nil
 }
 
-func sqlgetPublicTrackingInfo(ctx context.Context, app *infra.Deps, token string) (map[string]any, error) {
+func getPublicTrackingInfo(ctx context.Context, app *infra.Deps, token string) (map[string]any, error) {
 	var res map[string]any
 	where := "public_tracking_token = $1"
 	args := []any{token}

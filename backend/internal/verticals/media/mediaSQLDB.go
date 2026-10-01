@@ -11,11 +11,11 @@ import (
 
 var mediaTable = config.Tables.MediaTable
 
-func SQLinsertMedia(ctx context.Context, app *infra.Deps, media Media) error {
+func insertMedia(ctx context.Context, app *infra.Deps, media Media) error {
 	return app.SQLDB.Insert(ctx, mediaTable, media)
 }
 
-func SQLgetMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (Media, error) {
+func getMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (Media, error) {
 	var media Media
 	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
 	args := []any{entityID, entityType, mediaID}
@@ -24,7 +24,7 @@ func SQLgetMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID,
 	return media, err
 }
 
-func SQLlistMediaByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Media, error) {
+func listMediaByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Media, error) {
 	query := "entityid = $1 AND entitytype = $2"
 	args := []any{entityID, entityType}
 
@@ -33,8 +33,8 @@ func SQLlistMediaByEntity(ctx context.Context, app *infra.Deps, entityType, enti
 	return medias, err
 }
 
-func SQLgetMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]map[string]any, error) {
-	medias, err := SQLlistMediaByEntity(ctx, app, entityType, entityID)
+func getMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]map[string]any, error) {
+	medias, err := listMediaByEntity(ctx, app, entityType, entityID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func SQLgetMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType,
 	return groups, nil
 }
 
-func SQLupdateMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, updateFields map[string]any) ([]Media, error) {
+func updateMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, updateFields map[string]any) ([]Media, error) {
 	query := "mediagroupid = $1"
 	args := []any{mediaGroupID}
 

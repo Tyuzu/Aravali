@@ -4,6 +4,9 @@ package events
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strings"
 
 	"scav/config"
 	"scav/infra"
@@ -18,11 +21,11 @@ var (
 	merchTable  = config.Tables.MerchTable
 )
 
-func sqlSQLinsertEvent(ctx context.Context, app *infra.Deps, event Event) error {
+func SQLinsertEvent(ctx context.Context, app *infra.Deps, event Event) error {
 	return app.SQLDB.InsertOne(ctx, eventsTable, event)
 }
 
-func sqlSQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Event) {
+func SQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Event) {
 	if event == nil {
 		return
 	}
@@ -37,21 +40,21 @@ func sqlSQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Even
 	}
 }
 
-func sqlSQLfindEventByID(ctx context.Context, app *infra.Deps, eventID string, event *Event) error {
+func SQLfindEventByID(ctx context.Context, app *infra.Deps, eventID string, event *Event) error {
 	query := "eventid = $1"
 	args := []any{eventID}
 
 	return app.SQLDB.FindOne(ctx, eventsTable, query, args, event)
 }
 
-func sqlSQLupdateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (int64, error) {
+func SQLupdateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (int64, error) {
 	query := "eventid = $1"
 	args := []any{eventID}
 
 	return app.SQLDB.UpdateOne(ctx, eventsTable, query, args, updates)
 }
 
-func sqlSQLaggregateEvent(ctx context.Context, app *infra.Deps, eventID string, result *[]Event) error {
+func SQLaggregateEvent(ctx context.Context, app *infra.Deps, eventID string, result *[]Event) error {
 	rawQuery := `
 		SELECT 
 			e.*,
@@ -74,10 +77,72 @@ func sqlSQLaggregateEvent(ctx context.Context, app *infra.Deps, eventID string, 
 	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{eventID}, result)
 }
 
-func sqlSQLlistEvents(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, result *[]Event) error {
+func SQLlistEvents(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, result *[]Event) error {
 	return app.SQLDB.FindManyWithOptions(ctx, eventsTable, query, args, opts, result)
 }
 
-func sqlSQLcountEvents(ctx context.Context, app *infra.Deps, whereClause string, args []any) (int64, error) {
+func SQLcountEvents(ctx context.Context, app *infra.Deps, whereClause string, args []any) (int64, error) {
 	return app.SQLDB.Count(ctx, eventsTable, whereClause, args)
+}
+
+func insertEvent(ctx context.Context, app *infra.Deps, event Event) error {
+	return SQLinsertEvent(ctx, app, event)
+}
+
+func ensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Event) {
+	SQLensureUniqueEventID(ctx, app, event)
+}
+
+func findEventByID(ctx context.Context, app *infra.Deps, eventID string, event *Event) error {
+	return SQLfindEventByID(ctx, app, eventID, event)
+}
+
+func updateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (int64, error) {
+	return SQLupdateEvent(ctx, app, eventID, updates)
+}
+
+func aggregateEvent(ctx context.Context, app *infra.Deps, eventID string, result *[]Event) error {
+	return SQLaggregateEvent(ctx, app, eventID, result)
+}
+
+func countEvents(ctx context.Context, app *infra.Deps, filter map[string]any) (int64, error) {
+	where, args := buildEventQuery(filter)
+	return SQLcountEvents(ctx, app, where, args)
+}
+
+func listEvents(ctx context.Context, app *infra.Deps, filter map[string]any, opts sqldb.FindManyOptions, result *[]Event) error {
+	where, args := buildEventQuery(filter)
+	return SQLlistEvents(ctx, app, where, args, opts, result)
+}
+
+func buildEventQuery(filter map[string]any) (string, []any) {
+	if len(filter) == 0 {
+		return "1 = 1", nil
+	}
+
+	clauses := make([]string, 0, len(filter))
+	args := make([]any, 0, len(filter))
+	keys := make([]string, 0, len(filter))
+	for k := range filter {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		value := filter[key]
+		if value == nil {
+			continue
+		}
+		clauses = append(clauses, fmt.Sprintf("%s = $%d", normalizeEventColumn(key), len(args)+1))
+		args = append(args, value)
+	}
+
+	if len(clauses) == 0 {
+		return "1 = 1", nil
+	}
+	return strings.Join(clauses, " AND "), args
+}
+
+func normalizeEventColumn(key string) string {
+	return strings.ToLower(strings.ReplaceAll(key, "-", "_"))
 }

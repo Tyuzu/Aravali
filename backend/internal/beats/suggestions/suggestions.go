@@ -6,13 +6,14 @@ import (
 	"context"
 	"net/http"
 	"scav/internal/places"
-	log "scav/utils/logger"
 	"strconv"
+	"strings"
 	"time"
 
 	"scav/config"
 	"scav/infra"
 	"scav/utils"
+	log "scav/utils/logger"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -53,11 +54,19 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 
 		excludedUserIDs := append(followData.Follows, currentUserID, userID)
 
-		filter := map[string]any{
-			"userid": map[string]any{"$nin": excludedUserIDs},
+		where := "1 = 1"
+		args := []any{}
+		if len(excludedUserIDs) > 0 {
+			placeholders := make([]string, len(excludedUserIDs))
+			args = make([]any, len(excludedUserIDs))
+			for i := range excludedUserIDs {
+				placeholders[i] = "$" + strconv.Itoa(i+1)
+				args[i] = excludedUserIDs[i]
+			}
+			where = "userid NOT IN (" + strings.Join(placeholders, ", ") + ")"
 		}
 
-		users, err := findSuggestedUsers(ctx, app, filter)
+		users, err := findSuggestedUsers(ctx, app, where, args)
 		if err != nil {
 			http.Error(w, "Failed to fetch suggestions", http.StatusInternalServerError)
 			return
@@ -92,7 +101,7 @@ func GetNearbyPlaces(app *infra.Deps) http.HandlerFunc {
 			log.Printf("invalid place id: %s", curplace)
 		}
 
-		nearbyplaces, err := findNearbyPlaces(ctx, app, map[string]any{})
+		nearbyplaces, err := findNearbyPlaces(ctx, app, "1 = 1", nil)
 		if err != nil {
 			http.Error(w, "Failed to fetch places", http.StatusInternalServerError)
 			return

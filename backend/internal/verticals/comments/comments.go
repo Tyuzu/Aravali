@@ -73,7 +73,7 @@ func CreateComment(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  time.Now(),
 		}
 
-		if err := insertComment(ctx, app.DB, comment); err != nil {
+		if err := insertComment(ctx, app, comment); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB insert failed")
 			return
 		}
@@ -115,7 +115,7 @@ func UpdateComment(app *infra.Deps) http.HandlerFunc {
 
 		/* Fetch + ownership check */
 		var existing Comment
-		err := findCommentByID(ctx, app.DB, commentID, &existing)
+		err := findCommentByID(ctx, app, commentID, &existing)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				utils.RespondWithError(w, http.StatusNotFound, "Comment not found")
@@ -130,18 +130,18 @@ func UpdateComment(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := map[string]any{"$set": map[string]any{
+		update := map[string]any{
 			"content":    content,
 			"updated_at": time.Now(),
-		}}
+		}
 
-		if _, err := updateCommentContent(ctx, app.DB, commentID, update); err != nil {
+		if _, err := updateCommentContent(ctx, app, commentID, update); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB update failed")
 			return
 		}
 
 		/* Return updated document */
-		err = findCommentByID(ctx, app.DB, commentID, &existing)
+		err = findCommentByID(ctx, app, commentID, &existing)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Fetch failed")
 			return
@@ -168,7 +168,7 @@ func DeleteComment(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := deleteComment(ctx, app.DB, commentID, utils.GetUserIDFromRequest(r))
+		count, err := deleteComment(ctx, app, commentID, utils.GetUserIDFromRequest(r))
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Delete failed")
 			return

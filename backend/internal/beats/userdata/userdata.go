@@ -60,13 +60,10 @@ func RemUserData(entityType, entityId, userId string, app *infra.Deps) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter := map[string]any{
-		"entity_id":   entityId,
-		"entity_type": entityType,
-		"userid":      userId,
-	}
+	where := "entity_type = $1 AND entity_id = $2 AND userid = $3"
+	args := []any{entityType, entityId, userId}
 
-	if err := DeleteUserData(ctx, app, filter); err != nil {
+	if _, err := DeleteUserData(ctx, app, where, args); err != nil {
 		log.Printf("Error deleting user data: %v", err)
 	}
 }

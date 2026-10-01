@@ -13,11 +13,11 @@ import (
 
 var fanmadeMediaCollection = config.Collections.MediaCollection
 
-func SQLinsertFanMedia(ctx context.Context, app *infra.Deps, media media.Media) error {
+func insertFanMedia(ctx context.Context, app *infra.Deps, media media.Media) error {
 	return app.SQLDB.Insert(ctx, fanmadeMediaCollection, media)
 }
 
-func SQLgetFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (media.Media, error) {
+func getFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (media.Media, error) {
 	var media media.Media
 	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
 	args := []any{entityID, entityType, mediaID}
@@ -26,7 +26,7 @@ func SQLgetFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entity
 	return media, err
 }
 
-func SQLlistFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]media.Media, error) {
+func listFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]media.Media, error) {
 	var medias []media.Media
 	query := "entityid = $1 AND entitytype = $2"
 	args := []any{entityID, entityType}
@@ -36,8 +36,8 @@ func SQLlistFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, 
 	return medias, err
 }
 
-func SQLlistFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]map[string]any, error) {
-	medias, err := SQLlistFanMediasByEntity(ctx, app, entityType, entityID)
+func listFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]map[string]any, error) {
+	medias, err := listFanMediasByEntity(ctx, app, entityType, entityID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func SQLlistFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityT
 	return groups, nil
 }
 
-func SQLupdateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, update map[string]any) ([]media.Media, error) {
+func updateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, update map[string]any) ([]media.Media, error) {
 	query := "mediagroupid = $1"
 	args := []any{mediaGroupID}
 
@@ -72,7 +72,7 @@ func SQLupdateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID s
 	return updatedMedias, err
 }
 
-func SQLdeleteFanMediaByID(ctx context.Context, app *infra.Deps, mediaID string) (int64, error) {
+func deleteFanMediaByID(ctx context.Context, app *infra.Deps, mediaID string) (int64, error) {
 	query := "mediaid = $1"
 	args := []any{mediaID}
 

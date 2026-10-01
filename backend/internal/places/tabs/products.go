@@ -103,7 +103,8 @@ func GetProducts(app *infra.Deps) httprouter.Handle {
 		var products []Product
 		if err := placedb.FindPlaceProducts(ctx,
 			app,
-			map[string]any{"placeid": placeID},
+			"placeid = $1",
+			[]any{placeID},
 			&products,
 		); err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
@@ -170,7 +171,8 @@ func PutProduct(app *infra.Deps) httprouter.Handle {
 
 		if _, err := placedb.UpdatePlaceProduct(ctx,
 			app,
-			map[string]any{"_id": id},
+			"_id = $1",
+			[]any{id},
 			map[string]any{
 				"name":  updateData.Name,
 				"price": updateData.Price,
@@ -197,7 +199,8 @@ func DeleteProduct(app *infra.Deps) httprouter.Handle {
 
 		if _, err := placedb.DeletePlaceProduct(ctx,
 			app,
-			map[string]any{"_id": id},
+			"_id = $1",
+			[]any{id},
 		); err != nil {
 			http.Error(w, "Delete failed", http.StatusInternalServerError)
 			return

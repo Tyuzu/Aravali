@@ -12,11 +12,11 @@ import (
 
 var webhooksTable = config.Tables.DeliveryWebhooksTable
 
-func sqlcreateWebhook(ctx context.Context, app *infra.Deps, wh deliveries.Webhook) error {
+func createWebhook(ctx context.Context, app *infra.Deps, wh deliveries.Webhook) error {
 	return app.SQLDB.InsertOne(ctx, webhooksTable, wh)
 }
 
-func sqllistWebhooksForTenant(ctx context.Context, app *infra.Deps, tenantID string) ([]deliveries.Webhook, error) {
+func listWebhooksForTenant(ctx context.Context, app *infra.Deps, tenantID string) ([]deliveries.Webhook, error) {
 	var webhooks []deliveries.Webhook
 	where := "tenantid = $1"
 	args := []any{tenantID}
@@ -30,7 +30,7 @@ func sqllistWebhooksForTenant(ctx context.Context, app *infra.Deps, tenantID str
 	return webhooks, nil
 }
 
-func sqlgetWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID string) (deliveries.Webhook, error) {
+func getWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID string) (deliveries.Webhook, error) {
 	var wh deliveries.Webhook
 	where := "id = $1 AND tenantid = $2"
 	args := []any{whID, tenantID}
@@ -41,7 +41,7 @@ func sqlgetWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID stri
 	return wh, nil
 }
 
-func sqlupdateWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID string, updates map[string]any) error {
+func updateWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID string, updates map[string]any) error {
 	where := "id = $1 AND tenantid = $2"
 	args := []any{whID, tenantID}
 
@@ -49,7 +49,7 @@ func sqlupdateWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID s
 	return err
 }
 
-func sqldeleteWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID string) (int64, error) {
+func deleteWebhookByID(ctx context.Context, app *infra.Deps, whID, tenantID string) (int64, error) {
 	where := "id = $1 AND tenantid = $2"
 	args := []any{whID, tenantID}
 

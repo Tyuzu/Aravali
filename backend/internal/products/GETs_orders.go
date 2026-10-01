@@ -46,7 +46,8 @@ func GetMyFarmOrders(app *infra.Deps) http.HandlerFunc {
 		if err := FindFarmOrders(
 			ctx,
 			app,
-			map[string]any{"userid": userID},
+			"userid = $1",
+			[]any{userID},
 			&orders,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -168,7 +169,8 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		if err := FindFarmsByFilter(
 			ctx,
 			app,
-			map[string]any{"createdBy": userID},
+			"createdby = $1",
+			[]any{userID},
 			&myfarms,
 		); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -192,39 +194,31 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 2. Build filter query from URL params
-		filter := map[string]any{"farmid": map[string]any{"$in": farmIDs}}
+		query := "farmid = ANY($1)"
+		args := []any{farmIDs}
 
-		// Filter by status
 		if status := r.URL.Query().Get("status"); status != "" {
-			filter["status"] = status
+			query += " AND status = $2"
+			args = append(args, status)
 		}
 
-		// Filter by date range
 		if dateFrom := r.URL.Query().Get("dateFrom"); dateFrom != "" {
-			if t, err := time.Parse("2006-01-02", dateFrom); err == nil {
-				filter["createdat"] = map[string]any{"$gte": t}
+			if _, err := time.Parse("2006-01-02", dateFrom); err == nil {
+				query += " AND createdat >= $3"
+				args = append(args, dateFrom)
 			}
 		}
 
 		if dateTo := r.URL.Query().Get("dateTo"); dateTo != "" {
-			if t, err := time.Parse("2006-01-02", dateTo); err == nil {
-				// Add one day to include all orders on that date
-				t = t.Add(24 * time.Hour)
-				if dateFrom := r.URL.Query().Get("dateFrom"); dateFrom != "" {
-					// If there's already a $gte, we need to use $lte
-					if existingDateFilter, ok := filter["createdat"].(map[string]any); ok {
-						existingDateFilter["$lte"] = t
-						filter["createdat"] = existingDateFilter
-					}
-				} else {
-					filter["createdat"] = map[string]any{"$lte": t}
-				}
+			if _, err := time.Parse("2006-01-02", dateTo); err == nil {
+				query += " AND createdat <= $4"
+				args = append(args, dateTo)
 			}
 		}
 
 		// 2. Fetch orders for those farms
 		var orders []cart.FarmOrder
-		if err := FindFarmOrders(ctx, app, filter, &orders); err != nil {
+		if err := FindFarmOrders(ctx, app, query, args, &orders); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch orders",
@@ -246,10 +240,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		txnByOrder := map[string]pay.Transaction{}
 		if len(orderIDs) > 0 {
 			var txns []pay.Transaction
-			_ = FindTransactions(ctx, app, map[string]any{
-				"entity_type": "order",
-				"entity_id":   map[string]any{"$in": orderIDs},
-			}, &txns)
+			_ = FindTransactions(ctx, app, "entity_type = $1 AND entity_id = ANY($2)", []any{"order", orderIDs}, &txns)
 
 			for _, t := range txns {
 				if t.EntityID != "" {

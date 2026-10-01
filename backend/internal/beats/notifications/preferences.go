@@ -40,7 +40,7 @@ func UpdatePreferences(app *infra.Deps) http.HandlerFunc {
 
 		// Fetch existing preferences or fallback to defaults.
 		var pref NotificationPreferences
-		err := findPreferencesByUser(ctx, app.DB, userID, &pref)
+		err := findPreferencesByUser(ctx, app.SQLDB, userID, &pref)
 
 		if err != nil && !isNoDocumentsError(err) {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB error")
@@ -70,7 +70,7 @@ func UpdatePreferences(app *infra.Deps) http.HandlerFunc {
 
 		pref.UpdatedAt = time.Now()
 
-		if _, err := upsertPreferences(ctx, app.DB, pref); err != nil {
+		if err := upsertPreferences(ctx, app.SQLDB, pref); err != nil {
 			utils.RespondWithError(
 				w,
 				http.StatusInternalServerError,

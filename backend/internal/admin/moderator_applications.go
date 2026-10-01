@@ -83,8 +83,9 @@ func FetchModeratorApplications(ctx context.Context, app *infra.Deps, status str
 		filter["status"] = status
 	}
 
+	query, args := buildFilterQuery(filter)
 	var applications []ModeratorApplication
-	if err := ListModeratorApplicationsDB(ctx, app, filter, &applications); err != nil {
+	if err := ListModeratorApplicationsDB(ctx, app, query, args, &applications); err != nil {
 		return nil, err
 	}
 

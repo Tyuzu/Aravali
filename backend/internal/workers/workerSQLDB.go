@@ -16,7 +16,7 @@ import (
 var BaitoWorkersTable = config.Tables.BaitoWorkerTable
 var UsersTable = config.Tables.UserTable
 
-func SQLfindWorkerByIDFromDB(ctx context.Context, app *infra.Deps, workerID string) (BaitoWorker, error) {
+func findWorkerByIDFromDB(ctx context.Context, app *infra.Deps, workerID string) (BaitoWorker, error) {
 	var worker BaitoWorker
 	query := "baitoWorkerId = $1"
 	args := []any{workerID}
@@ -28,7 +28,7 @@ func SQLfindWorkerByIDFromDB(ctx context.Context, app *infra.Deps, workerID stri
 	return worker, err
 }
 
-func SQLgetUniqueWorkerSkillsFromDB(ctx context.Context, app *infra.Deps) ([]string, error) {
+func getUniqueWorkerSkillsFromDB(ctx context.Context, app *infra.Deps) ([]string, error) {
 	var skills []string
 	err := app.SQLDB.Distinct(ctx, BaitoWorkersTable, "preferredRoles", "", nil, &skills)
 	if err != nil {
@@ -41,7 +41,7 @@ func SQLgetUniqueWorkerSkillsFromDB(ctx context.Context, app *infra.Deps) ([]str
 	return skills, nil
 }
 
-func SQLfindWorkersFromDB(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions) ([]BaitoWorkersResponse, error) {
+func findWorkersFromDB(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions) ([]BaitoWorkersResponse, error) {
 	var workers []BaitoWorkersResponse
 	err := app.SQLDB.FindManyWithOptions(ctx, BaitoWorkersTable, query, args, opts, &workers)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -50,11 +50,11 @@ func SQLfindWorkersFromDB(ctx context.Context, app *infra.Deps, query string, ar
 	return workers, err
 }
 
-func SQLcountWorkersFromDB(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
+func countWorkersFromDB(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
 	return app.SQLDB.CountDocuments(ctx, BaitoWorkersTable, query, args)
 }
 
-func SQLfindExistingWorkerProfile(ctx context.Context, app *infra.Deps, userID string, result any) error {
+func findExistingWorkerProfile(ctx context.Context, app *infra.Deps, userID string, result any) error {
 	query := "userid = $1"
 	args := []any{userID}
 
@@ -65,11 +65,11 @@ func SQLfindExistingWorkerProfile(ctx context.Context, app *infra.Deps, userID s
 	return err
 }
 
-func SQLcreateWorkerProfileRecord(ctx context.Context, app *infra.Deps, worker BaitoWorker) error {
+func createWorkerProfileRecord(ctx context.Context, app *infra.Deps, worker BaitoWorker) error {
 	return app.SQLDB.Insert(ctx, BaitoWorkersTable, worker)
 }
 
-func SQLupdateWorkerProfileRecord(ctx context.Context, app *infra.Deps, workerID, userID string, update map[string]any) error {
+func updateWorkerProfileRecord(ctx context.Context, app *infra.Deps, workerID, userID string, update map[string]any) error {
 	query := "baitoWorkerId = $1 AND userid = $2"
 	args := []any{workerID, userID}
 
@@ -80,7 +80,7 @@ func SQLupdateWorkerProfileRecord(ctx context.Context, app *infra.Deps, workerID
 	return err
 }
 
-func SQLaddWorkerRoleToUser(ctx context.Context, app *infra.Deps, userID string) error {
+func addWorkerRoleToUser(ctx context.Context, app *infra.Deps, userID string) error {
 	query := "userid = $1"
 	args := []any{userID}
 
@@ -91,7 +91,7 @@ func SQLaddWorkerRoleToUser(ctx context.Context, app *infra.Deps, userID string)
 	return err
 }
 
-func SQLtouchUserUpdatedAt(ctx context.Context, app *infra.Deps, userID string) error {
+func touchUserUpdatedAt(ctx context.Context, app *infra.Deps, userID string) error {
 	query := "userid = $1"
 	args := []any{userID}
 

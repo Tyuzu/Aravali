@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/internal/events"
 	placedb "scav/internal/places/placedb"
 	"scav/utils"
@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // 🏟️ Events
@@ -81,37 +80,35 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 		defer cancel()
 
 		// Filter: upcoming events for this place
-		filter := map[string]any{
-			"placeid":  placeID,
-			"date_gte": now,
-		}
+		query := "placeid = $1 AND date >= $2"
+		args := []any{placeID, now}
 
 		// Count total
-		total, err := placedb.CountEvents(ctx, app, filter)
+		total, err := placedb.CountEvents(ctx, app, query, args)
 		if err != nil {
 			http.Error(w, "Failed to count events", http.StatusInternalServerError)
 			return
 		}
 
 		// Fetch events
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  []bson.E{{Key: "date", Value: 1}},
-			Projection: []string{
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64(skip),
+			OrderBy: "date ASC",
+			Columns: []string{
 				"eventid",
 				"title",
 				"description",
 				"start_date_time",
 				"end_date_time",
 				"placename",
-				"banner_image",
+				"banner",
 				"category",
 			},
 		}
 
 		var placeevents []events.Event
-		if err := placedb.FindEventsWithOptions(ctx, app, filter, opts, &placeevents); err != nil {
+		if err := placedb.FindEventsWithOptions(ctx, app, query, args, opts, &placeevents); err != nil {
 			http.Error(w, "Failed to fetch events", http.StatusInternalServerError)
 			return
 		}

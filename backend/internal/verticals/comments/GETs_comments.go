@@ -9,10 +9,8 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* =========================
@@ -31,7 +29,7 @@ func GetComment(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var comment Comment
-		err := findCommentByID(ctx, app.DB, commentID, &comment)
+		err := findCommentByID(ctx, app, commentID, &comment)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Comment not found")
 			return
@@ -85,32 +83,22 @@ func GetComments(app *infra.Deps) http.HandlerFunc {
 		sortBy := r.URL.Query().Get("sort") // new | old | likes
 
 		/* ---------- Sorting (ORDERED) ---------- */
-		sort := []bson.E{
-			{Key: "created_at", Value: -1},
-			{Key: "commentid", Value: -1},
-		}
-
+		orderBy := "created_at DESC, commentid DESC"
 		switch sortBy {
 		case "old":
-			sort = []bson.E{
-				{Key: "created_at", Value: 1},
-				{Key: "commentid", Value: 1},
-			}
+			orderBy = "created_at ASC, commentid ASC"
 		case "likes":
-			sort = []bson.E{
-				{Key: "likes", Value: -1},
-				{Key: "created_at", Value: -1},
-			}
+			orderBy = "likes DESC, created_at DESC"
 		}
 
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  sort,
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64(skip),
+			OrderBy: orderBy,
 		}
 
 		var comments []Comment
-		if err := findCommentsByEntity(ctx, app.DB, entityType, entityID, opts, &comments); err != nil {
+		if err := findCommentsByEntity(ctx, app, entityType, entityID, opts, &comments); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"message": "Failed to fetch comments"})
 			return
 		}

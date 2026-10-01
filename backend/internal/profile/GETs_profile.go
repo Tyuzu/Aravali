@@ -22,13 +22,13 @@ func GetProfile(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		requestingUserID := utils.GetUserIDFromRequest(r)
 
-		user, err := FindUserByFilter(ctx, app, map[string]any{"userid": requestingUserID})
+		user, err := FindUserByFilter(ctx, app, "userid = $1", []any{requestingUserID})
 		if err != nil || user == nil {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
 		}
 
-		userFollow, err := follows.GetUserFollowData(ctx, user.UserID, app.DB)
+		userFollow, err := follows.GetUserFollowData(ctx, user.UserID, app.SQLDB)
 		if err == nil && userFollow.UserID != "" {
 			user.FollowersCount = len(userFollow.Followers)
 			user.FollowingCount = len(userFollow.Follows)
@@ -65,13 +65,13 @@ func GetUserProfile(app *infra.Deps) http.HandlerFunc {
 
 		username := utils.GetParam(r, "username")
 
-		user, err := FindUserByFilter(ctx, app, map[string]any{"username": username})
+		user, err := FindUserByFilter(ctx, app, "username = $1", []any{username})
 		if err != nil || user == nil {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
 		}
 
-		userFollow, _ := follows.GetUserFollowData(ctx, user.UserID, app.DB)
+		userFollow, _ := follows.GetUserFollowData(ctx, user.UserID, app.SQLDB)
 
 		isFollowing := false
 		if userFollow.UserID != "" {

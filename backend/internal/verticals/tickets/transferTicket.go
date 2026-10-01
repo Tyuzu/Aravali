@@ -53,8 +53,14 @@ func TransferTicket(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// Update ownership
-		if _, err := UpdatePurchasedTicket(ctx, app, map[string]any{"eventid": eventID, "uniquecode": payload.UniqueCode}, map[string]any{"$set": map[string]any{"userid": payload.Recipient, "transferred": true, "transferredto": payload.Recipient}}); err != nil {
+		// Update ownership using the SQL helper's expected query/args signature.
+		if _, err := UpdatePurchasedTicket(
+			ctx,
+			app,
+			"eventid = $1 AND uniquecode = $2",
+			[]any{eventID, payload.UniqueCode},
+			map[string]any{"$set": map[string]any{"userid": payload.Recipient, "transferred": true, "transferredto": payload.Recipient}},
+		); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to transfer ticket: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -63,7 +69,12 @@ func TransferTicket(app *infra.Deps) http.HandlerFunc {
 		userdata.DelUserData("ticket", payload.UniqueCode, requestingUserId, app)
 		userdata.SetUserData("ticket", payload.UniqueCode, payload.Recipient, "event", eventID, app)
 
-		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.TicketTransferredEvent, mqevent.TicketTransferredPayload{}); err != nil {
+		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.TicketTransferredEvent, mqevent.TicketTransferredPayload{
+			TicketID:   ticket.TicketID,
+			FromUserID: requestingUserId,
+			ToUserID:   payload.Recipient,
+			OccurredAt: time.Now().UTC(),
+		}); err != nil {
 			log.Printf("failed to publish ticket transferred event: %v", err)
 		}
 

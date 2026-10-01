@@ -13,38 +13,36 @@ import (
 	"scav/infra/sqldb"
 )
 
-// // SearchResult represents a single search result item
-// type SearchResult struct {
-// 	ID          string    `json:"id,omitempty"`
-// 	EntityID    string    `json:"entityid,omitempty"`
-// 	Title       string    `json:"title"`
-// 	Description string    `json:"description"`
-// 	Image       string    `json:"image,omitempty"`
-// 	CreatedAt   time.Time `json:"createdAt"`
-// }
+type SearchResult struct {
+	ID          string    `json:"id,omitempty"`
+	EntityID    string    `json:"entityid,omitempty"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Image       string    `json:"image,omitempty"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
 
-// // AllSearchResults represents results grouped by entity type
-// type AllSearchResults struct {
-// 	Events       []SearchResult `json:"events,omitempty"`
-// 	Places       []SearchResult `json:"places,omitempty"`
-// 	Feedposts    []SearchResult `json:"feedposts,omitempty"`
-// 	Merch        []SearchResult `json:"merch,omitempty"`
-// 	Blogposts    []SearchResult `json:"blogposts,omitempty"`
-// 	Farms        []SearchResult `json:"farms,omitempty"`
-// 	Songs        []SearchResult `json:"songs,omitempty"`
-// 	Users        []SearchResult `json:"users,omitempty"`
-// 	Recipes      []SearchResult `json:"recipes,omitempty"`
-// 	Products     []SearchResult `json:"products,omitempty"`
-// 	Menu         []SearchResult `json:"menu,omitempty"`
-// 	Media        []SearchResult `json:"media,omitempty"`
-// 	Crops        []SearchResult `json:"crops,omitempty"`
-// 	Baitoworkers []SearchResult `json:"baitoworkers,omitempty"`
-// 	Baitos       []SearchResult `json:"baitos,omitempty"`
-// 	Artists      []SearchResult `json:"artists,omitempty"`
-// }
+type AllSearchResults struct {
+	Events       []SearchResult `json:"events,omitempty"`
+	Places       []SearchResult `json:"places,omitempty"`
+	Feedposts    []SearchResult `json:"feedposts,omitempty"`
+	Merch        []SearchResult `json:"merch,omitempty"`
+	Blogposts    []SearchResult `json:"blogposts,omitempty"`
+	Farms        []SearchResult `json:"farms,omitempty"`
+	Songs        []SearchResult `json:"songs,omitempty"`
+	Users        []SearchResult `json:"users,omitempty"`
+	Recipes      []SearchResult `json:"recipes,omitempty"`
+	Products     []SearchResult `json:"products,omitempty"`
+	Menu         []SearchResult `json:"menu,omitempty"`
+	Media        []SearchResult `json:"media,omitempty"`
+	Crops        []SearchResult `json:"crops,omitempty"`
+	Baitoworkers []SearchResult `json:"baitoworkers,omitempty"`
+	Baitos       []SearchResult `json:"baitos,omitempty"`
+	Artists      []SearchResult `json:"artists,omitempty"`
+}
 
 // GetAutocompleteSuggestions returns autocomplete suggestions for a prefix using SQL
-func SQLGetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix string) ([]string, error) {
+func GetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix string) ([]string, error) {
 	prefix = strings.ToLower(prefix)
 	pattern := prefix + "%"
 
@@ -102,7 +100,7 @@ func SQLGetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix 
 }
 
 // SearchByEntity searches in a specific entity type using SQL
-func SQLSearchByEntity(ctx context.Context, app *infra.Deps, entityType, query string) ([]SearchResult, error) {
+func SearchByEntity(ctx context.Context, app *infra.Deps, entityType, query string) ([]SearchResult, error) {
 	var results []SearchResult
 	pattern := "%" + strings.ToLower(query) + "%"
 
@@ -268,7 +266,7 @@ func SQLSearchByEntity(ctx context.Context, app *infra.Deps, entityType, query s
 }
 
 // SearchAll searches across all entity types and returns grouped results
-func SQL(ctx context.Context, app *infra.Deps, query string) (AllSearchResults, error) {
+func SearchAll(ctx context.Context, app *infra.Deps, query string) (AllSearchResults, error) {
 	allResults := AllSearchResults{}
 
 	entityTypes := []string{
@@ -337,7 +335,7 @@ func SQL(ctx context.Context, app *infra.Deps, query string) (AllSearchResults, 
 }
 
 // Helper function to safely get string field from document
-func SQLgetStringField(doc map[string]any, fieldName string) string {
+func getStringField(doc map[string]any, fieldName string) string {
 	if val, ok := doc[fieldName]; ok {
 		if str, ok := val.(string); ok {
 			return str

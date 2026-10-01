@@ -28,7 +28,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		farm, err := getFarmByCreatedBy(ctx, app.DB, userID)
+		farm, err := getFarmByCreatedBy(ctx, app.SQLDB, userID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
@@ -37,7 +37,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		crops, err := getCropsByFarmID(ctx, app.DB, farm.FarmID)
+		crops, err := getCropsByFarmID(ctx, app.SQLDB, farm.FarmID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
@@ -46,7 +46,7 @@ func GetFarmDash(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		orders, _ := getFarmOrdersByFarmID(ctx, app.DB, farm.FarmID)
+		orders, _ := getFarmOrdersByFarmID(ctx, app.SQLDB, farm.FarmID)
 
 		for i := range crops {
 			crops[i].FarmName = farm.Name

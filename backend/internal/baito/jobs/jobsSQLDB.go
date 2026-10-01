@@ -12,15 +12,14 @@ import (
 
 var baitosTable = config.Tables.BaitoTable
 
-func SQLInsertBaitoForEntity(ctx context.Context, app *infra.Deps, baito baito.Baito) error {
-	return app.DB.Insert(ctx, baitosTable, baito)
+func InsertBaitoForEntity(ctx context.Context, app *infra.Deps, baito baito.Baito) error {
+	return app.SQLDB.Insert(ctx, baitosTable, baito)
 }
 
-func SQLFindJobsForEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]baito.BaitosResponse, error) {
+func FindJobsForEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]baito.BaitosResponse, error) {
 	var jobs []baito.BaitosResponse
-	err := app.DB.FindMany(ctx, baitosTable, map[string]any{
-		"entityType": entityType,
-		"entityId":   entityID,
-	}, &jobs)
+	query := "entitytype = $1 AND entityid = $2"
+	args := []any{entityType, entityID}
+	err := app.SQLDB.FindMany(ctx, baitosTable, query, args, &jobs)
 	return jobs, err
 }

@@ -9,7 +9,7 @@ import (
 	"scav/infra/sqldb"
 )
 
-func SQLfetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string, offset, limit int) ([]HomeCard, error) {
+func fetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string, offset, limit int) ([]HomeCard, error) {
 	table, projector := categoryProjection(category)
 	if table == "" || projector == nil {
 		return []HomeCard{}, nil

@@ -39,7 +39,8 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 		if err := placedb.FindOnePlace(
 			ctx,
 			app,
-			map[string]any{"placeid": placeID},
+			"placeid = $1",
+			[]any{placeID},
 			&existing,
 		); err != nil {
 			http.Error(w, "Place not found", http.StatusNotFound)
@@ -97,7 +98,8 @@ func UpdatePlaceInfo(app *infra.Deps) http.HandlerFunc {
 		if _, err := placedb.UpdatePlace(
 			ctx,
 			app,
-			map[string]any{"placeid": placeID},
+			"placeid = $1",
+			[]any{placeID},
 			update,
 		); err != nil {
 			http.Error(w, "Failed to update place info", http.StatusInternalServerError)

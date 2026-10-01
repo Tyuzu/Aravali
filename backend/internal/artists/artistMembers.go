@@ -22,7 +22,7 @@ func AddArtistMember(app *infra.Deps) http.HandlerFunc {
 
 		// Ensure artist exists
 		var artist Artist
-		if err := FindArtistByID(ctx, app.DB, artistID, &artist); err != nil {
+		if err := FindArtistByID(ctx, app, artistID, &artist); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
 			return
 		}
@@ -58,7 +58,7 @@ func AddArtistMember(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		if _, err := AddArtistMemberDB(ctx, app.DB, artistID, m); err != nil {
+		if err := AddArtistMemberDB(ctx, app, artistID, m); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to add member")
 			return
 		}
@@ -83,7 +83,7 @@ func UpdateArtistMember(app *infra.Deps) http.HandlerFunc {
 		userID := utils.GetUserIDFromRequest(r)
 
 		var artist Artist
-		if err := FindArtistByID(ctx, app.DB, artistID, &artist); err != nil {
+		if err := FindArtistByID(ctx, app, artistID, &artist); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
 			return
 		}
@@ -115,7 +115,7 @@ func UpdateArtistMember(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// UpdateArtistMemberDB already encapsulates map[string]any{"$set": update} internally
-		if _, err := UpdateArtistMemberDB(ctx, app.DB, artistID, memberID, updates); err != nil {
+		if _, err := UpdateArtistMemberDB(ctx, app, artistID, memberID, updates); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to update member")
 			return
 		}
@@ -142,12 +142,12 @@ func DeleteArtistMember(app *infra.Deps) http.HandlerFunc {
 		userID := utils.GetUserIDFromRequest(r)
 
 		var artist Artist
-		if err := FindArtistByID(ctx, app.DB, artistID, &artist); err != nil {
+		if err := FindArtistByID(ctx, app, artistID, &artist); err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
 			return
 		}
 
-		if _, err := DeleteArtistMemberDB(ctx, app.DB, artistID, memberID); err != nil {
+		if _, err := DeleteArtistMemberDB(ctx, app, artistID, memberID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete member")
 			return
 		}

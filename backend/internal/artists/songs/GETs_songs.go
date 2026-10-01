@@ -19,7 +19,7 @@ func GetArtistsSongs(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var songs []ArtistSong
-		err := FindSongsByArtist(ctx, app.DB, artistID, &songs)
+		err := FindSongsByArtist(ctx, app, artistID, &songs)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch songs")
 			return

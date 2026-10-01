@@ -15,7 +15,7 @@ import (
 
 var merchTable = config.Tables.MerchTable
 
-func SQLgetEntityOwner(ctx context.Context, app *infra.Deps, entityType, entityID string) (string, error) {
+func getEntityOwner(ctx context.Context, app *infra.Deps, entityType, entityID string) (string, error) {
 	table := ""
 	idField := ""
 	ownerField := ""
@@ -52,7 +52,7 @@ func SQLgetEntityOwner(ctx context.Context, app *infra.Deps, entityType, entityI
 	return owner, nil
 }
 
-func SQLfindMerchByEntity(ctx context.Context, app *infra.Deps, entityType, entityID, merchID string) (Merch, error) {
+func findMerchByEntity(ctx context.Context, app *infra.Deps, entityType, entityID, merchID string) (Merch, error) {
 	var merch Merch
 	query := "entity_type = $1 AND entity_id = $2 AND merchid = $3 AND deletedat IS NULL"
 	args := []any{entityType, entityID, merchID}
@@ -63,7 +63,7 @@ func SQLfindMerchByEntity(ctx context.Context, app *infra.Deps, entityType, enti
 	return merch, nil
 }
 
-func SQLfindMerchsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Merch, error) {
+func findMerchsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Merch, error) {
 	var list []Merch
 	query := "entity_type = $1 AND entity_id = $2 AND deletedat IS NULL"
 	args := []any{entityType, entityID}
@@ -77,7 +77,7 @@ func SQLfindMerchsByEntity(ctx context.Context, app *infra.Deps, entityType, ent
 	return list, nil
 }
 
-func SQLfindMerchByMerchID(ctx context.Context, app *infra.Deps, merchID string) (Merch, error) {
+func findMerchByMerchID(ctx context.Context, app *infra.Deps, merchID string) (Merch, error) {
 	var merch Merch
 	query := "merchid = $1 AND deletedat IS NULL"
 	args := []any{merchID}
@@ -88,7 +88,7 @@ func SQLfindMerchByMerchID(ctx context.Context, app *infra.Deps, merchID string)
 	return merch, nil
 }
 
-func SQLfindMerchForPurchase(ctx context.Context, app *infra.Deps, eventID, merchID string) (Merch, error) {
+func findMerchForPurchase(ctx context.Context, app *infra.Deps, eventID, merchID string) (Merch, error) {
 	var merch Merch
 	query := "entity_id = $1 AND merchid = $2"
 	args := []any{eventID, merchID}
@@ -99,11 +99,11 @@ func SQLfindMerchForPurchase(ctx context.Context, app *infra.Deps, eventID, merc
 	return merch, nil
 }
 
-func SQLinsertMerch(ctx context.Context, app *infra.Deps, merch Merch) error {
+func insertMerch(ctx context.Context, app *infra.Deps, merch Merch) error {
 	return app.SQLDB.Insert(ctx, merchTable, merch)
 }
 
-func SQLupdateMerchFields(ctx context.Context, app *infra.Deps, entityType, entityID, merchID string, update map[string]any) error {
+func updateMerchFields(ctx context.Context, app *infra.Deps, entityType, entityID, merchID string, update map[string]any) error {
 	query := "entity_type = $1 AND entity_id = $2 AND merchid = $3"
 	args := []any{entityType, entityID, merchID}
 
@@ -111,7 +111,7 @@ func SQLupdateMerchFields(ctx context.Context, app *infra.Deps, entityType, enti
 	return err
 }
 
-func SQLsoftDeleteMerch(ctx context.Context, app *infra.Deps, entityType, entityID, merchID string, now time.Time) error {
+func softDeleteMerch(ctx context.Context, app *infra.Deps, entityType, entityID, merchID string, now time.Time) error {
 	query := "entity_type = $1 AND entity_id = $2 AND merchid = $3 AND deletedat IS NULL"
 	args := []any{entityType, entityID, merchID}
 
@@ -124,7 +124,7 @@ func SQLsoftDeleteMerch(ctx context.Context, app *infra.Deps, entityType, entity
 	return err
 }
 
-func SQLconfirmMerchPurchase(ctx context.Context, app *infra.Deps, eventID, merchID string, quantity int) (Merch, error) {
+func confirmMerchPurchase(ctx context.Context, app *infra.Deps, eventID, merchID string, quantity int) (Merch, error) {
 	query := "entity_id = $1 AND merchid = $2 AND stock >= $3"
 	args := []any{eventID, merchID, quantity}
 
@@ -142,7 +142,7 @@ func SQLconfirmMerchPurchase(ctx context.Context, app *infra.Deps, eventID, merc
 	return updatedMerch, nil
 }
 
-func SQLbuyMerchTransaction(ctx context.Context, app *infra.Deps, r context.Context, userID, entityType, entityID, merchID string, quantity int) error {
+func buyMerchTransaction(ctx context.Context, app *infra.Deps, r context.Context, userID, entityType, entityID, merchID string, quantity int) error {
 	_ = ctx
 	return app.SQLDB.WithDB(r, func(txCtx context.Context) error {
 		var merch Merch

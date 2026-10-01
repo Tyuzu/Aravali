@@ -24,7 +24,7 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var orders []cart.FarmOrder
-		if err := FindFarmOrders(ctx, app, map[string]any{}, &orders); err != nil {
+		if err := FindFarmOrders(ctx, app, "1 = 1", nil, &orders); err != nil {
 			log.Println("GetIncomingOrders error:", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return

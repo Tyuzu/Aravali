@@ -27,7 +27,7 @@ func CreateArtistEvent(app *infra.Deps) http.HandlerFunc {
 		artistevent.CreatorID = utils.GetUserIDFromRequest(r)
 		artistevent.EventID = utils.GenerateRandomString(14)
 
-		err := InsertArtistEvent(ctx, app.DB, &artistevent)
+		err := InsertArtistEvent(ctx, app, &artistevent)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, ErrDatabase.Error())
 			return
@@ -63,7 +63,7 @@ func UpdateArtistEvent(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		_, err := UpdateArtistEventByID(ctx, app.DB, artisteventID, updateData)
+		_, err := UpdateArtistEventByID(ctx, app, artisteventID, updateData)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "ArtistEvent not found or update failed")
 			return
@@ -84,7 +84,7 @@ func DeleteArtistEvent(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		artisteventID := utils.GetParam(r, "id")
 
-		err := DeleteArtistEventByID(ctx, app.DB, artisteventID)
+		err := DeleteArtistEventByID(ctx, app, artisteventID)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete ArtistEvent")
 			return
@@ -114,7 +114,7 @@ func AddArtistToEvent(app *infra.Deps) http.HandlerFunc {
 
 		// Fetch event details from EventsCollection
 		var event events.Event
-		err := FindEventByID(ctx, app.DB, payload.EventID, &event)
+		err := FindEventByID(ctx, app, payload.EventID, &event)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "Event not found")
 			return
@@ -122,7 +122,7 @@ func AddArtistToEvent(app *infra.Deps) http.HandlerFunc {
 
 		// Check if ArtistEvent already exists
 		var existing []ArtistEvent
-		err = FindArtistEventsByEventAndArtist(ctx, app.DB, payload.EventID, payload.ArtistID, &existing)
+		err = FindArtistEventsByEventAndArtist(ctx, app, payload.EventID, payload.ArtistID, &existing)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Error checking for existing artist event")
 			return
@@ -145,7 +145,7 @@ func AddArtistToEvent(app *infra.Deps) http.HandlerFunc {
 			TicketURL: event.WebsiteURL,
 		}
 
-		_, err = AddArtistToEventDB(ctx, app.DB, artistEvent)
+		_, err = AddArtistToEventDB(ctx, app, artistEvent)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to add artist to artist events")
 			return

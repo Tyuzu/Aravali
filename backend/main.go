@@ -85,7 +85,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 
-		if err := app.DB.Ping(ctx); err != nil {
+		if err := app.SQLDB.Ping(ctx); err != nil {
 			http.Error(w, "db_unavailable", http.StatusServiceUnavailable)
 			return
 		}

@@ -51,7 +51,7 @@ func CreateTier(app *infra.Deps) http.HandlerFunc {
 
 		tier.CreatedAt = time.Now().Unix()
 
-		if err := InsertTier(ctx, app.DB, tier); err != nil {
+		if err := InsertTier(ctx, app, tier); err != nil {
 			http.Error(w, "db insert failed", http.StatusInternalServerError)
 			return
 		}
@@ -73,7 +73,7 @@ func DeleteTier(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), defaultTimeout)
 		defer cancel()
 
-		if _, err := DeleteTierByID(ctx, app.DB, tierID); err != nil {
+		if _, err := DeleteTierByID(ctx, app, tierID); err != nil {
 			http.Error(w, "db error", http.StatusInternalServerError)
 			return
 		}
@@ -102,7 +102,7 @@ func CreateSlot(app *infra.Deps) http.HandlerFunc {
 
 		if s.TierId != "" {
 			var t Tier
-			if err := FindTierByID(ctx, app.DB, s.TierId, &t); err == nil {
+			if err := FindTierByID(ctx, app, s.TierId, &t); err == nil {
 				s.TierName = t.Name
 			}
 		}
@@ -110,7 +110,7 @@ func CreateSlot(app *infra.Deps) http.HandlerFunc {
 		s.ID = genID()
 		s.CreatedAt = time.Now().Unix()
 
-		if err := InsertSlot(ctx, app.DB, s); err != nil {
+		if err := InsertSlot(ctx, app, s); err != nil {
 			http.Error(w, "db error", http.StatusInternalServerError)
 			return
 		}
@@ -132,11 +132,11 @@ func DeleteSlot(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), defaultTimeout)
 		defer cancel()
 
-		if _, err := DeleteSlotByID(ctx, app.DB, slotID); err != nil {
+		if _, err := DeleteSlotByID(ctx, app, slotID); err != nil {
 			http.Error(w, "db error", http.StatusInternalServerError)
 			return
 		}
-		_ = DeleteBookingsBySlot(ctx, app.DB, slotID)
+		_, _ = DeleteBookingsBySlot(ctx, app, slotID)
 
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -172,7 +172,7 @@ func GenerateSlotsFromTier(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var tier Tier
-		if err := FindTierByID(ctx, app.DB, tierID, &tier); err != nil {
+		if err := FindTierByID(ctx, app, tierID, &tier); err != nil {
 			http.Error(w, "tier not found", http.StatusNotFound)
 			return
 		}
@@ -191,7 +191,7 @@ func GenerateSlotsFromTier(app *infra.Deps) http.HandlerFunc {
 			for i, s := range slots {
 				docs[i] = s
 			}
-			if err := InsertSlotsMany(ctx, app.DB, docs); err != nil {
+			if err := InsertSlotsMany(ctx, app, docs); err != nil {
 				http.Error(w, "db error", http.StatusInternalServerError)
 				return
 			}

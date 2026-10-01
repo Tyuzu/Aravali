@@ -31,7 +31,7 @@ func MarkAsRead(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := updateMarkAsRead(ctx, app.DB, notificationID, userID); err != nil {
+		if _, err := updateMarkAsRead(ctx, app.SQLDB, notificationID, userID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to mark as read")
 			return
 		}
@@ -67,7 +67,7 @@ func MarkAllAsRead(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := updateMarkAllAsRead(ctx, app.DB, targetUserID); err != nil {
+		if _, err := updateMarkAllAsRead(ctx, app.SQLDB, targetUserID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to mark all as read")
 			return
 		}
@@ -97,7 +97,7 @@ func DeleteNotification(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := deleteNotificationByID(ctx, app.DB, notificationID, userID)
+		count, err := deleteNotificationByID(ctx, app.SQLDB, notificationID, userID)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Delete failed")
 			return
@@ -126,7 +126,7 @@ func ClearAllNotifications(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if err := deleteAllNotificationsByUser(ctx, app.DB, userID); err != nil {
+		if _, err := deleteAllNotificationsByUser(ctx, app.SQLDB, userID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Clear notifications failed")
 			return
 		}

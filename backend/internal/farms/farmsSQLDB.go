@@ -16,11 +16,11 @@ var (
 	farmOrdersTable = config.Tables.FarmOrdersTable
 )
 
-func SQLinsertFarm(ctx context.Context, database sqldb.Database, farm Farm) error {
+func insertFarm(ctx context.Context, database sqldb.Database, farm Farm) error {
 	return database.InsertOne(ctx, farmsTable, farm)
 }
 
-func SQLgetFarmByID(ctx context.Context, database sqldb.Database, farmID string) (Farm, error) {
+func getFarmByID(ctx context.Context, database sqldb.Database, farmID string) (Farm, error) {
 	var farm Farm
 	query := "farmid = $1"
 	args := []any{farmID}
@@ -29,7 +29,7 @@ func SQLgetFarmByID(ctx context.Context, database sqldb.Database, farmID string)
 	return farm, err
 }
 
-func SQLgetFarmByCreatedBy(ctx context.Context, database sqldb.Database, userID string) (Farm, error) {
+func getFarmByCreatedBy(ctx context.Context, database sqldb.Database, userID string) (Farm, error) {
 	var farm Farm
 	query := "created_by = $1"
 	args := []any{userID}
@@ -38,7 +38,7 @@ func SQLgetFarmByCreatedBy(ctx context.Context, database sqldb.Database, userID 
 	return farm, err
 }
 
-func SQLgetCropsByFarmID(ctx context.Context, database sqldb.Database, farmID string) ([]Crop, error) {
+func getCropsByFarmID(ctx context.Context, database sqldb.Database, farmID string) ([]Crop, error) {
 	var crops []Crop
 	query := "farmid = $1"
 	args := []any{farmID}
@@ -52,7 +52,7 @@ func SQLgetCropsByFarmID(ctx context.Context, database sqldb.Database, farmID st
 	return crops, nil
 }
 
-func SQLgetFarmOrdersByFarmID(ctx context.Context, database sqldb.Database, farmID string) ([]cart.FarmOrder, error) {
+func getFarmOrdersByFarmID(ctx context.Context, database sqldb.Database, farmID string) ([]cart.FarmOrder, error) {
 	var orders []cart.FarmOrder
 	query := "farmid = $1"
 	args := []any{farmID}
@@ -66,7 +66,7 @@ func SQLgetFarmOrdersByFarmID(ctx context.Context, database sqldb.Database, farm
 	return orders, nil
 }
 
-func SQLgetCropsByCropID(ctx context.Context, database sqldb.Database, cropID string) ([]Crop, error) {
+func getCropsByCropID(ctx context.Context, database sqldb.Database, cropID string) ([]Crop, error) {
 	var crops []Crop
 	query := "cropid = $1"
 	args := []any{cropID}
@@ -80,7 +80,7 @@ func SQLgetCropsByCropID(ctx context.Context, database sqldb.Database, cropID st
 	return crops, nil
 }
 
-func SQLgetFarmsByIDs(ctx context.Context, database sqldb.Database, farmIDs []string) ([]Farm, error) {
+func getFarmsByIDs(ctx context.Context, database sqldb.Database, farmIDs []string) ([]Farm, error) {
 	var farms []Farm
 	query := "farmid = ANY($1)"
 	args := []any{farmIDs}
@@ -94,7 +94,7 @@ func SQLgetFarmsByIDs(ctx context.Context, database sqldb.Database, farmIDs []st
 	return farms, nil
 }
 
-func SQLgetCropsByNameFilter(ctx context.Context, database sqldb.Database, cropName string) ([]Crop, error) {
+func getCropsByNameFilter(ctx context.Context, database sqldb.Database, cropName string) ([]Crop, error) {
 	query := "name ILIKE $1"
 	args := []any{cropName}
 
@@ -108,7 +108,7 @@ func SQLgetCropsByNameFilter(ctx context.Context, database sqldb.Database, cropN
 	return crops, nil
 }
 
-func SQLgetPaginatedFarms(ctx context.Context, database sqldb.Database, search string, offset, limit int) ([]Farm, int64, error) {
+func getPaginatedFarms(ctx context.Context, database sqldb.Database, search string, offset, limit int) ([]Farm, int64, error) {
 	whereClause := ""
 	args := []any{}
 
@@ -146,7 +146,7 @@ func SQLgetPaginatedFarms(ctx context.Context, database sqldb.Database, search s
 	return farms, total, nil
 }
 
-func SQLgetMyFarmsPage(ctx context.Context, database sqldb.Database, userID string, offset, limit int) ([]Farm, int64, error) {
+func getMyFarmsPage(ctx context.Context, database sqldb.Database, userID string, offset, limit int) ([]Farm, int64, error) {
 	rawQuery := `
 		SELECT f.*, COALESCE(json_agg(c) FILTER (WHERE c.cropid IS NOT NULL), '[]') AS crops
 		FROM ` + farmsTable + ` f
@@ -169,14 +169,14 @@ func SQLgetMyFarmsPage(ctx context.Context, database sqldb.Database, userID stri
 	return farms, total, nil
 }
 
-func SQLupdateOwnedFarm(ctx context.Context, database sqldb.Database, farmID, userID string, update map[string]any) (int64, error) {
+func updateOwnedFarm(ctx context.Context, database sqldb.Database, farmID, userID string, update map[string]any) (int64, error) {
 	query := "farmid = $1 AND created_by = $2"
 	args := []any{farmID, userID}
 
 	return database.UpdateOne(ctx, farmsTable, query, args, update)
 }
 
-func SQLdeleteFarmByID(ctx context.Context, database sqldb.Database, farmID string) (int64, error) {
+func deleteFarmByID(ctx context.Context, database sqldb.Database, farmID string) (int64, error) {
 	query := "farmid = $1"
 	args := []any{farmID}
 

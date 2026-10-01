@@ -9,10 +9,8 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* =========================
@@ -31,7 +29,7 @@ func GetFAQ(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var faq FAQ
-		err := findFAQByID(ctx, app.DB, faqID, &faq)
+		err := findFAQByID(ctx, app, faqID, &faq)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusNotFound, "FAQ not found")
 			return
@@ -85,32 +83,22 @@ func GetFAQs(app *infra.Deps) http.HandlerFunc {
 		sortBy := r.URL.Query().Get("sort") // new | old | likes
 
 		/* ---------- Sorting (ORDERED) ---------- */
-		sort := []bson.E{
-			{Key: "created_at", Value: -1},
-			{Key: "faqid", Value: -1},
-		}
-
+		orderBy := "created_at DESC, faqid DESC"
 		switch sortBy {
 		case "old":
-			sort = []bson.E{
-				{Key: "created_at", Value: 1},
-				{Key: "faqid", Value: 1},
-			}
+			orderBy = "created_at ASC, faqid ASC"
 		case "likes":
-			sort = []bson.E{
-				{Key: "likes", Value: -1},
-				{Key: "created_at", Value: -1},
-			}
+			orderBy = "likes DESC, created_at DESC"
 		}
 
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  sort,
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64(skip),
+			OrderBy: orderBy,
 		}
 
 		var faqs []FAQ
-		if err := findFAQsByEntity(ctx, app.DB, entityType, entityID, opts, &faqs); err != nil {
+		if err := findFAQsByEntity(ctx, app, entityType, entityID, opts, &faqs); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"message": "Failed to fetch faqs"})
 			return
 		}

@@ -23,8 +23,6 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 			status = "pending"
 		}
 
-		filter := map[string]any{"status": status}
-
 		limit := int64(20)
 		offset := int64(0)
 
@@ -39,8 +37,9 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
+		query, args := buildFilterQuery(map[string]any{"status": status})
 		var appeals []map[string]any
-		if err := FindAppeals(ctx, app, filter, &appeals); err != nil {
+		if err := FindAppeals(ctx, app, query, args, &appeals); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch appeals",
 			})
@@ -76,8 +75,9 @@ func GetMyAppeals(app *infra.Deps) http.HandlerFunc {
 			filter["status"] = status
 		}
 
+		query, args := buildFilterQuery(filter)
 		var appeals []map[string]any
-		if err := FindAppeals(ctx, app, filter, &appeals); err != nil {
+		if err := FindAppeals(ctx, app, query, args, &appeals); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{
 				"error": "Failed to fetch your appeals",
 			})

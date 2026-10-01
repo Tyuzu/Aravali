@@ -5,15 +5,12 @@ package recipes
 import (
 	"context"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- Get single recipe ---
@@ -42,46 +39,40 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{}
-
+		query := "1 = 1"
+		args := []any{}
 		if search := r.URL.Query().Get("search"); search != "" {
-			filter["$or"] = []any{
-				utils.RegexFilter("title", search),
-				utils.RegexFilter("description", search),
-			}
+			query += " AND (LOWER(title) LIKE $1 OR LOWER(description) LIKE $1)"
+			args = append(args, "%"+strings.ToLower(search)+"%")
 		}
-
 		if ing := r.URL.Query().Get("ingredient"); ing != "" {
-			filter["ingredients.name"] = map[string]any{
-				"$regex":   regexp.QuoteMeta(ing),
-				"$options": "i",
-			}
+			query += " AND ingredients::text ILIKE $2"
+			args = append(args, "%"+strings.ToLower(ing)+"%")
 		}
-
 		if tags := r.URL.Query().Get("tags"); tags != "" {
-			filter["tags"] = map[string]any{"$all": strings.Split(tags, ",")}
+			query += " AND tags::text ILIKE $3"
+			args = append(args, "%"+strings.ToLower(tags)+"%")
 		}
 
 		skip, limit := utils.ParsePagination(r, 10, 100)
-		sort := utils.ParseSort(
-			r.URL.Query().Get("sort"),
-			[]bson.E{{Key: "createdAt", Value: -1}},
-			map[string][]bson.E{
-				"newest":   {{Key: "createdAt", Value: -1}},
-				"oldest":   {{Key: "createdAt", Value: 1}},
-				"views":    {{Key: "views", Value: -1}},
-				"prepTime": {{Key: "prepTime", Value: 1}},
-			},
-		)
+		orderBy := "created_at DESC"
+		switch r.URL.Query().Get("sort") {
+		case "oldest":
+			orderBy = "created_at ASC"
+		case "views":
+			orderBy = "views DESC"
+		case "prepTime":
+			orderBy = "preptime ASC"
+		}
 
-		opts := db.FindManyOptions{
-			Skip:  skip,
-			Limit: limit,
-			Sort:  sort,
+		opts := sqldb.FindManyOptions{
+			Offset:  int64(skip),
+			Limit:   int64(limit),
+			OrderBy: orderBy,
 		}
 
 		var recipes []Recipe
-		if err := FindRecipesWithOptions(ctx, app, filter, opts, &recipes); err != nil {
+		if err := FindRecipesWithOptions(ctx, app, query, args, opts, &recipes); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch recipes")
 			return
 		}
@@ -90,7 +81,7 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 			normalizeRecipeSlices(&recipes[i])
 		}
 
-		totalCount, err := CountRecipes(ctx, app, filter)
+		totalCount, err := CountRecipes(ctx, app, query, args)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count recipes")
 			return
@@ -116,23 +107,16 @@ func GetRecipeTags(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		pipeline := []any{
-			map[string]any{"$unwind": "$tags"},
-			map[string]any{"$group": map[string]any{
-				"_id":  nil,
-				"tags": map[string]any{"$addToSet": "$tags"},
-			}},
-		}
-
+		query := "SELECT DISTINCT unnest(tags) AS tags FROM " + recipeTable + " WHERE tags IS NOT NULL"
 		var result []recipeTagAgg
-		if err := AggregateRecipes(ctx, app, pipeline, &result); err != nil {
+		if err := AggregateRecipes(ctx, app, query, nil, &result); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		tags := []string{}
-		if len(result) > 0 && result[0].Tags != nil {
-			tags = result[0].Tags
+		for _, item := range result {
+			tags = append(tags, item.Tags...)
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, tags)

@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"scav/infra"
+	"scav/infra/sqldb"
 	"scav/utils"
-
-	"scav/infra/db"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --- Get single post ---
@@ -55,14 +52,14 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 		skip := (page - 1) * limit
 
 		// --- Fetch posts ---
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64(skip),
+			OrderBy: "created_at DESC",
 		}
 
 		var posts []BlogPost
-		if err := FindPostsWithOptions(ctx, app, map[string]any{}, opts, &posts); err != nil {
+		if err := FindPostsWithOptions(ctx, app, "1 = 1", nil, opts, &posts); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch posts")
 			return
 		}
@@ -92,9 +89,7 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 				Username string `bson:"username"`
 			}
 
-			if err := FindUsersByFilter(ctx, app, map[string]any{
-				"userid_in": ids,
-			}, &users); err == nil {
+			if err := FindUsersByFilter(ctx, app, "userid = ANY($1)", []any{ids}, &users); err == nil {
 				for _, u := range users {
 					usernames[u.UserID] = u.Username
 				}

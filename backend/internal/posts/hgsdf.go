@@ -247,27 +247,26 @@ func CreateOrUpdatePost(
 	now := time.Now()
 
 	if isEdit {
-		filter := map[string]any{
-			"postid":    postID,
-			"createdBy": userID,
-		}
+		query := "postid = $1 AND createdby = $2"
+		args := []any{postID, userID}
 
 		update := map[string]any{
 			"type":        input.Type,
 			"title":       input.Title,
 			"category":    input.Category,
 			"subcategory": input.Subcategory,
-			"referenceId": refPtr,
+			"referenceid": refPtr,
 			"blocks":      input.Blocks,
 			"hashtags":    input.Hashtags,
 			"thumb":       pickThumb(input.Blocks),
-			"updatedAt":   now,
+			"updatedat":   now,
 		}
 
 		if _, err := UpdatePostByFilter(
 			ctx,
 			app,
-			filter,
+			query,
+			args,
 			update,
 		); err != nil {
 			utils.RespondWithError(
@@ -359,15 +358,14 @@ func DeletePost(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		filter := map[string]any{
-			"postid":    postID,
-			"createdBy": userID,
-		}
+		query := "postid = $1 AND createdby = $2"
+		args := []any{postID, userID}
 
 		_, err := DeletePostByFilter(
 			ctx,
 			app,
-			filter,
+			query,
+			args,
 		)
 		if err != nil {
 			utils.RespondWithError(

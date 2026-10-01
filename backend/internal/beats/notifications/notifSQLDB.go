@@ -21,11 +21,11 @@ var (
    DATABASE OPERATIONS
 ========================= */
 
-func SQLinsertNotification(ctx context.Context, database sqldb.Database, notif Notification) error {
+func insertNotification(ctx context.Context, database sqldb.Database, notif Notification) error {
 	return database.InsertOne(ctx, notifsTable, notif)
 }
 
-func SQLinsertBulkNotifications(ctx context.Context, database sqldb.Database, notifs []Notification) error {
+func insertBulkNotifications(ctx context.Context, database sqldb.Database, notifs []Notification) error {
 	docs := make([]any, len(notifs))
 	for i, v := range notifs {
 		docs[i] = v
@@ -33,7 +33,7 @@ func SQLinsertBulkNotifications(ctx context.Context, database sqldb.Database, no
 	return database.InsertMany(ctx, notifsTable, docs)
 }
 
-func SQLfindNotificationsByUser(
+func findNotificationsByUser(
 	ctx context.Context,
 	database sqldb.Database,
 	userID string,
@@ -46,7 +46,7 @@ func SQLfindNotificationsByUser(
 	return database.FindManyWithOptions(ctx, notifsTable, where, args, opts, notifs)
 }
 
-func SQLcountUnreadNotifications(
+func countUnreadNotifications(
 	ctx context.Context,
 	database sqldb.Database,
 	userID string,
@@ -57,7 +57,7 @@ func SQLcountUnreadNotifications(
 	return database.Count(ctx, notifsTable, where, args)
 }
 
-func SQLupdateMarkAsRead(
+func updateMarkAsRead(
 	ctx context.Context,
 	database sqldb.Database,
 	notificationID string,
@@ -74,7 +74,7 @@ func SQLupdateMarkAsRead(
 	return database.UpdateOne(ctx, notifsTable, where, args, updateValues)
 }
 
-func SQLupdateMarkAllAsRead(
+func updateMarkAllAsRead(
 	ctx context.Context,
 	database sqldb.Database,
 	userID string,
@@ -90,7 +90,7 @@ func SQLupdateMarkAllAsRead(
 	return database.UpdateMany(ctx, notifsTable, where, args, updateValues)
 }
 
-func SQLdeleteNotificationByID(
+func deleteNotificationByID(
 	ctx context.Context,
 	database sqldb.Database,
 	notificationID string,
@@ -102,7 +102,7 @@ func SQLdeleteNotificationByID(
 	return database.DeleteOne(ctx, notifsTable, where, args)
 }
 
-func SQLdeleteAllNotificationsByUser(
+func deleteAllNotificationsByUser(
 	ctx context.Context,
 	database sqldb.Database,
 	userID string,
@@ -113,7 +113,7 @@ func SQLdeleteAllNotificationsByUser(
 	return database.DeleteMany(ctx, notifsTable, where, args)
 }
 
-func SQLfindPreferencesByUser(
+func findPreferencesByUser(
 	ctx context.Context,
 	database sqldb.Database,
 	userID string,
@@ -125,7 +125,7 @@ func SQLfindPreferencesByUser(
 	return database.FindOne(ctx, preferencesTable, where, args, pref)
 }
 
-func SQLupsertPreferences(
+func upsertPreferences(
 	ctx context.Context,
 	database sqldb.Database,
 	pref NotificationPreferences,
@@ -137,10 +137,10 @@ func SQLupsertPreferences(
    DATABASE ERROR HELPERS
 ========================= */
 
-func SQLisNoDocumentsError(err error) bool {
+func isNoDocumentsError(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)
 }
 
-func SQLnotificationSort() string {
+func notificationSort() string {
 	return "created_at DESC, notificationid DESC"
 }

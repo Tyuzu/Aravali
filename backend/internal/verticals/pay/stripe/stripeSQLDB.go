@@ -15,7 +15,7 @@ import (
 var fundingCollection = config.Collections.FundingCollection
 var stripeOrdersCollection = config.Collections.StripeOrdersCollection
 
-func SQLupdatePaymentStatus(
+func updatePaymentStatusSQL(
 	ctx context.Context,
 	entityType string,
 	entityId string,

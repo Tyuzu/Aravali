@@ -4,7 +4,6 @@ package vendors
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"time"
 
@@ -79,7 +78,9 @@ func GetVendorByUserID(ctx context.Context, app *infra.Deps, userID string) (*Ve
 // GetVendorsByCategory retrieves all vendors in a specific category.
 func GetVendorsByCategory(ctx context.Context, app *infra.Deps, category string) ([]Vendor, error) {
 	var vendors []Vendor
-	if err := FindVendors(ctx, app, map[string]any{"available": true, "category": category}, &vendors); err != nil {
+	query := "available = $1 AND category = $2"
+	args := []any{true, category}
+	if err := FindVendors(ctx, app, query, args, &vendors); err != nil {
 		return nil, err
 	}
 
@@ -92,24 +93,27 @@ func GetVendorsByCategory(ctx context.Context, app *infra.Deps, category string)
 
 // GetAllVendors retrieves all available vendors, optionally filtered by search/category.
 func GetAllVendors(ctx context.Context, app *infra.Deps, search string, category string) ([]Vendor, error) {
-	filter := vendorBaseFilter()
+	query := "available = $1"
+	args := []any{true}
 
 	if category != "" {
-		filter["category"] = category
+		query += " AND category = $2"
+		args = append(args, category)
 	}
 
 	if search != "" {
-		escaped := regexp.QuoteMeta(strings.TrimSpace(search))
-		filter["$or"] = []map[string]any{
-			{"name": map[string]any{"$regex": escaped, "$options": "i"}},
-			{"category": map[string]any{"$regex": escaped, "$options": "i"}},
-			{"description": map[string]any{"$regex": escaped, "$options": "i"}},
-			{"location": map[string]any{"$regex": escaped, "$options": "i"}},
+		pattern := "%" + strings.ToLower(strings.TrimSpace(search)) + "%"
+		if category == "" {
+			query += " AND (LOWER(name) LIKE $2 OR LOWER(category) LIKE $2 OR LOWER(description) LIKE $2 OR LOWER(location) LIKE $2)"
+			args = append(args, pattern)
+		} else {
+			query += " AND (LOWER(name) LIKE $3 OR LOWER(category) LIKE $3 OR LOWER(description) LIKE $3 OR LOWER(location) LIKE $3)"
+			args = append(args, pattern)
 		}
 	}
 
 	var vendors []Vendor
-	if err := FindVendors(ctx, app, filter, &vendors); err != nil {
+	if err := FindVendors(ctx, app, query, args, &vendors); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +132,7 @@ func UpdateVendor(ctx context.Context, app *infra.Deps, vendorID string, updates
 
 	updates["updated_at"] = time.Now()
 
-	return UpdateVendorDB(ctx, app, map[string]any{"vendorid": vendorID, "available": true}, map[string]any{"$set": updates})
+	return UpdateVendorDB(ctx, app, "vendorid = $1 AND available = $2", []any{vendorID, true}, updates)
 }
 
 // DeleteVendor soft-deletes a vendor by setting available to false.
@@ -210,12 +214,14 @@ func RemoveVendorFromEvent(ctx context.Context, app *infra.Deps, eventID, vendor
 		return nil, ErrVendorNotInEvent
 	}
 
-	return UpdateHiringDB(ctx, app, map[string]any{"eventid": eventID, "vendorid": vendorID}, map[string]any{"$set": map[string]any{"status": "rejected", "updated_at": time.Now()}})
+	update := map[string]any{"status": "rejected", "updated_at": time.Now()}
+	return UpdateHiringDB(ctx, app, "eventid = $1 AND vendorid = $2", []any{eventID, vendorID}, update)
 }
 
 // UpdateVendorStatus updates the status of a vendor hiring.
 func UpdateVendorStatus(ctx context.Context, app *infra.Deps, hiringID, status string) (any, error) {
-	return UpdateHiringDB(ctx, app, map[string]any{"hiringid": hiringID}, map[string]any{"$set": map[string]any{"status": status, "updated_at": time.Now()}})
+	update := map[string]any{"status": status, "updated_at": time.Now()}
+	return UpdateHiringDB(ctx, app, "hiringid = $1", []any{hiringID}, update)
 }
 
 // GetVendorsByEvent retrieves detailed vendor info for an event.

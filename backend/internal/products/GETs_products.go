@@ -7,12 +7,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/internal/farms"
 	"scav/utils"
+	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // --------------------------------------------------
@@ -24,48 +23,45 @@ func GetItems(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{}
-
+		query := "1 = 1"
+		args := []any{}
 		if t := r.URL.Query().Get("type"); t != "" {
-			filter["type"] = t
+			query += " AND type = $1"
+			args = append(args, t)
 		}
 		if c := r.URL.Query().Get("category"); c != "" {
-			filter["category"] = c
+			query += " AND category = $2"
+			args = append(args, c)
 		}
 		if s := r.URL.Query().Get("search"); s != "" {
-			filter["name"] = utils.RegexFilter("name", s)["name"]
+			query += " AND LOWER(name) LIKE $3"
+			args = append(args, "%"+strings.ToLower(s)+"%")
 		}
 
 		skip, limit := utils.ParsePagination(r, 10, 100)
-		var sortMap []bson.E
-
+		orderBy := "name ASC"
 		switch r.URL.Query().Get("sort") {
 		case "price_asc":
-			sortMap = []bson.E{{Key: "price", Value: 1}}
-
+			orderBy = "price ASC"
 		case "price_desc":
-			sortMap = []bson.E{{Key: "price", Value: -1}}
-
+			orderBy = "price DESC"
 		case "name_desc":
-			sortMap = []bson.E{{Key: "name", Value: -1}}
-
-		default:
-			sortMap = []bson.E{{Key: "name", Value: 1}}
+			orderBy = "name DESC"
 		}
 
-		opts := db.FindManyOptions{
-			Skip:  int(skip),
-			Limit: int(limit),
-			Sort:  sortMap,
+		opts := sqldb.FindManyOptions{
+			Offset:  int64(skip),
+			Limit:   int64(limit),
+			OrderBy: orderBy,
 		}
 
 		var items []farms.Product
-		if err := FindProductsWithOptions(ctx, app, filter, opts, &items); err != nil {
+		if err := FindProductsWithOptions(ctx, app, query, args, opts, &items); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch items")
 			return
 		}
 
-		total, err := CountProducts(ctx, app, filter)
+		total, err := CountProducts(ctx, app, query, args)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count items")
 			return

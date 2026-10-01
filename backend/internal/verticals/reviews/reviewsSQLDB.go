@@ -18,7 +18,7 @@ var reviewsTable = config.Tables.ReviewsTable
    Database Helpers
 ------------------------- */
 
-func SQLGetUserReviewForEntity(ctx context.Context, app *infra.Deps, userID, entityType, entityID string) (*Review, error) {
+func GetUserReviewForEntity(ctx context.Context, app *infra.Deps, userID, entityType, entityID string) (*Review, error) {
 	query := "userid = $1 AND entityType = $2 AND entityId = $3"
 	args := []any{userID, entityType, entityID}
 
@@ -29,7 +29,7 @@ func SQLGetUserReviewForEntity(ctx context.Context, app *infra.Deps, userID, ent
 	return &review, nil
 }
 
-func SQLGetReviewByID(ctx context.Context, app *infra.Deps, reviewID string) (*Review, error) {
+func GetReviewByID(ctx context.Context, app *infra.Deps, reviewID string) (*Review, error) {
 	query := "reviewid = $1"
 	args := []any{reviewID}
 
@@ -40,11 +40,11 @@ func SQLGetReviewByID(ctx context.Context, app *infra.Deps, reviewID string) (*R
 	return &review, nil
 }
 
-func SQLInsertReview(ctx context.Context, app *infra.Deps, review Review) error {
+func InsertReview(ctx context.Context, app *infra.Deps, review Review) error {
 	return app.SQLDB.Insert(ctx, reviewsTable, review)
 }
 
-func SQLUpdateReviewByID(ctx context.Context, app *infra.Deps, reviewID string, update map[string]any) error {
+func UpdateReviewByID(ctx context.Context, app *infra.Deps, reviewID string, update map[string]any) error {
 	query := "reviewid = $1"
 	args := []any{reviewID}
 
@@ -52,7 +52,7 @@ func SQLUpdateReviewByID(ctx context.Context, app *infra.Deps, reviewID string, 
 	return err
 }
 
-func SQLDeleteReviewByID(ctx context.Context, app *infra.Deps, reviewID string) error {
+func DeleteReviewByID(ctx context.Context, app *infra.Deps, reviewID string) error {
 	query := "reviewid = $1"
 	args := []any{reviewID}
 
@@ -65,7 +65,7 @@ func SQLDeleteReviewByID(ctx context.Context, app *infra.Deps, reviewID string) 
 ------------------------- */
 
 // FetchReviewsByEntity queries reviews for a specific entity type and ID.
-func SQLFetchReviewsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Review, error) {
+func FetchReviewsByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Review, error) {
 	query := "entityType = $1 AND entityId = $2"
 	args := []any{entityType, entityID}
 
@@ -78,7 +78,7 @@ func SQLFetchReviewsByEntity(ctx context.Context, app *infra.Deps, entityType, e
 }
 
 // FetchReviewByID retrieves a single review by its ID.
-func SQLFetchReviewByID(ctx context.Context, app *infra.Deps, reviewID string) (*Review, error) {
+func FetchReviewByID(ctx context.Context, app *infra.Deps, reviewID string) (*Review, error) {
 	query := "reviewid = $1"
 	args := []any{reviewID}
 

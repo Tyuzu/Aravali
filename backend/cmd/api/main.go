@@ -196,8 +196,8 @@ func main() {
 					)
 					return
 				}
-			} else if app.DB != nil {
-				if err := app.DB.Ping(ctx); err != nil {
+			} else if app.SQLDB != nil {
+				if err := app.SQLDB.Ping(ctx); err != nil {
 					http.Error(
 						w,
 						"db_unavailable",

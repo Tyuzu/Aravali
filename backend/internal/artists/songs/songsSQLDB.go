@@ -4,40 +4,43 @@ package songs
 
 import (
 	"context"
-	"scav/config"
-	"scav/infra/db"
-	"scav/internal/artists"
 	"time"
+
+	"scav/config"
+	"scav/infra"
+	"scav/internal/artists"
 )
 
 var (
 	SongsTable = config.Tables.SongsTable
 )
 
-func SQLListPublishedSongsByArtist(ctx context.Context, d db.Database, artistID string, result *[]ArtistSong) error {
-	return d.FindMany(ctx, SongsTable, map[string]any{"artistid": artistID, "published": true}, result)
+func ListPublishedSongsByArtist(ctx context.Context, app *infra.Deps, artistID string, result *[]ArtistSong) error {
+	query := "artistid = $1 AND published = true"
+	args := []any{artistID}
+	return app.SQLDB.FindMany(ctx, SongsTable, query, args, result)
 }
 
-func SQLFindSongsByArtist(ctx context.Context, d db.Database, artistID string, result *[]ArtistSong) error {
-	return ListPublishedSongsByArtist(ctx, d, artistID, result)
+func FindSongsByArtist(ctx context.Context, app *infra.Deps, artistID string, result *[]ArtistSong) error {
+	return ListPublishedSongsByArtist(ctx, app, artistID, result)
 }
 
-func SQLFindSongByArtistAndID(ctx context.Context, d db.Database, artistID, songID string, result *ArtistSong) error {
-	return d.FindOne(ctx, SongsTable, map[string]any{"artistid": artistID, "songid": songID}, result)
+func FindSongByArtistAndID(ctx context.Context, app *infra.Deps, artistID, songID string, result *ArtistSong) error {
+	query := "artistid = $1 AND songid = $2"
+	args := []any{artistID, songID}
+	return app.SQLDB.FindOne(ctx, SongsTable, query, args, result)
 }
 
-func SQLSaveSong(ctx context.Context, d db.Database, song *ArtistSong) error {
-	return d.Insert(ctx, SongsTable, song)
+func SaveSong(ctx context.Context, app *infra.Deps, song *ArtistSong) error {
+	return app.SQLDB.Insert(ctx, SongsTable, song)
 }
 
-func SQLInsertArtistSong(ctx context.Context, d db.Database, song *ArtistSong) error {
-	return SaveSong(ctx, d, song)
+func InsertArtistSong(ctx context.Context, app *infra.Deps, song *ArtistSong) error {
+	return SaveSong(ctx, app, song)
 }
 
-// UpdateArtistSongFromPayload maps optional payload fields to query maps and calls UpdateArtistSong.
-func SQLUpdateArtistSongFromPayload(ctx context.Context, d db.Database, artistID, songID string, payload songPayload) (any, error) {
+func UpdateArtistSongFromPayload(ctx context.Context, app *infra.Deps, artistID, songID string, payload songPayload) (int64, error) {
 	updateFields := map[string]any{}
-
 	assignIfPresent := func(field string, val *string) {
 		if val != nil {
 			updateFields[field] = *val
@@ -54,19 +57,21 @@ func SQLUpdateArtistSongFromPayload(ctx context.Context, d db.Database, artistID
 	assignIfPresent("posterextn", payload.PosterExtn)
 
 	if len(updateFields) == 0 {
-		return nil, artists.ErrNoFieldsToUpdate
+		return 0, artists.ErrNoFieldsToUpdate
 	}
 
 	updateFields["updatedAt"] = time.Now()
-
-	return UpdateArtistSong(ctx, d, artistID, songID, updateFields)
+	return UpdateArtistSong(ctx, app, artistID, songID, updateFields)
 }
 
-func SQLUpdateArtistSong(ctx context.Context, d db.Database, artistID, songID string, update map[string]any) (any, error) {
-	return d.Update(ctx, SongsTable, map[string]any{"artistid": artistID, "songid": songID}, map[string]any{"$set": update})
+func UpdateArtistSong(ctx context.Context, app *infra.Deps, artistID, songID string, update map[string]any) (int64, error) {
+	query := "artistid = $1 AND songid = $2"
+	args := []any{artistID, songID}
+	return app.SQLDB.UpdateOne(ctx, SongsTable, query, args, update)
 }
 
-func SQLDeleteArtistSong(ctx context.Context, d db.Database, artistID, songID string) error {
-	_, err := d.Delete(ctx, SongsTable, map[string]any{"artistid": artistID, "songid": songID})
+func DeleteArtistSong(ctx context.Context, app *infra.Deps, artistID, songID string) error {
+	query := "artistid = $1 AND songid = $2"
+	_, err := app.SQLDB.DeleteOne(ctx, SongsTable, query, []any{artistID, songID})
 	return err
 }

@@ -6,12 +6,10 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
-	"scav/infra/db"
+	"scav/infra/sqldb"
 	"scav/utils"
 	log "scav/utils/logger"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // GetEvent fetches a single event with its tickets, media, and merch
@@ -59,10 +57,10 @@ func GetEvents(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  skip,
-			Sort:  []bson.E{{Key: "createdAt", Value: -1}},
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64(skip),
+			OrderBy: "created_at DESC",
 		}
 
 		var rawEvents []Event

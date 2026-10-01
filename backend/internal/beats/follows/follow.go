@@ -9,8 +9,8 @@ import (
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
-	"scav/infra/db"
 	"scav/infra/mq"
+	"scav/infra/sqldb"
 	"scav/internal/beats/userdata"
 	"scav/utils"
 	log "scav/utils/logger"
@@ -71,11 +71,17 @@ func ToggleUnFollow(app *infra.Deps) http.HandlerFunc {
 ------------------------------------------------------- */
 
 // GetUserFollowData returns followers and follows for a user
-func GetUserFollowData(ctx context.Context, userID string, database db.Database) (UserFollow, error) {
+func GetUserFollowData(ctx context.Context, userID string, database sqldb.Database) (UserFollow, error) {
 	var uf UserFollow
-	_ = database.FindOne(ctx, "followings", map[string]any{"userid": userID}, &uf)
+	where := "userid = $1"
+	args := []any{userID}
+	if err := database.FindOne(ctx, followingsTable, where, args, &uf); err != nil {
+		return UserFollow{
+			Followers: []string{},
+			Follows:   []string{},
+		}, nil
+	}
 
-	// return empty if not found
 	if uf.UserID == "" {
 		return UserFollow{
 			Followers: []string{},

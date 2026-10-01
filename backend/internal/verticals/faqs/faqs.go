@@ -73,7 +73,7 @@ func CreateFAQ(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:  time.Now(),
 		}
 
-		if err := insertFAQ(ctx, app.DB, faq); err != nil {
+		if err := insertFAQ(ctx, app, faq); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB insert failed")
 			return
 		}
@@ -115,7 +115,7 @@ func UpdateFAQ(app *infra.Deps) http.HandlerFunc {
 
 		/* Fetch + ownership check */
 		var existing FAQ
-		err := findFAQByID(ctx, app.DB, faqID, &existing)
+		err := findFAQByID(ctx, app, faqID, &existing)
 		if err != nil {
 			if errors.Is(err, mongo.ErrNoDocuments) {
 				utils.RespondWithError(w, http.StatusNotFound, "FAQ not found")
@@ -130,18 +130,18 @@ func UpdateFAQ(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := map[string]any{"$set": map[string]any{
-			"content":    content,
-			"updated_at": time.Now(),
-		}}
+		update := map[string]any{
+			"content":   content,
+			"updatedAt": time.Now(),
+		}
 
-		if _, err := updateFAQContent(ctx, app.DB, faqID, update); err != nil {
+		if _, err := updateFAQContent(ctx, app, faqID, update); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "DB update failed")
 			return
 		}
 
 		/* Return updated document */
-		err = findFAQByID(ctx, app.DB, faqID, &existing)
+		err = findFAQByID(ctx, app, faqID, &existing)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Fetch failed")
 			return
@@ -168,7 +168,7 @@ func DeleteFAQ(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := deleteFAQ(ctx, app.DB, faqID, utils.GetUserIDFromRequest(r))
+		count, err := deleteFAQ(ctx, app, faqID, utils.GetUserIDFromRequest(r))
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Delete failed")
 			return

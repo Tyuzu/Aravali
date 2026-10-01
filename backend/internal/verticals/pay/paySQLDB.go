@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"scav/config"
@@ -30,6 +31,190 @@ var ordersTable = config.Tables.OrderTable
 var usersTable = config.Tables.UserTable
 var RefundsTable = config.Tables.RefundsTable
 var webhookTable = config.Tables.DeliveryWebhooksTable
+
+var ticketsCollection = config.Collections.TicketsCollection
+var menuCollection = config.Collections.MenuCollection
+var serviceCollection = config.Collections.ServiceCollection
+var productCollection = config.Collections.ProductCollection
+var bookingsCollection = config.Collections.BookingsCollection
+var merchCollection = config.Collections.MerchCollection
+var cropsCollection = config.Collections.CropsCollection
+var ordersCollection = config.Collections.OrderCollection
+var farmOrdersCollection = config.Collections.FarmOrdersCollection
+
+func (p *PaymentService) getOrCreateAccount(ctx context.Context, userID string) (string, error) {
+	return p.SQLgetOrCreateAccount(ctx, userID)
+}
+
+func (p *PaymentService) getAccountByID(ctx context.Context, accountID string) (Account, error) {
+	return p.SQLgetAccountByID(ctx, accountID)
+}
+
+func (p *PaymentService) getAccountByUserID(ctx context.Context, userID string) (Account, error) {
+	return p.SQLgetAccountByUserID(ctx, userID)
+}
+
+func (p *PaymentService) listUserTransactions(ctx context.Context, userID string, skip int64, limit int64) ([]Transaction, error) {
+	return p.SQLlistUserTransactions(ctx, userID, skip, limit)
+}
+
+func (p *PaymentService) fetchPriceByField(ctx context.Context, tableName string, fieldName string, entityID string) (int64, error) {
+	return p.SQLfetchPriceByField(ctx, tableName, fieldName, entityID)
+}
+
+func (p *PaymentService) findOrderTotalByID(ctx context.Context, id string) (int64, error) {
+	return p.SQLfindOrderTotalByID(ctx, id)
+}
+
+func (p *PaymentService) createTransactionRecord(ctx context.Context, txn Transaction) error {
+	return p.SQLcreateTransactionRecord(ctx, txn)
+}
+
+func (p *PaymentService) applyBalanceDelta(ctx context.Context, accountID string, delta int64) error {
+	return p.SQLapplyBalanceDelta(ctx, accountID, delta)
+}
+
+func (p *PaymentService) setTransactionStatus(ctx context.Context, txnID string, status string) error {
+	return p.SQLsetTransactionStatus(ctx, txnID, status)
+}
+
+func (p *PaymentService) updateTransactionStatus(ctx context.Context, txnID string, status string, updatedAt time.Time) error {
+	return p.SQLupdateTransactionStatus(ctx, txnID, status, updatedAt)
+}
+
+func (p *PaymentService) findTransactionByID(ctx context.Context, txnID string) (Transaction, error) {
+	return p.SQLfindTransactionByID(ctx, txnID)
+}
+
+func (p *PaymentService) markTransactionReversed(ctx context.Context, txnID string, updatedAt time.Time) error {
+	return p.SQLmarkTransactionReversed(ctx, txnID, updatedAt)
+}
+
+func (p *PaymentService) recordWebhookProcessing(ctx context.Context, payload *PaymentWebhookPayload) error {
+	return p.SQLrecordWebhookProcessing(ctx, payload)
+}
+
+func (p *PaymentService) hasWebhookBeenProcessed(ctx context.Context, transactionID string) (bool, error) {
+	return p.SQLhasWebhookBeenProcessed(ctx, transactionID)
+}
+
+func (p *PaymentService) incrementTopupBalanceByUser(ctx context.Context, userID string, amount float64, updatedAt time.Time) error {
+	return p.SQLincrementTopupBalanceByUser(ctx, userID, amount, updatedAt)
+}
+
+func (p *PaymentService) setTransactionStatusByID(ctx context.Context, txnID string, status string, updatedAt time.Time) error {
+	return p.SQLsetTransactionStatusByID(ctx, txnID, status, updatedAt)
+}
+
+func (p *PaymentService) updateOrderStatus(ctx context.Context, tableName string, lookupField string, orderID string, status string) error {
+	return p.SQLupdateOrderStatus(ctx, tableName, lookupField, orderID, status)
+}
+
+func (p *PaymentService) updateOrderSet(ctx context.Context, tableName string, lookupField string, orderID string, update map[string]any) error {
+	return p.SQLupdateOrderSet(ctx, tableName, lookupField, orderID, update)
+}
+
+func (p *PaymentService) decrementInventory(ctx context.Context, tableName string, lookupField string, itemID string, incField string, qty int) error {
+	return p.SQLdecrementInventory(ctx, tableName, lookupField, itemID, incField, qty)
+}
+
+func (p *PaymentService) findOrderByID(ctx context.Context, tableName string, lookupField string, orderID string, out any) error {
+	return p.SQLfindOrderByID(ctx, tableName, lookupField, orderID, out)
+}
+
+func (p *PaymentService) findOrderTotalByUser(ctx context.Context, orderID string, userID string) (string, int64, error) {
+	return p.SQLfindOrderTotalByUser(ctx, orderID, userID)
+}
+
+func (p *PaymentService) findRefundRequestByOrderID(ctx context.Context, orderID string) (OrderRefundRequest, error) {
+	return p.SQLfindRefundRequestByOrderID(ctx, orderID)
+}
+
+func (p *PaymentService) findActiveRefundRequestByOrderID(ctx context.Context, orderID string) (OrderRefundRequest, error) {
+	return p.SQLfindActiveRefundRequestByOrderID(ctx, orderID)
+}
+
+func (p *PaymentService) createRefundRequestRecord(ctx context.Context, refundReq OrderRefundRequest) error {
+	return p.SQLcreateRefundRequestRecord(ctx, refundReq)
+}
+
+func (p *PaymentService) countRefundRequestsByUser(ctx context.Context, userID string) (int64, error) {
+	return p.SQLcountRefundRequestsByUser(ctx, userID)
+}
+
+func (p *PaymentService) listRefundRequestsByUser(ctx context.Context, userID string, skip int, limit int) ([]tickets.RefundRequest, error) {
+	return p.SQLlistRefundRequestsByUser(ctx, userID, skip, limit)
+}
+
+func (p *PaymentService) countRefundRequests(ctx context.Context, filter map[string]any) (int64, error) {
+	where, args := buildSQLFilter(filter)
+	return p.SQLcountRefundRequests(ctx, where, args)
+}
+
+func (p *PaymentService) listRefundRequests(ctx context.Context, filter map[string]any, skip int, limit int) ([]tickets.RefundRequest, error) {
+	where, args := buildSQLFilter(filter)
+	return p.SQLlistRefundRequests(ctx, where, args, skip, limit)
+}
+
+func buildSQLFilter(filter map[string]any) (string, []any) {
+	if len(filter) == 0 {
+		return "1=1", nil
+	}
+
+	clauses := make([]string, 0, len(filter))
+	args := make([]any, 0, len(filter))
+	idx := 1
+	for key, val := range filter {
+		if val == nil {
+			clauses = append(clauses, fmt.Sprintf("%s IS NULL", key))
+			continue
+		}
+		clauses = append(clauses, fmt.Sprintf("%s = $%d", key, idx))
+		args = append(args, val)
+		idx++
+	}
+	return strings.Join(clauses, " AND "), args
+}
+
+func (p *PaymentService) findRefundRequestByID(ctx context.Context, refundID string) (OrderRefundRequest, error) {
+	return p.SQLfindRefundRequestByID(ctx, refundID)
+}
+
+func (p *PaymentService) createRefundTransactionRecord(ctx context.Context, refundTxn Transaction) error {
+	return p.SQLcreateRefundTransactionRecord(ctx, refundTxn)
+}
+
+func (p *PaymentService) updateRefundRequestStatus(ctx context.Context, refundID string, update map[string]any) error {
+	return p.SQLupdateRefundRequestStatus(ctx, refundID, update)
+}
+
+func (p *PaymentService) recordGlobalLedger(ctx context.Context, txnID string, journalEntryID string, ledgerType string, reason string, amount int64, accountID string, userID string) error {
+	return p.SQLrecordGlobalLedger(ctx, txnID, journalEntryID, ledgerType, reason, amount, accountID, userID)
+}
+
+func (p *PaymentService) createJournalEntryRecord(ctx context.Context, entry JournalEntry) error {
+	return p.SQLcreateJournalEntryRecord(ctx, entry)
+}
+
+func (p *PaymentService) failTxn(ctx context.Context, txnID string) {
+	p.SQLfailTxn(ctx, txnID)
+}
+
+func (p *PaymentService) successTxn(ctx context.Context, txnID string) {
+	p.SQLsuccessTxn(ctx, txnID)
+}
+
+func (p *PaymentService) createTransferViews(ctx context.Context, txnID string, senderID string, recipientID string, amount int64, now time.Time) error {
+	return p.SQLcreateTransferViews(ctx, txnID, senderID, recipientID, amount, now)
+}
+
+func (p *PaymentService) userExists(ctx context.Context, userID string) bool {
+	return p.SQLuserExists(ctx, userID)
+}
+
+func (p *PaymentService) createWalletAccount(ctx context.Context, userID string) (Account, error) {
+	return p.SQLcreateWalletAccount(ctx, userID)
+}
 
 func (p *PaymentService) SQLgetOrCreateAccount(ctx context.Context, userID string) (string, error) {
 	var acc Account

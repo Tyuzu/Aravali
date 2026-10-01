@@ -12,7 +12,7 @@ import (
 
 var menuTable = config.Tables.MenuTable
 
-func SQLfindMenuByPlaceAndID(ctx context.Context, app *infra.Deps, placeID, menuID string) (Menu, error) {
+func findMenuByPlaceAndID(ctx context.Context, app *infra.Deps, placeID, menuID string) (Menu, error) {
 	var menu Menu
 	query := "placeid = $1 AND menuid = $2"
 	args := []any{placeID, menuID}
@@ -21,7 +21,7 @@ func SQLfindMenuByPlaceAndID(ctx context.Context, app *infra.Deps, placeID, menu
 	return menu, err
 }
 
-func SQLfindMenusByPlace(ctx context.Context, app *infra.Deps, placeID string) ([]Menu, error) {
+func findMenusByPlace(ctx context.Context, app *infra.Deps, placeID string) ([]Menu, error) {
 	var menus []Menu
 	query := "placeid = $1"
 	args := []any{placeID}
@@ -35,11 +35,11 @@ func SQLfindMenusByPlace(ctx context.Context, app *infra.Deps, placeID string) (
 	return menus, nil
 }
 
-func SQLinsertMenu(ctx context.Context, app *infra.Deps, menu Menu) error {
+func insertMenu(ctx context.Context, app *infra.Deps, menu Menu) error {
 	return app.SQLDB.Insert(ctx, menuTable, menu)
 }
 
-func SQLupdateMenuFields(ctx context.Context, app *infra.Deps, placeID, menuID string, updateFields map[string]any) error {
+func updateMenuFields(ctx context.Context, app *infra.Deps, placeID, menuID string, updateFields map[string]any) error {
 	query := "placeid = $1 AND menuid = $2"
 	args := []any{placeID, menuID}
 
@@ -47,7 +47,7 @@ func SQLupdateMenuFields(ctx context.Context, app *infra.Deps, placeID, menuID s
 	return err
 }
 
-func SQLdeleteMenuByID(ctx context.Context, app *infra.Deps, placeID, menuID string) error {
+func deleteMenuByID(ctx context.Context, app *infra.Deps, placeID, menuID string) error {
 	query := "placeid = $1 AND menuid = $2"
 	args := []any{placeID, menuID}
 
@@ -55,7 +55,7 @@ func SQLdeleteMenuByID(ctx context.Context, app *infra.Deps, placeID, menuID str
 	return err
 }
 
-func SQLdecrementMenuStock(ctx context.Context, app *infra.Deps, placeID, menuID string, quantity int) error {
+func decrementMenuStock(ctx context.Context, app *infra.Deps, placeID, menuID string, quantity int) error {
 	query := "placeid = $1 AND menuid = $2"
 	args := []any{placeID, menuID}
 

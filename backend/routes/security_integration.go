@@ -91,7 +91,7 @@ In your main.go or route initialization:
 
 	// Initialize indexes
 	ctx := context.Background()
-	if err := app.DB.InitializeIndexes(ctx); err != nil {
+	if err := app.SQLDB.InitializeIndexes(ctx); err != nil {
 		log.Fatalf("Failed to initialize indexes: %v", err)
 	}
 

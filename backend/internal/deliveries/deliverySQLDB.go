@@ -13,11 +13,11 @@ import (
 
 var deliveriesTable = config.Tables.DeliveriesTable
 
-func SQLfindDeliveryByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+func findDeliveryByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
 	return app.SQLDB.FindOne(ctx, deliveriesTable, query, args, out)
 }
 
-func SQLfindMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID string) ([]Delivery, error) {
+func findMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID string) ([]Delivery, error) {
 	query := "userid = $1 AND tenantid = $2"
 	args := []any{userID, tenantID}
 
@@ -31,11 +31,11 @@ func SQLfindMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID 
 	return deliveries, nil
 }
 
-func SQLsaveDelivery(ctx context.Context, app *infra.Deps, delivery Delivery) error {
+func saveDelivery(ctx context.Context, app *infra.Deps, delivery Delivery) error {
 	return app.SQLDB.InsertOne(ctx, deliveriesTable, delivery)
 }
 
-func SQLfindDeliveryAndUpdate(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (Delivery, error) {
+func findDeliveryAndUpdate(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (Delivery, error) {
 	if _, err := app.SQLDB.UpdateOne(ctx, deliveriesTable, query, args, update); err != nil {
 		return Delivery{}, err
 	}
@@ -47,7 +47,7 @@ func SQLfindDeliveryAndUpdate(ctx context.Context, app *infra.Deps, query string
 	return updated, nil
 }
 
-func SQLfetchDeliveryForRead(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
+func fetchDeliveryForRead(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
 	var delivery Delivery
 	query := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -58,7 +58,7 @@ func SQLfetchDeliveryForRead(ctx context.Context, app *infra.Deps, deliveryID, t
 	return delivery, nil
 }
 
-func SQLsetDeliveryStatusWithHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
+func setDeliveryStatusWithHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
 	current, err := fetchDeliveryForRead(ctx, app, deliveryID, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("delivery not found")
@@ -85,7 +85,7 @@ func SQLsetDeliveryStatusWithHistory(ctx context.Context, app *infra.Deps, deliv
 	query := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
 
-	updated, err := SQLfindDeliveryAndUpdate(ctx, app, query, args, update)
+	updated, err := findDeliveryAndUpdate(ctx, app, query, args, update)
 	if err != nil {
 		return nil, err
 	}
@@ -95,11 +95,11 @@ func SQLsetDeliveryStatusWithHistory(ctx context.Context, app *infra.Deps, deliv
 	return &updated, nil
 }
 
-func SQLfindDeliveryByIDTenant(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
+func findDeliveryByIDTenant(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
 	return fetchDeliveryForRead(ctx, app, deliveryID, tenantID)
 }
 
-func SQLlistDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
+func listDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
 	var events []map[string]any
 	query := "deliveryid = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -113,7 +113,7 @@ func SQLlistDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, ten
 	return events, nil
 }
 
-func SQLupsertDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID, userID string) (Delivery, error) {
+func upsertDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID, userID string) (Delivery, error) {
 	current, err := fetchDeliveryForRead(ctx, app, deliveryID, tenantID)
 	if err != nil {
 		return Delivery{}, fmt.Errorf("delivery not found")
@@ -141,10 +141,10 @@ func SQLupsertDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryI
 	query := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
 
-	return SQLfindDeliveryAndUpdate(ctx, app, query, args, update)
+	return findDeliveryAndUpdate(ctx, app, query, args, update)
 }
 
-func SQLupdateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
+func updateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
 	var currentDelivery Delivery
 	query := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -171,7 +171,7 @@ func SQLupdateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliver
 		"status_history": updatedHistory,
 	}
 
-	updatedDelivery, err := SQLfindDeliveryAndUpdate(ctx, app, query, args, update)
+	updatedDelivery, err := findDeliveryAndUpdate(ctx, app, query, args, update)
 	if err != nil {
 		return nil, err
 	}

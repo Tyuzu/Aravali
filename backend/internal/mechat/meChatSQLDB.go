@@ -18,22 +18,37 @@ var (
 
 // ================= REPOSITORY (POSTGRESQL LOGIC) =================
 
+type UnreadCountResult struct {
+	ChatID string `json:"chatid"`
+	Count  int64  `json:"count"`
+}
+
 func SQLdbEnsureChatAccess(ctx context.Context, app *infra.Deps, chatID, user string) error {
+	return dbEnsureChatAccess(ctx, app, chatID, user)
+}
+
+func SQLnowUTC() time.Time { return nowUTC() }
+
+func SQLdbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, msg *Message) {
+	dbUpdateLastMessage(ctx, app, chatID, msg)
+}
+
+func dbEnsureChatAccess(ctx context.Context, app *infra.Deps, chatID, user string) error {
 	query := "chatid = $1 AND $2 = ANY(participants)"
 	args := []any{chatID, user}
 
 	return app.SQLDB.FindOne(ctx, MereChatTable, query, args, &struct{}{})
 }
 
-func SQLdbFindChat(ctx context.Context, app *infra.Deps, query string, args []any, out *Chat) error {
+func dbFindChat(ctx context.Context, app *infra.Deps, query string, args []any, out *Chat) error {
 	return app.SQLDB.FindOne(ctx, MereChatTable, query, args, out)
 }
 
-func SQLdbInsertChat(ctx context.Context, app *infra.Deps, chat Chat) error {
+func dbInsertChat(ctx context.Context, app *infra.Deps, chat Chat) error {
 	return app.SQLDB.InsertOne(ctx, MereChatTable, chat)
 }
 
-func SQLdbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID string, user string, limit, offset int) ([]Message, error) {
+func dbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID string, user string, limit, offset int) ([]Message, error) {
 	if err := SQLdbEnsureChatAccess(ctx, app, chatID, user); err != nil {
 		return nil, err
 	}
@@ -57,7 +72,7 @@ func SQLdbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID strin
 	return msgs, nil
 }
 
-func SQLdbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user string) (Chat, error) {
+func dbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user string) (Chat, error) {
 	var chat Chat
 	query := "chatid = $1 AND $2 = ANY(participants)"
 	args := []any{chatID, user}
@@ -68,7 +83,7 @@ func SQLdbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user stri
 	return chat, nil
 }
 
-func SQLdbFindUserChats(ctx context.Context, app *infra.Deps, user string, offset, limit int) ([]Chat, error) {
+func dbFindUserChats(ctx context.Context, app *infra.Deps, user string, offset, limit int) ([]Chat, error) {
 	query := "$1 = ANY(participants)"
 	args := []any{user}
 
@@ -88,7 +103,7 @@ func SQLdbFindUserChats(ctx context.Context, app *infra.Deps, user string, offse
 	return chats, nil
 }
 
-func SQLdbPersistAttachmentMessage(ctx context.Context, app *infra.Deps, chatID, user string, msg *Message) error {
+func dbPersistAttachmentMessage(ctx context.Context, app *infra.Deps, chatID, user string, msg *Message) error {
 	if err := app.SQLDB.InsertOne(ctx, MessagesTable, msg); err != nil {
 		return err
 	}
@@ -108,9 +123,9 @@ func SQLdbPersistAttachmentMessage(ctx context.Context, app *infra.Deps, chatID,
 	return nil
 }
 
-func SQLnowUTC() time.Time { return time.Now().UTC() }
+func nowUTC() time.Time { return time.Now().UTC() }
 
-func SQLdbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, msg *Message) {
+func dbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, msg *Message) {
 	if msg == nil {
 		return
 	}
@@ -131,11 +146,11 @@ func SQLdbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string,
 	_, _ = app.SQLDB.UpdateOne(ctx, MereChatTable, query, args, update)
 }
 
-func SQLdbInsertMessage(ctx context.Context, app *infra.Deps, msg *Message) error {
+func dbInsertMessage(ctx context.Context, app *infra.Deps, msg *Message) error {
 	return app.SQLDB.InsertOne(ctx, MessagesTable, msg)
 }
 
-func SQLdbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newContent string) (*Message, error) {
+func dbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newContent string) (*Message, error) {
 	now := time.Now()
 	query := "messageid = $1 AND userid = $2 AND deleted IS NOT TRUE"
 	args := []any{msgID, userID}
@@ -154,7 +169,7 @@ func SQLdbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newCo
 	return &msg, nil
 }
 
-func SQLdbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID string) (*Message, error) {
+func dbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID string) (*Message, error) {
 	query := "messageid = $1 AND userid = $2"
 	args := []any{msgID, userID}
 	update := map[string]any{"deleted": true}
@@ -174,12 +189,12 @@ func SQLdbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID stri
 	return &msg, nil
 }
 
-func SQLdbMarkAsRead(ctx context.Context, app *infra.Deps, msgID, userID string) error {
+func dbMarkAsRead(ctx context.Context, app *infra.Deps, msgID, userID string) error {
 	rawQuery := "UPDATE " + MessagesTable + " SET read_by = ARRAY_APPEND(read_by, $2) WHERE messageid = $1 AND NOT ($2 = ANY(read_by))"
 	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{msgID, userID}, nil)
 }
 
-func SQLdbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string, add bool) error {
+func dbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string, add bool) error {
 	if add {
 		rawQuery := "UPDATE " + MessagesTable + " SET reactions = ARRAY_APPEND(reactions, $2) WHERE messageid = $1 AND NOT ($2 = ANY(reactions))"
 		return app.SQLDB.QueryRaw(ctx, rawQuery, []any{msgID, userID}, nil)
@@ -189,7 +204,7 @@ func SQLdbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID str
 	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{msgID, userID}, nil)
 }
 
-func SQLdbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID string) ([]string, error) {
+func dbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID string) ([]string, error) {
 	var chat Chat
 	query := "chatid = $1"
 	args := []any{chatID}
@@ -200,7 +215,7 @@ func SQLdbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID strin
 	return chat.Participants, nil
 }
 
-func SQLdbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string) ([]Chat, map[string]int64, error) {
+func dbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string) ([]Chat, map[string]int64, error) {
 	var chats []Chat
 	chatQuery := "$1 = ANY(participants)"
 	chatArgs := []any{user}
@@ -236,7 +251,7 @@ func SQLdbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user stri
 	return chats, countsMap, nil
 }
 
-func SQLdbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string, limit, offset int) ([]Message, error) {
+func dbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string, limit, offset int) ([]Message, error) {
 	query := "chatid = $1 AND deleted IS NOT TRUE"
 	args := []any{chatID}
 

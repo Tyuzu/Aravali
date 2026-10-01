@@ -74,7 +74,7 @@ func PostNewSong(app *infra.Deps) http.HandlerFunc {
 			PosterExtn:  deref(payload.PosterExtn),
 		}
 
-		if err := InsertArtistSong(ctx, app.DB, &newSong); err != nil {
+		if err := InsertArtistSong(ctx, app, &newSong); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to save song")
 			return
 		}
@@ -106,7 +106,7 @@ func EditSong(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// Delegated BSON mapping and persistence to the repo function
-		_, err := UpdateArtistSongFromPayload(ctx, app.DB, artistID, songID, payload)
+		_, err := UpdateArtistSongFromPayload(ctx, app, artistID, songID, payload)
 		if err != nil {
 			if errors.Is(err, artists.ErrNoFieldsToUpdate) {
 				utils.RespondWithError(w, http.StatusBadRequest, "No fields to update")
@@ -138,7 +138,7 @@ func DeleteSong(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if err := DeleteArtistSong(ctx, app.DB, artistID, songID); err != nil {
+		if err := DeleteArtistSong(ctx, app, artistID, songID); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to delete song")
 			return
 		}

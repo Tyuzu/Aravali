@@ -15,7 +15,7 @@ import (
 var driversTable = config.Tables.DriversTable
 var driverJobRejectionsTable = config.Tables.DriverJobRejectionsTable
 
-func sqlgetDriverProfileByID(ctx context.Context, app *infra.Deps, driverID, tenantID string) (deliveries.Driver, error) {
+func getDriverProfileByID(ctx context.Context, app *infra.Deps, driverID, tenantID string) (deliveries.Driver, error) {
 	var driver deliveries.Driver
 	where := "id = $1 AND tenantid = $2"
 	args := []any{driverID, tenantID}
@@ -26,7 +26,7 @@ func sqlgetDriverProfileByID(ctx context.Context, app *infra.Deps, driverID, ten
 	return driver, nil
 }
 
-func sqlupdateDriverProfile(ctx context.Context, app *infra.Deps, driverID, tenantID string, updates map[string]any) error {
+func updateDriverProfile(ctx context.Context, app *infra.Deps, driverID, tenantID string, updates map[string]any) error {
 	where := "id = $1 AND tenantid = $2"
 	args := []any{driverID, tenantID}
 
@@ -34,7 +34,7 @@ func sqlupdateDriverProfile(ctx context.Context, app *infra.Deps, driverID, tena
 	return err
 }
 
-func sqlsetDriverOnlineState(ctx context.Context, app *infra.Deps, driverID, tenantID string, online bool) error {
+func setDriverOnlineState(ctx context.Context, app *infra.Deps, driverID, tenantID string, online bool) error {
 	where := "id = $1 AND tenantid = $2"
 	args := []any{driverID, tenantID}
 	updates := map[string]any{"is_online": online}
@@ -43,7 +43,7 @@ func sqlsetDriverOnlineState(ctx context.Context, app *infra.Deps, driverID, ten
 	return err
 }
 
-func sqlgetDriverStatus(ctx context.Context, app *infra.Deps, driverID, tenantID string) (map[string]any, error) {
+func getDriverStatus(ctx context.Context, app *infra.Deps, driverID, tenantID string) (map[string]any, error) {
 	var status map[string]any
 	where := "id = $1 AND tenantid = $2"
 	args := []any{driverID, tenantID}
@@ -55,7 +55,7 @@ func sqlgetDriverStatus(ctx context.Context, app *infra.Deps, driverID, tenantID
 	return status, nil
 }
 
-func sqlgetAvailableJobsForTenant(ctx context.Context, app *infra.Deps, tenantID string) ([]deliveries.Delivery, error) {
+func getAvailableJobsForTenant(ctx context.Context, app *infra.Deps, tenantID string) ([]deliveries.Delivery, error) {
 	var jobs []deliveries.Delivery
 	where := "status = $1 AND driverid IS NULL AND tenantid = $2"
 	args := []any{deliveries.StatusCreated, tenantID}
@@ -69,7 +69,7 @@ func sqlgetAvailableJobsForTenant(ctx context.Context, app *infra.Deps, tenantID
 	return jobs, nil
 }
 
-func sqlgetActiveJobsForDriver(ctx context.Context, app *infra.Deps, driverID, tenantID string) ([]deliveries.Delivery, error) {
+func getActiveJobsForDriver(ctx context.Context, app *infra.Deps, driverID, tenantID string) ([]deliveries.Delivery, error) {
 	var active []deliveries.Delivery
 	where := "driverid = $1 AND tenantid = $2 AND status = ANY($3)"
 	statuses := []string{
@@ -89,7 +89,7 @@ func sqlgetActiveJobsForDriver(ctx context.Context, app *infra.Deps, driverID, t
 	return active, nil
 }
 
-func sqlfindDeliveryForDriver(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (deliveries.Delivery, error) {
+func findDeliveryForDriver(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (deliveries.Delivery, error) {
 	var current deliveries.Delivery
 	where := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -100,7 +100,7 @@ func sqlfindDeliveryForDriver(ctx context.Context, app *infra.Deps, deliveryID, 
 	return current, nil
 }
 
-func sqlsaveDriverRejection(ctx context.Context, app *infra.Deps, tenantID, driverID, deliveryID string) error {
+func saveDriverRejection(ctx context.Context, app *infra.Deps, tenantID, driverID, deliveryID string) error {
 	record := map[string]any{
 		"rejectionid": time.Now().UnixNano(),
 		"tenantid":    tenantID,
@@ -111,7 +111,7 @@ func sqlsaveDriverRejection(ctx context.Context, app *infra.Deps, tenantID, driv
 	return app.SQLDB.InsertOne(ctx, driverJobRejectionsTable, record)
 }
 
-func sqlclaimDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {
+func claimDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {
 	var current deliveries.Delivery
 	where := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}
@@ -152,7 +152,7 @@ func sqlclaimDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID
 	return updated, nil
 }
 
-func sqlacceptDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {
+func acceptDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {
 	var current deliveries.Delivery
 	where := "id = $1 AND tenantid = $2"
 	args := []any{deliveryID, tenantID}

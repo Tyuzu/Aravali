@@ -66,7 +66,7 @@ func CreateBooking(app *infra.Deps) http.HandlerFunc {
 		// 1. Vendor availability check
 		if req.EntityType == EntityTypeVendor {
 			var unavailable []vendors.AvailabilitySlot
-			if err := FindVendorAvailability(ctx, app.DB, req.EntityId, req.Date, &unavailable); err != nil {
+			if err := FindVendorAvailability(ctx, app, req.EntityId, req.Date, &unavailable); err != nil {
 				respondError(w, http.StatusInternalServerError, "db error")
 				return
 			}
@@ -77,13 +77,7 @@ func CreateBooking(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 2. One booking per user per date restriction
-		count, err := CountBookings(ctx, app.DB, map[string]any{
-			"entityType": req.EntityType,
-			"entityId":   req.EntityId,
-			"userid":     req.UserId,
-			"date":       req.Date,
-			"status":     map[string]any{"$ne": StatusCancelled},
-		})
+		count, err := CountBookings(ctx, app, "entityType = $1 AND entityId = $2 AND userid = $3 AND date = $4 AND status != $5", []any{req.EntityType, req.EntityId, req.UserId, req.Date, StatusCancelled})
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "db error")
 			return
@@ -109,7 +103,7 @@ func CreateBooking(app *infra.Deps) http.HandlerFunc {
 		req.Status = StatusPending
 		req.CreatedAt = time.Now().Unix()
 
-		if err := InsertBooking(ctx, app.DB, req); err != nil {
+		if err := InsertBooking(ctx, app, req); err != nil {
 			respondError(w, http.StatusInternalServerError, "db error")
 			return
 		}
@@ -150,9 +144,9 @@ func UpdateBookingStatus(app *infra.Deps) http.HandlerFunc {
 		var updated Booking
 		err := UpdateBookingStatusByID(
 			ctx,
-			app.DB,
+			app,
 			bookingID,
-			map[string]any{"$set": map[string]any{"status": body.Status}},
+			map[string]any{"status": body.Status},
 			&updated,
 		)
 		if err != nil {
@@ -180,9 +174,9 @@ func CancelBooking(app *infra.Deps) http.HandlerFunc {
 		var updated Booking
 		err := UpdateBookingStatusByID(
 			ctx,
-			app.DB,
+			app,
 			bookingID,
-			map[string]any{"$set": map[string]any{"status": StatusCancelled}},
+			map[string]any{"status": StatusCancelled},
 			&updated,
 		)
 		if err != nil {
@@ -212,13 +206,19 @@ func SetDateCapacity(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		updates := map[string]any{
+			"entityType": req.EntityType,
+			"entityId":   req.EntityId,
+			"date":       req.Date,
+			"capacity":   req.Capacity,
+		}
 		_, err := UpdateDateCapacity(
 			ctx,
-			app.DB,
+			app,
 			req.EntityType,
 			req.EntityId,
 			req.Date,
-			map[string]any{"$set": req},
+			updates,
 		)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "db error")
@@ -246,17 +246,12 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 	switch {
 	case req.SlotId != "":
 		var slot Slot
-		if err := FindSlotByID(ctx, app.DB, req.SlotId, &slot); err != nil {
+		if err := FindSlotByID(ctx, app, req.SlotId, &slot); err != nil {
 			return "slot-missing", nil
 		}
 
 		var slotBookings []Booking
-		err := FindBookings(ctx, app.DB, map[string]any{
-			"entityType": req.EntityType,
-			"entityId":   req.EntityId,
-			"slotId":     req.SlotId,
-			"status":     map[string]any{"$ne": StatusCancelled},
-		}, &slotBookings)
+		err := FindBookings(ctx, app, "entityType = $1 AND entityId = $2 AND slotId = $3 AND status != $4", []any{req.EntityType, req.EntityId, req.SlotId, StatusCancelled}, &slotBookings)
 		if err != nil {
 			return "", err
 		}
@@ -272,18 +267,12 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 
 	case req.TierId != "":
 		var tier Tier
-		if err := FindTierByID(ctx, app.DB, req.TierId, &tier); err != nil {
+		if err := FindTierByID(ctx, app, req.TierId, &tier); err != nil {
 			return "tier-missing", nil
 		}
 
 		var tierBookings []Booking
-		err := FindBookings(ctx, app.DB, map[string]any{
-			"entityType": req.EntityType,
-			"entityId":   req.EntityId,
-			"tierId":     req.TierId,
-			"date":       req.Date,
-			"status":     map[string]any{"$ne": StatusCancelled},
-		}, &tierBookings)
+		err := FindBookings(ctx, app, "entityType = $1 AND entityId = $2 AND tierId = $3 AND date = $4 AND status != $5", []any{req.EntityType, req.EntityId, req.TierId, req.Date, StatusCancelled}, &tierBookings)
 		if err != nil {
 			return "", err
 		}
@@ -299,9 +288,9 @@ func validateCapacity(ctx context.Context, app *infra.Deps, req *Booking) (strin
 
 	default:
 		var dc DateCap
-		if err := FindDateCap(ctx, app.DB, req.EntityType, req.EntityId, req.Date, &dc); err == nil {
+		if err := FindDateCap(ctx, app, req.EntityType, req.EntityId, req.Date, &dc); err == nil {
 			var dateBookings []Booking
-			if err := FindDateBookings(ctx, app.DB, req.EntityType, req.EntityId, req.Date, &dateBookings); err != nil {
+			if err := FindDateBookings(ctx, app, req.EntityType, req.EntityId, req.Date, &dateBookings); err != nil {
 				return "", err
 			}
 

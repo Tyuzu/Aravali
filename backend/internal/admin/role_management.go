@@ -143,7 +143,8 @@ func FetchAllRoleRequests(ctx context.Context, app *infra.Deps, rawStatus string
 		filter["status"] = status
 	}
 
-	if err := ListRoleApplicationsDB(ctx, app, filter, &applications); err != nil {
+	query, args := buildFilterQuery(filter)
+	if err := ListRoleApplicationsDB(ctx, app, query, args, &applications); err != nil {
 		return nil, err
 	}
 	return applications, nil

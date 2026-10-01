@@ -5,12 +5,11 @@ package musicon
 import (
 	"context"
 	"net/http"
-	"scav/infra"
-	"scav/infra/db"
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"scav/infra"
+	"scav/infra/sqldb"
 )
 
 // --------------------------- Helpers ---------------------------
@@ -32,21 +31,19 @@ func sanitizePagination(limit, page int) (int, int) {
 
 func GetRecommendedSongs(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		limit, page := getPaginationParams(r)
 		limit, page = sanitizePagination(limit, page)
 
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  (page - 1) * limit,
-			Sort:  []bson.E{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}},
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64((page - 1) * limit),
+			OrderBy: "plays DESC",
 		}
 
 		filter := map[string]any{"published": true}
-
 		songs, err := getRecommendedSongsList(ctx, app, filter, opts)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommended songs")
@@ -59,21 +56,19 @@ func GetRecommendedSongs(app *infra.Deps) http.HandlerFunc {
 
 func GetRecommendedAlbums(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		limit, page := getPaginationParams(r)
 		limit, page = sanitizePagination(limit, page)
 
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  (page - 1) * limit,
-			Sort:  []bson.E{{Key: "release_date", Value: -1}, {Key: "_id", Value: -1}},
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64((page - 1) * limit),
+			OrderBy: "releasedate DESC",
 		}
 
 		filter := map[string]any{"published": true}
-
 		albums, err := getRecommendedAlbumsList(ctx, app, filter, opts)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommended albums")
@@ -86,24 +81,17 @@ func GetRecommendedAlbums(app *infra.Deps) http.HandlerFunc {
 
 func GetRecommendations(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		basedOn := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("based_on")))
-
 		filter := map[string]any{"published": true}
-		sort := []bson.E{{Key: "_id", Value: -1}} // default stable sort
 
 		switch basedOn {
-
 		case "recently_played":
-			filter["plays"] = map[string]any{"$gt": 0}
-			sort = []bson.E{{Key: "plays", Value: -1}, {Key: "_id", Value: -1}}
-
+			filter["plays"] = 0
 		case "language_en":
 			filter["language"] = "en"
-
 		case "genre_pop":
 			filter["genre"] = "Pop"
 		}
@@ -111,10 +99,10 @@ func GetRecommendations(app *infra.Deps) http.HandlerFunc {
 		limit, page := getPaginationParams(r)
 		limit, page = sanitizePagination(limit, page)
 
-		opts := db.FindManyOptions{
-			Limit: limit,
-			Skip:  (page - 1) * limit,
-			Sort:  sort,
+		opts := sqldb.FindManyOptions{
+			Limit:   int64(limit),
+			Offset:  int64((page - 1) * limit),
+			OrderBy: "plays DESC",
 		}
 
 		songs, err := getRecommendedSongsList(ctx, app, filter, opts)

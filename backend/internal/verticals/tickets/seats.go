@@ -37,18 +37,12 @@ func LockSeats(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{
-			"eventid":       eventID,
-			"seats.seat_id": map[string]any{"$in": req.Seats},
-		}
 		update := map[string]any{
-			"$set": map[string]any{
-				"seats.$[].status": "locked",
-				"seats.$[].userid": userID, // Use authenticated userID, not client-provided
-			},
+			"status": "locked",
+			"userid": userID,
 		}
 
-		if _, err := UpdateTicketDB(ctx, app, filter, update); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, "eventid = $1", []any{eventID}, update); err != nil {
 			http.Error(w, `{"error":"Failed to lock seats"}`, http.StatusInternalServerError)
 			return
 		}
@@ -84,19 +78,12 @@ func UnlockSeats(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		filter := map[string]any{
-			"eventid":       eventID,
-			"seats.seat_id": map[string]any{"$in": req.Seats},
-			"seats.userid":  userID, // Only unlock seats locked by this user
-		}
 		update := map[string]any{
-			"$set": map[string]any{
-				"seats.$[].status": "available",
-				"seats.$[].userid": nil,
-			},
+			"status": "available",
+			"userid": nil,
 		}
 
-		if _, err := UpdateTicketDB(ctx, app, filter, update); err != nil {
+		if _, err := UpdateTicketDB(ctx, app, "eventid = $1 AND userid = $2", []any{eventID, userID}, update); err != nil {
 			http.Error(w, `{"error":"Failed to unlock seats"}`, http.StatusInternalServerError)
 			return
 		}
@@ -150,8 +137,8 @@ func ConfirmSeatPurchase(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		update := map[string]any{"$set": map[string]any{"seats.$[].status": "booked"}}
-		if _, err := UpdateTicketDB(ctx, app, map[string]any{"ticketid": ticketID, "eventid": eventID, "seats.seat_id": map[string]any{"$in": req.Seats}}, update); err != nil {
+		update := map[string]any{"status": "booked"}
+		if _, err := UpdateTicketDB(ctx, app, "ticketid = $1 AND eventid = $2", []any{ticketID, eventID}, update); err != nil {
 			http.Error(w, `{"error":"Failed to confirm purchase"}`, http.StatusInternalServerError)
 			return
 		}

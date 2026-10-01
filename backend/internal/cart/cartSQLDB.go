@@ -24,7 +24,7 @@ var (
 
 /* ───────────────────────── Cart Operations ───────────────────────── */
 
-func SQLfindUserByID(ctx context.Context, app *infra.Deps, userID string) (auth.User, bool) {
+func findUserByID(ctx context.Context, app *infra.Deps, userID string) (auth.User, bool) {
 	var user auth.User
 	query := "userid = $1"
 	args := []any{userID}
@@ -35,7 +35,8 @@ func SQLfindUserByID(ctx context.Context, app *infra.Deps, userID string) (auth.
 	return user, true
 }
 
-func SQLfindCouponByFilter(ctx context.Context, app *infra.Deps, query string, args []any) (Coupon, error) {
+func findCouponByFilter(ctx context.Context, app *infra.Deps, filter map[string]any) (Coupon, error) {
+	query, args := buildSQLFilter(filter)
 	var coupon Coupon
 	if err := app.SQLDB.FindOne(ctx, couponTable, query, args, &coupon); err != nil {
 		return Coupon{}, err
@@ -43,7 +44,7 @@ func SQLfindCouponByFilter(ctx context.Context, app *infra.Deps, query string, a
 	return coupon, nil
 }
 
-func SQLfindCouponByCode(ctx context.Context, app *infra.Deps, code string) (Coupon, error) {
+func findCouponByCode(ctx context.Context, app *infra.Deps, code string) (Coupon, error) {
 	var coupon Coupon
 	query := "code = $1"
 	args := []any{code}
@@ -54,7 +55,7 @@ func SQLfindCouponByCode(ctx context.Context, app *infra.Deps, code string) (Cou
 	return coupon, nil
 }
 
-func SQLvalidateCouponServer(ctx context.Context, code string, subtotal int64, app *infra.Deps) (*CouponResult, error) {
+func validateCouponServer(ctx context.Context, code string, subtotal int64, app *infra.Deps) (*CouponResult, error) {
 	code = strings.TrimSpace(strings.ToLower(code))
 	if code == "" {
 		return &CouponResult{DiscountAmount: 0}, nil
@@ -82,15 +83,15 @@ func SQLvalidateCouponServer(ctx context.Context, code string, subtotal int64, a
 	return &CouponResult{DiscountAmount: discount}, nil
 }
 
-func SQLinsertFarmOrderRecord(ctx context.Context, app *infra.Deps, order FarmOrder) error {
+func insertFarmOrderRecord(ctx context.Context, app *infra.Deps, order FarmOrder) error {
 	return app.SQLDB.InsertOne(ctx, farmOrdersTable, order)
 }
 
-func SQLinsertGeneralOrderRecord(ctx context.Context, app *infra.Deps, order Order) error {
+func insertGeneralOrderRecord(ctx context.Context, app *infra.Deps, order Order) error {
 	return app.SQLDB.InsertOne(ctx, ordersTable, order)
 }
 
-func SQLfetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderIDs []string) map[string]pay.Transaction {
+func fetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderIDs []string) map[string]pay.Transaction {
 	txnMap := make(map[string]pay.Transaction)
 	if len(orderIDs) == 0 {
 		return txnMap
@@ -112,7 +113,7 @@ func SQLfetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderI
 	return txnMap
 }
 
-func SQLfetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[string]struct{}) map[string]string {
+func fetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[string]struct{}) map[string]string {
 	nameMap := make(map[string]string)
 	if len(userIDs) == 0 {
 		return nameMap
@@ -139,7 +140,7 @@ func SQLfetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[st
 	return nameMap
 }
 
-func SQLgetCartItemsFromDB(
+func getCartItemsFromDB(
 	ctx context.Context,
 	userID string,
 	app *infra.Deps,
@@ -167,7 +168,7 @@ func SQLgetCartItemsFromDB(
 	return items, nil
 }
 
-func SQLreplaceCartItemsInDB(
+func replaceCartItemsInDB(
 	ctx context.Context,
 	userID string,
 	docs []any,
@@ -200,7 +201,7 @@ func SQLreplaceCartItemsInDB(
 	)
 }
 
-func SQLupsertCartItemInDB(
+func upsertCartItemInDB(
 	ctx context.Context,
 	userID string,
 	item CartItem,
@@ -272,7 +273,7 @@ func SQLupsertCartItemInDB(
 	return app.SQLDB.InsertOne(ctx, cartTable, newCartItem)
 }
 
-func SQLupdateCartItemQuantityInDB(
+func updateCartItemQuantityInDB(
 	ctx context.Context,
 	userID string,
 	itemID string,
@@ -308,7 +309,7 @@ func SQLupdateCartItemQuantityInDB(
 	)
 }
 
-func SQLdeleteCartItemFromDB(
+func deleteCartItemFromDB(
 	ctx context.Context,
 	userID string,
 	itemID string,
@@ -335,7 +336,7 @@ func SQLdeleteCartItemFromDB(
 	return err
 }
 
-func SQLclearCartForUser(
+func clearCartForUser(
 	ctx context.Context,
 	userID string,
 	app *infra.Deps,
@@ -357,7 +358,7 @@ func SQLclearCartForUser(
 	return err
 }
 
-func SQLgetGroupedCart(
+func getGroupedCart(
 	ctx context.Context,
 	userID string,
 	category string,
@@ -386,7 +387,7 @@ func SQLgetGroupedCart(
 
 /* ───────────────────────── Orders Operations ───────────────────────── */
 
-func SQLfetchUserOrdersFromDB(
+func fetchUserOrdersFromDB(
 	ctx context.Context,
 	userID string,
 	app *infra.Deps,
@@ -422,7 +423,7 @@ func SQLfetchUserOrdersFromDB(
 
 /* ───────────────────────── Item Resolution ───────────────────────── */
 
-func SQLresolveLookupTypeAlias(itemType string, category string) string {
+func resolveLookupTypeAlias(itemType string, category string) string {
 	itemType = strings.ToLower(strings.TrimSpace(itemType))
 	category = strings.ToLower(strings.TrimSpace(category))
 
@@ -451,7 +452,7 @@ func SQLresolveLookupTypeAlias(itemType string, category string) string {
 	}
 }
 
-func SQLlookupItemDetailsByType(
+func lookupItemDetailsByType(
 	ctx context.Context,
 	itemID string,
 	itemType string,
@@ -479,7 +480,7 @@ func SQLlookupItemDetailsByType(
 	}
 }
 
-func SQLlookupItemDetails(
+func lookupItemDetails(
 	ctx context.Context,
 	itemID string,
 	app *infra.Deps,
@@ -502,7 +503,7 @@ func SQLlookupItemDetails(
 
 /* ───────────────────────── Product ───────────────────────── */
 
-func SQLlookupProduct(
+func lookupProduct(
 	ctx context.Context,
 	productID string,
 	app *infra.Deps,
@@ -565,7 +566,7 @@ func SQLlookupProduct(
 
 /* ───────────────────────── Crop ───────────────────────── */
 
-func SQLlookupCrop(
+func lookupCrop(
 	ctx context.Context,
 	cropID string,
 	app *infra.Deps,
@@ -650,7 +651,7 @@ func SQLlookupCrop(
 
 /* ───────────────────────── Menu ───────────────────────── */
 
-func SQLlookupMenu(
+func lookupMenu(
 	ctx context.Context,
 	menuID string,
 	app *infra.Deps,
@@ -702,7 +703,7 @@ func SQLlookupMenu(
 
 /* ───────────────────────── Merchandise ───────────────────────── */
 
-func SQLlookupMerchandise(
+func lookupMerchandise(
 	ctx context.Context,
 	merchID string,
 	app *infra.Deps,
@@ -753,7 +754,7 @@ func SQLlookupMerchandise(
 
 /* ───────────────────────── Helpers ───────────────────────── */
 
-func SQLclampDiscount(discount float64) float64 {
+func clampDiscount(discount float64) float64 {
 	if discount < 0 {
 		return 0
 	}
@@ -765,7 +766,26 @@ func SQLclampDiscount(discount float64) float64 {
 	return discount
 }
 
-func SQLbuildCartFilter(
+func buildSQLFilter(filter map[string]any) (string, []any) {
+	if len(filter) == 0 {
+		return "1 = 1", nil
+	}
+	clauses := make([]string, 0, len(filter))
+	args := make([]any, 0, len(filter))
+	for key, value := range filter {
+		if value == nil {
+			continue
+		}
+		clauses = append(clauses, fmt.Sprintf("%s = $%d", key, len(args)+1))
+		args = append(args, value)
+	}
+	if len(clauses) == 0 {
+		return "1 = 1", nil
+	}
+	return strings.Join(clauses, " AND "), args
+}
+
+func buildCartFilter(
 	userID,
 	itemID,
 	category,
@@ -795,4 +815,42 @@ func SQLbuildCartFilter(
 	}
 
 	return strings.Join(conditions, " AND "), args
+}
+
+const maxCartQuantity = 100
+
+func SQLfindCouponByCode(ctx context.Context, app *infra.Deps, code string) (Coupon, error) {
+	return findCouponByCode(ctx, app, code)
+}
+
+func SQLbuildCartFilter(userID, itemID, category, entityID, entityType string) (string, []any) {
+	return buildCartFilter(userID, itemID, category, entityID, entityType)
+}
+
+func SQLgetCartItemsFromDB(ctx context.Context, userID string, app *infra.Deps) ([]CartItem, error) {
+	return getCartItemsFromDB(ctx, userID, app)
+}
+
+func SQLresolveLookupTypeAlias(itemType, category string) string {
+	return resolveLookupTypeAlias(itemType, category)
+}
+
+func SQLlookupCrop(ctx context.Context, cropID string, app *infra.Deps) (*ItemDetails, error) {
+	return lookupCrop(ctx, cropID, app)
+}
+
+func SQLlookupProduct(ctx context.Context, productID string, app *infra.Deps) (*ItemDetails, error) {
+	return lookupProduct(ctx, productID, app)
+}
+
+func SQLlookupMenu(ctx context.Context, menuID string, app *infra.Deps) (*ItemDetails, error) {
+	return lookupMenu(ctx, menuID, app)
+}
+
+func SQLlookupMerchandise(ctx context.Context, merchID string, app *infra.Deps) (*ItemDetails, error) {
+	return lookupMerchandise(ctx, merchID, app)
+}
+
+func SQLclampDiscount(discount float64) float64 {
+	return clampDiscount(discount)
 }

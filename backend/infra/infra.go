@@ -11,12 +11,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"scav/config"
 	"scav/infra/cache"
-	"scav/infra/db"
 	"scav/infra/mq"
 	"scav/infra/sqldb"
 	"scav/utils/logger"
@@ -24,14 +21,12 @@ import (
 
 type Deps struct {
 	SQLDB  sqldb.Database
-	DB     db.Database
 	Cache  cache.Cache
 	MQ     mq.MQ
 	Config config.Config
 
 	// Underlying raw clients for graceful shutdown.
 	PGPool      *pgxpool.Pool
-	MongoClient *mongo.Client
 	RedisClient *redis.Client
 }
 
@@ -50,34 +45,6 @@ func New(cfg *config.Config) (*Deps, error) {
 	cleanup := func() {
 		_ = d.Close(context.Background())
 	}
-
-	/* -------- Mongo -------- */
-
-	mongoURI := env(
-		"MONGO_URI",
-		"mongodb://localhost:27017",
-	)
-
-	mongoDB := env(
-		"MONGO_DB",
-		"eventdb",
-	)
-
-	mongoClient, database, err := NewMongo(
-		mongoURI,
-		mongoDB,
-	)
-	if err != nil {
-		cleanup()
-		return nil, fmt.Errorf("mongo setup: %w", err)
-	}
-
-	d.MongoClient = mongoClient
-	d.DB = db.NewMongoDatabase(
-		database,
-		mongoClient,
-		100,
-	)
 
 	/* -------- Redis -------- */
 
@@ -230,18 +197,6 @@ func (d *Deps) Close(ctx context.Context) error {
 		}
 	}
 
-	/*
-		3. Disconnect MongoDB.
-	*/
-	if d.MongoClient != nil {
-		if err := d.MongoClient.Disconnect(ctx); err != nil {
-			errs = append(
-				errs,
-				fmt.Sprintf("mongo disconnect: %v", err),
-			)
-		}
-	}
-
 	if len(errs) > 0 {
 		return fmt.Errorf(
 			"close errors: %s",
@@ -250,39 +205,6 @@ func (d *Deps) Close(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-/* -------------------- Mongo -------------------- */
-
-func NewMongo(
-	uri string,
-	dbName string,
-) (*mongo.Client, *mongo.Database, error) {
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
-	defer cancel()
-
-	client, err := mongo.Connect(
-		ctx,
-		options.Client().
-			ApplyURI(uri).
-			SetMaxPoolSize(100).
-			SetMinPoolSize(10).
-			SetRetryWrites(true),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err := client.Ping(ctx, nil); err != nil {
-		_ = client.Disconnect(ctx)
-
-		return nil, nil, err
-	}
-
-	return client, client.Database(dbName), nil
 }
 
 /* -------------------- Redis -------------------- */

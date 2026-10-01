@@ -37,7 +37,7 @@ func GetLatestBaitos(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		baitos, err := findLatestBaitosFromDB(ctx, app, map[string]any{}, 20)
+		baitos, err := findLatestBaitosFromDB(ctx, app, "1 = 1", nil, 20)
 		if err != nil {
 			logger.Printf("DB error: %v", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
@@ -55,15 +55,22 @@ func GetRelatedBaitos(app *infra.Deps) http.HandlerFunc {
 		category := r.URL.Query().Get("category")
 		exclude := r.URL.Query().Get("exclude")
 
-		filter := map[string]any{}
+		query := "1 = 1"
+		args := []any{}
 		if category != "" {
-			filter["category"] = category
+			query = "category = $1"
+			args = append(args, category)
 		}
 		if exclude != "" {
-			filter["baitoid_ne"] = exclude
+			if query == "1 = 1" {
+				query = "baitoid <> $1"
+			} else {
+				query += " AND baitoid <> $2"
+			}
+			args = append(args, exclude)
 		}
 
-		baitos, err := findRelatedBaitosFromDB(ctx, app, filter, 10)
+		baitos, err := findRelatedBaitosFromDB(ctx, app, query, args, 10)
 		if err != nil {
 			logger.Printf("DB error: %v", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
@@ -72,12 +79,14 @@ func GetRelatedBaitos(app *infra.Deps) http.HandlerFunc {
 
 		// fallback if none found
 		if len(baitos) == 0 {
-			fallback := map[string]any{}
+			fallbackQuery := "1 = 1"
+			fallbackArgs := []any{}
 			if exclude != "" {
-				fallback["baitoid_ne"] = exclude
+				fallbackQuery = "baitoid <> $1"
+				fallbackArgs = append(fallbackArgs, exclude)
 			}
 
-			baitos, _ = findRelatedBaitosFromDB(ctx, app, fallback, 10)
+			baitos, _ = findRelatedBaitosFromDB(ctx, app, fallbackQuery, fallbackArgs, 10)
 		}
 
 		respondBaitos(w, baitos)

@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -39,6 +40,44 @@ func splitAndTrim(s string) []string {
 		}
 	}
 	return out
+}
+
+func buildFilterQuery(filter map[string]any) (string, []any) {
+	if len(filter) == 0 {
+		return "1 = 1", nil
+	}
+	clauses := make([]string, 0, len(filter))
+	args := make([]any, 0, len(filter))
+	for key, value := range filter {
+		if value == nil {
+			continue
+		}
+		switch v := value.(type) {
+		case map[string]any:
+			if inVals, ok := v["$in"]; ok {
+				clauses = append(clauses, fmt.Sprintf("%s = ANY($%d)", key, len(args)+1))
+				args = append(args, inVals)
+				continue
+			}
+			if inVals, ok := v["$nin"]; ok {
+				clauses = append(clauses, fmt.Sprintf("NOT (%s = ANY($%d))", key, len(args)+1))
+				args = append(args, inVals)
+				continue
+			}
+		}
+		if strings.HasSuffix(key, "_ne") {
+			keyName := strings.TrimSuffix(key, "_ne")
+			clauses = append(clauses, fmt.Sprintf("%s <> $%d", keyName, len(args)+1))
+			args = append(args, value)
+			continue
+		}
+		clauses = append(clauses, fmt.Sprintf("%s = $%d", key, len(args)+1))
+		args = append(args, value)
+	}
+	if len(clauses) == 0 {
+		return "1 = 1", nil
+	}
+	return strings.Join(clauses, " AND "), args
 }
 
 /* -------------------------
@@ -95,8 +134,9 @@ func ReportContent(app *infra.Deps) http.HandlerFunc {
 			"targetId":   payload.TargetID,
 		}
 
+		query, args := buildFilterQuery(filter)
 		var existing Report
-		if err := FindReportByFilter(ctx, app, filter, &existing); err == nil {
+		if err := FindReportByFilter(ctx, app, query, args, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You have already reported this item")
 			return
 		}
@@ -170,8 +210,9 @@ func GetReports(app *infra.Deps) http.HandlerFunc {
 			offset = v
 		}
 
+		query, args := buildFilterQuery(filter)
 		var reports []Report
-		if err := FindReports(ctx, app, filter, &reports); err != nil {
+		if err := FindReports(ctx, app, query, args, &reports); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch reports")
 			return
 		}
@@ -273,8 +314,9 @@ func CreateAppeal(app *infra.Deps) http.HandlerFunc {
 			"status":     map[string]any{"$in": []string{"pending", "submitted"}},
 		}
 
+		query, args := buildFilterQuery(filter)
 		var existing map[string]any
-		if err := FindAppealByFilter(ctx, app, filter, &existing); err == nil {
+		if err := FindAppealByFilter(ctx, app, query, args, &existing); err == nil {
 			utils.RespondWithError(w, http.StatusConflict, "You already have a pending appeal for this content")
 			return
 		}
