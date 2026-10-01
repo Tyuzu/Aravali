@@ -8,9 +8,9 @@ import (
 
 // SoftDeleteFields adds soft delete fields to records
 type SoftDeleteFields struct {
-	DeletedAt *time.Time `bson:"deletedAt,omitempty" json:"deletedAt,omitempty"`
-	DeletedBy string     `bson:"deletedBy,omitempty" json:"deletedBy,omitempty"`
-	Reason    string     `bson:"deleteReason,omitempty" json:"deleteReason,omitempty"`
+	DeletedAt *time.Time `db:"deletedAt,omitempty" json:"deletedAt,omitempty"`
+	DeletedBy string     `db:"deletedBy,omitempty" json:"deletedBy,omitempty"`
+	Reason    string     `db:"deleteReason,omitempty" json:"deleteReason,omitempty"`
 }
 
 // MarkDeleted creates update filter for soft deletion

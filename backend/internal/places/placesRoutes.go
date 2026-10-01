@@ -70,11 +70,11 @@ func DisplayPlaceExhibits(router *httprouter.Router, app *infra.Deps) {
 
 // 🏋️ Gym → Membership
 func DisplayPlaceMembership(router *httprouter.Router, app *infra.Deps) {
-	router.GET("/api/v1/place/:placeid/membership", places.GetMemberships)
-	router.POST("/api/v1/place/:placeid/membership", places.PostMembership)
-	router.PUT("/api/v1/place/:placeid/membership/:membershipId", places.PutMembership)
-	router.GET("/api/v1/place/:placeid/membership/:membershipId", places.GetMembership)
-	router.DELETE("/api/v1/place/:placeid/membership/:membershipId", places.DeleteMembership)
+	router.GET("/api/v1/place/:placeid/membership", places.GetMemberships(app))
+	router.POST("/api/v1/place/:placeid/membership", places.PostMembership(app))
+	router.PUT("/api/v1/place/:placeid/membership/:membershipId", places.PutMembership(app))
+	router.GET("/api/v1/place/:placeid/membership/:membershipId", places.GetMembership(app))
+	router.DELETE("/api/v1/place/:placeid/membership/:membershipId", places.DeleteMembership(app))
 	router.POST("/api/v1/place/:placeid/membership/:membershipId/join", places.PostJoinMembership)
 }
 

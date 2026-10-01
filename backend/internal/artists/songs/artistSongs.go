@@ -105,7 +105,6 @@ func EditSong(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// Delegated BSON mapping and persistence to the repo function
 		_, err := UpdateArtistSongFromPayload(ctx, app, artistID, songID, payload)
 		if err != nil {
 			if errors.Is(err, artists.ErrNoFieldsToUpdate) {

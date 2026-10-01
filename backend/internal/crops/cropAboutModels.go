@@ -3,29 +3,29 @@
 package crops
 
 type CropAbout struct {
-	ID                 string             `bson:"id" json:"id"`
-	CommonName         string             `bson:"commonName" json:"commonName"`
-	ScientificName     string             `bson:"scientificName" json:"scientificName"`
-	Image              string             `bson:"image" json:"image"`
-	ImageAlt           string             `bson:"imageAlt" json:"imageAlt"`
-	Description        string             `bson:"description" json:"description"`
-	NutritionalValues  []NutritionalValue `bson:"nutritionalValues" json:"nutritionalValues"`
-	GrowingConditions  GrowingConditions  `bson:"growingConditions" json:"growingConditions"`
-	PlantingHarvesting string             `bson:"plantingHarvesting" json:"plantingHarvesting"`
-	CareTips           []string           `bson:"careTips" json:"careTips"`
-	Varieties          []string           `bson:"varieties" json:"varieties"`
-	Usage              string             `bson:"usage" json:"usage"`
-	FunFacts           []string           `bson:"funFacts" json:"funFacts"`
+	ID                 string             `db:"id" json:"id"`
+	CommonName         string             `db:"commonName" json:"commonName"`
+	ScientificName     string             `db:"scientificName" json:"scientificName"`
+	Image              string             `db:"image" json:"image"`
+	ImageAlt           string             `db:"imageAlt" json:"imageAlt"`
+	Description        string             `db:"description" json:"description"`
+	NutritionalValues  []NutritionalValue `db:"nutritionalValues" json:"nutritionalValues"`
+	GrowingConditions  GrowingConditions  `db:"growingConditions" json:"growingConditions"`
+	PlantingHarvesting string             `db:"plantingHarvesting" json:"plantingHarvesting"`
+	CareTips           []string           `db:"careTips" json:"careTips"`
+	Varieties          []string           `db:"varieties" json:"varieties"`
+	Usage              string             `db:"usage" json:"usage"`
+	FunFacts           []string           `db:"funFacts" json:"funFacts"`
 }
 
 type NutritionalValue struct {
-	Label string `bson:"label" json:"label"`
-	Value string `bson:"value" json:"value"`
+	Label string `db:"label" json:"label"`
+	Value string `db:"value" json:"value"`
 }
 
 type GrowingConditions struct {
-	Soil        string `bson:"soil" json:"soil"`
-	Sunlight    string `bson:"sunlight" json:"sunlight"`
-	Water       string `bson:"water" json:"water"`
-	Temperature string `bson:"temperature" json:"temperature"`
+	Soil        string `db:"soil" json:"soil"`
+	Sunlight    string `db:"sunlight" json:"sunlight"`
+	Water       string `db:"water" json:"water"`
+	Temperature string `db:"temperature" json:"temperature"`
 }

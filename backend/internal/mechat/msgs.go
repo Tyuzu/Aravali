@@ -180,7 +180,6 @@ func MarkAsRead(app *infra.Deps) http.HandlerFunc {
 	}
 }
 
-// GetUnreadCount aggregates unread counts per chat using MongoDB aggregation pipeline
 func GetUnreadCount(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

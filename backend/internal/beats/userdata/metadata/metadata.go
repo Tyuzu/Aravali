@@ -28,10 +28,10 @@ func GetUsersMeta(app *infra.Deps) http.HandlerFunc {
 
 		// Fetch full user documents (projection not supported by interface)
 		var users []struct {
-			UserID   string `bson:"userid"`
-			Username string `bson:"username"`
-			Name     string `bson:"name"`
-			Avatar   string `bson:"avatar"`
+			UserID   string `db:"userid"`
+			Username string `db:"username"`
+			Name     string `db:"name"`
+			Avatar   string `db:"avatar"`
 		}
 
 		if err := FindUsersByIDs(ctx, app, ids, &users); err != nil {

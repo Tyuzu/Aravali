@@ -29,13 +29,13 @@ var (
 
 // Helper Types
 type RoleApplication struct {
-	ID        string    `json:"id" bson:"id"`
-	UserID    string    `json:"userid" bson:"userid"`
-	Role      string    `json:"role" bson:"role"`
-	Reason    string    `json:"reason" bson:"reason"`
-	Status    string    `json:"status" bson:"status"`
-	CreatedAt time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
+	ID        string    `json:"id" db:"id"`
+	UserID    string    `json:"userid" db:"userid"`
+	Role      string    `json:"role" db:"role"`
+	Reason    string    `json:"reason" db:"reason"`
+	Status    string    `json:"status" db:"status"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type ApplyPayload struct {
@@ -161,7 +161,7 @@ func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, appID strin
 	}
 
 	var user struct {
-		Role []string `json:"role" bson:"role"`
+		Role []string `json:"role" db:"role"`
 	}
 	if err := GetUserRoles(ctx, app, application.UserID, &user); err != nil {
 		return "", ErrUserNotFound

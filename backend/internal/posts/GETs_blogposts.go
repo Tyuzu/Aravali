@@ -85,8 +85,8 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 		usernames := make(map[string]string)
 		if len(ids) > 0 {
 			var users []struct {
-				UserID   string `bson:"userid"`
-				Username string `bson:"username"`
+				UserID   string `db:"userid"`
+				Username string `db:"username"`
 			}
 
 			if err := FindUsersByFilter(ctx, app, "userid = ANY($1)", []any{ids}, &users); err == nil {

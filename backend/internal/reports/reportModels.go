@@ -7,22 +7,22 @@ import (
 )
 
 type Report struct {
-	ReportID    string    `bson:"reportid,omitempty" json:"id"`
-	ReportedBy  string    `json:"reportedBy"  bson:"reportedBy"`
-	TargetID    string    `json:"targetId"    bson:"targetId"`
-	TargetType  string    `json:"targetType"  bson:"targetType"`
-	Reason      string    `json:"reason"      bson:"reason"`
-	Notes       string    `json:"notes,omitempty"      bson:"notes,omitempty"`
-	Status      string    `json:"status"      bson:"status"`
-	ReviewedBy  string    `json:"reviewedBy,omitempty"  bson:"reviewedBy,omitempty"`
-	ReviewNotes string    `json:"reviewNotes,omitempty" bson:"reviewNotes,omitempty"`
-	CreatedAt   time.Time `json:"createdAt"   bson:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"   bson:"updatedAt"`
+	ReportID    string    `db:"reportid,omitempty" json:"id"`
+	ReportedBy  string    `json:"reportedBy"  db:"reportedBy"`
+	TargetID    string    `json:"targetId"    db:"targetId"`
+	TargetType  string    `json:"targetType"  db:"targetType"`
+	Reason      string    `json:"reason"      db:"reason"`
+	Notes       string    `json:"notes,omitempty"      db:"notes,omitempty"`
+	Status      string    `json:"status"      db:"status"`
+	ReviewedBy  string    `json:"reviewedBy,omitempty"  db:"reviewedBy,omitempty"`
+	ReviewNotes string    `json:"reviewNotes,omitempty" db:"reviewNotes,omitempty"`
+	CreatedAt   time.Time `json:"createdAt"   db:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"   db:"updatedAt"`
 
 	// New fields for parent reference
-	ParentType string `json:"parentType,omitempty" bson:"parentType,omitempty"`
-	ParentID   string `json:"parentId,omitempty"   bson:"parentId,omitempty"`
+	ParentType string `json:"parentType,omitempty" db:"parentType,omitempty"`
+	ParentID   string `json:"parentId,omitempty"   db:"parentId,omitempty"`
 
 	// New field to indicate whether the reporter has been notified
-	Notified bool `json:"notified" bson:"notified"`
+	Notified bool `json:"notified" db:"notified"`
 }

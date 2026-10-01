@@ -2,11 +2,9 @@
 
 package filemgr
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
-
 type FileMetadata struct {
-	ID        primitive.ObjectID  `bson:"_id,omitempty"`
-	Hash      string              `bson:"hash"`
-	UserPosts map[string][]string `bson:"userPosts"` // Maps userID to an array of postIDs
-	PostURLs  map[string]string   `bson:"postUrls"`  // Maps postID to its corresponding URL
+	ID        string              `db:"fileid,omitempty"`
+	Hash      string              `db:"hash"`
+	UserPosts map[string][]string `db:"userPosts"` // Maps userID to an array of postIDs
+	PostURLs  map[string]string   `db:"postUrls"`  // Maps postID to its corresponding URL
 }

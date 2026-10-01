@@ -14,6 +14,7 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
+	log "scav/utils/logger"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,6 +44,10 @@ func Register(app *infra.Deps) http.HandlerFunc {
 				utils.RespondWithError(w, http.StatusConflict, "User already exists")
 				return
 			}
+
+			// Log unexpected registration errors with context for debugging
+			log.L.Sugar().Errorw("register_error", "remote", r.RemoteAddr, "method", r.Method, "uri", r.RequestURI, "error", err, "username", input.Username, "email", input.Email)
+
 			utils.RespondWithError(w, http.StatusInternalServerError, "Registration failed")
 			return
 		}

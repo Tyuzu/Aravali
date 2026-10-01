@@ -46,12 +46,12 @@ type CouponResult struct {
 }
 
 type dbCoupon struct {
-	Code        string  `bson:"code"`
-	Active      bool    `bson:"active"`
-	ExpiresAt   int64   `bson:"expiresat"`
-	Type        string  `bson:"type"`  // "flat" or "percent"
-	Value       float64 `bson:"value"` // ₹ or %
-	MaxDiscount float64 `bson:"maxdiscount"`
+	Code        string  `db:"code"`
+	Active      bool    `db:"active"`
+	ExpiresAt   int64   `db:"expiresat"`
+	Type        string  `db:"type"`  // "flat" or "percent"
+	Value       float64 `db:"value"` // ₹ or %
+	MaxDiscount float64 `db:"maxdiscount"`
 }
 
 /* ───────────────────────── Validate Coupon Handler ───────────────────────── */

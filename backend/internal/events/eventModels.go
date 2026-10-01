@@ -8,40 +8,40 @@ import (
 )
 
 type Event struct {
-	EventID          string      `json:"eventid" bson:"eventid"`
-	Title            string      `json:"title" bson:"title"`
-	Description      string      `json:"description" bson:"description"`
-	Date             time.Time   `json:"date" bson:"date"`
-	PlaceID          string      `json:"placeid" bson:"placeid"`
-	PlaceName        string      `json:"placename" bson:"placename"`
-	Location         string      `json:"location" bson:"location"`
-	Coords           Coordinates `json:"coords" bson:"coords"`
-	CreatorID        string      `json:"creatorid" bson:"creatorid"`
-	StartDateTime    time.Time   `json:"start_date_time" bson:"start_date_time"`
-	EndDateTime      time.Time   `json:"end_date_time" bson:"end_date_time"`
-	Category         string      `json:"category" bson:"category"`
-	Banner           string      `json:"banner" bson:"banner"`
-	SeatingPlanImage string      `json:"seating" bson:"seating"`
-	WebsiteURL       string      `json:"website_url" bson:"website_url"`
-	Status           string      `json:"status" bson:"status"`
-	Tags             []string    `json:"tags" bson:"tags"`
-	CreatedAt        time.Time   `json:"created_at" bson:"created_at"`
-	UpdatedAt        time.Time   `json:"updated_at" bson:"updated_at"`
-	OrganizerName    string      `json:"organizer_name" bson:"organizer_name"`
-	OrganizerContact string      `json:"organizer_contact" bson:"organizer_contact"`
-	Artists          []string    `json:"artists,omitempty" bson:"artists,omitempty"`
-	Published        string      `json:"published,omitempty" bson:"published,omitempty"`
-	External         bool        `json:"external" bson:"external"`
-	ExternalLink     string      `json:"externallink" bson:"externallink"`
+	EventID          string      `json:"eventid" db:"eventid"`
+	Title            string      `json:"title" db:"title"`
+	Description      string      `json:"description" db:"description"`
+	Date             time.Time   `json:"date" db:"date"`
+	PlaceID          string      `json:"placeid" db:"placeid"`
+	PlaceName        string      `json:"placename" db:"placename"`
+	Location         string      `json:"location" db:"location"`
+	Coords           Coordinates `json:"coords" db:"coords"`
+	CreatorID        string      `json:"creatorid" db:"creatorid"`
+	StartDateTime    time.Time   `json:"start_date_time" db:"start_date_time"`
+	EndDateTime      time.Time   `json:"end_date_time" db:"end_date_time"`
+	Category         string      `json:"category" db:"category"`
+	Banner           string      `json:"banner" db:"banner"`
+	SeatingPlanImage string      `json:"seating" db:"seating"`
+	WebsiteURL       string      `json:"website_url" db:"website_url"`
+	Status           string      `json:"status" db:"status"`
+	Tags             []string    `json:"tags" db:"tags"`
+	CreatedAt        time.Time   `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time   `json:"updated_at" db:"updated_at"`
+	OrganizerName    string      `json:"organizer_name" db:"organizer_name"`
+	OrganizerContact string      `json:"organizer_contact" db:"organizer_contact"`
+	Artists          []string    `json:"artists,omitempty" db:"artists,omitempty"`
+	Published        string      `json:"published,omitempty" db:"published,omitempty"`
+	External         bool        `json:"external" db:"external"`
+	ExternalLink     string      `json:"externallink" db:"externallink"`
 	// New fields for alignment (CRITICAL FIX)
-	ContactInfo  *EventContactInfo      `json:"contactInfo" bson:"contact_info"`
-	News         []NewsItem             `json:"news" bson:"news"`
-	Polls        []Poll                 `json:"polls" bson:"polls"`
-	LostFound    []LostFoundItem        `json:"lostfound" bson:"lost_found"`
-	HiredVendors []vendors.VendorHiring `json:"hired_vendors,omitempty" bson:"hired_vendors,omitempty"`
+	ContactInfo  *EventContactInfo      `json:"contactInfo" db:"contact_info"`
+	News         []NewsItem             `json:"news" db:"news"`
+	Polls        []Poll                 `json:"polls" db:"polls"`
+	LostFound    []LostFoundItem        `json:"lostfound" db:"lost_found"`
+	HiredVendors []vendors.VendorHiring `json:"hired_vendors,omitempty" db:"hired_vendors,omitempty"`
 	// Computed fields for frontend filters
-	Prices   []float64 `json:"prices,omitempty" bson:"-"`
-	Currency string    `json:"currency,omitempty" bson:"-"`
+	Prices   []float64 `json:"prices,omitempty" db:"-"`
+	Currency string    `json:"currency,omitempty" db:"-"`
 }
 
 // FAQ represents a single FAQ structure
@@ -52,38 +52,38 @@ type FAQ struct {
 
 // EventContactInfo represents event contact information (renamed to avoid conflicts with Farm.ContactInfo)
 type EventContactInfo struct {
-	Email         string `json:"email" bson:"email"`
-	Phone         string `json:"phone" bson:"phone"`
-	OrganizerName string `json:"organizer_name" bson:"organizer_name"`
+	Email         string `json:"email" db:"email"`
+	Phone         string `json:"phone" db:"phone"`
+	OrganizerName string `json:"organizer_name" db:"organizer_name"`
 }
 
 // NewsItem represents a single news update for an event
 type NewsItem struct {
-	ID        string    `json:"id" bson:"_id"`
-	Title     string    `json:"title" bson:"title"`
-	Content   string    `json:"content" bson:"content"`
-	Timestamp time.Time `json:"timestamp" bson:"timestamp"`
+	ID        string    `json:"id" db:"_id"`
+	Title     string    `json:"title" db:"title"`
+	Content   string    `json:"content" db:"content"`
+	Timestamp time.Time `json:"timestamp" db:"timestamp"`
 }
 
 // PollOption represents a single poll option with vote count
 type PollOption struct {
-	Text  string `json:"text" bson:"text"`
-	Votes int    `json:"votes" bson:"votes"`
+	Text  string `json:"text" db:"text"`
+	Votes int    `json:"votes" db:"votes"`
 }
 
 // Poll represents a poll for an event
 type Poll struct {
-	ID       string       `json:"id" bson:"_id"`
-	Question string       `json:"question" bson:"question"`
-	Options  []PollOption `json:"options" bson:"options"`
+	ID       string       `json:"id" db:"_id"`
+	Question string       `json:"question" db:"question"`
+	Options  []PollOption `json:"options" db:"options"`
 }
 
 // LostFoundItem represents a lost or found item at an event
 type LostFoundItem struct {
-	ID          string `json:"id" bson:"_id"`
-	Type        string `json:"type" bson:"type"` // "lost" or "found"
-	Description string `json:"description" bson:"description"`
-	Contact     string `json:"contact" bson:"contact"`
+	ID          string `json:"id" db:"_id"`
+	Type        string `json:"type" db:"type"` // "lost" or "found"
+	Description string `json:"description" db:"description"`
+	Contact     string `json:"contact" db:"contact"`
 }
 
 type SocialMediaLinks struct {
@@ -92,6 +92,6 @@ type SocialMediaLinks struct {
 }
 
 type Coordinates struct {
-	Latitude  float64 `json:"latitude,omitempty" bson:"latitude,omitempty"`
-	Longitude float64 `json:"longitude,omitempty" bson:"longitude,omitempty"`
+	Latitude  float64 `json:"latitude,omitempty" db:"latitude,omitempty"`
+	Longitude float64 `json:"longitude,omitempty" db:"longitude,omitempty"`
 }

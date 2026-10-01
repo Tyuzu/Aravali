@@ -4,6 +4,7 @@ package crops
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"scav/config/mqevent"
@@ -12,8 +13,6 @@ import (
 	"scav/utils"
 	log "scav/utils/logger"
 	"time"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func CreateCropAboutHandler(app *infra.Deps) http.HandlerFunc {
@@ -72,7 +71,7 @@ func GetCropAboutHandler(app *infra.Deps) http.HandlerFunc {
 		)
 
 		if err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
+			if errors.Is(err, sql.ErrNoRows) {
 				utils.RespondWithError(
 					w,
 					http.StatusNotFound,

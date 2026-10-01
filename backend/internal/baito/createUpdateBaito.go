@@ -189,8 +189,6 @@ func (r BaitoRequest) BuildUpdate() map[string]any {
 
 	set["updatedAt"] = time.Now()
 
-	// Return update in a Mongo-like shape (with $set) so repository helpers
-	// that expect either a raw document or a $set operator can handle it.
 	return map[string]any{"$set": set}
 }
 

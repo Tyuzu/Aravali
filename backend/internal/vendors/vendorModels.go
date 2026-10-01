@@ -16,37 +16,37 @@ var (
 
 // Vendor represents a vendor who can be hired for events
 type Vendor struct {
-	VendorID     string    `json:"vendorid" bson:"vendorid"`
-	UserID       string    `json:"userid" bson:"userid"`
-	Name         string    `json:"name" bson:"name"`
-	Category     string    `json:"category" bson:"category"`
-	Description  string    `json:"description,omitempty" bson:"description,omitempty"`
-	Email        string    `json:"email,omitempty" bson:"email,omitempty"`
-	Phone        string    `json:"phone,omitempty" bson:"phone,omitempty"`
-	Location     string    `json:"location,omitempty" bson:"location,omitempty"`
-	Rating       float64   `json:"rating,omitempty" bson:"rating,omitempty"`
-	RatingCount  int       `json:"rating_count,omitempty" bson:"rating_count,omitempty"`
-	ProfileImage string    `json:"profile_image,omitempty" bson:"profile_image,omitempty"`
-	Portfolio    []string  `json:"portfolio,omitempty" bson:"portfolio,omitempty"`
-	Verified     bool      `json:"verified" bson:"verified"`
-	Available    bool      `json:"available" bson:"available"`
-	CreatedAt    time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	VendorID     string    `json:"vendorid" db:"vendorid"`
+	UserID       string    `json:"userid" db:"userid"`
+	Name         string    `json:"name" db:"name"`
+	Category     string    `json:"category" db:"category"`
+	Description  string    `json:"description,omitempty" db:"description,omitempty"`
+	Email        string    `json:"email,omitempty" db:"email,omitempty"`
+	Phone        string    `json:"phone,omitempty" db:"phone,omitempty"`
+	Location     string    `json:"location,omitempty" db:"location,omitempty"`
+	Rating       float64   `json:"rating,omitempty" db:"rating,omitempty"`
+	RatingCount  int       `json:"rating_count,omitempty" db:"rating_count,omitempty"`
+	ProfileImage string    `json:"profile_image,omitempty" db:"profile_image,omitempty"`
+	Portfolio    []string  `json:"portfolio,omitempty" db:"portfolio,omitempty"`
+	Verified     bool      `json:"verified" db:"verified"`
+	Available    bool      `json:"available" db:"available"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }
 
 // VendorHiring represents the relationship between an event and hired vendors
 type VendorHiring struct {
-	HiringID       string    `json:"hiringid" bson:"hiringid"`
-	EventID        string    `json:"eventid" bson:"eventid"`
-	VendorID       string    `json:"vendorid" bson:"vendorid"`
-	VendorName     string    `json:"vendor_name" bson:"vendor_name"`
-	VendorCategory string    `json:"vendor_category" bson:"vendor_category"`
-	HiredAt        time.Time `json:"hired_at" bson:"hired_at"`
-	HiredBy        string    `json:"hired_by" bson:"hired_by"` // UserID of event creator/organizer
-	Status         string    `json:"status" bson:"status"`     // "hired", "accepted", "rejected", "completed"
-	Notes          string    `json:"notes,omitempty" bson:"notes,omitempty"`
-	CreatedAt      time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	HiringID       string    `json:"hiringid" db:"hiringid"`
+	EventID        string    `json:"eventid" db:"eventid"`
+	VendorID       string    `json:"vendorid" db:"vendorid"`
+	VendorName     string    `json:"vendor_name" db:"vendor_name"`
+	VendorCategory string    `json:"vendor_category" db:"vendor_category"`
+	HiredAt        time.Time `json:"hired_at" db:"hired_at"`
+	HiredBy        string    `json:"hired_by" db:"hired_by"` // UserID of event creator/organizer
+	Status         string    `json:"status" db:"status"`     // "hired", "accepted", "rejected", "completed"
+	Notes          string    `json:"notes,omitempty" db:"notes,omitempty"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }
 
 // VendorResponse is the response structure for vendor data
@@ -63,20 +63,20 @@ type VendorResponse struct {
 	ProfileImage string    `json:"profile_image,omitempty"`
 	Portfolio    []string  `json:"portfolio,omitempty"`
 	Verified     bool      `json:"verified"`
-	Status       string    `json:"status,omitempty" bson:"status,omitempty"`
-	HiringID     string    `json:"hiringid,omitempty" bson:"hiringid,omitempty"`
-	HiredAt      time.Time `json:"hired_at,omitempty" bson:"hired_at,omitempty"`
+	Status       string    `json:"status,omitempty" db:"status,omitempty"`
+	HiringID     string    `json:"hiringid,omitempty" db:"hiringid,omitempty"`
+	HiredAt      time.Time `json:"hired_at,omitempty" db:"hired_at,omitempty"`
 }
 
 // AvailabilitySlot represents a vendor's unavailable or available date range
 type AvailabilitySlot struct {
-	SlotID         string    `json:"slotid" bson:"slotid"`
-	VendorID       string    `json:"vendorid" bson:"vendorid"`
-	StartDate      string    `json:"start_date" bson:"start_date"` // YYYY-MM-DD
-	EndDate        string    `json:"end_date" bson:"end_date"`     // YYYY-MM-DD
-	Recurring      bool      `json:"recurring,omitempty" bson:"recurring,omitempty"`
-	RecurrenceRule string    `json:"recurrence_rule,omitempty" bson:"recurrence_rule,omitempty"` // e.g. RFC5545 or simple rule
-	Notes          string    `json:"notes,omitempty" bson:"notes,omitempty"`
-	CreatedAt      time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
+	SlotID         string    `json:"slotid" db:"slotid"`
+	VendorID       string    `json:"vendorid" db:"vendorid"`
+	StartDate      string    `json:"start_date" db:"start_date"` // YYYY-MM-DD
+	EndDate        string    `json:"end_date" db:"end_date"`     // YYYY-MM-DD
+	Recurring      bool      `json:"recurring,omitempty" db:"recurring,omitempty"`
+	RecurrenceRule string    `json:"recurrence_rule,omitempty" db:"recurrence_rule,omitempty"` // e.g. RFC5545 or simple rule
+	Notes          string    `json:"notes,omitempty" db:"notes,omitempty"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }

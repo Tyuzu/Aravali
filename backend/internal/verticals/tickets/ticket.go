@@ -36,7 +36,7 @@ func CreateTicket(app *infra.Deps) http.HandlerFunc {
 
 		// SECURITY: Verify user is the event owner
 		var event struct {
-			CreatorID string `bson:"creatorid" json:"creatorid"`
+			CreatorID string `db:"creatorid" json:"creatorid"`
 		}
 		if err := FindEventByID(r.Context(), app, eventID, &event); err != nil {
 			http.Error(w, "Event not found", http.StatusNotFound)
@@ -200,7 +200,7 @@ func DeleteTicket(app *infra.Deps) http.HandlerFunc {
 
 		// SECURITY: Verify user is the event owner
 		var event struct {
-			CreatorID string `bson:"creatorid" json:"creatorid"`
+			CreatorID string `db:"creatorid" json:"creatorid"`
 		}
 		if err := FindEventByID(ctx, app, eventID, &event); err != nil {
 			http.Error(w, "Event not found", http.StatusNotFound)

@@ -8,13 +8,13 @@ import (
 
 // Correct Notice model (in case you define here)
 type Notice struct {
-	NoticeID   string    `bson:"noticeid,omitempty" json:"noticeid"`
-	EntityType string    `bson:"entityType" json:"entityType"`
-	EntityId   string    `bson:"entityId" json:"entityId"`
-	Title      string    `bson:"title" json:"title"`
-	Content    string    `bson:"content,omitempty" json:"content,omitempty"`
-	Summary    string    `bson:"summary" json:"summary"`
-	CreatedBy  string    `bson:"createdBy" json:"createdBy"`
-	CreatedAt  time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt  time.Time `bson:"updatedAt" json:"updatedAt"`
+	NoticeID   string    `db:"noticeid,omitempty" json:"noticeid"`
+	EntityType string    `db:"entityType" json:"entityType"`
+	EntityId   string    `db:"entityId" json:"entityId"`
+	Title      string    `db:"title" json:"title"`
+	Content    string    `db:"content,omitempty" json:"content,omitempty"`
+	Summary    string    `db:"summary" json:"summary"`
+	CreatedBy  string    `db:"createdBy" json:"createdBy"`
+	CreatedAt  time.Time `db:"createdAt" json:"createdAt"`
+	UpdatedAt  time.Time `db:"updatedAt" json:"updatedAt"`
 }

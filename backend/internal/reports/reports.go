@@ -17,8 +17,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -219,7 +217,7 @@ func GetReports(app *infra.Deps) http.HandlerFunc {
 
 		utils.SortAndSlice(
 			&reports,
-			[]bson.E{{Key: "createdAt", Value: -1}},
+			[]utils.SortField{{Key: "createdAt", Value: -1}},
 			offset,
 			limit,
 		)

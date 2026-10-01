@@ -13,8 +13,6 @@ import (
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -133,7 +131,7 @@ func EditReview(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		update := bson.M{
+		update := map[string]any{
 			"updatedAt": time.Now().UTC(),
 		}
 

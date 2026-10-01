@@ -5,18 +5,18 @@ package reviews
 import "time"
 
 type Review struct {
-	ReviewID string `json:"reviewid" bson:"reviewid"`
-	UserID   string `json:"userid" bson:"userid"`
+	ReviewID string `json:"reviewid" db:"reviewid"`
+	UserID   string `json:"userid" db:"userid"`
 
-	EntityType string `json:"entityType" bson:"entityType"`
-	EntityID   string `json:"entityId" bson:"entityId"`
+	EntityType string `json:"entityType" db:"entityType"`
+	EntityID   string `json:"entityId" db:"entityId"`
 
-	Rating  int    `json:"rating" bson:"rating"`
-	Comment string `json:"comment" bson:"comment"`
+	Rating  int    `json:"rating" db:"rating"`
+	Comment string `json:"comment" db:"comment"`
 
-	Likes    int `json:"likes,omitempty" bson:"likes,omitempty"`
-	Dislikes int `json:"dislikes,omitempty" bson:"dislikes,omitempty"`
+	Likes    int `json:"likes,omitempty" db:"likes,omitempty"`
+	Dislikes int `json:"dislikes,omitempty" db:"dislikes,omitempty"`
 
-	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
+	CreatedAt time.Time `json:"createdAt" db:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updatedAt"`
 }

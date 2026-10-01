@@ -6,13 +6,16 @@ import (
 	"reflect"
 	"sort"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
+
+type SortField struct {
+	Key   string
+	Value int
+}
 
 func SortAndSlice[T any](
 	items *[]T,
-	sortDef []bson.E,
+	sortDef []SortField,
 	skip int64,
 	limit int64,
 ) {
@@ -56,22 +59,12 @@ func SortAndSlice[T any](
 	*items = (*items)[start:end]
 }
 
-func parseSort(sortDef []bson.E) (string, int) {
+func parseSort(sortDef []SortField) (string, int) {
 	if len(sortDef) == 0 {
 		return "", 1
 	}
 
-	dir := 1
-	switch v := sortDef[0].Value.(type) {
-	case int:
-		dir = v
-	case int32:
-		dir = int(v)
-	case int64:
-		dir = int(v)
-	}
-
-	return sortDef[0].Key, dir
+	return sortDef[0].Key, sortDef[0].Value
 }
 
 func indirectField(v reflect.Value, field string) reflect.Value {

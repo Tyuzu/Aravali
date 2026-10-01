@@ -99,7 +99,7 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 // --- Tags ---
 
 type recipeTagAgg struct {
-	Tags []string `bson:"tags"`
+	Tags []string `db:"tags"`
 }
 
 func GetRecipeTags(app *infra.Deps) http.HandlerFunc {

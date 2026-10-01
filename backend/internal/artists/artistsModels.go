@@ -7,43 +7,43 @@ import (
 )
 
 type Artist struct {
-	ArtistID  string            `bson:"artistid,omitempty" json:"artistid"`
-	Category  string            `bson:"category" json:"category"`
-	Name      string            `bson:"name" json:"name"`
-	Place     string            `bson:"place" json:"place"`
-	Country   string            `bson:"country" json:"country"`
-	Bio       string            `bson:"bio" json:"bio"`
-	DOB       string            `bson:"dob" json:"dob"`
-	Photo     string            `bson:"photo" json:"photo"`
-	Banner    string            `bson:"banner" json:"banner"`
-	Genres    []string          `bson:"genres" json:"genres"`
-	Socials   map[string]string `bson:"socials" json:"socials"`
-	EventIDs  []string          `bson:"events" json:"events"`
-	Members   []BandMember      `bson:"members,omitempty" json:"members,omitempty"` // ✅ ADD THIS
-	CreatedAt time.Time         `json:"createdAt" bson:"createdAt"`
-	CreatorID string            `bson:"creatorid" json:"creatorid"`
+	ArtistID  string            `db:"artistid,omitempty" json:"artistid"`
+	Category  string            `db:"category" json:"category"`
+	Name      string            `db:"name" json:"name"`
+	Place     string            `db:"place" json:"place"`
+	Country   string            `db:"country" json:"country"`
+	Bio       string            `db:"bio" json:"bio"`
+	DOB       string            `db:"dob" json:"dob"`
+	Photo     string            `db:"photo" json:"photo"`
+	Banner    string            `db:"banner" json:"banner"`
+	Genres    []string          `db:"genres" json:"genres"`
+	Socials   map[string]string `db:"socials" json:"socials"`
+	EventIDs  []string          `db:"events" json:"events"`
+	Members   []BandMember      `db:"members,omitempty" json:"members,omitempty"` // ✅ ADD THIS
+	CreatedAt time.Time         `json:"createdAt" db:"createdAt"`
+	CreatorID string            `db:"creatorid" json:"creatorid"`
 }
 
 type BandMember struct {
-	MemberID        string `bson:"memberid,omitempty" json:"memberid,omitempty"`
-	ReferenceArtist string `bson:"ref_artistid,omitempty" json:"ref_artistid,omitempty"`
-	Name            string `bson:"name" json:"name"`
-	Role            string `bson:"role,omitempty" json:"role,omitempty"`
-	DOB             string `bson:"dob,omitempty" json:"dob,omitempty"`
-	Image           string `bson:"image,omitempty" json:"image,omitempty"`
+	MemberID        string `db:"memberid,omitempty" json:"memberid,omitempty"`
+	ReferenceArtist string `db:"ref_artistid,omitempty" json:"ref_artistid,omitempty"`
+	Name            string `db:"name" json:"name"`
+	Role            string `db:"role,omitempty" json:"role,omitempty"`
+	DOB             string `db:"dob,omitempty" json:"dob,omitempty"`
+	Image           string `db:"image,omitempty" json:"image,omitempty"`
 }
 
 // ArtistEvent Struct
 type ArtistEvent struct {
-	EventID   string `bson:"eventid,omitempty" json:"eventid"`
-	ArtistID  string `bson:"artistid" json:"artistid"`
-	Title     string `bson:"title" json:"title"`
-	Date      string `bson:"date" json:"date"`
-	Venue     string `bson:"venue" json:"venue"`
-	City      string `bson:"city" json:"city"`
-	Country   string `bson:"country" json:"country"`
-	CreatorID string `bson:"creatorid" json:"creatorid"`
-	TicketURL string `bson:"ticket_url,omitempty" json:"ticketUrl,omitempty"`
+	EventID   string `db:"eventid,omitempty" json:"eventid"`
+	ArtistID  string `db:"artistid" json:"artistid"`
+	Title     string `db:"title" json:"title"`
+	Date      string `db:"date" json:"date"`
+	Venue     string `db:"venue" json:"venue"`
+	City      string `db:"city" json:"city"`
+	Country   string `db:"country" json:"country"`
+	CreatorID string `db:"creatorid" json:"creatorid"`
+	TicketURL string `db:"ticket_url,omitempty" json:"ticketUrl,omitempty"`
 }
 
 type ArtistAlbum struct {
@@ -66,7 +66,7 @@ type ArtistMerchItem struct {
 	Description string  `json:"description"`
 	Image       string  `json:"image,omitempty"`
 	Visible     bool    `json:"visible"`
-	MerchID     string  `json:"merchid" bson:"merchid"`
+	MerchID     string  `json:"merchid" db:"merchid"`
 }
 
 // CreateArtistEventRequest defines the shape of the body to create an event.

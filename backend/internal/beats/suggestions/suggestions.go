@@ -14,8 +14,6 @@ import (
 	"scav/infra"
 	"scav/utils"
 	log "scav/utils/logger"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
@@ -78,7 +76,7 @@ func SuggestFollowers(app *infra.Deps) http.HandlerFunc {
 
 		utils.SortAndSlice(
 			&users,
-			[]bson.E{{Key: "userid", Value: 1}},
+			[]utils.SortField{{Key: "userid", Value: 1}},
 			offset,
 			int64(limit),
 		)

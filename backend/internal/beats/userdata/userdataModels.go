@@ -5,25 +5,25 @@ package userdata
 import "time"
 
 type UserData struct {
-	UserID     string `json:"userid" bson:"userid"`
-	EntityID   string `json:"entity_id" bson:"entity_id"`
-	EntityType string `json:"entity_type" bson:"entity_type"`
-	ItemID     string `json:"item_id" bson:"item_id"`
-	ItemType   string `json:"item_type" bson:"item_type"`
-	CreatedAt  string `json:"created_at" bson:"created_at"`
+	UserID     string `json:"userid" db:"userid"`
+	EntityID   string `json:"entity_id" db:"entity_id"`
+	EntityType string `json:"entity_type" db:"entity_type"`
+	ItemID     string `json:"item_id" db:"item_id"`
+	ItemType   string `json:"item_type" db:"item_type"`
+	CreatedAt  string `json:"created_at" db:"created_at"`
 }
 
 // Data Models
 type postDoc struct {
-	PostID    string    `bson:"postid"`
-	Title     string    `bson:"title"`
-	Thumb     string    `bson:"thumb"`
-	CreatedBy string    `bson:"createdBy"`
-	Username  string    `bson:"username"`
-	CreatedAt time.Time `bson:"createdAt"`
+	PostID    string    `db:"postid"`
+	Title     string    `db:"title"`
+	Thumb     string    `db:"thumb"`
+	CreatedBy string    `db:"createdBy"`
+	Username  string    `db:"username"`
+	CreatedAt time.Time `db:"createdAt"`
 	Blocks    []struct {
-		Type    string `bson:"type"`
-		URL     string `bson:"url"`
-		Caption string `bson:"caption"`
-	} `bson:"blocks"`
+		Type    string `db:"type"`
+		URL     string `db:"url"`
+		Caption string `db:"caption"`
+	} `db:"blocks"`
 }

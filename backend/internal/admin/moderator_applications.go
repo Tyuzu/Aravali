@@ -27,12 +27,12 @@ var (
 
 // Helper Types
 type ModeratorApplication struct {
-	ID        string    `json:"id" bson:"id"`
-	UserID    string    `json:"userid" bson:"userid"`
-	Reason    string    `json:"reason" bson:"reason"`
-	Status    string    `json:"status" bson:"status"`
-	CreatedAt time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
+	ID        string    `json:"id" db:"id"`
+	UserID    string    `json:"userid" db:"userid"`
+	Reason    string    `json:"reason" db:"reason"`
+	Status    string    `json:"status" db:"status"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type ApplyModeratorPayload struct {

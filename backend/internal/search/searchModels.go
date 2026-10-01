@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// Event struct for MongoDB documents
 type MEvent struct {
 	EventID     string    `json:"eventid"`
 	Title       string    `json:"title"`
@@ -17,7 +16,6 @@ type MEvent struct {
 	Image       string    `json:"banner_image"`
 }
 
-// Place struct for MongoDB documents
 type MPlace struct {
 	PlaceID     string `json:"placeid"`
 	Name        string `json:"name"`
@@ -30,17 +28,17 @@ type MPlace struct {
 
 // Result represents a single search result.
 type Result struct {
-	Placeid     string    `json:"placeid" bson:"placeid"`
-	Eventid     string    `json:"eventid" bson:"eventid"`
-	Businessid  string    `json:"businessid" bson:"businessid"`
-	Userid      string    `json:"userid" bson:"userid"`
-	Type        string    `json:"type" bson:"type"`
-	Location    string    `json:"location" bson:"location"`
-	Address     string    `json:"address" bson:"address"`
-	Category    string    `json:"category" bson:"category"`
-	Date        time.Time `json:"date" bson:"date"`
-	Price       string    `json:"price" bson:"price"`
-	Description string    `json:"description" bson:"description"`
+	Placeid     string    `json:"placeid" db:"placeid"`
+	Eventid     string    `json:"eventid" db:"eventid"`
+	Businessid  string    `json:"businessid" db:"businessid"`
+	Userid      string    `json:"userid" db:"userid"`
+	Type        string    `json:"type" db:"type"`
+	Location    string    `json:"location" db:"location"`
+	Address     string    `json:"address" db:"address"`
+	Category    string    `json:"category" db:"category"`
+	Date        time.Time `json:"date" db:"date"`
+	Price       string    `json:"price" db:"price"`
+	Description string    `json:"description" db:"description"`
 	ID          string    `json:"id"`
 	CreatedAt   time.Time `json:"created_at"`
 	Name        string    `json:"name"`

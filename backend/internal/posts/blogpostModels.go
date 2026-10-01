@@ -5,41 +5,41 @@ package posts
 import "time"
 
 type Block struct {
-	Type     string `bson:"type" json:"type"`
-	Content  string `bson:"content,omitempty" json:"content,omitempty"`
-	URL      string `bson:"url,omitempty" json:"url,omitempty"`
-	Alt      string `bson:"alt,omitempty" json:"alt,omitempty"`
-	Caption  string `bson:"caption,omitempty" json:"caption,omitempty"`   // for video or image captions
-	Language string `bson:"language,omitempty" json:"language,omitempty"` // for code blocks
+	Type     string `db:"type" json:"type"`
+	Content  string `db:"content,omitempty" json:"content,omitempty"`
+	URL      string `db:"url,omitempty" json:"url,omitempty"`
+	Alt      string `db:"alt,omitempty" json:"alt,omitempty"`
+	Caption  string `db:"caption,omitempty" json:"caption,omitempty"`   // for video or image captions
+	Language string `db:"language,omitempty" json:"language,omitempty"` // for code blocks
 }
 
 type BlogPost struct {
-	PostID      string    `bson:"postid" json:"postid"`
-	Title       string    `bson:"title" json:"title"`
-	Category    string    `bson:"category" json:"category"`
-	Subcategory string    `bson:"subcategory" json:"subcategory"`
-	ReferenceID *string   `bson:"referenceId,omitempty" json:"referenceId,omitempty"`
-	Blocks      []Block   `bson:"blocks" json:"blocks"`
-	Thumb       string    `bson:"thumb" json:"thumb"`
-	CreatedBy   string    `bson:"createdBy" json:"createdBy"`
-	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time `bson:"updatedAt" json:"updatedAt"`
-	Hashtags    []string  `bson:"hashtags" json:"hashtags"`
-	Type        string    `json:"type" bson:"type"`
-	Username    string    `json:"username" bson:"username"`
+	PostID      string    `db:"postid" json:"postid"`
+	Title       string    `db:"title" json:"title"`
+	Category    string    `db:"category" json:"category"`
+	Subcategory string    `db:"subcategory" json:"subcategory"`
+	ReferenceID *string   `db:"referenceId,omitempty" json:"referenceId,omitempty"`
+	Blocks      []Block   `db:"blocks" json:"blocks"`
+	Thumb       string    `db:"thumb" json:"thumb"`
+	CreatedBy   string    `db:"createdBy" json:"createdBy"`
+	CreatedAt   time.Time `db:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time `db:"updatedAt" json:"updatedAt"`
+	Hashtags    []string  `db:"hashtags" json:"hashtags"`
+	Type        string    `json:"type" db:"type"`
+	Username    string    `json:"username" db:"username"`
 }
 
 // --- BlogPostResponse for list view ---
 
 type BlogPostResponse struct {
-	PostID      string    `bson:"postid" json:"postid"`
-	Title       string    `bson:"title" json:"title"`
-	Category    string    `bson:"category" json:"category"`
-	Subcategory string    `bson:"subcategory" json:"subcategory"`
-	ReferenceID *string   `bson:"referenceId,omitempty" json:"referenceId,omitempty"`
-	Thumb       string    `bson:"thumb" json:"thumb"`
-	CreatedBy   string    `bson:"createdBy" json:"createdBy"`
-	Username    string    `bson:"username" json:"username"`
-	CreatedAt   time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time `bson:"updatedAt" json:"updatedAt"`
+	PostID      string    `db:"postid" json:"postid"`
+	Title       string    `db:"title" json:"title"`
+	Category    string    `db:"category" json:"category"`
+	Subcategory string    `db:"subcategory" json:"subcategory"`
+	ReferenceID *string   `db:"referenceId,omitempty" json:"referenceId,omitempty"`
+	Thumb       string    `db:"thumb" json:"thumb"`
+	CreatedBy   string    `db:"createdBy" json:"createdBy"`
+	Username    string    `db:"username" json:"username"`
+	CreatedAt   time.Time `db:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time `db:"updatedAt" json:"updatedAt"`
 }

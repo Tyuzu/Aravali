@@ -4,7 +4,9 @@ package pay
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"scav/config"
 	"scav/config/mqevent"
@@ -15,8 +17,6 @@ import (
 	log "scav/utils/logger"
 	"strconv"
 	"time"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var RefundsCollection = config.Collections.RefundsCollection
@@ -67,7 +67,7 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 		orderType, amount, err := svc.findOrderTotalByUser(ctx, req.OrderID, userID)
 		switch {
 		case err == nil:
-		case err == mongo.ErrNoDocuments:
+		case errors.Is(err, sql.ErrNoRows):
 			utils.RespondWithError(w, http.StatusNotFound, "Order not found")
 			return
 		default:
@@ -83,7 +83,7 @@ func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if err != mongo.ErrNoDocuments {
+		if !errors.Is(err, sql.ErrNoRows) {
 			log.Println("FindOne existing refund error:", err)
 			utils.RespondWithError(w, http.StatusInternalServerError, "Database error")
 			return
@@ -278,7 +278,7 @@ func ApproveRefundRequest(app *infra.Deps) http.HandlerFunc {
 		svc := NewPaymentService(app)
 		refund, err := svc.findRefundRequestByID(ctx, refundID)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
+			if errors.Is(err, sql.ErrNoRows) {
 				utils.RespondWithError(w, http.StatusNotFound, "Refund request not found")
 			} else {
 				log.Println("FindOne refund error:", err)
@@ -386,7 +386,7 @@ func RejectRefundRequest(app *infra.Deps) http.HandlerFunc {
 		svc := NewPaymentService(app)
 		refund, err := svc.findRefundRequestByID(ctx, refundID)
 		if err != nil {
-			if err == mongo.ErrNoDocuments {
+			if errors.Is(err, sql.ErrNoRows) {
 				utils.RespondWithError(w, http.StatusNotFound, "Refund request not found")
 			} else {
 				log.Println("FindOne refund error:", err)

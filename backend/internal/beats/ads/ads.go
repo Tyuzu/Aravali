@@ -71,9 +71,6 @@ func GetAds(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		// ---------------------------------------------------------
-		// 2. Fallback to Database (MongoDB)
-		// ---------------------------------------------------------
 		if len(candidates) == 0 {
 			dbAds, err := FetchActiveAdsFromDB(ctx, app)
 

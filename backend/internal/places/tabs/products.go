@@ -16,15 +16,14 @@ import (
 	"scav/utils"
 
 	"github.com/julienschmidt/httprouter"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Product represents a product sold by a place
 type Product struct {
-	ID      primitive.ObjectID `json:"_id"`
-	PlaceID string             `json:"placeid"`
-	Name    string             `json:"name"`
-	Price   float64            `json:"price"`
+	ID      string  `json:"_id"`
+	PlaceID string  `json:"placeid"`
+	Name    string  `json:"name"`
+	Price   float64 `json:"price"`
 }
 
 // UnmarshalJSON supports both string and float for price
@@ -128,7 +127,7 @@ func PostProduct(app *infra.Deps) httprouter.Handle {
 			return
 		}
 
-		product.ID = primitive.NewObjectID()
+		product.ID = utils.GenerateRandomString(16)
 		product.PlaceID = placeID
 
 		if err := validateProduct(product); err != nil {
@@ -150,8 +149,8 @@ func PostProduct(app *infra.Deps) httprouter.Handle {
 
 func PutProduct(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		id, err := primitive.ObjectIDFromHex(ps.ByName("productId"))
-		if err != nil {
+		id := ps.ByName("productId")
+		if id == "" {
 			http.Error(w, "Invalid product ID", http.StatusBadRequest)
 			return
 		}
@@ -188,8 +187,8 @@ func PutProduct(app *infra.Deps) httprouter.Handle {
 
 func DeleteProduct(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		id, err := primitive.ObjectIDFromHex(ps.ByName("productId"))
-		if err != nil {
+		id := ps.ByName("productId")
+		if id == "" {
 			http.Error(w, "Invalid product ID", http.StatusBadRequest)
 			return
 		}
@@ -212,7 +211,7 @@ func DeleteProduct(app *infra.Deps) httprouter.Handle {
 
 func PostPlaceProductPurchase(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		if _, err := primitive.ObjectIDFromHex(ps.ByName("productId")); err != nil {
+		if ps.ByName("productId") == "" {
 			http.Error(w, "Invalid product ID", http.StatusBadRequest)
 			return
 		}

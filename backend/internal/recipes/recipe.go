@@ -3,39 +3,39 @@
 package recipes
 
 type IngredientAlternative struct {
-	Name   string `json:"name" bson:"name"`
-	ItemID string `json:"itemId" bson:"itemId"`
-	Type   string `json:"type" bson:"type"`
+	Name   string `json:"name" db:"name"`
+	ItemID string `json:"itemId" db:"itemId"`
+	Type   string `json:"type" db:"type"`
 }
 
 type Ingredient struct {
-	Name         string                  `json:"name" bson:"name"`
-	ItemID       string                  `json:"itemId" bson:"itemId"`
-	Type         string                  `json:"type" bson:"type"`
-	Quantity     float64                 `json:"quantity" bson:"quantity"`
-	Unit         string                  `json:"unit" bson:"unit"`
-	Alternatives []IngredientAlternative `json:"alternatives" bson:"alternatives"`
+	Name         string                  `json:"name" db:"name"`
+	ItemID       string                  `json:"itemId" db:"itemId"`
+	Type         string                  `json:"type" db:"type"`
+	Quantity     float64                 `json:"quantity" db:"quantity"`
+	Unit         string                  `json:"unit" db:"unit"`
+	Alternatives []IngredientAlternative `json:"alternatives" db:"alternatives"`
 }
 
 type Recipe struct {
-	RecipeId    string       `bson:"recipeid,omitempty" json:"recipeid"`
-	UserID      string       `json:"userid" bson:"userid"`
-	Title       string       `json:"title" bson:"title"`
-	Description string       `json:"description" bson:"description"`
-	CookTime    string       `json:"cookTime" bson:"cookTime"`       // replaced PrepTime
-	Cuisine     string       `json:"cuisine" bson:"cuisine"`         // new
-	Dietary     []string     `json:"dietary" bson:"dietary"`         // new
-	PortionSize string       `json:"portionSize" bson:"portionSize"` // new
-	Season      string       `json:"season" bson:"season"`           // new
-	Tags        []string     `json:"tags" bson:"tags"`
-	Images      []string     `json:"images" bson:"images"`
-	Ingredients []Ingredient `json:"ingredients" bson:"ingredients"`
-	Steps       []string     `json:"steps" bson:"steps"`
-	Difficulty  string       `json:"difficulty" bson:"difficulty"`
-	Banner      string       `json:"banner" bson:"banner"`
-	Servings    int          `json:"servings" bson:"servings"`
-	VideoURL    string       `json:"videoUrl" bson:"videoUrl"` // new
-	Notes       string       `json:"notes" bson:"notes"`       // new
-	CreatedAt   int64        `json:"createdAt" bson:"createdAt"`
-	Views       int          `json:"views" bson:"views"`
+	RecipeId    string       `db:"recipeid,omitempty" json:"recipeid"`
+	UserID      string       `json:"userid" db:"userid"`
+	Title       string       `json:"title" db:"title"`
+	Description string       `json:"description" db:"description"`
+	CookTime    string       `json:"cookTime" db:"cookTime"`       // replaced PrepTime
+	Cuisine     string       `json:"cuisine" db:"cuisine"`         // new
+	Dietary     []string     `json:"dietary" db:"dietary"`         // new
+	PortionSize string       `json:"portionSize" db:"portionSize"` // new
+	Season      string       `json:"season" db:"season"`           // new
+	Tags        []string     `json:"tags" db:"tags"`
+	Images      []string     `json:"images" db:"images"`
+	Ingredients []Ingredient `json:"ingredients" db:"ingredients"`
+	Steps       []string     `json:"steps" db:"steps"`
+	Difficulty  string       `json:"difficulty" db:"difficulty"`
+	Banner      string       `json:"banner" db:"banner"`
+	Servings    int          `json:"servings" db:"servings"`
+	VideoURL    string       `json:"videoUrl" db:"videoUrl"` // new
+	Notes       string       `json:"notes" db:"notes"`       // new
+	CreatedAt   int64        `json:"createdAt" db:"createdAt"`
+	Views       int          `json:"views" db:"views"`
 }

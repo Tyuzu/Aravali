@@ -2,8 +2,6 @@
 
 package suggestions
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
-
 type PlaceSuggestion struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -19,16 +17,16 @@ type UserSuggestion struct {
 
 // UserProfileResponse defines the structure for the user profile response
 type UserSuggest struct {
-	Username    string `json:"username" bson:"username"`
-	UserID      string `json:"userid" bson:"userid"`
+	Username    string `json:"username" db:"username"`
+	UserID      string `json:"userid" db:"userid"`
 	IsFollowing bool
-	Bio         string `json:"bio,omitempty" bson:"bio,omitempty"`
+	Bio         string `json:"bio,omitempty" db:"bio,omitempty"`
 }
 
 type Suggestion struct {
-	ID          primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Type        string             `json:"type" bson:"type"` // e.g., "place" or "event"
-	Title       string             `json:"title" bson:"title"`
-	Description string             `json:"description,omitempty" bson:"description,omitempty"`
-	Name        string             `json:"name"`
+	ID          string `json:"id" db:"suggesstionid,omitempty"`
+	Type        string `json:"type" db:"type"` // e.g., "place" or "event"
+	Title       string `json:"title" db:"title"`
+	Description string `json:"description,omitempty" db:"description,omitempty"`
+	Name        string `json:"name"`
 }

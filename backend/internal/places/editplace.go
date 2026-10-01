@@ -34,7 +34,7 @@ func EditPlace(app *infra.Deps) http.HandlerFunc {
 
 		// Fetch existing place (use placeid)
 		var existing struct {
-			CreatedBy string `bson:"createdBy"`
+			CreatedBy string `db:"createdBy"`
 		}
 		if err := placedb.FindOnePlace(
 			ctx,
@@ -104,7 +104,7 @@ func DeletePlace(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var existing struct {
-			CreatedBy string `bson:"createdBy"`
+			CreatedBy string `db:"createdBy"`
 		}
 		if err := placedb.FindOnePlace(ctx, app, "placeid = $1", []any{placeID}, &existing); err != nil {
 			http.Error(w, "Place not found", http.StatusNotFound)

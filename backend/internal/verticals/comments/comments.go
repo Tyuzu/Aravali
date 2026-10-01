@@ -4,13 +4,12 @@ package comments
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"scav/config/mqevent"
 	"scav/infra"
@@ -117,7 +116,7 @@ func UpdateComment(app *infra.Deps) http.HandlerFunc {
 		var existing Comment
 		err := findCommentByID(ctx, app, commentID, &existing)
 		if err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
+			if errors.Is(err, sql.ErrNoRows) {
 				utils.RespondWithError(w, http.StatusNotFound, "Comment not found")
 				return
 			}

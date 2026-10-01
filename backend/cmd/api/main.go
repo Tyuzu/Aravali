@@ -196,15 +196,6 @@ func main() {
 					)
 					return
 				}
-			} else if app.SQLDB != nil {
-				if err := app.SQLDB.Ping(ctx); err != nil {
-					http.Error(
-						w,
-						"db_unavailable",
-						http.StatusServiceUnavailable,
-					)
-					return
-				}
 			}
 
 			// Cache Check
@@ -364,7 +355,6 @@ func main() {
 	// This closes:
 	// - PostgreSQL
 	// - Redis (including Redis Pub/Sub resources)
-	// - MongoDB
 
 	logger.L.Sugar().Infow(
 		"Closing infrastructure...",

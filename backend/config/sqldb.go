@@ -59,6 +59,7 @@ type SQLDB struct {
 	OrderTable                    string
 	PlacesTable                   string
 	ProductTable                  string
+	MembershipsTable              string
 	PurchasedTicketsTable         string
 	RecipeTable                   string
 	RefundsTable                  string
@@ -142,6 +143,7 @@ var Tables = SQLDB{
 	PlacesTable:                   "places",
 	PlaylistsTable:                "playlists",
 	ProductTable:                  "products",
+	MembershipsTable:              "memberships",
 	PurchasedTicketsTable:         "purticks",
 	RecipeTable:                   "recipes",
 	RefundsTable:                  "refunds",

@@ -6,148 +6,157 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"scav/infra"
+	placedb "scav/internal/places/placedb"
 	"scav/utils"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Membership struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	PlaceID     primitive.ObjectID `bson:"placeId,omitempty" json:"placeId"`
-	Name        string             `bson:"name" json:"name"`
-	Price       float64            `bson:"price" json:"price"`
-	Description string             `bson:"description" json:"description"`
-	CreatedAt   time.Time          `bson:"createdAt" json:"createdAt"`
+	ID          string    `db:"_id,omitempty" json:"_id"`
+	PlaceID     string    `db:"placeId,omitempty" json:"placeId"`
+	Name        string    `db:"name" json:"name"`
+	Price       float64   `db:"price" json:"price"`
+	Description string    `db:"description" json:"description"`
+	CreatedAt   time.Time `db:"createdAt" json:"createdAt"`
 }
 
-var membershipColl *mongo.Collection // set this from your DB init
+// handlers use the SQL table via placedb helpers
 
 // GET /place/:placeId/membership/:id
-func GetMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id, err := primitive.ObjectIDFromHex(ps.ByName("id"))
-	if err != nil {
-		http.Error(w, "Invalid membership ID", http.StatusBadRequest)
-		return
-	}
+func GetMembership(app *infra.Deps) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		id := ps.ByName("membershipId")
+		if id == "" {
+			http.Error(w, "Invalid membership ID", http.StatusBadRequest)
+			return
+		}
 
-	var membership Membership
-	err = membershipColl.FindOne(r.Context(), map[string]any{"_id": id}).Decode(&membership)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var m Membership
+		if err := placedb.FindOneMembership(ctx, app, "_id = $1", []any{id}, &m); err != nil {
 			http.Error(w, "Membership not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Failed to fetch membership", http.StatusInternalServerError)
-		return
-	}
 
-	utils.RespondWithJSON(w, http.StatusOK, membership)
+		utils.RespondWithJSON(w, http.StatusOK, m)
+	}
 }
 
 // POST /place/:placeId/membership
-func PostMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	placeID, err := primitive.ObjectIDFromHex(ps.ByName("placeId"))
-	if err != nil {
-		http.Error(w, "Invalid place ID", http.StatusBadRequest)
-		return
-	}
+func PostMembership(app *infra.Deps) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		placeID := ps.ByName("placeid")
+		if placeID == "" {
+			http.Error(w, "Invalid place ID", http.StatusBadRequest)
+			return
+		}
 
-	var membership Membership
-	if err := json.NewDecoder(r.Body).Decode(&membership); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-	membership.PlaceID = placeID
-	membership.CreatedAt = time.Now()
+		var membership Membership
+		if err := json.NewDecoder(r.Body).Decode(&membership); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		membership.ID = utils.GenerateRandomString(16)
+		membership.PlaceID = placeID
+		membership.CreatedAt = time.Now()
 
-	res, err := membershipColl.InsertOne(r.Context(), membership)
-	if err != nil {
-		http.Error(w, "Failed to create membership", http.StatusInternalServerError)
-		return
-	}
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
 
-	membership.ID = res.InsertedID.(primitive.ObjectID)
-	utils.RespondWithJSON(w, http.StatusOK, membership)
+		if err := placedb.InsertMembership(ctx, app, membership); err != nil {
+			http.Error(w, "Failed to create membership", http.StatusInternalServerError)
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, membership)
+	}
 }
 
 // PUT /place/:placeId/membership/:id
-func PutMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id, err := primitive.ObjectIDFromHex(ps.ByName("id"))
-	if err != nil {
-		http.Error(w, "Invalid membership ID", http.StatusBadRequest)
-		return
-	}
+func PutMembership(app *infra.Deps) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		id := ps.ByName("membershipId")
+		if id == "" {
+			http.Error(w, "Invalid membership ID", http.StatusBadRequest)
+			return
+		}
 
-	var update Membership
-	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
+		var update Membership
+		if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
 
-	_, err = membershipColl.UpdateOne(
-		r.Context(),
-		map[string]any{"_id": id},
-		map[string]any{"$set": map[string]any{
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		if _, err := placedb.UpdateMembership(ctx, app, "_id = $1", []any{id}, map[string]any{
 			"name":        update.Name,
 			"price":       update.Price,
 			"description": update.Description,
-		}},
-	)
-	if err != nil {
-		http.Error(w, "Failed to update membership", http.StatusInternalServerError)
-		return
-	}
+		}); err != nil {
+			http.Error(w, "Failed to update membership", http.StatusInternalServerError)
+			return
+		}
 
-	w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 // DELETE /place/:placeId/membership/:id
-func DeleteMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id, err := primitive.ObjectIDFromHex(ps.ByName("id"))
-	if err != nil {
-		http.Error(w, "Invalid membership ID", http.StatusBadRequest)
-		return
-	}
+func DeleteMembership(app *infra.Deps) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		id := ps.ByName("membershipId")
+		if id == "" {
+			http.Error(w, "Invalid membership ID", http.StatusBadRequest)
+			return
+		}
 
-	_, err = membershipColl.DeleteOne(r.Context(), map[string]any{"_id": id})
-	if err != nil {
-		http.Error(w, "Failed to delete membership", http.StatusInternalServerError)
-		return
-	}
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
 
-	w.WriteHeader(http.StatusNoContent)
+		if _, err := placedb.DeleteMembership(ctx, app, "_id = $1", []any{id}); err != nil {
+			http.Error(w, "Failed to delete membership", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 // POST /place/:placeId/membership/:id/join
 func PostJoinMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	// This could insert into a `membership_users` collection
+	// This could insert into a `membership_users` table
 	http.Error(w, "Join membership not implemented", http.StatusNotImplemented)
 }
 
 // GET /place/:placeId/memberships
-func GetMemberships(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	placeID, err := primitive.ObjectIDFromHex(ps.ByName("placeId"))
-	if err != nil {
-		http.Error(w, "Invalid place ID", http.StatusBadRequest)
-		return
-	}
+func GetMemberships(app *infra.Deps) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		placeID := ps.ByName("placeid")
+		if placeID == "" {
+			http.Error(w, "Invalid place ID", http.StatusBadRequest)
+			return
+		}
 
-	cur, err := membershipColl.Find(r.Context(), map[string]any{"placeId": placeID})
-	if err != nil {
-		http.Error(w, "Failed to fetch memberships", http.StatusInternalServerError)
-		return
-	}
-	defer cur.Close(context.Background())
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
 
-	var memberships []Membership
-	if err := cur.All(r.Context(), &memberships); err != nil {
-		http.Error(w, "Failed to parse memberships", http.StatusInternalServerError)
-		return
-	}
+		var memberships []Membership
+		if err := placedb.FindPlaceMemberships(ctx, app, "placeid = $1", []any{placeID}, &memberships); err != nil {
+			http.Error(w, "Failed to fetch memberships", http.StatusInternalServerError)
+			return
+		}
 
-	utils.RespondWithJSON(w, http.StatusOK, memberships)
+		if memberships == nil {
+			memberships = make([]Membership, 0)
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, memberships)
+	}
 }

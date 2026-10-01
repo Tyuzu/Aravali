@@ -12,16 +12,14 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // HomeCard response type
 type HomeCard struct {
-	Banner      string `json:"banner,omitempty" bson:"-"`
-	Title       string `json:"title" bson:"title"`
-	Description string `json:"description" bson:"description"`
-	Href        string `json:"href" bson:"-"`
+	Banner      string `json:"banner,omitempty" db:"-"`
+	Title       string `json:"title" db:"title"`
+	Description string `json:"description" db:"description"`
+	Href        string `json:"href" db:"-"`
 }
 
 // categoryProjection returns collection name and projection function
@@ -77,7 +75,7 @@ func categoryProjection(category string) (string, func(map[string]any) HomeCard)
 			id, _ := doc["productid"].(string)
 
 			banner := ""
-			if arr, ok := doc["imageUrls"].(bson.A); ok && len(arr) > 0 {
+			if arr, ok := doc["imageUrls"].([]any); ok && len(arr) > 0 {
 				if s, ok := arr[0].(string); ok {
 					banner = s
 				}

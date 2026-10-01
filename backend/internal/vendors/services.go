@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"scav/infra"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"scav/utils"
 )
 
 func vendorBaseFilter() map[string]any {
@@ -38,7 +37,7 @@ func RegisterVendor(
 	now := time.Now()
 
 	vendor := &Vendor{
-		VendorID:    primitive.NewObjectID().Hex(),
+		VendorID:    utils.GenerateRandomString(18),
 		UserID:      userID,
 		Name:        name,
 		Category:    category,
@@ -160,7 +159,7 @@ func HireVendor(ctx context.Context, app *infra.Deps, eventID, vendorID, vendorN
 	now := time.Now()
 
 	hiring := &VendorHiring{
-		HiringID:       primitive.NewObjectID().Hex(),
+		HiringID:       utils.GenerateRandomString(18),
 		EventID:        eventID,
 		VendorID:       vendorID,
 		VendorName:     vendorName,

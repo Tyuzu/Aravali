@@ -32,73 +32,73 @@ type Alert struct {
 }
 
 type ContactInfo struct {
-	Phone   string `bson:"phone,omitempty" json:"phone,omitempty"`
-	Email   string `bson:"email,omitempty" json:"email,omitempty"`
-	Website string `bson:"website,omitempty" json:"website,omitempty"`
+	Phone   string `db:"phone,omitempty" json:"phone,omitempty"`
+	Email   string `db:"email,omitempty" json:"email,omitempty"`
+	Website string `db:"website,omitempty" json:"website,omitempty"`
 }
 
 type AvailableSlot struct {
-	Enabled bool   `json:"enabled" bson:"enabled"`
-	From    string `json:"from" bson:"from"`
-	To      string `json:"to" bson:"to"`
+	Enabled bool   `json:"enabled" db:"enabled"`
+	From    string `json:"from" db:"from"`
+	To      string `json:"to" db:"to"`
 }
 
 type WeeklyAvailability map[string]AvailableSlot
 
 type Farm struct {
-	FarmID         string             `bson:"farmid,omitempty"         json:"farmid"`
-	Name           string             `bson:"name"                  json:"name"`
-	Location       string             `bson:"location"              json:"location"`
-	Latitude       float64            `bson:"latitude,omitempty"    json:"latitude,omitempty"`
-	Longitude      float64            `bson:"longitude,omitempty"   json:"longitude,omitempty"`
-	Description    string             `bson:"description,omitempty" json:"description,omitempty"`
-	Owner          string             `bson:"owner"                 json:"owner"`
-	ContactInfo    ContactInfo        `bson:"contactInfo,omitempty" json:"contactInfo,omitempty"`
-	Availability   WeeklyAvailability `json:"availability" bson:"availability"`
-	Tags           []string           `bson:"tags,omitempty"        json:"tags,omitempty"`
-	Banner         string             `bson:"banner,omitempty"       json:"photo,omitempty"`
-	Crops          []Crop             `bson:"crops" json:"crops,omitempty"` // loaded via lookup or separate query
-	Media          []string           `bson:"media,omitempty"       json:"media,omitempty"`
-	AvgRating      float64            `bson:"avgRating,omitempty"   json:"avgRating,omitempty"`
-	ReviewCount    int                `bson:"reviewCount,omitempty" json:"reviewCount,omitempty"`
-	FavoritesCount int64              `bson:"favoritesCount,omitempty" json:"favoritesCount,omitempty"`
-	CreatedBy      string             `bson:"createdBy"             json:"createdBy"`
-	CreatedAt      time.Time          `bson:"createdAt"             json:"createdAt"`
-	UpdatedAt      time.Time          `bson:"updatedAt"             json:"updatedAt"`
+	FarmID         string             `db:"farmid,omitempty"         json:"farmid"`
+	Name           string             `db:"name"                  json:"name"`
+	Location       string             `db:"location"              json:"location"`
+	Latitude       float64            `db:"latitude,omitempty"    json:"latitude,omitempty"`
+	Longitude      float64            `db:"longitude,omitempty"   json:"longitude,omitempty"`
+	Description    string             `db:"description,omitempty" json:"description,omitempty"`
+	Owner          string             `db:"owner"                 json:"owner"`
+	ContactInfo    ContactInfo        `db:"contactInfo,omitempty" json:"contactInfo,omitempty"`
+	Availability   WeeklyAvailability `json:"availability" db:"availability"`
+	Tags           []string           `db:"tags,omitempty"        json:"tags,omitempty"`
+	Banner         string             `db:"banner,omitempty"       json:"photo,omitempty"`
+	Crops          []Crop             `db:"crops" json:"crops,omitempty"` // loaded via lookup or separate query
+	Media          []string           `db:"media,omitempty"       json:"media,omitempty"`
+	AvgRating      float64            `db:"avgRating,omitempty"   json:"avgRating,omitempty"`
+	ReviewCount    int                `db:"reviewCount,omitempty" json:"reviewCount,omitempty"`
+	FavoritesCount int64              `db:"favoritesCount,omitempty" json:"favoritesCount,omitempty"`
+	CreatedBy      string             `db:"createdBy"             json:"createdBy"`
+	CreatedAt      time.Time          `db:"createdAt"             json:"createdAt"`
+	UpdatedAt      time.Time          `db:"updatedAt"             json:"updatedAt"`
 	Contact        string             `json:"contact"`
 
-	Social   string `json:"social,omitempty" bson:"social,omitempty"`
-	Practice string `json:"practice,omitempty" bson:"practice,omitempty"`
+	Social   string `json:"social,omitempty" db:"social,omitempty"`
+	Practice string `json:"practice,omitempty" db:"practice,omitempty"`
 }
 
 type PricePoint struct {
-	Date  time.Time `json:"date" bson:"date"`
-	Price float64   `json:"price" bson:"price"`
+	Date  time.Time `json:"date" db:"date"`
+	Price float64   `json:"price" db:"price"`
 }
 
 type Crop struct {
 	Name         string       `json:"name"`
 	CropId       string       `json:"cropid"`
 	Price        float64      `json:"price"`
-	Discount     float64      `json:"discount,omitempty" bson:"discount,omitempty"`
+	Discount     float64      `json:"discount,omitempty" db:"discount,omitempty"`
 	Quantity     int          `json:"quantity"`
 	Unit         string       `json:"unit"`
-	Banner       string       `bson:"banner" json:"banner"`
+	Banner       string       `db:"banner" json:"banner"`
 	Notes        string       `json:"notes,omitempty"`
 	Category     string       `json:"category,omitempty"`
 	CatalogueId  string       `json:"catalogueid,omitempty"`
 	Featured     bool         `json:"featured,omitempty"`
 	OutOfStock   bool         `json:"outOfStock,omitempty"`
-	HarvestDate  *time.Time   `bson:"harvestDate,omitempty"`
-	PlantedDate  time.Time    `bson:"plantedDate,omitempty"`
-	LastSoldAt   time.Time    `bson:"lastSoldAt,omitempty"`
+	HarvestDate  *time.Time   `db:"harvestDate,omitempty"`
+	PlantedDate  time.Time    `db:"plantedDate,omitempty"`
+	LastSoldAt   time.Time    `db:"lastSoldAt,omitempty"`
 	ExpiryDate   *time.Time   `json:"expiryDate,omitempty"`
 	UpdatedAt    time.Time    `json:"updatedAt"`
 	PriceHistory []PricePoint `json:"priceHistory,omitempty"`
 	FieldPlot    string       `json:"fieldPlot,omitempty"`
 	CreatedAt    time.Time    `json:"createdAt"`
 	CreatedBy    string       `json:"createdby"`
-	FarmID       string       `bson:"farmid,omitempty" json:"farmid,omitempty"`
+	FarmID       string       `db:"farmid,omitempty" json:"farmid,omitempty"`
 	FarmName     string       `json:"farmName,omitempty"` // CRITICAL FIX: Add farm name for cart/display
 }
 
@@ -119,7 +119,7 @@ type IncomingOrder struct {
 type CropCatalogueItem struct {
 	Name       string `json:"name"`
 	Category   string `json:"category"`
-	Banner     string `bson:"banner" json:"banner"`
+	Banner     string `db:"banner" json:"banner"`
 	Stock      int    `json:"stock"`
 	Unit       string `json:"unit"`
 	Featured   bool   `json:"featured"`
@@ -151,7 +151,7 @@ type CropListing struct {
 
 	FavoritesCount int64 `json:"favoritesCount"`
 
-	Availability WeeklyAvailability `json:"availability" bson:"availability"`
+	Availability WeeklyAvailability `json:"availability" db:"availability"`
 	Phone        string             `json:"phone,omitempty"`
 
 	InventoryValue float64 `json:"inventoryValue"`
@@ -161,19 +161,19 @@ type CropListing struct {
 }
 
 type Product struct {
-	ProductID   string   `bson:"productid,omitempty" json:"productid"`
-	UserID      string   `bson:"userid" json:"userid"`
+	ProductID   string   `db:"productid,omitempty" json:"productid"`
+	UserID      string   `db:"userid" json:"userid"`
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Price       float64  `json:"price"`
-	Discount    float64  `json:"discount,omitempty" bson:"discount,omitempty"`
+	Discount    float64  `json:"discount,omitempty" db:"discount,omitempty"`
 	Unit        string   `json:"unit"`
 	Images      []string `json:"images"`
-	Category    string   `bson:"category" json:"category"`
-	Quantity    float64  `bson:"quantity" json:"quantity"`
-	Type        string   `bson:"type" json:"type"`
-	Photo       string   `bson:"photo,omitempty" json:"photo,omitempty"`
-	Banner      string   `bson:"banner,omitempty" json:"banner,omitempty"`
+	Category    string   `db:"category" json:"category"`
+	Quantity    float64  `db:"quantity" json:"quantity"`
+	Type        string   `db:"type" json:"type"`
+	Photo       string   `db:"photo,omitempty" json:"photo,omitempty"`
+	Banner      string   `db:"banner,omitempty" json:"banner,omitempty"`
 
 	// Physical product fields
 	Size        string            `json:"size,omitempty"`
@@ -209,8 +209,8 @@ type Product struct {
 
 	Featured      bool      `json:"featured,omitempty"`
 	SKU           string    `json:"sku,omitempty"`
-	AvailableFrom *SafeTime `bson:"availableFrom,omitempty" json:"availableFrom,omitempty"`
-	AvailableTo   *SafeTime `bson:"availableTo,omitempty" json:"availableTo,omitempty"`
+	AvailableFrom *SafeTime `db:"availableFrom,omitempty" json:"availableFrom,omitempty"`
+	AvailableTo   *SafeTime `db:"availableTo,omitempty" json:"availableTo,omitempty"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
@@ -220,19 +220,19 @@ type SafeTime struct {
 }
 
 type Tool struct {
-	ToolID        string    `bson:"toolid,omitempty" json:"toolid"`
-	Name          string    `bson:"name" json:"name"`
-	Price         float64   `bson:"price" json:"price"`
-	Discount      float64   `bson:"discount,omitempty" json:"discount,omitempty"`
-	Description   string    `bson:"description" json:"description"`
-	Banner        string    `bson:"banner" json:"banner"`
-	Category      string    `bson:"category" json:"category"`
-	SKU           string    `bson:"sku,omitempty" json:"sku,omitempty"`
-	AvailableFrom *SafeTime `bson:"availableFrom,omitempty" json:"availableFrom,omitempty"`
-	AvailableTo   *SafeTime `bson:"availableTo,omitempty" json:"availableTo,omitempty"`
-	Quantity      float64   `bson:"quantity" json:"quantity"`
-	Unit          string    `bson:"unit" json:"unit"`
-	Featured      bool      `bson:"featured" json:"featured"`
+	ToolID        string    `db:"toolid,omitempty" json:"toolid"`
+	Name          string    `db:"name" json:"name"`
+	Price         float64   `db:"price" json:"price"`
+	Discount      float64   `db:"discount,omitempty" json:"discount,omitempty"`
+	Description   string    `db:"description" json:"description"`
+	Banner        string    `db:"banner" json:"banner"`
+	Category      string    `db:"category" json:"category"`
+	SKU           string    `db:"sku,omitempty" json:"sku,omitempty"`
+	AvailableFrom *SafeTime `db:"availableFrom,omitempty" json:"availableFrom,omitempty"`
+	AvailableTo   *SafeTime `db:"availableTo,omitempty" json:"availableTo,omitempty"`
+	Quantity      float64   `db:"quantity" json:"quantity"`
+	Unit          string    `db:"unit" json:"unit"`
+	Featured      bool      `db:"featured" json:"featured"`
 }
 
 // UnmarshalJSON tries RFC3339, then "2006-01-02"

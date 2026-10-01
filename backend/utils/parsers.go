@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ----------------------
@@ -107,9 +106,9 @@ func RegexFilter(field, value string) map[string]any {
 // ParseSort returns a sort map usable in db.FindManyOptions
 func ParseSort(
 	param string,
-	defaultSort []bson.E,
-	sortMap map[string][]bson.E,
-) []bson.E {
+	defaultSort []SortField,
+	sortMap map[string][]SortField,
+) []SortField {
 
 	if s, ok := sortMap[param]; ok {
 		return s

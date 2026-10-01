@@ -9,8 +9,6 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 /* -------------------------
@@ -35,7 +33,7 @@ func GetReviews(app *infra.Deps) http.HandlerFunc {
 
 		utils.SortAndSlice(
 			&reviews,
-			bson.D{{Key: "createdAt", Value: -1}},
+			[]utils.SortField{{Key: "createdAt", Value: -1}},
 			int64(skip),
 			int64(limit),
 		)

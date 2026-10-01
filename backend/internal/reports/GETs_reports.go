@@ -9,8 +9,6 @@ import (
 
 	"scav/infra"
 	"scav/utils"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func GetAppeals(app *infra.Deps) http.HandlerFunc {
@@ -48,7 +46,7 @@ func GetAppeals(app *infra.Deps) http.HandlerFunc {
 
 		utils.SortAndSlice(
 			&appeals,
-			[]bson.E{{Key: "createdAt", Value: -1}},
+			[]utils.SortField{{Key: "createdAt", Value: -1}},
 			offset,
 			limit,
 		)
@@ -87,7 +85,7 @@ func GetMyAppeals(app *infra.Deps) http.HandlerFunc {
 			appeals = []map[string]any{}
 		}
 
-		utils.SortAndSlice(&appeals, []bson.E{{Key: "createdAt", Value: -1}}, 0, int64(len(appeals)))
+		utils.SortAndSlice(&appeals, []utils.SortField{{Key: "createdAt", Value: -1}}, 0, int64(len(appeals)))
 		utils.RespondWithJSON(w, http.StatusOK, appeals)
 	}
 }
