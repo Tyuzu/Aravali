@@ -49,3 +49,31 @@ func TestNormalizeRoleRequestStatus(t *testing.T) {
 		t.Fatal("isFinalRoleRequestStatus(pending) = true, want false")
 	}
 }
+
+func TestRoleGrantPermissions(t *testing.T) {
+	if !CanAssignRole([]string{"admin"}, "moderator") {
+		t.Fatal("admin should be able to assign moderator")
+	}
+
+	if !CanAssignRole([]string{"admin"}, "farmer") {
+		t.Fatal("admin should be able to assign farmer")
+	}
+
+	if CanAssignRole([]string{"moderator"}, "moderator") {
+		t.Fatal("moderator should not be able to assign moderator")
+	}
+
+	if !CanAssignRole([]string{"moderator"}, "farmer") {
+		t.Fatal("moderator should be able to assign farmer")
+	}
+
+	roles := AssignableRolesFor([]string{"moderator"})
+	if len(roles) == 0 {
+		t.Fatal("moderator should have at least one assignable role")
+	}
+	for _, role := range roles {
+		if role == "moderator" {
+			t.Fatal("moderator should not be able to assign moderator role")
+		}
+	}
+}

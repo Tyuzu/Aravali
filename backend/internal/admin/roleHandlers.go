@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"scav/config"
 	"scav/infra"
 	"scav/utils"
 )
@@ -90,7 +91,14 @@ func ApproveRoleRequest(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		approvedRole, err := ProcessApproveRoleRequest(r.Context(), app, appID)
+		var actorRoles []string
+		if raw := r.Context().Value(config.RoleKey); raw != nil {
+			if roles, ok := raw.([]string); ok {
+				actorRoles = roles
+			}
+		}
+
+		approvedRole, err := ProcessApproveRoleRequest(r.Context(), app, actorRoles, appID)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrApplicationNotFound):
@@ -99,6 +107,8 @@ func ApproveRoleRequest(app *infra.Deps) http.HandlerFunc {
 				utils.RespondWithError(w, http.StatusConflict, "This role request has already been resolved")
 			case errors.Is(err, ErrUserNotFound):
 				utils.RespondWithError(w, http.StatusNotFound, "User not found")
+			case errors.Is(err, ErrRoleGrantForbidden):
+				utils.RespondWithError(w, http.StatusForbidden, err.Error())
 			default:
 				utils.RespondWithError(w, http.StatusInternalServerError, "Failed to approve role request")
 			}

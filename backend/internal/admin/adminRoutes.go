@@ -16,12 +16,13 @@ func AddAdminRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter *mid
 	authMid := middleware.Authenticate(app)
 	modOnly := middleware.Chain(authMid, middleware.RequireRoles("moderator"))
 	adminOnly := middleware.Chain(authMid, middleware.RequireRoles("admin"))
+	roleApproverOnly := middleware.Chain(authMid, middleware.RequireRoles("admin", "moderator"))
 
 	router.HandlerFunc(http.MethodPost, "/api/v1/admin/role/request", middleware.Chain(rateLimiter.Limit, authMid)(ApplyForRole(app)))
 	router.HandlerFunc(http.MethodGet, "/api/v1/admin/role/requests/me", authMid(GetMyRoleRequests(app)))
-	router.HandlerFunc(http.MethodGet, "/api/v1/admin/role/requests", adminOnly(ListRoleRequests(app)))
-	router.HandlerFunc(http.MethodPut, "/api/v1/admin/role/requests/:id/approve", adminOnly(ApproveRoleRequest(app)))
-	router.HandlerFunc(http.MethodPut, "/api/v1/admin/role/requests/:id/reject", adminOnly(RejectRoleRequest(app)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/admin/role/requests", roleApproverOnly(ListRoleRequests(app)))
+	router.HandlerFunc(http.MethodPut, "/api/v1/admin/role/requests/:id/approve", roleApproverOnly(ApproveRoleRequest(app)))
+	router.HandlerFunc(http.MethodPut, "/api/v1/admin/role/requests/:id/reject", roleApproverOnly(RejectRoleRequest(app)))
 
 	// Moderator application submission and review live with admin-related concerns.
 	router.HandlerFunc(http.MethodPost, "/api/v1/moderator/apply", middleware.Chain(rateLimiter.Limit, authMid)(ApplyModerator(app)))

@@ -2,8 +2,7 @@ import { navigate } from "../../routes/navigate.js";
 import { getState } from "../../state/state.js";
 import { createElement } from "../../components/createElement.js";
 import ToggleSwitch from "../../components/ui/ToggleSwitch.js";
-import { submitRoleRequest } from "../admin/roleManagement.js";
-import { getMyAppeals, type Appeal } from "../reporting/api.js";
+import { listMyRoleRequests, submitRoleRequest, type RoleApplication } from "../admin/roleManagement.js";
 import {
   loadSettingsRequest,
   updateSettingRequest,
@@ -238,25 +237,25 @@ async function createAppealStatusCard(): Promise<HTMLElement> {
   const listHost = createElement("div", { class: "setting-control" });
 
   try {
-    const appeals = await getMyAppeals();
-    if (!appeals || appeals.length === 0) {
+    const requests = await listMyRoleRequests();
+    if (!requests || requests.length === 0) {
       listHost.appendChild(createElement("p", { class: "setting-description" }, ["No appeals submitted yet."]));
       return createElement("div", { class: "setting-card" }, [info, listHost]);
     }
 
-    const rows = appeals.map((appeal: Appeal) => {
+    const rows = requests.map((request: RoleApplication) => {
       const item = createElement("div", { class: "setting-card" }, []);
-      const label = createElement("strong", {}, [appeal.targetType ? `${appeal.targetType} appeal` : "Appeal"]);
-      const status = createElement("span", {}, [String(appeal.status || "pending")]);
+      const label = createElement("strong", {}, [request.role ? `${request.role} access request` : "Role request"]);
+      const status = createElement("span", {}, [String(request.status || "pending")]);
       status.style.textTransform = "capitalize";
       status.style.marginLeft = "8px";
 
       const summary = createElement("p", { class: "setting-description" }, [
-        `${appeal.reason || "No reason provided."}`
+        request.reason || "No reason provided."
       ]);
 
       const meta = createElement("p", { class: "setting-description" }, [
-        `Status: ${String(appeal.status || "pending")}${appeal.reviewNotes ? ` · ${appeal.reviewNotes}` : ""}`
+        `Status: ${String(request.status || "pending")}`
       ]);
 
       item.appendChild(label);
@@ -277,7 +276,10 @@ async function createAppealStatusCard(): Promise<HTMLElement> {
 
 function createRoleAccessCard(): HTMLElement {
   const existingRoles = Array.isArray(getState("roles")) ? (getState("roles") as string[]) : [];
-  const availableRoles = ["farmer", "worker", "admin"].filter((role) => !existingRoles.includes(role));
+  const normalizedCurrentRoles = existingRoles.map((role) => String(role).toLowerCase());
+  const availableRoles = ["farmer", "worker", "moderator", "admin"]
+    .filter((role) => !normalizedCurrentRoles.includes(role))
+    .filter((role) => !(normalizedCurrentRoles.includes("moderator") && role === "moderator"));
 
   const title = createElement("h3", { class: "setting-title" }, ["Role access"]);
   const description = createElement(

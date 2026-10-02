@@ -26,6 +26,7 @@ var (
 	ErrApplicationNotFound  = errors.New("application not found")
 	ErrAlreadyResolved      = errors.New("this role request has already been resolved")
 	ErrUserNotFound         = errors.New("user not found")
+	ErrRoleGrantForbidden   = errors.New("you are not allowed to grant this role")
 )
 
 // Helper Types
@@ -157,7 +158,7 @@ func FetchAllRoleRequests(ctx context.Context, app *infra.Deps, rawStatus string
 	return applications, nil
 }
 
-func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, appID string) (string, error) {
+func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, actorRoles []string, appID string) (string, error) {
 	var application RoleApplication
 	if err := GetRoleApplicationByID(ctx, app, appID, &application); err != nil {
 		return "", ErrApplicationNotFound
@@ -165,6 +166,10 @@ func ProcessApproveRoleRequest(ctx context.Context, app *infra.Deps, appID strin
 
 	if isFinalRoleRequestStatus(application.Status) {
 		return "", ErrAlreadyResolved
+	}
+
+	if !CanAssignRole(actorRoles, application.Role) {
+		return "", ErrRoleGrantForbidden
 	}
 
 	var user struct {
