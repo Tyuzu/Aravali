@@ -5,6 +5,25 @@ export interface RoleRequestPayload {
   reason: string;
 }
 
+export function normalizeRoleName(role?: unknown): string {
+  if (typeof role === "string") {
+    return role.trim().toLowerCase();
+  }
+
+  if (typeof role === "number" || typeof role === "boolean") {
+    return String(role).trim().toLowerCase();
+  }
+
+  return "";
+}
+
+export function canReviewRoleRequests(actorRoles?: Array<string | null | undefined>): boolean {
+  const roles = Array.isArray(actorRoles)
+    ? actorRoles.map((role: string | null | undefined) => normalizeRoleName(role))
+    : [];
+  return roles.includes("admin") || roles.includes("moderator");
+}
+
 export interface RoleApplication {
   id: string;
   userid: string;
