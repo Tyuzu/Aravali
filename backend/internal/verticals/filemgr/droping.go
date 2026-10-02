@@ -49,33 +49,33 @@ var validEntities = map[string]EntityType{
 }
 
 type EntityMeta struct {
-	Collection string
-	IDField    string
+	Table   string
+	IDField string
 }
 
 var entityMeta = map[string]EntityMeta{
-	"artist":   {Collection: config.Collections.ArtistsCollection, IDField: config.IDField.ArtistId},
-	"baito":    {Collection: config.Collections.BaitoCollection, IDField: config.IDField.BaitoId},
-	"blogpost": {Collection: config.Collections.BlogPostsCollection, IDField: config.IDField.BlogPostId},
-	"chat":     {Collection: config.Collections.ChatsCollection, IDField: config.IDField.ChatId},
-	"crop":     {Collection: config.Collections.CropsCollection, IDField: config.IDField.CropId},
-	"event":    {Collection: config.Collections.EventsCollection, IDField: config.IDField.EventId},
-	"farm":     {Collection: config.Collections.FarmsCollection, IDField: config.IDField.FarmId},
-	"feedpost": {Collection: config.Collections.FeedPostsCollection, IDField: config.IDField.FeedPostId},
-	"live":     {Collection: "vlive", IDField: "eventid"},
-	"media":    {Collection: config.Collections.MediaCollection, IDField: config.IDField.MediaId},
-	"menu":     {Collection: config.Collections.MenuCollection, IDField: config.IDField.MenuId},
-	"merch":    {Collection: config.Collections.MerchCollection, IDField: config.IDField.MerchId},
-	"music":    {Collection: config.Collections.AlbumsCollection, IDField: config.IDField.AlbumId},
-	"place":    {Collection: config.Collections.PlacesCollection, IDField: config.IDField.PlaceId},
-	"product":  {Collection: config.Collections.ProductCollection, IDField: config.IDField.ProductId},
-	"recipe":   {Collection: config.Collections.RecipeCollection, IDField: config.IDField.RecipeId},
-	"report":   {Collection: config.Collections.ReportsCollection, IDField: config.IDField.ReportId},
-	"review":   {Collection: config.Collections.ReviewsCollection, IDField: config.IDField.ReviewId},
-	"song":     {Collection: config.Collections.SongsCollection, IDField: config.IDField.SongId},
-	"user":     {Collection: config.Collections.UserCollection, IDField: config.IDField.UserId},
-	"vendor":   {Collection: config.Collections.VendorCollection, IDField: config.IDField.VendorId},
-	"worker":   {Collection: config.Collections.BaitoWorkerCollection, IDField: config.IDField.BaitoWorkerId},
+	"artist":   {Table: config.Tables.ArtistsTable, IDField: config.IDField.ArtistId},
+	"baito":    {Table: config.Tables.BaitoTable, IDField: config.IDField.BaitoId},
+	"blogpost": {Table: config.Tables.BlogPostsTable, IDField: config.IDField.BlogPostId},
+	"chat":     {Table: config.Tables.ChatsTable, IDField: config.IDField.ChatId},
+	"crop":     {Table: config.Tables.CropsTable, IDField: config.IDField.CropId},
+	"event":    {Table: config.Tables.EventsTable, IDField: config.IDField.EventId},
+	"farm":     {Table: config.Tables.FarmsTable, IDField: config.IDField.FarmId},
+	"feedpost": {Table: config.Tables.FeedPostsTable, IDField: config.IDField.FeedPostId},
+	"live":     {Table: "vlive", IDField: "eventid"},
+	"media":    {Table: config.Tables.MediaTable, IDField: config.IDField.MediaId},
+	"menu":     {Table: config.Tables.MenuTable, IDField: config.IDField.MenuId},
+	"merch":    {Table: config.Tables.MerchTable, IDField: config.IDField.MerchId},
+	"music":    {Table: config.Tables.AlbumsTable, IDField: config.IDField.AlbumId},
+	"place":    {Table: config.Tables.PlacesTable, IDField: config.IDField.PlaceId},
+	"product":  {Table: config.Tables.ProductTable, IDField: config.IDField.ProductId},
+	"recipe":   {Table: config.Tables.RecipeTable, IDField: config.IDField.RecipeId},
+	"report":   {Table: config.Tables.ReportsTable, IDField: config.IDField.ReportId},
+	"review":   {Table: config.Tables.ReviewsTable, IDField: config.IDField.ReviewId},
+	"song":     {Table: config.Tables.SongsTable, IDField: config.IDField.SongId},
+	"user":     {Table: config.Tables.UserTable, IDField: config.IDField.UserId},
+	"vendor":   {Table: config.Tables.VendorTable, IDField: config.IDField.VendorId},
+	"worker":   {Table: config.Tables.BaitoWorkerTable, IDField: config.IDField.BaitoWorkerId},
 }
 
 func validateUploadRequest(w http.ResponseWriter, r *http.Request) error {
@@ -147,5 +147,5 @@ func updateEntityMedia(app *infra.Deps, entityType string, entityId string, atta
 		return nil, nil
 	}
 
-	return updateEntityMediaInDB(app, meta.Collection, meta.IDField, entityId, update)
+	return updateEntityMediaInDB(app, meta.Table, meta.IDField, entityId, update)
 }

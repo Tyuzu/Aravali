@@ -11,10 +11,10 @@ import (
 	"scav/internal/verticals/media"
 )
 
-var fanmadeMediaCollection = config.Collections.MediaCollection
+var fanmadeMediaTable = config.Tables.MediaTable
 
 func insertFanMedia(ctx context.Context, app *infra.Deps, media media.Media) error {
-	return app.SQLDB.Insert(ctx, fanmadeMediaCollection, media)
+	return app.SQLDB.Insert(ctx, fanmadeMediaTable, media)
 }
 
 func getFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (media.Media, error) {
@@ -22,7 +22,7 @@ func getFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID,
 	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
 	args := []any{entityID, entityType, mediaID}
 
-	err := app.SQLDB.FindOne(ctx, fanmadeMediaCollection, query, args, &media)
+	err := app.SQLDB.FindOne(ctx, fanmadeMediaTable, query, args, &media)
 	return media, err
 }
 
@@ -32,7 +32,7 @@ func listFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, ent
 	args := []any{entityID, entityType}
 
 	opts := sqldb.FindManyOptions{}
-	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaCollection, query, args, opts, &medias)
+	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaTable, query, args, opts, &medias)
 	return medias, err
 }
 
@@ -62,13 +62,13 @@ func updateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID stri
 	query := "mediagroupid = $1"
 	args := []any{mediaGroupID}
 
-	if _, err := app.SQLDB.UpdateMany(ctx, fanmadeMediaCollection, query, args, update); err != nil {
+	if _, err := app.SQLDB.UpdateMany(ctx, fanmadeMediaTable, query, args, update); err != nil {
 		return nil, err
 	}
 
 	var updatedMedias []media.Media
 	opts := sqldb.FindManyOptions{}
-	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaCollection, query, args, opts, &updatedMedias)
+	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaTable, query, args, opts, &updatedMedias)
 	return updatedMedias, err
 }
 
@@ -76,5 +76,5 @@ func deleteFanMediaByID(ctx context.Context, app *infra.Deps, mediaID string) (i
 	query := "mediaid = $1"
 	args := []any{mediaID}
 
-	return app.SQLDB.DeleteOne(ctx, fanmadeMediaCollection, query, args)
+	return app.SQLDB.DeleteOne(ctx, fanmadeMediaTable, query, args)
 }

@@ -32,16 +32,6 @@ var usersTable = config.Tables.UserTable
 var RefundsTable = config.Tables.RefundsTable
 var webhookTable = config.Tables.DeliveryWebhooksTable
 
-var ticketsCollection = config.Collections.TicketsCollection
-var menuCollection = config.Collections.MenuCollection
-var serviceCollection = config.Collections.ServiceCollection
-var productCollection = config.Collections.ProductCollection
-var bookingsCollection = config.Collections.BookingsCollection
-var merchCollection = config.Collections.MerchCollection
-var cropsCollection = config.Collections.CropsCollection
-var ordersCollection = config.Collections.OrderCollection
-var farmOrdersCollection = config.Collections.FarmOrdersCollection
-
 func (p *PaymentService) getOrCreateAccount(ctx context.Context, userID string) (string, error) {
 	return p.SQLgetOrCreateAccount(ctx, userID)
 }

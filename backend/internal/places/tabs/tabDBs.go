@@ -5,6 +5,6 @@ package places
 import "scav/config"
 
 var (
-	eventsCollection   = config.Collections.EventsCollection
-	productsCollection = config.Collections.ProductCollection
+	eventsTable   = config.Tables.EventsTable
+	productsTable = config.Tables.ProductTable
 )

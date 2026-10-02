@@ -77,7 +77,7 @@ func (p *PaymentService) handleCashOnDelivery(w http.ResponseWriter, r *http.Req
 	}
 
 	if req.EntityType == "order" {
-		if err := p.updateOrderSet(ctx, ordersCollection, "orderId", req.EntityID, map[string]any{
+		if err := p.updateOrderSet(ctx, ordersTable, "orderId", req.EntityID, map[string]any{
 			"paymentMethod": "cash_on_delivery",
 			"status":        "cod_pending",
 			"updatedAt":     now,

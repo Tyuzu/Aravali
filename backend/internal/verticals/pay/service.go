@@ -45,15 +45,15 @@ func (p *PaymentService) resolver(entityType string) (PriceResolver, error) {
 
 func (p *PaymentService) RegisterDefaultResolvers() {
 	p.RegisterResolver("ticket", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, ticketsCollection, "ticketid", id)
+		return p.fetchPriceByField(ctx, ticketsTable, "ticketid", id)
 	})
 
 	p.RegisterResolver("menu", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, menuCollection, "menuid", id)
+		return p.fetchPriceByField(ctx, menuTable, "menuid", id)
 	})
 
 	p.RegisterResolver("service", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, serviceCollection, "serviceid", id)
+		return p.fetchPriceByField(ctx, serviceTable, "serviceid", id)
 	})
 
 	// donations / tips
@@ -73,22 +73,22 @@ func (p *PaymentService) RegisterDefaultResolvers() {
 
 	// product - treat like menu item
 	p.RegisterResolver("product", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, productCollection, "productid", id)
+		return p.fetchPriceByField(ctx, productTable, "productid", id)
 	})
 
 	// booking - has a price
 	p.RegisterResolver("booking", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, bookingsCollection, "bookingid", id)
+		return p.fetchPriceByField(ctx, bookingsTable, "bookingid", id)
 	})
 
 	// merch - has a price
 	p.RegisterResolver("merch", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, merchCollection, "merchid", id)
+		return p.fetchPriceByField(ctx, merchTable, "merchid", id)
 	})
 
 	// crop - has a price
 	p.RegisterResolver("crop", func(ctx context.Context, id string) (int64, error) {
-		return p.fetchPriceByField(ctx, cropsCollection, "cropid", id)
+		return p.fetchPriceByField(ctx, cropsTable, "cropid", id)
 	})
 
 	// farm - custom entity

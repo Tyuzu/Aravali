@@ -101,7 +101,7 @@ func AddToCart(app *infra.Deps) http.HandlerFunc {
 		}
 
 		/*
-			The type is used to select the correct collection.
+			The type is used to select the correct Table.
 
 			We DO NOT use the client's price/name/entity values.
 		*/

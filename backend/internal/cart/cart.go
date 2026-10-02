@@ -232,7 +232,7 @@ func UpdateItemQuantity(app *infra.Deps) http.HandlerFunc {
 			Resolve the actual item first.
 
 			This prevents a client from changing the quantity of some
-			other collection's item simply by guessing an ID.
+			other Table's item simply by guessing an ID.
 		*/
 		details, err := lookupItemDetailsByType(
 			ctx,

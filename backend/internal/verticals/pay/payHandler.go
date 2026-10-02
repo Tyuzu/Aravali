@@ -300,8 +300,8 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 	// If this payment is for an order, mark the order as paid and decrement inventory.
 	if req.EntityType == "order" {
 		var ord map[string]any
-		if err := p.findOrderByID(ctx, ordersCollection, "orderId", req.EntityID, &ord); err == nil {
-			_ = p.updateOrderStatus(ctx, ordersCollection, "orderId", req.EntityID, "paid")
+		if err := p.findOrderByID(ctx, ordersTable, "orderId", req.EntityID, &ord); err == nil {
+			_ = p.updateOrderStatus(ctx, ordersTable, "orderId", req.EntityID, "paid")
 
 			if itemsRaw, ok := ord["items"].(map[string]any); ok {
 				for category, raw := range itemsRaw {
@@ -324,21 +324,21 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 
 						switch category {
 						case "crops":
-							_ = p.decrementInventory(ctx, cropsCollection, "cropid", itemID, "quantity", qty)
+							_ = p.decrementInventory(ctx, cropsTable, "cropid", itemID, "quantity", qty)
 						case "menu":
-							_ = p.decrementInventory(ctx, menuCollection, "menuid", itemID, "stock", qty)
+							_ = p.decrementInventory(ctx, menuTable, "menuid", itemID, "stock", qty)
 						case "merch":
-							_ = p.decrementInventory(ctx, merchCollection, "merchid", itemID, "stock", qty)
+							_ = p.decrementInventory(ctx, merchTable, "merchid", itemID, "stock", qty)
 						default:
-							_ = p.decrementInventory(ctx, productCollection, "productid", itemID, "quantity", qty)
+							_ = p.decrementInventory(ctx, productTable, "productid", itemID, "quantity", qty)
 						}
 					}
 				}
 			}
 		} else {
 			var ford map[string]any
-			if err := p.findOrderByID(ctx, farmOrdersCollection, "orderid", req.EntityID, &ford); err == nil {
-				_ = p.updateOrderStatus(ctx, farmOrdersCollection, "orderid", req.EntityID, "paid")
+			if err := p.findOrderByID(ctx, farmOrdersTable, "orderid", req.EntityID, &ford); err == nil {
+				_ = p.updateOrderStatus(ctx, farmOrdersTable, "orderid", req.EntityID, "paid")
 				if itemsRaw, ok := ford["items"].(map[string]any); ok {
 					if cropsRaw, ok := itemsRaw["crops"].([]any); ok {
 						for _, it := range cropsRaw {
@@ -353,7 +353,7 @@ func (p *PaymentService) Pay(w http.ResponseWriter, r *http.Request) {
 							} else if qi, ok := itMap["quantity"].(int); ok {
 								qty = qi
 							}
-							_ = p.decrementInventory(ctx, cropsCollection, "cropid", itemID, "quantity", qty)
+							_ = p.decrementInventory(ctx, cropsTable, "cropid", itemID, "quantity", qty)
 						}
 					}
 				}

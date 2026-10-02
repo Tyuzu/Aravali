@@ -13,45 +13,45 @@ import (
 )
 
 var (
-	EventsCollection       = config.Collections.EventsCollection
-	ArtistsCollection      = config.Collections.ArtistsCollection
-	ArtistEventsCollection = config.Collections.ArtistEventsCollection
-	ArtistAlbumsCollection = config.Collections.ArtistAlbumsCollection
-	SubscribersCollection  = config.Collections.SubscribersCollection
+	EventsTable       = config.Tables.EventsTable
+	ArtistsTable      = config.Tables.ArtistsTable
+	ArtistEventsTable = config.Tables.ArtistEventsTable
+	ArtistAlbumsTable = config.Tables.ArtistAlbumsTable
+	SubscribersTable  = config.Tables.SubscribersTable
 )
 
 func InsertArtist(ctx context.Context, app *infra.Deps, artist *Artist) error {
-	return app.SQLDB.Insert(ctx, ArtistsCollection, artist)
+	return app.SQLDB.Insert(ctx, ArtistsTable, artist)
 }
 
 func FindArtistByID(ctx context.Context, app *infra.Deps, artistID string, artist *Artist) error {
 	query := "artistid = $1"
 	args := []any{artistID}
-	return app.SQLDB.FindOne(ctx, ArtistsCollection, query, args, artist)
+	return app.SQLDB.FindOne(ctx, ArtistsTable, query, args, artist)
 }
 
 func UpdateArtistByID(ctx context.Context, app *infra.Deps, artistID string, update map[string]any) (int64, error) {
 	query := "artistid = $1"
 	args := []any{artistID}
-	return app.SQLDB.Update(ctx, ArtistsCollection, query, args, update)
+	return app.SQLDB.Update(ctx, ArtistsTable, query, args, update)
 }
 
 func FindArtistEvents(ctx context.Context, app *infra.Deps, artistID string, result *[]ArtistEvent) error {
 	query := "artistid = $1"
 	args := []any{artistID}
-	return app.SQLDB.FindMany(ctx, ArtistEventsCollection, query, args, result)
+	return app.SQLDB.FindMany(ctx, ArtistEventsTable, query, args, result)
 }
 
 func FindArtistAlbumsByArtistID(ctx context.Context, app *infra.Deps, artistID string, result *[]ArtistAlbum) error {
 	query := "artistid = $1"
 	args := []any{artistID}
-	return app.SQLDB.FindMany(ctx, ArtistAlbumsCollection, query, args, result)
+	return app.SQLDB.FindMany(ctx, ArtistAlbumsTable, query, args, result)
 }
 
 func DeleteArtistRecordByID(ctx context.Context, app *infra.Deps, artistID string) (int64, error) {
 	query := "artistid = $1"
 	args := []any{artistID}
-	return app.SQLDB.DeleteOne(ctx, ArtistsCollection, query, args)
+	return app.SQLDB.DeleteOne(ctx, ArtistsTable, query, args)
 }
 
 // FindSubscribersForArtist checks if a specific user is subscribed to an artist.
@@ -60,7 +60,7 @@ func FindSubscribersForArtist(ctx context.Context, app *infra.Deps, userID, arti
 	query := "userid = $1 AND $2 = ANY(subscribed)"
 	args := []any{userID, artistID}
 
-	err := app.SQLDB.FindMany(ctx, SubscribersCollection, query, args, &results)
+	err := app.SQLDB.FindMany(ctx, SubscribersTable, query, args, &results)
 	if err != nil {
 		return false, err
 	}
@@ -71,69 +71,69 @@ func FindSubscribersForArtist(ctx context.Context, app *infra.Deps, userID, arti
 func FindArtistsByEventID(ctx context.Context, app *infra.Deps, eventID string, result *[]Artist) error {
 	query := "$1 = ANY(events)"
 	args := []any{eventID}
-	return app.SQLDB.FindMany(ctx, ArtistsCollection, query, args, result)
+	return app.SQLDB.FindMany(ctx, ArtistsTable, query, args, result)
 }
 
 func FindAllArtists(ctx context.Context, app *infra.Deps, result *[]Artist) error {
-	return app.SQLDB.FindMany(ctx, ArtistsCollection, "", nil, result)
+	return app.SQLDB.FindMany(ctx, ArtistsTable, "", nil, result)
 }
 
 func AddArtistMemberDB(ctx context.Context, app *infra.Deps, artistID string, member BandMember) error {
 	query := "artistid = $1"
 	args := []any{artistID}
-	return app.SQLDB.AddToSet(ctx, ArtistsCollection, query, args, "members", member)
+	return app.SQLDB.AddToSet(ctx, ArtistsTable, query, args, "members", member)
 }
 
 func UpdateArtistMemberDB(ctx context.Context, app *infra.Deps, artistID, memberID string, update map[string]any) (int64, error) {
 	query := "artistid = $1 AND memberid = $2"
 	args := []any{artistID, memberID}
-	return app.SQLDB.Update(ctx, ArtistsCollection, query, args, update)
+	return app.SQLDB.Update(ctx, ArtistsTable, query, args, update)
 }
 
 func DeleteArtistMemberDB(ctx context.Context, app *infra.Deps, artistID, memberID string) (int64, error) {
 	query := "artistid = $1 AND memberid = $2"
 	args := []any{artistID, memberID}
-	return app.SQLDB.Delete(ctx, ArtistsCollection, query, args)
+	return app.SQLDB.Delete(ctx, ArtistsTable, query, args)
 }
 
 func InsertArtistEvent(ctx context.Context, app *infra.Deps, artistevent *ArtistEvent) error {
-	return app.SQLDB.Insert(ctx, ArtistEventsCollection, artistevent)
+	return app.SQLDB.Insert(ctx, ArtistEventsTable, artistevent)
 }
 
 func UpdateArtistEventByID(ctx context.Context, app *infra.Deps, artisteventID string, update map[string]any) (int64, error) {
 	query := "eventid = $1"
 	args := []any{artisteventID}
-	return app.SQLDB.Update(ctx, ArtistEventsCollection, query, args, update)
+	return app.SQLDB.Update(ctx, ArtistEventsTable, query, args, update)
 }
 
 // DeleteArtistEventByID deletes an artist event entry by its ID.
 func DeleteArtistEventByID(ctx context.Context, app *infra.Deps, artisteventID string) error {
 	query := "eventid = $1"
 	args := []any{artisteventID}
-	_, err := app.SQLDB.DeleteOne(ctx, ArtistEventsCollection, query, args)
+	_, err := app.SQLDB.DeleteOne(ctx, ArtistEventsTable, query, args)
 	return err
 }
 
 func FindEventByID(ctx context.Context, app *infra.Deps, eventID string, event *events.Event) error {
 	query := "eventid = $1"
 	args := []any{eventID}
-	return app.SQLDB.FindOne(ctx, EventsCollection, query, args, event)
+	return app.SQLDB.FindOne(ctx, EventsTable, query, args, event)
 }
 
 func FindArtistEventsByEventAndArtist(ctx context.Context, app *infra.Deps, eventID, artistID string, result *[]ArtistEvent) error {
 	query := "eventid = $1 AND artistid = $2"
 	args := []any{eventID, artistID}
-	return app.SQLDB.FindMany(ctx, ArtistEventsCollection, query, args, result)
+	return app.SQLDB.FindMany(ctx, ArtistEventsTable, query, args, result)
 }
 
 func AddArtistToEventDB(ctx context.Context, app *infra.Deps, artistEvent ArtistEvent) (int64, error) {
-	if err := app.SQLDB.Insert(ctx, ArtistEventsCollection, artistEvent); err != nil {
+	if err := app.SQLDB.Insert(ctx, ArtistEventsTable, artistEvent); err != nil {
 		return 0, err
 	}
 
 	query := "eventid = $1"
 	args := []any{artistEvent.EventID}
-	err := app.SQLDB.AddToSet(ctx, EventsCollection, query, args, "artists", artistEvent.ArtistID)
+	err := app.SQLDB.AddToSet(ctx, EventsTable, query, args, "artists", artistEvent.ArtistID)
 	if err != nil {
 		return 0, err
 	}
@@ -157,7 +157,7 @@ func AddEventToDB(ctx context.Context, app *infra.Deps, artistEvent ArtistEvent)
 	event.Published = "draft"
 	event.Category = "concert"
 
-	if err := app.SQLDB.Insert(ctx, EventsCollection, event); err != nil {
+	if err := app.SQLDB.Insert(ctx, EventsTable, event); err != nil {
 		return err
 	}
 

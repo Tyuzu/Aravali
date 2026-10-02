@@ -14,7 +14,6 @@ import (
 )
 
 var usersTable = config.Tables.UserTable
-var usersCollection = usersTable
 
 // Wrapper helpers that accept infra.Deps to simplify call sites.
 func FindUserByFilter(ctx context.Context, app *infra.Deps, query string, args []any) (*auth.User, error) {

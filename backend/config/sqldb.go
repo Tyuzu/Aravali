@@ -91,6 +91,7 @@ var Tables = SQLDB{
 	AlbumsTable:                   "albums",
 	AnalyticsTable:                "analytics",
 	AppealsTable:                  "appeals",
+	ArtistAlbumsTable:             "albums",
 	ArtistEventsTable:             "artistevents",
 	ArtistsTable:                  "artists",
 	AutocompleteTable:             "autocomplete",

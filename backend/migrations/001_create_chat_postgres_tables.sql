@@ -849,18 +849,21 @@ CREATE TABLE IF NOT EXISTS globalledger (
     metadata JSONB NOT NULL DEFAULT '{}'::JSONB
 );
 
-CREATE TABLE IF NOT EXISTS notifications_preferences (
-    id TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS notificationpreferences (
+    preferenceid TEXT PRIMARY KEY,
     userid TEXT,
-    settings JSONB NOT NULL DEFAULT '{}'::JSONB,
+    email BOOLEAN NOT NULL DEFAULT TRUE,
+    push BOOLEAN NOT NULL DEFAULT TRUE,
+    sms BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    metadata JSONB NOT NULL DEFAULT '{}'::JSONB
 );
 
 CREATE TABLE IF NOT EXISTS role_applications (
-    id TEXT PRIMARY KEY,
+    roleapplicationid TEXT PRIMARY KEY,
     userid TEXT,
-    role_name TEXT,
+    role TEXT,
     status TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

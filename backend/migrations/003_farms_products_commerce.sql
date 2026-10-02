@@ -184,8 +184,8 @@ CREATE TABLE IF NOT EXISTS service (
     metadata JSONB NOT NULL DEFAULT '{}'::JSONB
 );
 
-CREATE TABLE IF NOT EXISTS tickets (
-    ticketid TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS ticks (
+    tickid TEXT PRIMARY KEY,
     eventid TEXT,
     title TEXT,
     price NUMERIC(18,2) NOT NULL DEFAULT 0,

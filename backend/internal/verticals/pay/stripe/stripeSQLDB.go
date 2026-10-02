@@ -12,10 +12,10 @@ import (
 	"scav/infra"
 )
 
-var fundingCollection = config.Collections.FundingCollection
-var stripeOrdersCollection = config.Collections.StripeOrdersCollection
+var fundingTable = config.Tables.FundingTable
+var stripeOrdersTable = config.Tables.StripeOrdersTable
 
-func updatePaymentStatusSQL(
+func updatePaymentStatus(
 	ctx context.Context,
 	entityType string,
 	entityId string,
@@ -23,15 +23,15 @@ func updatePaymentStatusSQL(
 	paymentIntentId string,
 	app *infra.Deps,
 ) (int64, error) {
-	var collection string
+	var Table string
 	var idField string
 
 	switch entityType {
 	case "funding":
-		collection = fundingCollection
+		Table = fundingTable
 		idField = "fundingid"
 	case "order":
-		collection = stripeOrdersCollection
+		Table = stripeOrdersTable
 		idField = "orderid"
 	default:
 		return 0, errors.New("invalid entityType")
@@ -49,7 +49,7 @@ func updatePaymentStatusSQL(
 
 	return app.SQLDB.Update(
 		ctx,
-		collection,
+		Table,
 		query,
 		args,
 		update,

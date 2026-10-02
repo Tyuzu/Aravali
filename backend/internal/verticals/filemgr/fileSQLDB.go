@@ -9,9 +9,9 @@ import (
 	"scav/infra"
 )
 
-func updateEntityMediaInDB(app *infra.Deps, collection, idField, entityID string, update map[string]any) (int64, error) {
+func updateEntityMediaInDB(app *infra.Deps, Table, idField, entityID string, update map[string]any) (int64, error) {
 	query := fmt.Sprintf("%s = $1", idField)
 	args := []any{entityID}
 
-	return app.SQLDB.UpdateOne(context.Background(), collection, query, args, update)
+	return app.SQLDB.UpdateOne(context.Background(), Table, query, args, update)
 }

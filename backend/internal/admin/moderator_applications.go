@@ -16,7 +16,7 @@ import (
 	"scav/utils"
 )
 
-var moderatorApplicationsCollection = config.Collections.ModeratorApplications
+var moderatorApplicationsTable = config.Tables.ModeratorApplications
 
 // Sentinel business errors
 var (

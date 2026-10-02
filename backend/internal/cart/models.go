@@ -59,7 +59,7 @@ type createSessionPayload struct {
 	Coupon        string                `json:"coupon"`
 }
 
-// ItemDetails represents item metadata fetched across various entity collections.
+// ItemDetails represents item metadata fetched across various entity Tables.
 type ItemDetails struct {
 	Name       string  `json:"name" db:"name"`
 	Type       string  `json:"type" db:"type"`

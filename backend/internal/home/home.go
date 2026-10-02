@@ -22,7 +22,7 @@ type HomeCard struct {
 	Href        string `json:"href" db:"-"`
 }
 
-// categoryProjection returns collection name and projection function
+// categoryProjection returns Table name and projection function
 func categoryProjection(category string) (string, func(map[string]any) HomeCard) {
 	switch category {
 	case "Places":

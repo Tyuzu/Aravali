@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
@@ -18,13 +17,6 @@ import (
 	"strconv"
 	"time"
 )
-
-var RefundsCollection = config.Collections.RefundsCollection
-
-// Collections are defined in payDB.go but declared here for reference
-// var transactionsCollection - from payDB.go
-// var ordersCollection - from payDB.go
-// var farmOrdersCollection - from payDB.go
 
 /* ───────────────────────── Create Refund Request ───────────────────────── */
 func CreateRefundRequest(app *infra.Deps) http.HandlerFunc {

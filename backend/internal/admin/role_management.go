@@ -13,9 +13,9 @@ import (
 	"scav/utils"
 )
 
-var roleApplicationsCollection = config.Collections.RoleApplicationsCollection
+var roleApplicationsTable = config.Tables.RoleApplicationsTable
 
-var usersCollection = config.Collections.UserCollection
+var usersTable = config.Tables.UserTable
 
 // Sentinel business errors
 var (

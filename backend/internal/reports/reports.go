@@ -426,39 +426,39 @@ func setEntityDeletedFlag(
 	by string,
 	app *infra.Deps,
 ) error {
-	var collection string
+	var Table string
 	var idField string
 
 	switch entityType {
 	case "post":
-		collection = config.Collections.BlogPostsCollection
+		Table = config.Tables.BlogPostsTable
 		idField = "postid"
 	case "place":
-		collection = config.Collections.PlacesCollection
+		Table = config.Tables.PlacesTable
 		idField = "placeid"
 	case "event":
-		collection = config.Collections.EventsCollection
+		Table = config.Tables.EventsTable
 		idField = "eventid"
 	case "user":
-		collection = config.Collections.UserCollection
+		Table = config.Tables.UserTable
 		idField = "userid"
 	case "merch":
-		collection = config.Collections.MerchCollection
+		Table = config.Tables.MerchTable
 		idField = "merchid"
 	case "message":
-		collection = config.Collections.MessagesCollection
+		Table = config.Tables.MessagesTable
 		idField = "messageid"
 	case "chat":
-		collection = config.Collections.ChatsCollection
+		Table = config.Tables.ChatsTable
 		idField = "chatid"
 	case "comment":
-		collection = config.Collections.CommentsCollection
+		Table = config.Tables.CommentsTable
 		idField = "commentid"
 	default:
 		return errors.New("unsupported entity type")
 	}
 
-	return setEntityDeletedFlagInDB(ctx, app, collection, idField, id, deleted, by)
+	return setEntityDeletedFlagInDB(ctx, app, Table, idField, id, deleted, by)
 }
 
 /* -------------------------

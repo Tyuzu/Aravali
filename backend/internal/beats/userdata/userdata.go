@@ -10,20 +10,19 @@ import (
 )
 
 var ValidEntityTypes = map[string]bool{
-	"userhome":   true,
-	"place":      true,
-	"event":      true,
-	"feedpost":   true,
-	"media":      true,
-	"ticket":     true,
-	"merch":      true,
-	"review":     true,
-	"comment":    true,
-	"like":       true,
-	"favourite":  true,
-	"booking":    true,
-	"blogpost":   true,
-	"collection": true,
+	"userhome":  true,
+	"place":     true,
+	"event":     true,
+	"feedpost":  true,
+	"media":     true,
+	"ticket":    true,
+	"merch":     true,
+	"review":    true,
+	"comment":   true,
+	"like":      true,
+	"favourite": true,
+	"booking":   true,
+	"blogpost":  true,
 }
 
 func IsValidEntityType(entityType string) bool {

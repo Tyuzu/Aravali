@@ -112,7 +112,7 @@ func AddArtistToEvent(app *infra.Deps) http.HandlerFunc {
 		// Get artist ID from URL parameter if passed
 		payload.ArtistID = utils.GetParam(r, "id")
 
-		// Fetch event details from EventsCollection
+		// Fetch event details from EventsTable
 		var event events.Event
 		err := FindEventByID(ctx, app, payload.EventID, &event)
 		if err != nil {

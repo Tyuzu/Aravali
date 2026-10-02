@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	webhookCollection     = "payment_webhooks"
 	webhookAttempts       = "webhook_attempts"
 	maxWebhookRetries     = 3
 	webhookTimeoutSeconds = 30
