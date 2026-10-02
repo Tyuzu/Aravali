@@ -23,7 +23,7 @@ func (s *redisSubscription) Unsubscribe() error {
 		return nil
 	}
 
-	if err := s.pubsub.Close(); err != nil {
+	if err := s.pubsub.Close(); err != nil && !errors.Is(err, redis.ErrClosed) {
 		return fmt.Errorf("redis pubsub close: %w", err)
 	}
 

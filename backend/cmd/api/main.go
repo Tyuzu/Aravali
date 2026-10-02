@@ -60,23 +60,6 @@ func main() {
 		)
 	}
 
-	// Ensure infrastructure is eventually closed even if main
-	// returns unexpectedly after initialization.
-	defer func() {
-		closeCtx, cancel := context.WithTimeout(
-			context.Background(),
-			10*time.Second,
-		)
-		defer cancel()
-
-		if err := app.Close(closeCtx); err != nil {
-			logger.L.Sugar().Errorw(
-				"failed to close infrastructure",
-				"error", err,
-			)
-		}
-	}()
-
 	// =====================
 	// Application Lifecycle
 	// =====================

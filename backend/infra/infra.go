@@ -151,6 +151,14 @@ func New(cfg *config.Config) (*Deps, error) {
 		100,
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	if err := sqldb.EnsureMigrations(ctx, pool); err != nil {
+		cancel()
+		cleanup()
+		return nil, fmt.Errorf("sql bootstrap: %w", err)
+	}
+	cancel()
+
 	logger.L.Sugar().Infow(
 		"infra initialized",
 		"redis_enabled", true,
@@ -179,6 +187,7 @@ func (d *Deps) Close(ctx context.Context) error {
 	*/
 	if d.PGPool != nil {
 		d.PGPool.Close()
+		d.PGPool = nil
 	}
 
 	/*
@@ -189,12 +198,13 @@ func (d *Deps) Close(ctx context.Context) error {
 		the client shuts down the Redis resources as well.
 	*/
 	if d.RedisClient != nil {
-		if err := d.RedisClient.Close(); err != nil {
+		if err := d.RedisClient.Close(); err != nil && !errors.Is(err, redis.ErrClosed) {
 			errs = append(
 				errs,
 				fmt.Sprintf("redis close: %v", err),
 			)
 		}
+		d.RedisClient = nil
 	}
 
 	if len(errs) > 0 {

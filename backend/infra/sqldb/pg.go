@@ -578,7 +578,7 @@ func mapRowToDest(dest any, cols []string, vals []any) error {
 	for i, c := range cols {
 		for j := 0; j < ev.NumField(); j++ {
 			field := typ.Field(j)
-			dbTag := field.Tag.Get("db")
+			dbTag := normalizeDBTag(field.Tag.Get("db"))
 			if dbTag == "" {
 				dbTag = strings.ToLower(field.Name)
 			}
@@ -622,7 +622,7 @@ func extractColumnsAndValues(record any) ([]string, []any, []string, error) {
 	argIdx := 1
 	for i := 0; i < val.NumField(); i++ {
 		field := typ.Field(i)
-		dbTag := field.Tag.Get("db")
+		dbTag := normalizeDBTag(field.Tag.Get("db"))
 		if dbTag == "-" {
 			continue
 		}
@@ -630,8 +630,13 @@ func extractColumnsAndValues(record any) ([]string, []any, []string, error) {
 			dbTag = strings.ToLower(field.Name)
 		}
 
+		fv := val.Field(i)
+		if isNilOptionalValue(fv) {
+			continue
+		}
+
 		cols = append(cols, quoteIdent(dbTag))
-		vals = append(vals, val.Field(i).Interface())
+		vals = append(vals, fv.Interface())
 		placeholders = append(placeholders, fmt.Sprintf("$%d", argIdx))
 		argIdx++
 	}
@@ -650,6 +655,28 @@ func quoteIdents(names []string) []string {
 		out[i] = quoteIdent(n)
 	}
 	return out
+}
+
+func normalizeDBTag(tag string) string {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return ""
+	}
+	parts := strings.Split(tag, ",")
+	return strings.TrimSpace(parts[0])
+}
+
+func isNilOptionalValue(v reflect.Value) bool {
+	if !v.IsValid() {
+		return true
+	}
+
+	switch v.Kind() {
+	case reflect.Map, reflect.Slice, reflect.Interface, reflect.Pointer, reflect.Func:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 func isRetryablePostgres(err error) bool {

@@ -115,6 +115,7 @@ func BuildUser(input SignUpRequest) (User, error) {
 		EmailVerified: false,
 		IsVerified:    false,
 		Online:        false,
+		SocialLinks:   map[string]string{},
 	}
 
 	return user, nil

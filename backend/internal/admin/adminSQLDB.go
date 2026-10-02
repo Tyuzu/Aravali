@@ -32,7 +32,7 @@ func ListRoleApplicationsDB(ctx context.Context, app *infra.Deps, query string, 
 }
 
 func GetRoleApplicationByID(ctx context.Context, app *infra.Deps, id string, result *RoleApplication) error {
-	query := "id = $1"
+	query := "roleapplicationid = $1"
 	args := []any{id}
 	return app.SQLDB.FindOne(ctx, roleApplicationsTable, query, args, result)
 }
@@ -55,7 +55,7 @@ func UpdateUserRoles(ctx context.Context, app *infra.Deps, userID string, roles 
 }
 
 func UpdateRoleApplicationStatus(ctx context.Context, app *infra.Deps, appID, status string) (int64, error) {
-	query := "id = $1"
+	query := "roleapplicationid = $1"
 	args := []any{appID}
 
 	updateValues := map[string]any{

@@ -14,6 +14,7 @@ import (
 	"scav/config"
 	"scav/infra"
 	"scav/infra/sqldb"
+	"scav/utils"
 )
 
 var (
@@ -55,6 +56,49 @@ func getActivities(ctx context.Context, app *infra.Deps, userID string, cursor t
 	return activities, err
 }
 
+type analyticsEventRow struct {
+	ID         string          `db:"id"`
+	EntityType string          `db:"entity_type"`
+	EntityID   string          `db:"entity_id"`
+	EventName  string          `db:"event_name"`
+	Payload    json.RawMessage `db:"payload"`
+}
+
+func analyticsEventRowFromPayload(ev map[string]any, user, session, url, remoteAddr string) (analyticsEventRow, bool) {
+	if ev == nil {
+		return analyticsEventRow{}, false
+	}
+
+	eventType, _ := ev["type"].(string)
+	if eventType == "" {
+		return analyticsEventRow{}, false
+	}
+
+	payload := map[string]any{
+		"data":    ev["data"],
+		"url":     url,
+		"user":    user,
+		"session": session,
+		"ip":      remoteAddr,
+	}
+	if ts, exists := ev["ts"]; exists {
+		payload["ts"] = ts
+	}
+
+	payloadRaw, err := json.Marshal(payload)
+	if err != nil {
+		return analyticsEventRow{}, false
+	}
+
+	return analyticsEventRow{
+		ID:         "ana_" + utils.GenerateRandomString(16),
+		EntityType: "event",
+		EntityID:   session,
+		EventName:  eventType,
+		Payload:    payloadRaw,
+	}, true
+}
+
 func insertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload AnalyticsPayload, remoteAddr string) (int, error) {
 	var docsToInsert []any
 	meta := payload.Meta
@@ -65,25 +109,19 @@ func insertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload Analyti
 	for _, ev := range payload.Events {
 		key := analyticsIdempotencyKey(ev)
 
-		ok, err := app.Cache.SetNX(ctx, key, []byte("1"), analyticsIdemTTL)
-		if err != nil || !ok {
+		if app.Cache != nil {
+			ok, err := app.Cache.SetNX(ctx, key, []byte("1"), analyticsIdemTTL)
+			if err != nil || !ok {
+				continue
+			}
+		}
+
+		row, ok := analyticsEventRowFromPayload(ev, user, session, url, remoteAddr)
+		if !ok {
 			continue
 		}
 
-		// Marshal nested map/interface data into JSON for SQL JSONB/TEXT columns if required
-		eventDataRaw, _ := json.Marshal(ev["data"])
-
-		doc := map[string]any{
-			"type":      ev["type"],
-			"data":      string(eventDataRaw),
-			"url":       url,
-			"user":      user,
-			"session":   session,
-			"timestamp": time.Now(),
-			"ip":        remoteAddr,
-		}
-
-		docsToInsert = append(docsToInsert, doc)
+		docsToInsert = append(docsToInsert, row)
 	}
 
 	if len(docsToInsert) == 0 {

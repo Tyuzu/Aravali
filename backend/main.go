@@ -165,7 +165,9 @@ func main() {
 	hub.Stop()
 	mehub.Stop()
 
-	// 4. Drain and close all infrastructure dependencies cleanly
+	// 4. Drain and close all infrastructure dependencies cleanly.
+	// Redis may already be closed by outstanding Pub/Sub subscriptions during shutdown,
+	// so treat redis.ErrClosed as an expected terminal state instead of a failure.
 	if err := app.Close(shutdownCtx); err != nil {
 		logger.L.Sugar().Errorw("Failed to close infrastructure dependencies", "error", err)
 	}

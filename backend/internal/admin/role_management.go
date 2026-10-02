@@ -4,6 +4,7 @@ package admin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -29,13 +30,14 @@ var (
 
 // Helper Types
 type RoleApplication struct {
-	ID        string    `json:"id" db:"id"`
+	ID        string    `json:"id" db:"roleapplicationid"`
 	UserID    string    `json:"userid" db:"userid"`
 	Role      string    `json:"role" db:"role"`
-	Reason    string    `json:"reason" db:"reason"`
+	Reason    string    `json:"reason" db:"-"`
 	Status    string    `json:"status" db:"status"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	Metadata  []byte    `json:"metadata" db:"metadata"`
 }
 
 type ApplyPayload struct {
@@ -118,6 +120,11 @@ func ProcessApplyForRole(ctx context.Context, app *infra.Deps, userID string, pa
 		Status:    "pending",
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
+	}
+
+	meta := map[string]any{"reason": reason}
+	if mb, err := json.Marshal(meta); err == nil {
+		application.Metadata = mb
 	}
 
 	if err := InsertRoleApplication(ctx, app, application); err != nil {
