@@ -14,33 +14,11 @@ import {
   publishItineraryRequest,
   type ItineraryApiItem
 } from "./api.js";
+import type { ItineraryItem, ItineraryVisit, ItineraryDay } from "./types.js";
 
-interface Visit {
-  start_time?: string;
-  end_time?: string;
-  location?: string;
-  transport?: string;
-  [key: string]: unknown;
-}
-
-interface Day {
-  date?: string;
-  visits?: Visit[];
-  [key: string]: unknown;
-}
-
-interface Itinerary {
-  itineraryid?: string | number;
-  userid?: string | number;
-  name?: string;
-  status?: string;
-  published?: boolean;
-  start_date?: string;
-  end_date?: string;
-  description?: string;
-  days?: Day[];
-  [key: string]: unknown;
-}
+type Visit = ItineraryVisit;
+type Day = ItineraryDay;
+type Itinerary = ItineraryItem;
 
 interface UserState {
   userid?: string | number;

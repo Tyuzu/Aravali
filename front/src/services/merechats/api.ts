@@ -1,4 +1,7 @@
 import { mereFetch } from "../../api/api.js";
+import type { ChatResponse, ChatMessage, ChatItem } from "./types.js";
+
+export type { ChatResponse, ChatMessage, ChatItem };
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 

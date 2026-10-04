@@ -34,9 +34,9 @@ export function createAddToPlaylistBtn(
                 return;
             }
 
-            const playlistID = playlists[index].playlistID || playlists[index].playlistid;
+            const playlistID = String(playlists[index].playlistID ?? playlists[index].playlistId ?? playlists[index].playlistid ?? "");
 
-            const res = await MusicAPI.addSongToPlaylist(playlistID, { songid: song.songid });
+            const res = await MusicAPI.addSongToPlaylist(playlistID, { songid: String(song.songid ?? song.songId ?? "") });
             if (res?.success) {
                 Notify(`Added "${song.title}" to playlist "${playlists[index].name}"`);
             } else if (res?.error && (String(res.error).toLowerCase().includes("unauthorized") || String(res.error).toLowerCase().includes("401") || String(res.error).toLowerCase().includes("403"))) {
@@ -88,8 +88,8 @@ export function createLikeButton(song: Song, isLoggedIn: boolean): HTMLElement {
 
         try {
             const res = previousState
-                ? await MusicAPI.unlikeSong(song.songid)
-                : await MusicAPI.likeSong(song.songid);
+                ? await MusicAPI.unlikeSong(String(song.songid ?? song.songId ?? ""))
+                : await MusicAPI.likeSong(String(song.songid ?? song.songId ?? ""));
 
             if (res?.success) {
                 const newState =
@@ -148,9 +148,9 @@ export function createSongRow(
         const checkbox = createElement("input", { type: "checkbox" }) as HTMLInputElement;
         checkbox.addEventListener("change", () => {
             if (checkbox.checked) {
-                batchSelection.add(song.songid);
+                batchSelection.add(String(song.songid ?? song.songId ?? ""));
             } else {
-                batchSelection.delete(song.songid);
+                batchSelection.delete(String(song.songid ?? song.songId ?? ""));
             }
         });
         rowChildren.unshift(checkbox);

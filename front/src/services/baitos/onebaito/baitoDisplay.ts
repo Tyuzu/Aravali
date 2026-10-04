@@ -16,10 +16,9 @@ import Imagex from "../../../components/base/Imagex";
 import Bannerx from "../../../components/base/Bannerx";
 import Datex from "../../../components/base/Datex";
 import { reportEntity } from "../../reporting/reporting.js";
+import type { Baito } from "../types.js";
 
-// ---------------------------------
-// INTERFACES & TYPES
-// ---------------------------------
+export type { Baito } from "../types.js";
 
 interface Employer {
   avatar?: string;
@@ -34,29 +33,11 @@ interface Coords {
   [key: string]: any;
 }
 
-export interface Baito {
-  baitoid: string | number;
-  title?: string;
-  banner?: string;
-  ownerId?: string | number;
+export type BaitoDisplayData = Baito & {
   employer?: Employer;
-  wage?: string | number;
-  lastdate?: string | number | Date;
-  category?: string;
-  subcategory?: string;
-  workHours?: string;
-  duration?: string;
-  location?: string;
-  phone?: string;
-  createdAt?: string | number | Date;
-  applicationcount?: number;
-  tags?: string[];
-  requirements?: string | string[];
-  description?: string;
   coords?: Coords;
   status?: "open" | "closed" | string;
-  [key: string]: any;
-}
+};
 
 interface UserState {
   userid?: string | number | { id?: string | number; [key: string]: any };

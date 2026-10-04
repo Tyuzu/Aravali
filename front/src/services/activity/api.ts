@@ -1,4 +1,5 @@
 import { API_URL } from "../../api/api.js";
+import type { ActivityBatchPayload } from "./types.js";
 
 const ENDPOINT = "/scitylana/event";
 

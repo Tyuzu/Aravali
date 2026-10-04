@@ -1,4 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { RoleApplication } from "./types.js";
+
+export type { RoleApplication };
 
 export interface RoleRequestPayload {
   role: string;
@@ -22,16 +25,6 @@ export function canReviewRoleRequests(actorRoles?: Array<string | null | undefin
     ? actorRoles.map((role: string | null | undefined) => normalizeRoleName(role))
     : [];
   return roles.includes("admin") || roles.includes("moderator");
-}
-
-export interface RoleApplication {
-  id: string;
-  userid: string;
-  role: string;
-  reason: string;
-  status: "pending" | "approved" | "rejected";
-  created_at?: string;
-  updated_at?: string;
 }
 
 export async function submitRoleRequest(payload: RoleRequestPayload): Promise<{ message: string; id: string; status: string }> {

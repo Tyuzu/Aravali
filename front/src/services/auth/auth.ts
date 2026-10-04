@@ -12,6 +12,28 @@ import {
 import { t } from "../../i18n/i18n.js";
 import Notify from "../../components/ui/Notify.js";
 
+import type {
+  AuthResponseData,
+  AuthUser,
+  JwtPayload,
+  RawUserRecord,
+  ExtractedAuthPayload,
+  AuthState,
+  SignupPayload,
+  LoginPayload
+} from "./types.js";
+
+export type {
+  AuthResponseData,
+  AuthUser,
+  JwtPayload,
+  RawUserRecord,
+  ExtractedAuthPayload,
+  AuthState,
+  SignupPayload,
+  LoginPayload
+} from "./types.js";
+
 type ToggleViewFn = () => void;
 type GetSubmittingFn = () => boolean;
 type SetSubmittingFn = (value: boolean) => void;

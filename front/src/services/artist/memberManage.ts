@@ -9,25 +9,9 @@ import Imagex from "../../components/base/Imagex.js";
 import { uploadFile } from "../media/api/mediaApi.js";
 import { uid } from "../media/ui/mediaUploadForm.js";
 import Notify from "../../components/ui/Notify.js";
+import { type Artist, type BandMember } from "./types.js";
 
-// ---------------------------------
-// INTERFACES & TYPES
-// ---------------------------------
-
-export interface BandMember {
-    memberid: string | number;
-    name?: string;
-    role?: string;
-    image?: string;
-    dob?: string;
-    [key: string]: any;
-}
-
-export interface Artist {
-    artistid: string | number;
-    members: BandMember[];
-    [key: string]: any;
-}
+export type { Artist, BandMember } from "./types.js";
 
 export interface UploadControlsResult {
     uploadBtn: HTMLElement;
@@ -42,7 +26,7 @@ interface UploadResponse {
 }
 
 export function renderBandMembers(artist: Artist, isCreator: boolean): HTMLElement {
-    const cards = artist.members.map(member => {
+    const cards = (artist.members ?? []).map(member => {
         const photo = resolveImagePath(EntityType.ARTIST, PictureType.THUMB, member.image);
         const img = Imagex({ src: photo, alt: member.name || "", classes: "member-photo" }) as HTMLElement;
 

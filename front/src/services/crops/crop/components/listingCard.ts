@@ -14,11 +14,19 @@ export function createListingCard(listing: CropListing, cropName: string, isLogg
     Imagex({ src: imageSrc, alt: listing?.breed || farmName, loading: "lazy" })
   ]);
 
+  const farmId = listing?.farmid;
+
   const detailRows = [
     createElement("h3", { class: "farm-link" }, [
       createElement(
         "a",
-        { events: { click: () => navigate(`/farm/${listing.farmid}`) } },
+        {
+          events: { click: () => {
+            if (farmId !== undefined && farmId !== null) {
+              navigate(`/farm/${String(farmId)}`);
+            }
+          } }
+        },
         [farmName]
       )
     ]),

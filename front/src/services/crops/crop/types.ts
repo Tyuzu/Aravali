@@ -1,34 +1,7 @@
-export interface AvailabilityDay {
-  enabled?: boolean;
-  from?: string;
-  to?: string;
-}
+import type { AvailabilitySchedule, CropListing as SharedCropListing } from "../types.js";
 
-export type AvailabilityMap = Record<string, AvailabilityDay>;
-
-export interface CropListing {
-  cropid: string;
-  farmid: string;
-  farmName?: string;
-  breed?: string;
-  banner?: string;
-  location?: string;
-  pricePerKg?: number;
-  unit?: string;
-  availableQtyKg?: number;
-  inventoryValue?: number;
-  outOfStock?: boolean;
-  featured?: boolean;
-  avgRating?: number;
-  reviewCount?: number;
-  favoritesCount?: number;
-  harvestDate?: string;
-  plantedDate?: string;
-  lastSoldAt?: string;
-  availability?: AvailabilityMap;
-  phone?: string;
-  tags?: string[];
-}
+export type AvailabilityMap = AvailabilitySchedule;
+export type CropListing = SharedCropListing;
 
 export interface CropApiResponse {
   success: boolean;

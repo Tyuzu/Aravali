@@ -144,17 +144,20 @@ export function renderItemCard(
   };
 
   const user = getState("user") as UserState | undefined;
-  const currentUserId = user?.userid;
-  const isCreator = Boolean(isLoggedIn) && Boolean(currentUserId) && item.userid === currentUserId;
+  const currentUserId = user?.userid ?? user?.userId;
+  const currentProductId = item.productid ?? item.productId;
+  const isCreator = Boolean(isLoggedIn) && Boolean(currentUserId) && (item.userid ?? item.userId) === currentUserId;
 
   // IMAGE SECTION
   const imageSection = createElement("div", { class: "image-section" });
   const targetImage = item.banner || (Array.isArray(item.images) ? item.images[0] : item.images);
 
+  const imageId = currentProductId === undefined || currentProductId === null || currentProductId === "" ? "product-image" : `product-image-${String(currentProductId)}`;
+
   const image = Imagex({
     src: resolveImagePath(EntityType.PRODUCT, PictureType.THUMB, targetImage),
     alt: item.name || "Product",
-    id: `product-image-${item.productid}`,
+    id: imageId,
   });
 
   image.addEventListener("click", (e: MouseEvent) => e.stopPropagation());
@@ -164,19 +167,20 @@ export function renderItemCard(
     imageSection.append(
       Button({
         title: "Edit Image",
-        id: `edit-image-${item.productid}`,
+        id: currentProductId === undefined || currentProductId === null || currentProductId === "" ? "edit-image" : `edit-image-${String(currentProductId)}`,
         classes: "edit-banner-pic overlay-edit-btn",
         events: {
           click: (e: Event) => {
             e.stopPropagation();
+            if (currentProductId === undefined || currentProductId === null || currentProductId === "") return;
             updateImageWithCrop({
               entityType: EntityType.PRODUCT,
               imageType: "banner",
               stateKey: "banner",
               stateEntityKey: "product",
-              previewElementId: `product-image-${item.productid}`,
+              previewElementId: imageId,
               pictureType: PictureType.THUMB,
-              entityId: item.productid,
+              entityId: String(currentProductId),
             });
           },
         },
@@ -222,7 +226,7 @@ export function renderItemCard(
       ]),
       Button({
         title: "Add to Cart",
-        id: `add-to-cart-${item.productid}`,
+        id: currentProductId === undefined || currentProductId === null || currentProductId === "" ? "add-to-cart" : `add-to-cart-${String(currentProductId)}`,
         classes: "buttonx primary-action-btn",
         events: { click: handleAdd },
       })
@@ -235,7 +239,7 @@ export function renderItemCard(
     actionWrapper.append(
       Button({
         title: "Edit Details",
-        id: `edit-${type}-${item.productid}`,
+        id: currentProductId === undefined || currentProductId === null || currentProductId === "" ? `edit-${type}` : `edit-${type}-${String(currentProductId)}`,
         classes: "buttonx secondary-action-btn edit-item-btn",
         events: {
           click: (e: Event) => {
@@ -261,7 +265,11 @@ export function renderItemCard(
     title: item.name || "Unnamed Product",
     details,
     actions: actionWrapper,
-    onClick: () => navigate(`/products/${type}/${item.productid}`)
+    onClick: () => {
+      if (currentProductId !== undefined && currentProductId !== null && currentProductId !== "") {
+        navigate(`/products/${type}/${String(currentProductId)}`);
+      }
+    }
   });
 
   return card;

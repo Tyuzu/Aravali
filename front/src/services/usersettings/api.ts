@@ -2,6 +2,30 @@ import { apiFetch } from "../../api/api.js";
 
 export type ControlType = "toggle" | "select" | "time" | "number" | "text" | string;
 
+export interface UserSettings {
+  theme?: "light" | "dark" | "system";
+  notifications?: boolean;
+  email_notifications?: boolean;
+  emailNotifications?: boolean;
+  push_notifications?: boolean;
+  pushNotifications?: boolean;
+  privacy_mode?: boolean;
+  privacyMode?: boolean;
+  profile_visibility?: "public" | "friends" | "private";
+  profileVisibility?: "public" | "friends" | "private";
+  auto_logout?: boolean;
+  autoLogout?: boolean;
+  session_timeout?: number;
+  sessionTimeout?: number;
+  language?: "english" | "spanish" | "french";
+  time_zone?: string;
+  timeZone?: string;
+  currency?: "INR" | "USD" | "EUR";
+  daily_reminder?: string;
+  dailyReminder?: string;
+  [key: string]: unknown;
+}
+
 export interface SettingSchemaItem {
   type: string;
   label: string;
@@ -11,7 +35,7 @@ export interface SettingSchemaItem {
   options?: string[];
 }
 
-export type SettingsValues = Record<string, unknown>;
+export type SettingsValues = UserSettings & Record<string, unknown>;
 
 export interface ApiResponse<T = unknown> {
   status?: string;

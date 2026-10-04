@@ -15,7 +15,7 @@ export function formatAvailability(availability?: AvailabilityMap): string {
   return activeDays.length > 0 ? activeDays.join(", ") : "Closed";
 }
 
-export function formatRelativeDate(dateString?: string): string {
+export function formatRelativeDate(dateString?: string | number | Date): string {
   if (!dateString) return "N/A";
 
   const date = new Date(dateString);

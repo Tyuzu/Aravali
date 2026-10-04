@@ -18,17 +18,26 @@ interface DeliveryLocation {
 
 interface DeliveryItem {
   deliveryid?: string | number;
+  deliveryId?: string | number;
   id?: string | number;
   status?: string;
   payout?: number | string;
   distance_km?: number;
+  distanceKm?: number;
   pickup_loc?: DeliveryLocation;
+  pickupLoc?: DeliveryLocation;
   dropoff_loc?: DeliveryLocation;
+  dropoffLoc?: DeliveryLocation;
   package_weight?: number | string;
+  packageWeight?: number | string;
   vehicle_type?: string;
+  vehicleType?: string;
   is_fragile?: boolean;
+  isFragile?: boolean;
   expires_at?: string | number;
+  expiresAt?: string | number;
   created_at?: string | number;
+  createdAt?: string | number;
   [key: string]: any;
 }
 

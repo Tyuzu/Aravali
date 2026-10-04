@@ -80,7 +80,11 @@ function createBookingsList(api: BookingApiInstance, userId: string, isAdmin: bo
 
         const activeBookings = bookings.filter(b => b.status !== "cancelled");
         bookings.sort((a, b) => new Date(`${a.date}T${a.start}`).getTime() - new Date(`${b.date}T${b.start}`).getTime());
-        const userIds = [...new Set(bookings.map(b => b.userid))].filter((id): id is string => Boolean(id) && id !== "guest");
+        const userIds = [...new Set(
+            bookings
+                .map(b => b.userid)
+                .filter((id): id is string => typeof id === "string" && id.trim().length > 0 && id !== "guest")
+        )];
         const userMeta = await fetchUserMeta(userIds);
         const totalSeats = activeBookings.reduce((s, b) => s + (b.seats || 1), 0);
 
@@ -109,8 +113,9 @@ function createBookingsList(api: BookingApiInstance, userId: string, isAdmin: bo
                 return;
             }
 
-            const isCurrentUser = b.userid === userId;
-            const username = b.userid === "guest" ? "Guest" : (userMeta[b.userid]?.username || b.userid);
+            const isCurrentUser = (b.userid ?? "") === userId;
+            const userKey = b.userid ?? "";
+            const username = userKey === "guest" ? "Guest" : (userMeta[userKey]?.username || userKey || "Unknown");
             const timeRange = b.end && b.end !== b.start ? `${b.start} - ${b.end}` : b.start;
             const seatsNote = (b.seats && b.seats > 1) ? ` (${b.seats} seats)` : "";
             const statusNote = b.status === "cancelled" ? " [CANCELLED]" : "";
@@ -129,6 +134,9 @@ function createBookingsList(api: BookingApiInstance, userId: string, isAdmin: bo
                             withRefresh(
                                 async () => {
                                     try {
+                                        if (!b.id) {
+                                            return false;
+                                        }
                                         const res = await api.apiCancelBooking(b.id);
                                         if (res) {
                                             notifySuccess("Booking cancelled");
@@ -190,6 +198,9 @@ function renderTierManager(
                         "Delete this tier and all associated slots?",
                         withRefresh(
                             async () => {
+                                if (!tier.id) {
+                                    return false;
+                                }
                                 await api.apiDeleteTier(tier.id);
                                 notifySuccess("Tier deleted");
                                 onTierChange?.();
@@ -289,6 +300,9 @@ function renderAdminUi(
                         "Delete this slot and associated bookings?",
                         withRefresh(
                             async () => {
+                                if (!slot.id) {
+                                    return false;
+                                }
                                 const ok = await api.apiDeleteSlot(slot.id);
                                 if (ok) {
                                     notifySuccess("Slot deleted", 1600);

@@ -1,24 +1,9 @@
 import { createElement, ElementAttributes } from "../../components/createElement.js";
 import { navigate } from "../../routes/navigate.js";
 import { fetchRelatedPosts } from "./api.js";
+import type { PostSummary, RelatedPostsResponse } from "./types.js";
 
-/* ---------------------- TYPES ---------------------- */
-export interface PostSummary {
-  postid: string | number;
-  category?: string;
-  subcategory?: string;
-}
-
-export interface RelatedPostItem {
-  postid: string | number;
-  title?: string;
-  category?: string;
-  subcategory?: string;
-}
-
-export interface RelatedPostsResponse {
-  related?: RelatedPostItem[];
-}
+export type { PostSummary, RelatedPostsResponse };
 
 // --- Main Export ---
 export async function renderRelatedPosts(post: PostSummary): Promise<HTMLElement> {

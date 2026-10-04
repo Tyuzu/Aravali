@@ -4,35 +4,15 @@ import { createElement } from "../../components/createElement.js";
 import Notify from "../../components/ui/Notify.js";
 import { navigate } from "../../routes/navigate.js";
 import { createItineraryRequest, updateItineraryRequest, fetchItineraryById, type ItineraryApiItem } from "./api.js";
+import type { ItineraryVisit, ItineraryDay, ItineraryItem } from "./types.js";
 
 let dayCount = 0;
 
 /* ---------- types ---------- */
 
-interface Visit {
-  transport?: string;
-  start_time?: string;
-  end_time?: string;
-  location?: string;
-  [key: string]: unknown;
-}
-
-interface Day {
-  date?: string;
-  visits?: Visit[];
-  [key: string]: unknown;
-}
-
-interface Itinerary {
-  itineraryid?: string | number;
-  name?: string;
-  description?: string;
-  start_date?: string;
-  end_date?: string;
-  status?: string;
-  days?: Day[];
-  [key: string]: unknown;
-}
+type Visit = ItineraryVisit;
+type Day = ItineraryDay;
+type Itinerary = ItineraryItem;
 
 interface InputFieldConfig {
   name: string;

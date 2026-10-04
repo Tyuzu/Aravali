@@ -3,23 +3,20 @@ import { navigate } from "../../routes/navigate.js";
 import { displayNewChat } from "./displayNewchat.js";
 import { renderSharedChatList } from "../chat/sharedChatList.js";
 import { fetchNewChats, initNewChat } from "./api.js";
+import type { NewChatItem } from "./types.js";
+
+export type { NewChatItem };
 
 export interface ChatMessage {
   text?: string;
   timestamp?: string | number;
 }
 
-export interface ChatItem {
-  chatid: string | number;
-  users?: (string | number)[];
-  lastMessage?: ChatMessage;
-}
-
 export async function displayChats(
   contentContainer: HTMLElement,
   isLoggedIn: boolean
 ): Promise<void> {
-  await renderSharedChatList<ChatItem, string | number>({
+  await renderSharedChatList<NewChatItem, string | number>({
     container: contentContainer,
     isLoggedIn,
     loginText: "Please log in to view chats.",
@@ -27,21 +24,25 @@ export async function displayChats(
     fetchChats: async () => fetchNewChats(),
     renderChat: (
       chatView: HTMLElement,
-      chat: ChatItem,
+      chat: NewChatItem,
       { currentUser, isLoggedIn }: { currentUser: string | number; isLoggedIn: boolean }
     ) => {
-      displayNewChat(chatView, chat?.chatid, isLoggedIn, currentUser);
+      const chatId = chat?.chatid;
+      if (chatId === undefined || chatId === null) {
+        return;
+      }
+      displayNewChat(chatView, chatId, isLoggedIn, currentUser);
     },
-    getChatId: (chat: ChatItem) => chat?.chatid,
-    getOtherUser: (chat: ChatItem, currentUser: string | number) => {
+    getChatId: (chat: NewChatItem) => chat?.chatid,
+    getOtherUser: (chat: NewChatItem, currentUser: string | number) => {
       const otherUser = chat?.users?.find(
         (user) => String(user) !== String(currentUser)
       );
       return otherUser !== undefined ? String(otherUser) : "Unknown";
     },
-    getLastMessage: (chat: ChatItem) =>
+    getLastMessage: (chat: NewChatItem) =>
       chat?.lastMessage?.text?.trim() || "No messages yet",
-    getTimestamp: (chat: ChatItem) => chat?.lastMessage?.timestamp
+    getTimestamp: (chat: NewChatItem) => chat?.lastMessage?.timestamp
   });
 }
 

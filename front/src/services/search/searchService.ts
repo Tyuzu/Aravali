@@ -29,8 +29,8 @@ const autocompleteCache = new Map<string, string[]>();
 // --- Utilities ---
 
 
-function formatDate(dateString?: string): string {
-  if (!dateString) return "Unknown";
+function formatDate(dateString?: string | number | Date | null): string {
+  if (dateString === undefined || dateString === null || dateString === "") return "Unknown";
   const d = new Date(dateString);
   return Number.isNaN(d.getTime()) ? "Unknown" : d.toLocaleDateString();
 }
@@ -335,18 +335,21 @@ function createCard(entityType: string, item: SearchItem): HTMLElement {
     ])
   );
 
+  const createdAt = item.created_at ?? item.createdAt ?? null;
+
   const details = createElement("div", { class: "result-details" }, [
     createElement("p", { class: "result-description" }, [item.description || "No description available."]),
-    createElement("small", { class: "result-date" }, [`Created: ${formatDate(item.createdAt)}`])
+    createElement("small", { class: "result-date" }, [`Created: ${formatDate(createdAt)}`])
   ]);
 
   const footer = createElement("div", { class: "result-footer" });
-  const id = item.id || item.entityid;
+  const id = item.id ?? item.entityid ?? item.entityId ?? item.placeid ?? item.eventid ?? item.businessid;
 
-  if (id) {
+  if (id !== undefined && id !== null && id !== "") {
+    const hrefId = String(id);
     footer.appendChild(
       createElement("a", {
-        href: `/${entityType}/${id}`,
+        href: `/${entityType}/${hrefId}`,
         class: "button button-secondary result-link",
         target: "_blank"
       }, ["View Details"])

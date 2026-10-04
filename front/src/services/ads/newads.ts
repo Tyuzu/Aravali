@@ -2,6 +2,7 @@ import "../../../css/subpages/sda.css";
 import { createElement } from "../../components/createElement.js";
 import { t } from "../../i18n/i18n.js";
 import { fetchAdPayload, trackImpression, trackClick } from "./api.js";
+import type { RawAdPayload } from "./types.js";
 
 // --- Types & Interfaces ---
 
@@ -9,22 +10,7 @@ export type AdLayout = "horizontal" | "vertical" | "banner" | "compact";
 
 export type AdFetcher = (slotEl: HTMLElement) => Promise<void> | void;
 
-export interface RawAdPayload {
-  id?: string;
-  ID?: string;
-  link?: string;
-  Link?: string;
-  image?: string;
-  Image?: string;
-  title?: string;
-  Title?: string;
-  description?: string;
-  Description?: string;
-  badge?: string;
-  Badge?: string;
-  cta?: string;
-  CTA?: string;
-}
+export type { RawAdPayload };
 
 export interface AdData {
   id: string;

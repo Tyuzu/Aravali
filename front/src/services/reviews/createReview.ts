@@ -115,8 +115,8 @@ function handleEditReview(
     const rating = Number(ratingInput?.value);
     const comment = commentInput?.value.trim() || "";
 
-    if (rating < 1 || rating > 5 || !comment) {
-      alert("Invalid input.");
+    if (rating < 1 || rating > 5 || !comment || review.reviewid == null) {
+      alert("Invalid input or missing review id.");
       return;
     }
 
@@ -130,12 +130,16 @@ function handleEditReview(
 }
 
 async function handleDeleteReview(
-  reviewId: string | number,
+  reviewId: string | number | undefined,
   entityType: string,
   entityId: string | number,
   onDone: OnDoneCallback
 ): Promise<void> {
   if (!confirm("Delete this review?")) {
+    return;
+  }
+
+  if (reviewId == null) {
     return;
   }
 

@@ -5,11 +5,25 @@ function normalizeEntityItems(items: EntityItem[] | unknown): EntityItem[] {
   if (!Array.isArray(items)) return [];
 
   return items.map((item) => {
-    const entityId = item.entity_id ?? item.postid ?? item.id;
+    const entityId = item.entity_id ?? item.entityId ?? item.postid ?? item.postId ?? item.id ?? item.item_id ?? item.itemId;
+    const createdAt = item.created_at ?? item.createdAt ?? new Date(0);
+
     return {
       ...item,
       entity_id: entityId ?? item.entity_id,
-      created_at: item.created_at ?? new Date(0)
+      entityId: entityId ?? item.entityId,
+      created_at: createdAt,
+      createdAt: createdAt,
+      userId: item.userId ?? item.userid,
+      userid: item.userid ?? item.userId,
+      item_id: item.item_id ?? item.itemId,
+      itemId: item.itemId ?? item.item_id,
+      image_url: item.image_url ?? item.imageUrl,
+      imageUrl: item.imageUrl ?? item.image_url,
+      entity_type: item.entity_type ?? item.entityType,
+      entityType: item.entityType ?? item.entity_type,
+      item_type: item.item_type ?? item.itemType,
+      itemType: item.itemType ?? item.item_type,
     };
   });
 }

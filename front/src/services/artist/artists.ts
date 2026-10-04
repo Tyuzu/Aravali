@@ -9,19 +9,7 @@ import { listArtists } from "./api.js";
 import { adspace } from "../../services/ads/newads.js";
 import { createMainLayout } from "../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../components/layout/asideLayout.js";
-
-// ---------------------------------
-// INTERFACES & TYPES
-// ---------------------------------
-
-export interface Artist {
-    artistid?: string | number;
-    name?: string;
-    category?: string;
-    bio?: string;
-    photo?: string;
-    [key: string]: any;
-}
+import { type Artist } from "./types.js";
 
 interface ArtistsApiResponse {
     data?: Artist[];

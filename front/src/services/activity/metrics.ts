@@ -1,43 +1,20 @@
 // src/utils/activityLogger.ts
 import { generateUUID } from "../../utils/genUUID.js";
 import { sendActivityBatch } from "./api.js";
+import type {
+  ActivityEventType,
+  ActivityAnalyticsEvent,
+  EnqueuedActivityEvent,
+  ActivityBatchMetadata,
+  ActivityBatchPayload
+} from "./types.js";
 
 // --- Types & Interfaces ---
-export type EventType =
-  | "pageview"
-  | "click"
-  | "scroll"
-  | "input_focus"
-  | "time_on_page"
-  | "button_click"
-  | "purchase"
-  | (string & {});
-
-export interface AnalyticsEvent {
-  type: EventType;
-  data?: Record<string, unknown>;
-  ts?: number;
-}
-
-export interface EnqueuedEvent extends AnalyticsEvent {
-  ts: number;
-}
-
-export interface BatchMetadata {
-  lang: string;
-  platform: string;
-  referrer: string;
-  url: string;
-  ua: string;
-  screen: string;
-  session: string;
-  user: string;
-}
-
-export interface BatchPayload {
-  meta: BatchMetadata;
-  events: EnqueuedEvent[];
-}
+export type EventType = ActivityEventType;
+export interface AnalyticsEvent extends ActivityAnalyticsEvent {}
+export interface EnqueuedEvent extends EnqueuedActivityEvent {}
+export interface BatchMetadata extends ActivityBatchMetadata {}
+export interface BatchPayload extends ActivityBatchPayload {}
 
 // --- Constants ---
 // endpoint moved to activity API helper

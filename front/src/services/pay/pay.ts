@@ -274,7 +274,8 @@ async function showPaymentModal({
   const paymentHandlers: Record<PaymentMethod, () => Promise<PaymentResult>> = {
     card: () => payViaStripe({ paymentType, entityType, entityId }),
     wallet: () => payViaWallet({ paymentType, entityType, entityId }),
-    cash_on_delivery: () => processCashOnDelivery({ paymentType, entityType, entityId })
+    cash_on_delivery: () => processCashOnDelivery({ paymentType, entityType, entityId }),
+    cod: () => processCashOnDelivery({ paymentType, entityType, entityId })
   };
 
   const confirmBtn = Button({

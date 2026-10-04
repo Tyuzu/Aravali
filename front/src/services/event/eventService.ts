@@ -14,20 +14,9 @@ import { displayMedia } from "../media/ui/mediaGallery.js";
 import { createTabs } from "../../utils/persistTabs.js";
 import { showSeatingBanner } from "../tickets/seatingBanner.js";
 import { displayEventNews } from "./eventMoreTabs.js";
+import type { EventData, EventItem } from "./types.js";
 
-// --- Type Definitions / Interfaces ---
-
-export interface EventData {
-    id?: string | number;
-    eventid?: string | number;
-    creatorid?: string | number;
-    date: string | Date;
-    seating?: unknown;
-    contactInfo?: unknown;
-    success?: boolean;
-    error?: string;
-    [key: string]: unknown;
-}
+export type { EventData, EventItem } from "./types.js";
 
 export interface TabItem {
     title: string;

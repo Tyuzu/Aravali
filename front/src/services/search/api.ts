@@ -2,12 +2,32 @@ import { SEARCH_URL } from "../../state/state.js";
 import Notify from "../../components/ui/Notify.js";
 
 export interface SearchItem {
-  id?: string;
-  entityid?: string;
+  id?: string | number;
+  entityid?: string | number;
+  entityId?: string | number;
+  placeid?: string | number;
+  placeId?: string | number;
+  eventid?: string | number;
+  eventId?: string | number;
+  businessid?: string | number;
+  businessId?: string | number;
+  userid?: string | number;
+  userId?: string | number;
+  type?: string;
   title?: string;
+  name?: string;
   description?: string;
+  location?: string;
+  address?: string;
+  category?: string;
+  price?: string | number;
+  contact?: string;
   image?: string;
-  createdAt?: string;
+  banner_image?: string;
+  bannerImage?: string;
+  link?: string;
+  created_at?: string | number | Date | null;
+  createdAt?: string | number | Date | null;
   [key: string]: unknown;
 }
 

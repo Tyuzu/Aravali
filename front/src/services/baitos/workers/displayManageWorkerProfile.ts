@@ -60,7 +60,7 @@ export async function displayManageWorkerProfile(
         createElement("div", { class: "header-content" }, [
             createElement("h2", {}, [worker.name || "Your Worker Profile"]),
             createElement("p", { class: "profile-id" }, [`Worker ID: ${worker["baitoWorkerId"]}`]),
-            createElement("p", { class: "joined-date" }, [`Joined: ${formatDate(worker["createdAt"])}`])
+            createElement("p", { class: "joined-date" }, [`Joined: ${formatDate(String(worker["createdAt"] ?? ""))}`])
         ])
     ]) as HTMLElement;
 
@@ -169,7 +169,10 @@ export async function displayManageWorkerProfile(
                                 }
                                 try {
                                     Notify("Deleting profile...", { type: "info" });
-                                    await deleteWorker(worker!["baitoWorkerId"]);
+                                    const workerId = worker?.["baitoWorkerId"];
+                                    if (workerId !== undefined && workerId !== null) {
+                                        await deleteWorker(workerId);
+                                    }
                                     Notify("Profile deleted.", { type: "success" });
                                     navigate("/baitos/hire");
                                 } catch (err: any) {

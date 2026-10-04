@@ -1,11 +1,9 @@
 // itineraryService.ts
 import { renderItineraryForm } from "./createOrEditItinerary.js";
 import { fetchItineraryById, type ItineraryApiItem } from "./api.js";
+import type { ItineraryItem } from "./types.js";
 
-interface Itinerary {
-    id?: string | number;
-    [key: string]: unknown;
-}
+type Itinerary = ItineraryItem;
 
 export async function editItinerary(
     container: HTMLElement,

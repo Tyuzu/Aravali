@@ -3,14 +3,29 @@ import { apiFetch } from "../../api/api.js";
 export interface NotificationItem {
   id?: string | number;
   notificationid?: string | number;
+  userid?: string | number;
+  userId?: string | number;
   title?: string;
   type?: string;
   message?: string;
-  createdAt?: string | number | Date;
   isRead?: boolean;
+  read?: boolean;
+  createdAt?: string | number | Date | null;
+  updatedAt?: string | number | Date | null;
+  [key: string]: unknown;
 }
 
-function SafeTimestamp(dateInput?: string | number | Date): number {
+export interface NotificationPreferences {
+  userid?: string | number;
+  userId?: string | number;
+  emailNotifs?: boolean;
+  pushNotifs?: boolean;
+  inAppNotifs?: boolean;
+  updatedAt?: string | number | Date | null;
+  [key: string]: unknown;
+}
+
+function SafeTimestamp(dateInput?: string | number | Date | null): number {
   if (!dateInput) return 0;
   const t = new Date(dateInput).getTime();
   return isNaN(t) ? 0 : t;

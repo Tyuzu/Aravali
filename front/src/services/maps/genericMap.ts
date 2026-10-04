@@ -1,13 +1,27 @@
 import { createElement } from "../../components/createElement.js";
 
+export interface MapPoint {
+  x?: number;
+  y?: number;
+  lat?: number;
+  lon?: number;
+  name?: string;
+  type?: string;
+}
+
 export interface MapOptions {
-  mapImage: string;
-  mapWidth: number;
-  mapHeight: number;
+  entity?: string;
+  title?: string;
+  mapImage?: string;
+  mapWidth?: number;
+  mapHeight?: number;
   mapBounds?: { minLat: number; maxLat: number; minLon: number; maxLon: number };
   currentLocation?: { lat: number; lon: number };
-  markers?: Array<{ lat: number; lon: number; name?: string }>;
+  markers?: Array<MapPoint & { lat?: number; lon?: number; name?: string; type?: string }>;
   showLegend?: boolean;
+  locations?: Array<{ id?: string; name?: string; x?: number; y?: number; category?: string }>;
+  lockedAreas?: Array<{ id?: string; label?: string; x?: number; y?: number; width?: number; height?: number }>;
+  floors?: Array<{ level?: number; name?: string; image?: string }>;
 }
 
 export function displayDynamicMap(container: HTMLElement, options: MapOptions): void {

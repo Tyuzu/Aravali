@@ -1,5 +1,5 @@
 import { apiFetch } from "../../api/api.js";
-import type { Place } from "./placeDetails.js";
+import type { Place } from "./types.js";
 
 export interface CreatePlaceResponse {
   placeid: string;

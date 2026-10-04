@@ -6,6 +6,9 @@ import Button from "../../components/base/Button.js";
 import { createFormGroup } from "../../components/form/createFormGroupEnhanced.js";
 import { createElement } from "../../components/createElement.js";
 import Notify from "../../components/ui/Notify.js";
+import { type ExistingArtist } from "./types.js";
+
+export type { ExistingArtist } from "./types.js";
 
 // ---------------------------------
 // INTERFACES & TYPES
@@ -14,18 +17,6 @@ import Notify from "../../components/ui/Notify.js";
 export interface SocialLink {
     platform: string;
     url: string;
-}
-
-export interface ExistingArtist {
-    category?: string;
-    name?: string;
-    bio?: string;
-    dob?: string;
-    place?: string;
-    country?: string;
-    genres?: string[];
-    socials?: Record<string, string>;
-    [key: string]: any;
 }
 
 export interface CreateOrEditArtistOptions {

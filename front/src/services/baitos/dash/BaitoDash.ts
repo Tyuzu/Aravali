@@ -8,40 +8,28 @@ import Notify from "../../../components/ui/Notify";
 import Modal from "../../../components/ui/Modal";
 import Button from "../../../components/base/Button";
 import Datex from "../../../components/base/Datex";
+import type { Baito, BaitoApplicationRecord } from "../types.js";
 
-// ---------------------------------
-// INTERFACES & TYPES
-// ---------------------------------
-
-export interface Application {
-    _id: string | number;
+export type Application = BaitoApplicationRecord & {
+    _id?: string | number;
+    jobId?: string | number;
     title?: string;
     location?: string;
     wage?: string | number;
     status?: string;
-    pitch?: string;
-    submittedAt?: string | number | Date;
     feedback?: string;
-    jobId: string | number;
-    [key: string]: any;
-}
+};
 
-export interface BaitoJob {
-    baitoid: string | number;
-    title?: string;
-    location?: string;
-    wage?: string | number;
+export type BaitoJob = Baito & {
     applicationsCount?: number;
-    [key: string]: any;
-}
+};
 
-export interface Applicant {
+export type Applicant = BaitoApplicationRecord & {
     _id?: string | number;
     username?: string;
     pitch?: string;
     submittedAt?: string | number | Date;
-    [key: string]: any;
-}
+};
 
 // ---------------- Applicant Dashboard ----------------
 export async function baitoApplicantDash(container: HTMLElement): Promise<void> {
@@ -134,7 +122,9 @@ export async function baitoApplicantDash(container: HTMLElement): Promise<void> 
                                     events: {
                                         click: async () => {
                                             try {
-                                                await deleteApplication(app._id);
+                                                if (app._id !== undefined && app._id !== null) {
+                                        await deleteApplication(app._id);
+                                    }
                                                 Notify("Application withdrawn", { type: "success", duration: 3000 });
                                                 modalInstance.close();
                                                 baitoApplicantDash(container);

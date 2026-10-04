@@ -1,11 +1,9 @@
 // itineraryService.ts
 import { apiFetch } from "../../api/api.js";
 import { renderItineraryForm } from "./createOrEditItinerary.js";
+import type { ItineraryItem } from "./types.js";
 
-interface Itinerary {
-    id?: string | number;
-    [key: string]: unknown;
-}
+type Itinerary = ItineraryItem;
 
 export function createItinerary(
     isLoggedIn: boolean,

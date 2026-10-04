@@ -1,31 +1,11 @@
 import { apiFetch } from "../../api/api.js";
+import type { ItineraryItem, ItineraryVisit, ItineraryDay, ItineraryApiResponse } from "./types.js";
 
-export interface ItineraryVisitApi {
-  start_time?: string;
-  end_time?: string;
-  location?: string;
-  transport?: string;
-  [key: string]: unknown;
-}
+export type { ItineraryItem, ItineraryVisit, ItineraryDay, ItineraryApiResponse };
 
-export interface ItineraryDayApi {
-  date?: string;
-  visits?: ItineraryVisitApi[];
-  [key: string]: unknown;
-}
-
-export interface ItineraryApiItem {
-  itineraryid?: string | number;
-  userid?: string | number;
-  name?: string;
-  status?: string;
-  published?: boolean;
-  start_date?: string;
-  end_date?: string;
-  description?: string;
-  days?: ItineraryDayApi[];
-  [key: string]: unknown;
-}
+export type ItineraryVisitApi = ItineraryVisit;
+export type ItineraryDayApi = ItineraryDay;
+export type ItineraryApiItem = ItineraryItem;
 
 export async function fetchItineraries(): Promise<ItineraryApiItem[] | { data?: ItineraryApiItem[]; [key: string]: unknown }> {
   return await apiFetch("/itineraries");

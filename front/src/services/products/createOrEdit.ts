@@ -135,18 +135,25 @@ export function renderItemForm(
     placeholder: "Optional code"
   });
 
+  const formatDateValue = (value?: string | Date | null): string => {
+    if (!value) return "";
+    if (typeof value === "string") return value.slice(0, 10);
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    return "";
+  };
+
   const availableFromGroup = createFormGroup({
     type: "date",
     id: "availableFrom",
     label: "Available From",
-    value: itemData?.availableFrom?.slice(0, 10) || ""
+    value: formatDateValue(itemData?.availableFrom)
   });
 
   const availableToGroup = createFormGroup({
     type: "date",
     id: "availableTo",
     label: "Available To",
-    value: itemData?.availableTo?.slice(0, 10) || ""
+    value: formatDateValue(itemData?.availableTo)
   });
 
   const descriptionGroup = createFormGroup({
@@ -227,7 +234,11 @@ export function renderItemForm(
           }
 
           try {
-            await deleteFarmItem(type, itemData.productid);
+            const productId = itemData?.productid ?? itemData?.productId;
+            if (productId === undefined || productId === null || productId === "") {
+              throw new Error("Missing product id");
+            }
+            await deleteFarmItem(type, String(productId));
             onDone();
           } catch (err: any) {
             if (err?.status === 403) {
@@ -274,7 +285,8 @@ export function renderItemForm(
         featured: (elements["featured"] as HTMLInputElement)?.checked ?? false
       };
 
-      const res = await saveFarmItem(type, payload, mode, itemData?.productid);
+      const productId = itemData?.productid ?? itemData?.productId;
+      const res = await saveFarmItem(type, payload, mode, productId === undefined || productId === null ? undefined : String(productId));
 
       if (!res || !res.productid) {
         throw new Error("Request failed");

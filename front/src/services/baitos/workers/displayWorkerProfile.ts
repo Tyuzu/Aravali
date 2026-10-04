@@ -10,7 +10,12 @@ import { displayBooking } from "../../booking/booking";
 import { getState } from "../../../state/state";
 import { meChat } from "../../mechat/plugnplay";
 import Notify from "../../../components/ui/Notify";
-import { Worker } from "./WorkerModal";
+import type { BaitoWorker } from "../types.js";
+
+export type Worker = BaitoWorker & {
+    name: string;
+    avatar?: string;
+};
 
 // ---------------------------------
 // INTERFACES & TYPES
@@ -121,7 +126,7 @@ export async function displayWorkerProfile(
         displayBooking(
             {
                 entityType: "worker",
-                entityId: worker.baitoWorkerId ?? workerId,
+                entityId: String(worker.baitoWorkerId ?? workerId),
                 entityCategory: "Worker",
                 userId: currentUser !== undefined ? String(currentUser) : "guest",
                 isAdmin: isOwnerOrAdmin

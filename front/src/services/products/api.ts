@@ -49,7 +49,10 @@ export async function deleteFarmItem(type: ItemType, itemId?: string): Promise<v
 }
 
 export interface ProductDetail {
-  productid?: string;
+  productid?: string | number;
+  productId?: string | number;
+  userid?: string | number;
+  userId?: string | number;
   name?: string;
   description?: string;
   category?: string;
@@ -58,17 +61,22 @@ export interface ProductDetail {
   quantity?: number | string;
   unit?: string;
   type?: string;
-  banner?: string;
-  photo?: string;
-  images?: string | string[];
+  banner?: string | null;
+  photo?: string | null;
+  images?: string | string[] | null;
   seller?: {
     name?: string;
     contact?: string;
     [key: string]: unknown;
   } | null;
-  sku?: string;
+  sku?: string | null;
   tags?: string[];
   rating?: number | string;
+  availableFrom?: string | Date | null;
+  availableTo?: string | Date | null;
+  featured?: boolean;
+  createdAt?: string | number | Date | null;
+  updatedAt?: string | number | Date | null;
   [key: string]: unknown;
 }
 

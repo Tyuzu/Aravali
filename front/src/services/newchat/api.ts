@@ -1,9 +1,7 @@
 import { chatFetch } from "../../api/api.js";
+import type { NewChatInitResponse } from "./types.js";
 
-export interface NewChatInitResponse {
-  chatid?: string | number;
-  [key: string]: unknown;
-}
+export type { NewChatInitResponse };
 
 export async function fetchNewChats(): Promise<any> {
   return await chatFetch("/api/v1/newchats/all", "GET");

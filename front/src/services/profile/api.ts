@@ -1,22 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { UserProfile, SuggestedUser } from "./types.js";
 
-export interface UserProfile {
-  userid?: string | number;
-  id?: string | number;
-  username?: string;
-  name?: string;
-  email?: string;
-  bio?: string;
-  phone_number?: string;
-  [key: string]: unknown;
-}
-
-export interface SuggestedUser {
-  userid: string | number;
-  username?: string;
-  bio?: string;
-  [key: string]: unknown;
-}
+export type { UserProfile, SuggestedUser } from "./types.js";
 
 export async function fetchMyProfile(): Promise<UserProfile | null> {
   return await apiFetch<UserProfile | null>("/profile/profile", "GET");

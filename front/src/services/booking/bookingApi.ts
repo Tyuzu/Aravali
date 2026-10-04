@@ -1,21 +1,11 @@
 // bookingApi.ts
 
 import { apiFetch } from "../../api/api.js";
-import { BookingItem, PricingTier, BookingSlot } from "./bookingManager.js";
+import type { BookingItem, BookingSlot, CreateBookingPayload, PricingTier } from "./types.js";
 
 // ---------- Interfaces ----------
 
-export interface CreateBookingPayload {
-    seats?: number | string;
-    userid?: string;
-    date?: string;
-    start?: string;
-    end?: string;
-    slotId?: string;
-    tierId?: string;
-    pricePaid?: number;
-    [key: string]: any;
-}
+export type { BookingItem, BookingSlot, CreateBookingPayload, PricingTier };
 
 export interface BookingApiInstance {
     apiListSlots: () => Promise<BookingSlot[]>;

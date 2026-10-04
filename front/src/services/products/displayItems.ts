@@ -16,13 +16,13 @@ export function sortItems(items: FarmItem[], sort: string): FarmItem[] {
   const sorted = [...items];
   switch (sort) {
     case "price_asc":
-      return sorted.sort((a, b) => a.price - b.price);
+      return sorted.sort((a, b) => Number(a.price ?? 0) - Number(b.price ?? 0));
     case "price_desc":
-      return sorted.sort((a, b) => b.price - a.price);
+      return sorted.sort((a, b) => Number(b.price ?? 0) - Number(a.price ?? 0));
     case "name_asc":
-      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      return sorted.sort((a, b) => String(a.name ?? "").localeCompare(String(b.name ?? "")));
     case "name_desc":
-      return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      return sorted.sort((a, b) => String(b.name ?? "").localeCompare(String(a.name ?? "")));
     default:
       return sorted;
   }

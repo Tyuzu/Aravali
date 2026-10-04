@@ -7,7 +7,7 @@ import { adspace } from "../../services/ads/newads.js";
 import { listPlacesRequest } from "./api.js";
 import { createMainLayout } from "../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../components/layout/asideLayout.js";
-import { Place } from "./placeDetails.js";
+import type { Place } from "./types.js";
 
 interface PlacesResponse {
   data?: Place[];

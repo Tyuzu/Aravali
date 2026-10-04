@@ -1,9 +1,7 @@
 import { mereFetch } from "../../api/api.js";
+import type { ChatResponse } from "./types.js";
 
-export interface ChatResponse {
-  chatid: string | number;
-  [key: string]: unknown;
-}
+export type { ChatResponse };
 
 export async function startMeChat(
   participants: Array<string | number>,

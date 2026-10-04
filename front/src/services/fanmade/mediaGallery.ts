@@ -65,23 +65,28 @@ function buildMediaFragment(
             class: `${prefix}-group`
         }) as HTMLElement;
         group.forEach((media: MediaItem, i: number) => {
-            if (!media.url) {
+            const mediaUrl = media.url ?? (media as any).mediaUrl ?? "";
+            if (!mediaUrl) {
                 return;
             }
+            const mediaId = media.mediaid ?? (media as any).mediaId ?? (media as any).id ?? "";
+            const caption = media.caption ?? (media as any).description ?? "";
+            const captionLang = media.captionlang ?? (media as any).captionLang ?? "";
+
             const figure = createElement("figure", {
                 class: `${prefix}-item`,
-                "data-id": String(media.mediaid)
+                "data-id": String(mediaId)
             }) as HTMLElement;
-            const thumbSrc = resolveImagePath(EntityType.MEDIA, PictureType.THUMB, `${media.url}.jpg`);
+            const thumbSrc = resolveImagePath(EntityType.MEDIA, PictureType.THUMB, `${mediaUrl}.jpg`);
             const mediaEl = buildMediaElement(media, thumbSrc, i, prefix);
             figure.append(mediaEl);
             
-            if (media.caption && media.caption.trim() !== "") {
-                const caption = createElement("figcaption", {
+            if (caption && caption.trim() !== "") {
+                const captionEl = createElement("figcaption", {
                     class: `${prefix}-caption`
-                }, [media.caption]);
-                const translation = buildTranslationSection(media.caption, media.captionlang);
-                figure.append(caption);
+                }, [caption]);
+                const translation = buildTranslationSection(caption, captionLang);
+                figure.append(captionEl);
                 if (translation) {
                     figure.append(...translation);
                 }

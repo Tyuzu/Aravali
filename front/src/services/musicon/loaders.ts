@@ -54,7 +54,7 @@ async function loadSongs(
             classes: "btn-add-queue",
             events: {
                 click: () => {
-                    const selected = songs.filter(s => batchSelection?.has(s.songid));
+                    const selected = songs.filter(s => batchSelection?.has(String(s.songid ?? s.songId ?? "")));
                     if (!selected.length) {
                         Notify("No songs selected", { type: "info" });
                         return;

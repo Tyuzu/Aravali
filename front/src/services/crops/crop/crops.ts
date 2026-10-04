@@ -8,9 +8,11 @@ import Button from "../../../components/base/Button.js";
 import { createMainLayout } from "../../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../../components/layout/asideLayout.js";
 
+import type { Crop as SharedCrop } from "../types.js";
+
 // --- Types & Interfaces ---
 
-export interface Crop {
+export type Crop = SharedCrop & {
   name: string;
   minPrice?: number;
   maxPrice?: number;
@@ -22,7 +24,7 @@ export interface Crop {
   price?: number;
   quantity?: number;
   farmName?: string;
-}
+};
 
 export type CategorizedCrops = Record<string, Crop[]>;
 

@@ -1,7 +1,38 @@
+export interface MapDimensions {
+    width: number;
+    height: number;
+}
+
+export interface MapAsset {
+    image: string;
+    fallbackImage?: string;
+    dimensions?: MapDimensions;
+}
+
+export interface Point2D {
+    x: number;
+    y: number;
+}
+
+export interface LiveEvent {
+    isLive?: boolean;
+    eventName?: string;
+    endsAt?: string | number | Date | null;
+    remainingSecs?: number;
+    rewardMultiplier?: number;
+}
+
+export interface LocationDetails {
+    address?: string;
+    price?: number;
+    intelData?: string;
+}
+
 export interface GtaFloor {
     level: number;
     name?: string;
     image?: string;
+    locations?: GtaLocation[];
 }
 
 export interface GtaLocation {
@@ -14,27 +45,24 @@ export interface GtaLocation {
     floorLevel?: number;
     icon?: string;
     iconUrl?: string;
-    details?: {
-        address?: string;
-        price?: number;
-    };
-    liveEvent?: {
-        isLive: boolean;
-        remainingSecs: number;
-    };
+    details?: LocationDetails;
+    liveEvent?: LiveEvent;
+    membersOnly?: boolean;
+    // Compatibility aliases used by the UI layer
+    locationId?: string;
+    [key: string]: unknown;
 }
 
 export interface LiveEntity {
     id: string;
     type: "vehicle" | "player" | string;
     name: string;
-    speed: number;
-    heading: number;
+    position: Point2D;
+    heading?: number;
+    speed?: number;
     floor?: number;
-    position: {
-        x: number;
-        y: number;
-    };
+    occupants?: number;
+    updated?: string | number | Date;
 }
 
 export interface TerritoryPoint {
@@ -51,13 +79,59 @@ export interface Territory {
     color?: string;
     polygonPoints?: TerritoryPoint[];
     points?: TerritoryPoint[];
+    [key: string]: unknown;
 }
 
-export interface CategoryItem {
+export interface CategoryFilter {
     id: string;
     label: string;
     icon?: string;
     count?: number;
+}
+
+export type CategoryItem = CategoryFilter;
+
+export interface LockedArea {
+    id?: string;
+    label?: string;
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+    condition?: string;
+    dependsOn?: string;
+}
+
+export interface PermalinkInfo {
+    url?: string;
+    targetId?: string;
+    entity?: string;
+    zoom?: number;
+    focusPoint?: Point2D;
+    floorLevel?: number | null;
+}
+
+export interface MapConfig {
+    entity?: string;
+    title?: string;
+    map?: MapAsset;
+    lockedAreas?: LockedArea[];
+    floors?: GtaFloor[];
+    [key: string]: unknown;
+}
+
+export interface MapResponseData {
+    entity?: string;
+    title?: string;
+    map?: MapAsset;
+    categories?: CategoryFilter[];
+    locations?: GtaLocation[];
+    territories?: Territory[];
+    lockedAreas?: LockedArea[];
+    floors?: GtaFloor[];
+    playerProgress?: Record<string, number>;
+    permalink?: PermalinkInfo;
+    [key: string]: unknown;
 }
 
 export interface GtaMapState {

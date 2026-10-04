@@ -1,21 +1,13 @@
 import { apiFetch } from "../../../api/api.js";
 import { FILEDROP_URL, getState } from "../../../state/state.js";
 import { UploadStore } from "../store/uploadStore.js";
+import type { MediaItem } from "../types.js";
+
+export type { MediaItem };
 
 /* =========================
    TYPES & INTERFACES
 ========================= */
-
-export interface MediaItem {
-    mediaid: string | number;
-    creatorid?: string | number;
-    url?: string;
-    type?: "image" | "video" | string;
-    caption?: string;
-    captionlang?: string;
-    extn?: string;
-    [key: string]: unknown;
-}
 
 export interface MediaUploadResult {
     filename?: string;

@@ -11,15 +11,22 @@ export type OrderType =
 
 export interface RefundRequest {
   id: string;
-  orderId: string;
-  userId: string;
+  order_id?: string;
+  orderId?: string;
+  userid?: string;
+  userId?: string;
   amount: number;
   reason?: string;
   status: RefundStatus;
+  created_at?: string;
   createdAt?: string;
+  order_type?: OrderType;
   orderType?: OrderType;
+  review_notes?: string;
   reviewNotes?: string;
+  reviewed_by?: string;
   reviewedBy?: string;
+  [key: string]: unknown;
 }
 
 export interface OrderItem {
@@ -41,10 +48,14 @@ export interface OrderItemsStructure {
  */
 export interface Order {
   orderId: string;
+  orderid?: string;
   orderType: OrderType | string;
+  ordertype?: string;
   createdAt: string | number;
+  created_at?: string | number;
   status: string;
   paymentMethod: string;
+  paymentmethod?: string;
   address: string;
   total: number;
   subtotal?: number;
@@ -52,9 +63,14 @@ export interface Order {
   tax?: number;
   delivery?: number;
   approvedBy?: string[];
+  approvedby?: string[];
   farmId?: string;
+  farmid?: string;
+  userid?: string;
+  userId?: string;
   items: OrderItemsStructure;
   refundStatus?: RefundStatus;
+  [key: string]: unknown;
 }
 
 export interface OrderFilters {

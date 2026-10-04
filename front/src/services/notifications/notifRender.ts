@@ -11,13 +11,16 @@ import { decrementUnreadNotificationState, syncUnreadNotificationState } from ".
 
 export interface SystemLog {
   id?: string | number;
-  userId?: string;
+  userid?: string | number;
+  userId?: string | number;
   notificationid?: string | number;
   type?: string;
   title?: string;
   message?: string;
-  createdAt?: string | number | Date;
+  createdAt?: string | number | Date | null;
   isRead?: boolean;
+  read?: boolean;
+  [key: string]: unknown;
 }
 
 export interface SummaryChip {

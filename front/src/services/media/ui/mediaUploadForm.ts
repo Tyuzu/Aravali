@@ -37,6 +37,7 @@ export interface CustomUploadItem extends UploadProgressItem {
 export interface PostMediaPayload {
     caption: string;
     captionLang: string;
+    captionlang?: string;
     files: Array<{
         filename: string;
         extn: string;

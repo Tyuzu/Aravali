@@ -1,48 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { ReportPayload, AppealPayload, ApiResponse, AppealStatusItem, Appeal } from "./types.js";
 
-// ---- Types & Interfaces ----
-
-export interface ReportPayload {
-  targetId: string;
-  targetType: string;
-  parentType?: string;
-  parentId?: string;
-  reason: string;
-  notes?: string;
-}
-
-export interface AppealPayload {
-  targetId: string;
-  targetType: string;
-  reason: string;
-}
-
-export interface ApiResponse<T = unknown> {
-  status?: string;
-  data?: T;
-  message?: string;
-  reportId?: string;
-  appealId?: string;
-  error?: string;
-}
-
-export interface AppealStatusItem {
-  appealId?: string;
-  appealid?: string;
-  userId?: string;
-  userid?: string;
-  targetType?: string;
-  targetId?: string;
-  reason?: string;
-  status?: "pending" | "approved" | "denied" | string;
-  reviewedBy?: string;
-  reviewNotes?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-/** Alias for AppealStatusItem to maintain consistency across components */
-export type Appeal = AppealStatusItem;
+export type { ReportPayload, AppealPayload, ApiResponse, AppealStatusItem, Appeal };
 
 // ---- API Functions ----
 

@@ -10,8 +10,8 @@ export function createPlaylistCard(
     player: Player, 
     isLoggedIn: boolean
 ): HTMLElement {
-    const playlistID = playlist.playlistid;
-    const isLikes = playlistID?.startsWith("likes_");
+    const playlistID = String(playlist.playlistid ?? playlist.playlistId ?? "");
+    const isLikes = playlistID.startsWith("likes_");
 
     const card = createElement("div", { class: "playlist-card" }, [
         createElement("p", {}, [playlist.name || "Untitled Playlist"]),
@@ -54,7 +54,7 @@ export function createAlbumCard(
     ]);
 
     card.addEventListener("click", () =>
-        loadAlbumSongs(album.albumid, album.title || "Untitled Album", container, player)
+        loadAlbumSongs(String(album.albumid ?? album.albumId ?? ""), album.title || "Untitled Album", container, player)
     );
 
     return card;

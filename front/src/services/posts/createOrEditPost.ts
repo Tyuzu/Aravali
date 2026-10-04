@@ -3,6 +3,7 @@ import { fetchPostById, savePostRequest } from "./api.js";
 import { createFormGroup } from "../../components/form/createFormGroupEnhanced.js";
 import Button from "../../components/base/Button.js";
 import { capitalize } from "../profile/profileHelpers.js";
+import type { Post as SharedPost } from "./types.js";
 import { resolveImagePath, PictureType, EntityType } from "../../utils/imagePaths.js";
 import { navigate } from "../../routes/navigate.js";
 import { uploadFile } from "../media/api/mediaApi.js";
@@ -65,16 +66,10 @@ export interface PostTypeConfig {
   fields: PostField[];
 }
 
-export interface Post {
+export type Post = SharedPost & {
   postid?: string | number;
-  type?: string;
-  title?: string;
-  hashtags?: string[];
-  category?: string;
-  subcategory?: string;
   blocks?: Block[] | unknown[];
-  [key: string]: unknown;
-}
+};
 
 export interface RenderPostEditorOptions {
   isLoggedIn: boolean;

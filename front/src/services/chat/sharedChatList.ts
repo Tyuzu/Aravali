@@ -7,15 +7,32 @@ import { getState } from "../../state/state.js";
 
 export interface ChatMessage {
   text?: string;
+  content?: string;
+  userid?: string | number;
+  userId?: string | number;
+  senderid?: string | number;
+  senderId?: string | number;
   timestamp?: string | number | Date;
+  createdAt?: string | number | Date;
+  updatedAt?: string | number | Date;
   [key: string]: unknown;
 }
 
 export interface GenericChat {
   chatid?: string | number;
+  chatId?: string | number;
   id?: string | number;
   participants?: (string | number)[];
+  participantsList?: (string | number)[];
+  users?: (string | number)[];
   lastMessage?: ChatMessage;
+  lastMessageText?: string;
+  createdAt?: string | number | Date;
+  updatedAt?: string | number | Date;
+  entitytype?: string;
+  entityType?: string;
+  entityid?: string | number;
+  entityId?: string | number;
   [key: string]: unknown;
 }
 

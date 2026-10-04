@@ -91,11 +91,16 @@ async function displayReviews(
     return;
   }
 
-  const userIds = [...new Set(reviews.map((r) => r.userid))];
+  const userIds = [...new Set(
+    reviews
+      .map((r) => r.userid)
+      .filter((id): id is string | number => id !== undefined && id !== null)
+  )].map(String);
   const userMeta: UserMetaMap = await fetchUserMeta(userIds);
 
   reviews.forEach((review) => {
-    const reviewerName = userMeta[review.userid]?.username || "Anonymous";
+    const reviewerId = review.userid != null ? String(review.userid) : undefined;
+    const reviewerName = reviewerId ? userMeta[reviewerId]?.username || "Anonymous" : "Anonymous";
 
     reviewsContainer.append(
       ReviewItem(

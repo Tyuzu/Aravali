@@ -6,23 +6,9 @@ import { getState } from "../../state/state.js";
 import { reportEntity } from "../reporting/reporting.js";
 import { deleteMedia } from "./api/mediaApi.js";
 import { apiFetch } from "../../api/api.js";
+import type { MediaItem, MediaType, DeleteResponse, TranslationResponse } from "./types.js";
 
-/* ======================================================
-   TYPES & INTERFACES
-====================================================== */
-
-export type MediaType = "image" | "video" | "unknown";
-
-export interface MediaItem {
-    mediaid: string | number;
-    creatorid?: string | number;
-    url: string;
-    mediaGroupId?: string;
-    type?: string;
-    caption?: string;
-    extn?: string;
-    [key: string]: unknown;
-}
+export type { MediaItem, MediaType, DeleteResponse, TranslationResponse };
 
 export type DeleteHandler = (
     mediaId: string | number,
@@ -36,16 +22,6 @@ export type ShowUploadFormFn = (
     entityId: string | number,
     list: HTMLElement
 ) => void;
-
-export interface DeleteResponse {
-    success?: boolean;
-    [key: string]: unknown;
-}
-
-export interface TranslationResponse {
-    translated?: string;
-    [key: string]: unknown;
-}
 
 /* ======================================================
    Lazy Loading for Images & Videos
@@ -88,7 +64,7 @@ export const clear = (el: HTMLElement): void => {
 
 export const groupMedia = <T extends MediaItem>(media: T[]): T[][] => {
     const grouped = media.reduce<Record<string, T[]>>((acc, m) => {
-        const key = m.mediaGroupId || "ungrouped";
+        const key = (m.mediaGroupId ?? m.mediaGroupID ?? "ungrouped") as string;
         (acc[key] ??= []).push(m);
         return acc;
     }, {});

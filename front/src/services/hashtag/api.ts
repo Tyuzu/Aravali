@@ -1,16 +1,30 @@
 import { apiFetch } from "../../api/api.js";
 
 export type HashtagPostItem = {
-  postid: string | number;
+  postid?: string | number;
+  postId?: string | number;
+  id?: string | number;
   title?: string;
   type?: "image" | "video" | string;
-  media_url?: string | string[];
+  media_url?: string | string[] | null;
+  mediaUrl?: string | string[] | null;
+  description?: string | null;
+  tags?: string[];
+  userid?: string | number;
+  userId?: string | number;
+  timestamp?: string | number | Date | null;
+  created_at?: string | number | Date | null;
+  createdAt?: string | number | Date | null;
+  resolution?: string | number | Record<string, unknown> | null;
   [key: string]: unknown;
 };
 
 export type HashtagUserItem = {
-  username: string;
+  username?: string;
   display_name?: string;
+  displayName?: string;
+  userid?: string | number;
+  userId?: string | number;
   [key: string]: unknown;
 };
 

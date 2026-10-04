@@ -1,7 +1,8 @@
 import type { Paise } from "./money.js";
 
 export type PaymentType = "funding" | "purchase";
-export type PaymentMethod = "card" | "wallet" | "cash_on_delivery";
+export type PaymentMethod = "card" | "wallet" | "cash_on_delivery" | "cod";
+export type DateLike = string | number | Date;
 
 export interface PaymentConfig {
   allowedEntities: string[];
@@ -19,6 +20,8 @@ export interface PaymentIntentRequest {
   paymentType?: string;
   entityType: string;
   entityId: string | number;
+  method?: string;
+  amount?: number;
 }
 
 export interface PaymentIntentResponse {
@@ -30,11 +33,28 @@ export interface PaymentSuccessPayload extends PaymentIntentRequest {
   paymentIntentId: string;
 }
 
+export interface WalletAccount {
+  id?: string | number;
+  userid?: string | number;
+  userId?: string | number;
+  currency?: string;
+  status?: string;
+  cached_balance?: number;
+  cachedBalance?: number;
+  version?: number;
+  created_at?: DateLike;
+  updated_at?: DateLike;
+  [key: string]: unknown;
+}
+
 export interface WalletBalanceResponse {
   exists?: boolean;
   accountExists?: boolean;
   balance?: number;
+  cached_balance?: number;
   currency?: string;
+  userid?: string | number;
+  account?: WalletAccount;
   [key: string]: unknown;
 }
 
@@ -47,6 +67,8 @@ export interface WalletCreateResponse {
 export interface WalletTopupResponse {
   success?: boolean;
   message?: string;
+  transaction_id?: string | number;
+  transactionId?: string | number;
   [key: string]: unknown;
 }
 
@@ -59,19 +81,36 @@ export interface WalletPayResponse {
   success?: boolean;
   message?: string;
   transaction_id?: string | number;
+  transactionId?: string | number;
   id?: string | number;
   [key: string]: unknown;
 }
 
 export interface TransactionItem {
   id: string | number;
-  type?: string;
-  amount: Paise | number;
-  method?: string;
-  status?: string;
-  created_at: string | number | Date;
-  from_account?: string | number;
+  _id?: string | number;
   userid?: string | number;
+  userId?: string | number;
+  parent_txn?: string | number;
+  type?: string;
+  method?: string;
+  entity_type?: string;
+  entityType?: string;
+  entity_id?: string | number;
+  entityId?: string | number;
+  from_account?: string | number;
+  fromAccount?: string | number;
+  to_account?: string | number;
+  toAccount?: string | number;
+  amount: Paise | number;
+  currency?: string;
+  status?: string;
+  external_ref?: string;
+  meta?: Record<string, unknown>;
+  created_at: DateLike;
+  createdAt?: DateLike;
+  updated_at?: DateLike;
+  updatedAt?: DateLike;
   [key: string]: unknown;
 }
 
@@ -89,6 +128,8 @@ export interface RefundResponse {
 export interface WalletTransferResponse {
   success?: boolean;
   message?: string;
+  transaction_id?: string | number;
+  transactionId?: string | number;
   [key: string]: unknown;
 }
 
@@ -105,6 +146,7 @@ export interface CouponApiResponse {
 
 export interface TopupResponse {
   transactionId?: string | number;
+  transaction_id?: string | number;
   status?: string;
   balance?: number;
   [key: string]: unknown;

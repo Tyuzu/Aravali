@@ -1,15 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { AnalyticsData } from "./types.js";
 
-export interface AnalyticsData {
-  name?: string;
-  type?: string;
-  lastUpdated?: string | number | Date;
-  metrics?: Record<string, number | string>;
-  trend?: (number | string)[];
-  engagement?: Record<string, string | number>;
-  insights?: Record<string, string | number>;
-  topLocations?: (string | number)[];
-}
+export type { AnalyticsData };
 
 export async function getAnalytics(entityType = "events", entityId: string | number | null = null): Promise<AnalyticsData | null> {
   const endpoint = entityId ? `/antics/${entityType}/${entityId}` : `/antics/${entityType}/all`;

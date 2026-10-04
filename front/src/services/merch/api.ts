@@ -1,21 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { MerchItem, MerchApiResponse } from "./types.js";
 
-export interface MerchItem {
-  merchid: string | number;
-  name: string;
-  price: number;
-  discount?: number;
-  stock: number | string;
-  merch_pic?: string;
-  [key: string]: unknown;
-}
-
-export interface MerchApiResponse<T = unknown> {
-  success?: boolean;
-  data?: T;
-  message?: string;
-  [key: string]: unknown;
-}
+export type { MerchItem, MerchApiResponse };
 
 export async function fetchMerchById(merchId: string | number): Promise<MerchApiResponse<MerchItem>> {
   return await apiFetch<MerchApiResponse<MerchItem>>(`/merch/${encodeURIComponent(String(merchId))}`, "GET");

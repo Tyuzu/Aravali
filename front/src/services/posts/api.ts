@@ -1,45 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { Post, PostSummary, PostsApiResponse, RelatedPostsResponse } from "./types.js";
 
-export interface PostSummary {
-  postid: string | number;
-  title?: string;
-  category?: string;
-  subcategory?: string;
-}
-
-export interface Post {
-  postid: string | number;
-  title?: string;
-  type?: string;
-  category?: string;
-  subcategory?: string;
-  createdBy?: string | number;
-  username?: string;
-  createdAt?: string | number | Date;
-  updatedAt?: string | number | Date;
-  referenceId?: string | number;
-  hashtags?: string[];
-  tags?: string[];
-  blocks?: unknown[];
-  [key: string]: unknown;
-}
-
-export interface PostsApiResponse {
-  data?: Post[];
-  posts?: Post[];
-  [key: string]: unknown;
-}
-
-export interface RelatedPostsResponse {
-  related?: Array<{
-    postid: string | number;
-    title?: string;
-    category?: string;
-    subcategory?: string;
-    [key: string]: unknown;
-  }>;
-  [key: string]: unknown;
-}
+export type { Post, PostSummary, PostsApiResponse, RelatedPostsResponse };
 
 export async function fetchPosts(page = 1, limit = 100): Promise<PostsApiResponse | Post[]> {
   return await apiFetch<PostsApiResponse | Post[]>(`/posts?page=${page}&limit=${limit}`);

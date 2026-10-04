@@ -15,13 +15,25 @@ export type EntityType =
   | "collection";
 
 export interface EntityItem {
+  userid?: string | number;
+  userId?: string | number;
   entity_id?: string | number;
+  entityId?: string | number;
+  item_id?: string | number;
+  itemId?: string | number;
   id?: string | number;
   postid?: string | number;
-  created_at: string | number | Date;
-  image_url?: string;
+  postId?: string | number;
+  entity_type?: string;
+  entityType?: string;
+  item_type?: string;
+  itemType?: string;
+  created_at?: string | number | Date | null;
+  createdAt?: string | number | Date | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
   caption?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TabStructure {

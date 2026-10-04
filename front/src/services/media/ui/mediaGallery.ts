@@ -10,22 +10,9 @@ import { handleTranslationToggle } from "../../fanmade/translate.js";
 import Sightbox from "../../../components/ui/Sightbox_zoom.js";
 import LightBox from "../../../components/ui/Lightbox.js";
 import { generateVideoPlayer } from "../../../components/ui/vidpopHelpers/index.js";
+import type { MediaItem, MediaType } from "../types.js";
 
-/* ------------------------------------------------------
-   Types & Interfaces
------------------------------------------------------- */
-export interface MediaItem {
-  mediaid: string | number;
-  url: string;
-  creatorid?: string | number;
-  type?: string;
-  mimeType?: string;
-  caption?: string;
-  extn?: string;
-  [key: string]: unknown;
-}
-
-export type MediaType = "image" | "video" | "unknown";
+export type { MediaItem, MediaType };
 
 /* ------------------------------------------------------
    Type Guards

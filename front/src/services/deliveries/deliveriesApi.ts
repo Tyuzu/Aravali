@@ -7,16 +7,46 @@ export interface DeliveryLocation {
   address?: string;
   lat?: number;
   lng?: number;
+  type?: string;
+  coordinates?: number[];
+  // compatibility aliases
+  latitude?: number;
+  longitude?: number;
+  [key: string]: any;
+}
+
+export interface DeliveryStatusHistoryItem {
+  status?: string;
+  timestamp?: string | number | Date | null;
+  created_at?: string | number | Date | null;
+  updated_by?: string;
+  updatedBy?: string;
   [key: string]: any;
 }
 
 export interface DeliveryData {
+  deliveryid?: string | number;
+  deliveryId?: string | number;
   pickup_loc?: DeliveryLocation;
+  pickupLoc?: DeliveryLocation;
   dropoff_loc?: DeliveryLocation;
+  dropoffLoc?: DeliveryLocation;
   pickup_contact?: string;
+  pickupContact?: string;
   dropoff_contact?: string;
+  dropoffContact?: string;
   payout?: number | string;
   vehicle_type?: string;
+  vehicleType?: string;
+  status?: string;
+  status_history?: DeliveryStatusHistoryItem[];
+  statusHistory?: DeliveryStatusHistoryItem[];
+  current_location?: DeliveryLocation | null;
+  currentLocation?: DeliveryLocation | null;
+  estimated_arrival?: string | number | Date | null;
+  estimatedArrival?: string | number | Date | null;
+  public_tracking_token?: string;
+  publicTrackingToken?: string;
   [key: string]: any;
 }
 
@@ -29,6 +59,7 @@ export interface StatusData {
 export interface ProofData {
   url?: string;
   recipient_name?: string;
+  recipientName?: string;
   notes?: string;
   [key: string]: any;
 }
@@ -37,6 +68,7 @@ export interface DriverProfileData {
   name?: string;
   phone?: string;
   vehicle_type?: string;
+  vehicleType?: string;
   [key: string]: any;
 }
 

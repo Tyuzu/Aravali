@@ -7,23 +7,9 @@ import { reportEntity } from "../reporting/reporting.js";
 import Datex from "../../components/base/Datex.js";
 import Bannerx from "../../components/base/Bannerx.js";
 import { EntityType } from "../../utils/imagePaths.js"; 
+import type { Place } from "./types.js";
 
-export interface PlaceCoordinates {
-  lat?: number;
-  lng?: number;
-}
-
-export interface Place {
-  placeid: string;
-  name?: string;
-  banner?: string;
-  description?: string;
-  address?: string;
-  category?: string;
-  coordinates?: PlaceCoordinates;
-  created_at?: string | Date | null;
-  updated_at?: string | Date | null;
-}
+export type { Place } from "./types.js";
 
 interface MetadataField {
   label: string;
@@ -74,7 +60,7 @@ export function renderPlaceDetails(
       id: "button-dfsh4",
       classes: "report-comment buttonx",
       events: {
-        click: () => reportEntity(place.placeid, "place", "", "")
+        click: () => reportEntity(String(place.placeid), "place", "", "")
       }
     });
     detailsSection.appendChild(reportBtn);
@@ -132,7 +118,7 @@ function createCreatorControls(place: Place, isLoggedIn: boolean): HTMLElement {
       click: () => {
         // Ensure container is cleared before rendering form to prevent duplicate appending
         editContainer.replaceChildren();
-        editPlaceForm(isLoggedIn, place.placeid, editContainer);
+        editPlaceForm(isLoggedIn, String(place.placeid), editContainer);
       }
     }
   });
@@ -142,7 +128,7 @@ function createCreatorControls(place: Place, isLoggedIn: boolean): HTMLElement {
     id: "delete-place-btn",
     classes: "delete-btn buttonx",
     events: {
-      click: () => deletePlace(isLoggedIn, place.placeid)
+      click: () => deletePlace(isLoggedIn, String(place.placeid))
     }
   });
 
@@ -154,7 +140,7 @@ function createCreatorControls(place: Place, isLoggedIn: boolean): HTMLElement {
       click: () => {
         // Ensure container is cleared before rendering analytics to prevent duplicates
         analyticsContainer.replaceChildren();
-        analyticsPlace(analyticsContainer, isLoggedIn, place.placeid);
+        analyticsPlace(analyticsContainer, isLoggedIn, String(place.placeid));
       }
     }
   });

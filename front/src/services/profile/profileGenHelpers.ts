@@ -1,22 +1,11 @@
 import { formatDate } from "./profileHelpers.js";
+import type { UserProfile } from "./types.js";
+
+export type { UserProfile } from "./types.js";
 
 /* ============================================================
     TYPE DEFINITIONS
 ============================================================ */
-
-export interface UserProfile {
-    userid?: string | number;
-    username?: string;
-    name?: string;
-    bio?: string;
-    is_following?: boolean;
-    last_login?: string | Date;
-    is_verified?: boolean;
-    wallet_balance?: number;
-    followerscount?: number;
-    followscount?: number;
-    [key: string]: unknown;
-}
 
 export interface InfoItem {
     label: string;

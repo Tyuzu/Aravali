@@ -22,30 +22,33 @@ export async function listMyTickets(eventid: string | number): Promise<void> {
     } else {
       tickets.sort((a, b) => {
         const order: Record<string, number> = { Active: 0, Transferred: 1, Cancelled: 2 };
-        return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+        const aStatus = a.status ?? "Active";
+        const bStatus = b.status ?? "Active";
+        return (order[aStatus] ?? 9) - (order[bStatus] ?? 9);
       });
 
       tickets.forEach((ticket) => {
+        const status = ticket.status ?? "Active";
         let statusColor = "green";
-        if (ticket.status === "Cancelled") {
+        if (status === "Cancelled") {
           statusColor = "red";
         }
-        if (ticket.status === "Transferred") {
+        if (status === "Transferred") {
           statusColor = "orange";
         }
 
         const actionButtons: HTMLElement[] = [];
+        const uniqueCode = ticket.uniquecode || ticket.uniqueCode || "";
 
         if (!ticket.canceled) {
           actionButtons.push(
             Button({
               title: "Print",
               events: {
-                click: () =>
-                  printTicketPDF(
-                    eventid,
-                    ticket.uniquecode
-                  )
+                click: () => {
+                  if (!uniqueCode) return;
+                  printTicketPDF(eventid, uniqueCode);
+                }
               },
               classes: "buttonx"
             }),
@@ -58,7 +61,11 @@ export async function listMyTickets(eventid: string | number): Promise<void> {
                   }
 
                   try {
-                    await cancelTicketRequest(eventid, ticket.uniquecode);
+                    if (!uniqueCode) {
+                      alert("Ticket code is missing.");
+                      return;
+                    }
+                    await cancelTicketRequest(eventid, uniqueCode);
                     listMyTickets(eventid);
                   } catch {
                     alert("Failed to cancel ticket.");
@@ -113,13 +120,13 @@ export async function listMyTickets(eventid: string | number): Promise<void> {
           },
           [
             createElement("h4", {}, [`Ticket ID: ${ticket.ticketid}`]),
-            createElement("p", {}, [`Unique Code: ${ticket.uniquecode}`]),
-            createElement("p", {}, [`Buyer: ${ticket.buyername}`]),
-            createElement("p", {}, [`Purchase Date: ${Datex(ticket.purchasedate)}`]),
+            createElement("p", {}, [`Unique Code: ${uniqueCode || "Unavailable"}`]),
+            createElement("p", {}, [`Buyer: ${ticket.buyername || ticket.buyerName || "Unknown"}`]),
+            createElement("p", {}, [`Purchase Date: ${Datex(ticket.purchasedate ?? ticket.purchaseDate ?? new Date())}`]),
             createElement(
               "p",
               { style: { fontWeight: "bold", color: statusColor } },
-              [`Status: ${ticket.status}`]
+              [`Status: ${status}`]
             ),
             ...meta,
             actionButtons.length > 0

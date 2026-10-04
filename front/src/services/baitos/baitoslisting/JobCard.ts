@@ -7,26 +7,13 @@ import { formatRelativeTime } from "../../../utils/dateUtils";
 import { saveJob } from "./utils";
 import { resolveImagePath, EntityType, PictureType } from "../../../utils/imagePaths";
 import Imagex from "../../../components/base/Imagex";
+import type { Baito } from "../types.js";
 
-// ---------------------------------
-// INTERFACES & TYPES
-// ---------------------------------
-
-export interface BaitoJob {
-    baitoid: string | number;
-    banner?: string;
-    wage?: number | string;
-    tags?: string[];
+export type BaitoJob = Baito & {
+    company?: string;
     type?: string;
     shift?: string;
-    title?: string;
-    company?: string;
-    category?: string;
-    subcategory?: string;
-    location?: string;
-    createdAt?: string | number | Date;
-    [key: string]: any;
-}
+};
 
 export function buildCard(job: BaitoJob): HTMLElement {
     const bannerFilename = job.banner || "placeholder.jpg";

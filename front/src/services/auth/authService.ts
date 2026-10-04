@@ -16,80 +16,27 @@ import { t } from "../../i18n/i18n.js";
 import { registerUser, loginUser, logoutUser } from "./api.js";
 import LoadingSpinner from "../../components/ui/LoadingSpinner.js";
 import { navigate } from "../../routes/navigate.js";
+import type {
+  AuthResponseData,
+  AuthState,
+  AuthUser,
+  ExtractedAuthPayload,
+  JwtPayload,
+  LoginPayload,
+  RawUserRecord,
+  SignupPayload
+} from "./types.js";
 
-/* =========================================================
-   TYPES & INTERFACES
-========================================================= */
-
-export interface JwtPayload {
-  userid?: string;
-  userID?: string;
-  sub?: string;
-  username?: string;
-  roles?: string | string[];
-  role?: string | string[];
-  permissions?: string | string[];
-  [key: string]: unknown;
-}
-
-export interface RawUserRecord {
-  id?: string;
-  userid?: string;
-  username?: string;
-  roles?: string | string[];
-  role?: string | string[];
-  permissions?: string | string[];
-  [key: string]: unknown;
-}
-
-export interface AuthResponseData {
-  token?: string;
-  Token?: string;
-  userid?: string;
-  UserID?: string;
-  username?: string;
-  roles?: string | string[];
-  role?: string | string[];
-  permissions?: string | string[];
-  user?: RawUserRecord;
-  data?: AuthResponseData;
-  [key: string]: unknown;
-}
-
-export interface AuthUser extends RawUserRecord {
-  userid?: string;
-  username: string;
-}
-
-export interface AuthState {
-  isAuthenticated: boolean;
-  accessToken: string;
-  user: AuthUser;
-  roles: string[];
-  permissions: string[];
-  loading: boolean;
-}
-
-export interface ExtractedAuthPayload {
-  token: string;
-  user: AuthUser;
-  userId: string | null;
-  username: string;
-  roles: string[];
-  permissions: string[];
-  auth: AuthState;
-}
-
-export interface SignupPayload {
-  username?: string;
-  email?: string;
-  password?: string;
-}
-
-export interface LoginPayload {
-  username?: string;
-  password?: string;
-}
+export type {
+  AuthResponseData,
+  AuthState,
+  AuthUser,
+  ExtractedAuthPayload,
+  JwtPayload,
+  LoginPayload,
+  RawUserRecord,
+  SignupPayload
+} from "./types.js";
 
 /* =========================================================
    REACTIVE ROLE STATE

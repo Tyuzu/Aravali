@@ -7,24 +7,12 @@ import {
 import Imagex from "../../components/base/Imagex.js";
 import { setupMessageActions } from "./setupMessageActions.js";
 import { renderMedia } from "../merechats/components/renderMedia.js";
+import type { NewChatMessage } from "./types.js";
 
-export interface MessageFile {
-  filename?: string;
-  path?: string;
-}
-
-export interface ChatMessagePayload {
-  id?: string | number;
-  messageid?: string | number;
-  senderid?: string | number;
-  userid?: string | number;
-  content?: string;
-  timestamp?: string | number;
-  files?: MessageFile[];
-}
+export type { NewChatMessage };
 
 export async function renderMessage(
-  msg: ChatMessagePayload,
+  msg: NewChatMessage,
   container: HTMLElement,
   currentUserId: string | number,
   socket: WebSocket | null

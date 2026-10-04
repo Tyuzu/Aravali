@@ -15,18 +15,7 @@ import {
   cancelTicket,
   transferTicket
 } from "./ticketTransfer.js";
-
-export interface Ticket {
-  ticketid: string | number;
-  name: string;
-  price: number;
-  quantity: number;
-  currency?: string;
-  color?: string;
-  seatstart?: number;
-  seatend?: number;
-  [key: string]: unknown;
-}
+import type { Ticket } from "./types.js";
 
 export interface PaymentResult {
   success: boolean;
@@ -78,14 +67,19 @@ function createTicketCard(
   isLoggedIn: boolean,
   onRefresh?: () => void
 ): HTMLElement {
+  const ticketName = ticket.name || "Ticket";
+  const ticketPrice = Number(ticket.price ?? 0);
+  const ticketQuantity = Number(ticket.quantity ?? 0);
+  const ticketCurrency = ticket.currency || "INR";
+
   const card = TicketCard({
     isl: isLoggedIn,
     seatstart: ticket.seatstart,
     seatend: ticket.seatend,
     creator: isCreator,
-    name: ticket.name,
-    price: formatCurrency(ticket.price, ticket.currency),
-    quantity: ticket.quantity,
+    name: ticketName,
+    price: formatCurrency(ticketPrice, ticketCurrency),
+    quantity: ticketQuantity,
     color: ticket.color || "#a3a3a349",
     attributes: { "data-ticket-id": String(ticket.ticketid) },
     onClick: () => {
@@ -103,7 +97,7 @@ function createTicketCard(
       }
 
       const currencyCode = String(ticket.currency || "INR").toUpperCase();
-      const unitPrice = Number(ticket.price) || 0;
+      const unitPrice = Number(ticket.price ?? 0) || 0;
       const quantityInput = createElement("input", {
         type: "number",
         min: 1,
@@ -182,7 +176,7 @@ function createTicketCard(
                         paymentType: "purchase",
                         entityType: "ticket",
                         entityId: ticket.ticketid,
-                        entityName: ticket.name
+                        entityName: ticketName
                       }) as PaymentResult | null;
 
                       if (!paymentResult?.success) {

@@ -20,8 +20,15 @@ interface ToggleActionOptions {
 
 interface ApiResponse {
     ok?: boolean;
+    success?: boolean;
     status?: number;
-    [key: string]: any;
+    userid?: string | number;
+    userId?: string | number;
+    follows?: Array<string | number>;
+    followers?: Array<string | number>;
+    entity_id?: string | number;
+    entityId?: string | number;
+    [key: string]: unknown;
 }
 
 /**

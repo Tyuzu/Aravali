@@ -11,6 +11,7 @@ interface CropItem {
   price?: number;
   discount?: number;
   value?: number;
+  [key: string]: unknown;
 }
 
 interface DayAvailability {
@@ -31,6 +32,8 @@ interface FarmAvailability {
 }
 
 interface FarmData {
+  farmid?: string | number;
+  id?: string | number;
   name?: string;
   crops?: CropItem[];
   location?: string;
@@ -39,18 +42,23 @@ interface FarmData {
   owner?: string;
   description?: string;
   availability?: FarmAvailability;
+  [key: string]: unknown;
 }
 
 interface AlertItem {
+  type?: string;
   severity?: string;
   message?: string;
+  [key: string]: unknown;
 }
 
 interface OrderItem {
   orderId?: string | number;
+  orderid?: string | number;
   id?: string | number;
   status?: string;
   total?: number;
+  [key: string]: unknown;
 }
 
 interface DashboardData {
@@ -61,13 +69,16 @@ interface DashboardData {
     featuredCrops?: number;
     lowStockCount?: number;
     outOfStockCount?: number;
+    [key: string]: unknown;
   };
   stats?: {
     healthScore?: number;
+    [key: string]: unknown;
   };
   revenue?: {
     monthly?: number;
     lifetime?: number;
+    [key: string]: unknown;
   };
   orders?: {
     pending?: number;
@@ -76,11 +87,17 @@ interface DashboardData {
     customers?: number;
     total?: number;
     cancelled?: number;
+    pendingOrders?: number;
+    completedOrders?: number;
+    cancelledOrders?: number;
+    todayDeliveries?: number;
+    [key: string]: unknown;
   };
   alerts?: AlertItem[];
   recommendations?: string[];
   topCrops?: CropItem[];
   recentOrders?: OrderItem[];
+  [key: string]: unknown;
 }
 
 interface FarmDashResponse {
@@ -88,6 +105,7 @@ interface FarmDashResponse {
   message?: string;
   farm?: FarmData;
   dashboard?: DashboardData;
+  [key: string]: unknown;
 }
 
 export async function displayDash(content: HTMLElement, isLoggedIn: boolean): Promise<void> {

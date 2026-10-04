@@ -1,8 +1,8 @@
 import { createElement } from "../../components/createElement.js";
-import { ChatMessagePayload } from "./renderMessage.js";
+import type { NewChatMessage } from "./types.js";
 
 export function setupMessageActions(
-  msg: ChatMessagePayload,
+  msg: NewChatMessage,
   socket: WebSocket | null
 ): HTMLElement {
   const messageId = msg.id || msg.messageid;

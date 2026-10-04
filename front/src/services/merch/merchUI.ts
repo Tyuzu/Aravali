@@ -15,20 +15,11 @@ import { createFormGroup } from "../../components/form/createFormGroupEnhanced.j
 import { addToCart, isValidCartQuantity } from "../cart/addToCart.js";
 import { getState } from "../../state/state.js";
 import { addMerchandise } from "./merchAPI.js";
+import type { MerchItem } from "./types.js";
 
 // External declarations for unprovided helpers
 declare function editMerchForm(entityType: string, merchId: string | number, eventId: string | number): void;
 declare function deleteMerch(entityType: string, merchId: string | number, eventId: string | number): void;
-
-export interface MerchItem {
-  merchid: string | number;
-  name: string;
-  price: number;
-  discount?: number;
-  stock: number | string;
-  merch_pic?: string;
-  [key: string]: unknown;
-}
 
 export interface FormGroupField {
   label: string;

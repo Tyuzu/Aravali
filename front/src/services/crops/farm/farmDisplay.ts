@@ -39,6 +39,7 @@ interface Farm {
   name?: string;
   photo?: string;
   createdBy?: string | number;
+  createdby?: string | number;
   crops?: Crop[];
   availability?: any;
   [key: string]: any;

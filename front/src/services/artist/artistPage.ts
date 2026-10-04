@@ -8,7 +8,7 @@ import {
 import { renderSongsTab } from "./artistSongsTab.js";
 import { getArtist } from "./api.js";
 import { deleteArtistForm } from "./createOrEditArtist.js";
-import { createOrEditArtist, ExistingArtist } from "./createOrEditArtist.js";
+import { createOrEditArtist } from "./createOrEditArtist.js";
 import { createElement } from "../../components/createElement.js";
 import { reportEntity } from "../reporting/reporting.js";
 import Button from "../../components/base/Button.js";
@@ -24,20 +24,7 @@ import { renderBandMembers, renderManageMembersButton } from "./memberManage.js"
 import { blueskySVG, facebookSVG, instagramSVG, soundcloudSVG, spotifySVG, tiktokSVG, twitterSVG, xitterSVG, youtubeSVG } from "../../components/svgs/socialSVGs.js";
 import { createIconButton } from "../../utils/svgIconButton.js";
 import { payViaStripe } from "../pay/pay.js";
-
-// ---------------------------------
-// INTERFACES & TYPES
-// ---------------------------------
-
-export interface ArtistProfile extends ExistingArtist {
-    artistid: string | number;
-    creatorid?: string | number;
-    subscribed?: boolean;
-    banner?: string;
-    photo?: string;
-    members?: any[];
-    [key: string]: any;
-}
+import { type ArtistProfile, type ExistingArtist } from "./types.js";
 
 interface TabConfig {
     title: string;

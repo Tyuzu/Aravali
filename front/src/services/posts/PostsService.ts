@@ -2,7 +2,8 @@ import { createElement, ElementAttributes } from "../../components/createElement
 import { Button } from "../../components/base/Button.js";
 import { navigate } from "../../routes/navigate.js";
 import { adspace } from "../../services/ads/newads.js";
-import { fetchPosts, type Post, type PostsApiResponse } from "./api.js";
+import { fetchPosts } from "./api.js";
+import type { Post, PostsApiResponse } from "./types.js";
 import Imagex from "../../components/base/Imagex.js";
 import Datex from "../../components/base/Datex.js";
 import { resolveImagePath, EntityType, PictureType } from "../../utils/imagePaths.js";

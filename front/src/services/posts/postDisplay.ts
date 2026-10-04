@@ -16,47 +16,14 @@ import { fetchUserMeta } from "../../utils/usersMeta.js";
 import ZoomBox from "../../components/ui/zoomBox/ZoomBox.js";
 import { renderRelatedPosts } from "./relatedPosts.js";
 
+import type { Post, PostBlock } from "./types.js";
+
 /* ---------------------- TYPES ---------------------- */
-export interface TextBlock {
-  type: "text";
-  content?: string;
-}
-
-export interface ImageBlock {
-  type: "image";
-  url?: string;
-  alt?: string;
-}
-
-export interface CodeBlock {
-  type: "code";
-  language?: string;
-  content?: string;
-}
-
-export interface VideoBlock {
-  type: "video";
-  url?: string;
-  caption?: string;
-}
-
-export type PostBlock = TextBlock | ImageBlock | CodeBlock | VideoBlock;
-
-export interface Post {
-  postid: string | number;
-  title?: string;
-  type?: string;
-  category?: string;
-  subcategory?: string;
-  createdBy: string | number;
-  username?: string;
-  createdAt?: string | number | Date;
-  updatedAt?: string | number | Date;
-  referenceId?: string | number;
-  hashtags?: string[];
-  tags?: string[];
-  blocks?: PostBlock[];
-}
+export type { Post, PostBlock };
+export type TextBlock = Extract<PostBlock, { type: "text" }>;
+export type ImageBlock = Extract<PostBlock, { type: "image" }>;
+export type CodeBlock = Extract<PostBlock, { type: "code" }>;
+export type VideoBlock = Extract<PostBlock, { type: "video" }>;
 
 export interface UserState {
   userid: string | number;
@@ -204,8 +171,13 @@ export async function displayPost(
     return;
   }
 
-  const userx = (await fetchUserMeta([String(post.createdBy)])) as UserMetaMap | undefined;
-  post.username = userx?.[post.createdBy]?.username || "Anonymous";
+  const creatorId = post.createdBy != null ? String(post.createdBy) : undefined;
+  if (creatorId) {
+    const userx = (await fetchUserMeta([creatorId])) as UserMetaMap | undefined;
+    post.username = userx?.[creatorId]?.username || "Anonymous";
+  } else {
+    post.username = "Anonymous";
+  }
 
   const frag = document.createDocumentFragment();
 
@@ -273,7 +245,7 @@ function renderHeader(post: Post): HTMLElement {
 
 function renderBody(post: Post): HTMLElement {
   const content = createElement("div", { class: "post-body" });
-  const blocks = Array.isArray(post.blocks) ? post.blocks : [];
+  const blocks = Array.isArray(post.blocks) ? (post.blocks as PostBlock[]) : [];
   const fragment = document.createDocumentFragment();
 
   let imageBuffer: ImageBlock[] = [];
@@ -335,11 +307,11 @@ function renderImageGroup(images: ImageBlock[]): HTMLElement {
   const group = createElement("div", { class: "image-group" });
 
   const mediaItems = images.map((img) =>
-    resolveImagePath(EntityType.BLOGPOST, PictureType.PHOTO, img.url)
+    resolveImagePath(EntityType.BLOGPOST, PictureType.PHOTO, String(img.url || ""))
   );
 
   images.forEach((img, index) => {
-    const thumbSrc = resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, img.url);
+    const thumbSrc = resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, String(img.url || ""));
 
     const imgEl = Imagex({
       src: thumbSrc,
@@ -380,7 +352,7 @@ function renderTags(tags: string[]): HTMLElement {
 }
 
 async function renderProfile(post: Post): Promise<HTMLElement> {
-  const avatarUrl = getAvatar(post.createdBy);
+  const avatarUrl = post.createdBy != null ? getAvatar(post.createdBy) : "";
 
   return await userProfileCard({
     username: post.username || "anonymous",

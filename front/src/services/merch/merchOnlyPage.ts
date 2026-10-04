@@ -5,7 +5,7 @@ import { getState } from "../../state/state.js";
 import { fetchEventById } from "../event/api.js";
 import Notify from "../../components/ui/Notify.js";
 import Datex from "../../components/base/Datex.js";
-import { MerchItem } from "./merchUI.js";
+import type { MerchItem } from "./types.js";
 
 interface EventData {
     success?: boolean;

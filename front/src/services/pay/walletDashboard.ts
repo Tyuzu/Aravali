@@ -5,24 +5,7 @@ import { createElement } from "../../components/createElement.js";
 import { Button } from "../../components/base/Button.js";
 import Notify from "../../components/ui/Notify.js";
 import { createWalletAccount, getWalletBalance } from "./api.js";
-
-/* ───────────────────────────────────────── */
-/* Types & Interfaces */
-/* ───────────────────────────────────────── */
-
-export interface WalletBalanceResponse {
-  exists?: boolean;
-  accountExists?: boolean;
-  balance?: number;
-  currency?: string;
-  [key: string]: unknown;
-}
-
-export interface WalletCreateResponse {
-  success: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
+import type { WalletBalanceResponse, WalletCreateResponse } from "./types.js";
 
 export interface ApiError extends Error {
   status?: number;

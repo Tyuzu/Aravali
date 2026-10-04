@@ -11,18 +11,11 @@ import {
   type Notice as ApiNotice,
   type DeleteNoticeResponse as ApiDeleteNoticeResponse
 } from "./api.js";
+import type { Notice } from "./types.js";
 
 /* ------------------------------------------------------
    Types & Interfaces
 ------------------------------------------------------ */
-export interface Notice {
-  noticeid?: string | number;
-  title?: string;
-  content?: string;
-  summary?: string;
-  createdAt?: string;
-  [key: string]: unknown;
-}
 
 export interface OpenNoticeFormOptions {
   notice?: Partial<ApiNotice>;
@@ -246,7 +239,7 @@ export async function displayNotices(
     const filtered = notices.filter((n) => {
       const textToSearch = `${n.title || ""} ${n.summary || ""} ${n.content || ""}`.toLowerCase();
       const matchesText = !search || textToSearch.includes(search);
-      const matchesDate = !date || (n.createdAt && n.createdAt.split("T")[0] === date);
+      const matchesDate = !date || (n.createdAt ? new Date(n.createdAt).toISOString().split("T")[0] === date : false);
       return matchesText && matchesDate;
     });
     renderList(filtered);

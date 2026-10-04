@@ -12,39 +12,13 @@ import {
 import {
   playSoundAlert
 } from "../notifications/soundAlerts.js";
+import type { ChatMessage, WSPacket, MediaPayload } from "./types.js";
+
+export type { ChatMessage, WSPacket, MediaPayload };
 
 /* ───────────────────────────────────────── */
 /* Types & Interfaces                       */
 /* ───────────────────────────────────────── */
-
-export interface MediaPayload {
-  mediaId?: string;
-  url?: string;
-  mimeType?: string;
-  type?: "video" | "image" | string;
-  serverUrl?: string;
-  previewUrl?: string;
-  __local_preview?: boolean;
-  [key: string]: unknown;
-}
-
-export interface ChatMessage {
-  messageid?: string | number;
-  id?: string | number;
-  sender?: string | number;
-  senderName?: string;
-  username?: string;
-  createdAt?: string;
-  content?: string;
-  text?: string;
-  message?: string;
-  chatid?: string | number;
-  clientId?: string;
-  media?: MediaPayload;
-  pending?: boolean;
-  type?: string;
-  [key: string]: unknown;
-}
 
 export interface PendingMessage {
   el: HTMLElement | null;
@@ -52,19 +26,6 @@ export interface PendingMessage {
   container?: HTMLElement | null;
   previewUrl?: string;
   progress?: number;
-}
-
-export interface WSPacket {
-  type: "message" | "typing" | "presence" | "join" | string;
-  chatid?: string | number;
-  clientId?: string;
-  online?: boolean;
-  senderName?: string;
-  username?: string;
-  content?: string;
-  messageid?: string | number;
-  id?: string | number;
-  [key: string]: unknown;
 }
 
 export interface MountMessageOptions {

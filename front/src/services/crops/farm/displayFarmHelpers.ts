@@ -6,58 +6,17 @@ import { addToCart, isValidCartQuantity } from "../../cart/addToCart.js";
 import { getState } from "../../../state/state.js";
 import { EntityType } from "../../../utils/imagePaths.js";
 import Bannerx from "../../../components/base/Bannerx.js";
+import type { AvailabilitySchedule, Crop, Farm, PriceHistory } from "../types.js";
+
+export type { AvailabilitySchedule, Crop, Farm, PriceHistory };
 
 const MAX_CART_QUANTITY = 99;
-
-export interface PriceHistory {
-  date: string;
-  price: number;
-}
-
-export interface AvailabilityDay {
-  enabled?: boolean;
-  from?: string;
-  to?: string;
-}
-
-export type AvailabilitySchedule = Record<string, AvailabilityDay>;
-
-export interface Crop {
-  cropid?: string | number;
-  name?: string;
-  category?: string;
-  price?: number;
-  discount?: number;
-  unit?: string;
-  quantity?: number;
-  harvestDate?: string;
-  HarvestDate?: string;
-  expiryDate?: string;
-  banner?: string;
-  history?: PriceHistory[];
-  [key: string]: unknown;
-}
-
-export interface Farm {
-  farmid?: string | number;
-  name?: string;
-  location?: string;
-  description?: string;
-  owner?: string;
-  contact?: string;
-  practice?: string;
-  social?: string;
-  updatedAt?: string;
-  availability?: AvailabilitySchedule;
-  crops?: Crop[];
-  [key: string]: unknown;
-}
 
 export type SortCriterion = "name" | "price" | "quantity" | "age" | string;
 
 // ─────────── Date utility ───────────
-function getAgeInDays(dateStr?: string): number {
-  if (!dateStr) return 0;
+function getAgeInDays(dateStr?: string | number | Date): number {
+  if (dateStr === undefined || dateStr === null || dateStr === "") return 0;
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) {
     return 0;
@@ -474,8 +433,8 @@ function createCreatorControls(
 export function createUserControls(
   crop: Crop,
   _farmName: string,
-  _farmId: string | number,
-  _isLoggedIn: boolean
+  _farmId?: string | number,
+  _isLoggedIn: boolean = false
 ): HTMLElement[] {
   let quantity = 1;
   let isAddingToCart = false;

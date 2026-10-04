@@ -6,20 +6,9 @@ import { createFormGroup } from "../../components/form/createFormGroupEnhanced.j
 import { Button } from "../../components/base/Button.js";
 import Notify from "../../components/ui/Notify.js";
 import { debounce } from "../../utils/deutils.js";
+import type { EventDetailData } from "./types.js";
 
-// --- Type Definitions / Interfaces ---
-
-export interface EventFormInputData {
-    eventid?: string | number;
-    category?: string;
-    title?: string;
-    description?: string;
-    location?: string;
-    placename?: string;
-    placeid?: string | number;
-    date?: string | Date;
-    [key: string]: unknown;
-}
+export type EventFormInputData = Partial<EventDetailData>;
 
 interface PlaceSuggestion {
     id: string | number;

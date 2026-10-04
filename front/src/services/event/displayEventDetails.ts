@@ -9,25 +9,9 @@ import { createIconButton } from "../../utils/svgIconButton.js";
 import { hireVendors } from "../jobs/vendors/vendors.js";
 import Bannerx from "../../components/base/Bannerx.js";
 import Datex from "../../components/base/Datex.js";
+import type { EventDetailData } from "./types.js";
 
-// --- Type Definitions / Interfaces ---
-
-export interface EventDetailData {
-    eventid: string | number;
-    title?: string;
-    name?: string;
-    status?: string;
-    date: string | Date;
-    description?: string;
-    category?: string;
-    banner?: string;
-    tags?: string[];
-    social_links?: Record<string, string>;
-    custom_fields?: Record<string, string | number>;
-    placename?: string;
-    placeid?: string | number;
-    [key: string]: unknown;
-}
+export type { EventDetailData } from "./types.js";
 
 interface FieldConfigItem {
     key: keyof EventDetailData;

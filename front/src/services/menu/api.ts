@@ -1,24 +1,9 @@
 import { apiFetch } from "../../api/api.js";
+import type { MenuItem, MenuApiResponse, StockResponse } from "./types.js";
 
-export interface MenuItem {
-  menuid: string | number;
-  name: string;
-  price: number;
-  discount?: number;
-  stock: number;
-  menu_pic?: string;
-  [key: string]: unknown;
-}
+export type { MenuItem, MenuApiResponse, StockResponse };
 
-export interface ApiResponse<T = unknown> {
-  success?: boolean;
-  data?: T;
-  message?: string;
-}
-
-export interface StockResponse {
-  stock: number;
-}
+export type ApiResponse<T = unknown> = MenuApiResponse<T>;
 
 export async function fetchMenuByPlace(placeId: string | number): Promise<MenuItem[]> {
   return await apiFetch<MenuItem[]>(`/places/menu/${placeId}`);

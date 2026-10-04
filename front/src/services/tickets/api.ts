@@ -1,40 +1,8 @@
 import { apiFetch } from "../../api/api.js";
+import type { Ticket as TicketData, TicketPayload, UserTicket } from "./types.js";
 
-export type TicketStatus = "Active" | "Transferred" | "Cancelled" | string;
-
-export interface TicketData {
-  ticketid: string | number;
-  name: string;
-  price: number;
-  quantity: number;
-  currency: string;
-  color?: string;
-  seatstart?: number;
-  seatend?: number;
-  [key: string]: unknown;
-}
-
-export interface TicketPayload {
-  name: string;
-  price: number;
-  quantity: number;
-  currency: string;
-  color: string;
-  seatstart: number;
-  seatend: number;
-}
-
-export interface UserTicket {
-  ticketid: string | number;
-  uniquecode: string;
-  buyername: string;
-  purchasedate: string | number | Date;
-  status: TicketStatus;
-  canceled?: boolean;
-  refundstatus?: string;
-  transferredto?: string;
-  [key: string]: unknown;
-}
+export type { TicketData, TicketPayload, UserTicket };
+export type TicketStatus = UserTicket["status"] extends string ? UserTicket["status"] : string;
 
 export async function fetchTicketData(
   ticketId: string | number,

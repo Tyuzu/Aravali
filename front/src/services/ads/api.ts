@@ -1,27 +1,7 @@
 import { API_URL } from "../../api/api.js";
+import type { AdQueryParams, RawAdPayload } from "./types.js";
 
-export interface AdQueryParams {
-  page?: string;
-  position?: string;
-  category?: string;
-}
-
-export interface RawAdPayload {
-  id?: string;
-  ID?: string;
-  link?: string;
-  Link?: string;
-  image?: string;
-  Image?: string;
-  title?: string;
-  Title?: string;
-  description?: string;
-  Description?: string;
-  badge?: string;
-  Badge?: string;
-  cta?: string;
-  CTA?: string;
-}
+export type { AdQueryParams, RawAdPayload };
 
 export async function fetchAdPayload(params: AdQueryParams): Promise<RawAdPayload> {
   const page = params.page || "home";

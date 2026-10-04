@@ -1,5 +1,5 @@
 import Notify from "../../components/ui/Notify.js";
-import { Place } from "./placeDetails.js";
+import type { Place } from "./types.js";
 import { fetchPlacesApi, type QueryParams } from "./api.js";
 
 /**

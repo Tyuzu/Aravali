@@ -1,41 +1,16 @@
 import { createElement } from "../../components/createElement.js";
 import { Button } from "../../components/base/Button.js";
-import { formatCurrency, Paise } from "./money.js";
+import { formatCurrency } from "./money.js";
 import { v4 as uuidv4 } from "uuid";
 import Datex from "../../components/base/Datex.js";
 import Notify from "../../components/ui/Notify.js";
 import { getWalletTransactions, refundWalletTransaction } from "./api.js";
+import type { TransactionItem, TransactionResponse, RefundResponse } from "./types.js";
 
-/* ───────────────────────────────────────── */
-/* Types & Interfaces */
-/* ───────────────────────────────────────── */
+export type { TransactionItem, TransactionResponse, RefundResponse };
 
 export type TransactionType = "topup" | "payment" | string;
-
 export type TransactionStatus = "initiated" | "pending" | "success" | "failed" | "reversed" | string;
-
-export interface TransactionItem {
-  id: string | number;
-  type?: TransactionType;
-  amount: Paise | number;
-  method?: string;
-  status?: TransactionStatus;
-  created_at: string | number | Date;
-  from_account?: string | number;
-  userid?: string | number;
-  [key: string]: unknown;
-}
-
-export interface TransactionResponse {
-  transactions?: TransactionItem[];
-  [key: string]: unknown;
-}
-
-export interface RefundResponse {
-  success?: boolean;
-  message?: string;
-  [key: string]: unknown;
-}
 
 export interface WalletTransactionsProps {
   onBalanceChange?: () => void;

@@ -3,7 +3,7 @@ import { getPlaceById, updatePlaceRequest, deletePlaceRequest } from "./api.js";
 import { navigate } from "../../routes/navigate.js";
 import Notify from "../../components/ui/Notify.js";
 import { createFormGroup } from "../../components/form/createFormGroupEnhanced.js";
-import { Place } from "./placeDetails.js";
+import type { Place } from "./types.js";
 
 type CategoryMap = Record<string, string[]>;
 

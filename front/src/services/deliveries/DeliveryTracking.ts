@@ -22,15 +22,20 @@ interface CurrentLocation {
 interface DeliveryTrackingData {
   status?: string;
   current_location?: CurrentLocation;
+  currentLocation?: CurrentLocation;
   eta?: string | number;
+  estimated_arrival?: string | number | Date | null;
+  estimatedArrival?: string | number | Date | null;
   [key: string]: any;
 }
 
 interface DeliveryEvent {
   created_at?: string | number;
+  createdAt?: string | number;
   timestamp?: string | number;
   status?: string;
   event_type?: string;
+  eventType?: string;
   description?: string;
   [key: string]: any;
 }

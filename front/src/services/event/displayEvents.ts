@@ -8,20 +8,9 @@ import { fetchEventsPage } from "./api.js";
 import Datex from "../../components/base/Datex.js";
 import { createMainLayout } from "../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../components/layout/asideLayout.js";
+import type { EventItem } from "./types.js";
 
-// --- Type Definitions / Interfaces ---
-
-export interface EventItem {
-    eventid: string | number;
-    title?: string;
-    date: string | Date;
-    placename?: string;
-    category?: string;
-    prices?: number[];
-    currency?: string;
-    banner?: string;
-    [key: string]: unknown;
-}
+export type { EventItem } from "./types.js";
 
 export async function displayEvents(isLoggedIn: boolean, container: HTMLElement): Promise<void> {
     container.replaceChildren();
