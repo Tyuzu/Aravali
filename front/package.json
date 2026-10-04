@@ -20,7 +20,8 @@
     "check:css": "node scripts/check-css.js",
     "check:project": "node scripts/check-project.mjs",
     "check:backend": "node scripts/check-backend-health.mjs",
-    "verify": "npm run check:project && npm run check:backend",
+    "check:contracts": "python ../utilities/contract_sync.py",
+    "verify": "npm run check:project && npm run check:backend && npm run check:contracts",
     "fix:css": "npx stylelint \"css/**/*.css\" --fix"
   },
   "author": "scav",

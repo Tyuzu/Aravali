@@ -1,0 +1,572 @@
+{
+  "admin": {
+    "backend": [
+      "backend/internal/admin/role_management.go"
+    ],
+    "frontend": [
+      "front/src/services/admin/types.ts"
+    ],
+    "fields": [
+      "id",
+      "userid",
+      "userId",
+      "role",
+      "reason",
+      "status",
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+      "metadata"
+    ]
+  },
+  "artists": {
+    "backend": [
+      "backend/internal/artists/artistsModels.go"
+    ],
+    "frontend": [
+      "front/src/services/artist/types.ts"
+    ],
+    "fields": [
+      "artistid",
+      "artistId",
+      "category",
+      "name",
+      "place",
+      "country",
+      "bio",
+      "dob",
+      "photo",
+      "banner",
+      "genres",
+      "socials",
+      "events",
+      "members",
+      "createdAt",
+      "creatorid",
+      "creatorId",
+      "issubscribed"
+    ]
+  },
+  "auth": {
+    "backend": [
+      "backend/internal/auth/types.go"
+    ],
+    "frontend": [
+      "front/src/services/auth/types.ts"
+    ],
+    "fields": [
+      "username",
+      "password",
+      "email",
+      "message",
+      "status",
+      "token",
+      "userid",
+      "name",
+      "avatar",
+      "banner",
+      "bio",
+      "created_at",
+      "updated_at"
+    ]
+  },
+  "beats": {
+    "backend": [
+      "backend/internal/beats/activity/activityModels.go",
+      "backend/internal/beats/follows/followModels.go"
+    ],
+    "frontend": [
+      "front/src/services/beats/api.ts",
+      "front/src/services/beats/toggleFollows.ts"
+    ],
+    "fields": [
+      "userid",
+      "entity_id",
+      "entity_type",
+      "activity_type",
+      "follows",
+      "followers",
+      "userId",
+      "entityId",
+      "entityType",
+      "activityType"
+    ]
+  },
+  "cart": {
+    "backend": [
+      "backend/internal/cart/models.go"
+    ],
+    "frontend": [
+      "front/src/services/cart/types.ts"
+    ],
+    "fields": [
+      "itemId",
+      "itemType",
+      "entityId",
+      "entityType",
+      "category",
+      "address",
+      "paymentMethod",
+      "status",
+      "userid",
+      "orderId",
+      "orderType",
+      "items",
+      "total",
+      "createdAt",
+      "discount"
+    ]
+  },
+  "chat": {
+    "backend": [
+      "backend/internal/newchat/newchatmodels.go"
+    ],
+    "frontend": [
+      "front/src/services/chat/sharedChatList.ts"
+    ],
+    "fields": [
+      "chatid",
+      "participants",
+      "lastMessage",
+      "userid",
+      "senderid",
+      "text",
+      "content",
+      "timestamp",
+      "createdAt",
+      "updatedAt",
+      "entityType",
+      "entityId"
+    ]
+  },
+  "deliveries": {
+    "backend": [
+      "backend/internal/deliveries/deliveryModels.go"
+    ],
+    "frontend": [
+      "front/src/services/deliveries/deliveries.ts",
+      "front/src/services/deliveries/deliveriesApi.ts"
+    ],
+    "fields": [
+      "deliveryid",
+      "status",
+      "pickup_loc",
+      "pickupLoc",
+      "dropoff_loc",
+      "dropoffLoc",
+      "created_at",
+      "createdAt",
+      "address",
+      "lat",
+      "lng",
+      "type",
+      "coordinates",
+      "timestamp"
+    ]
+  },
+  "events": {
+    "backend": [
+      "backend/internal/events/eventModels.go"
+    ],
+    "frontend": [
+      "front/src/services/event/types.ts"
+    ],
+    "fields": [
+      "eventid",
+      "title",
+      "description",
+      "date",
+      "placeid",
+      "placename",
+      "location",
+      "coords",
+      "latitude",
+      "longitude",
+      "creatorid",
+      "category",
+      "banner",
+      "website_url",
+      "status",
+      "tags",
+      "created_at",
+      "updated_at",
+      "organizer_name",
+      "organizer_contact",
+      "artists",
+      "published",
+      "external",
+      "externallink",
+      "contactInfo",
+      "news",
+      "polls",
+      "lostfound",
+      "prices",
+      "currency",
+      "email",
+      "phone",
+      "question",
+      "options",
+      "text",
+      "votes"
+    ]
+  },
+  "farms": {
+    "backend": [
+      "backend/internal/farms/farmModels.go"
+    ],
+    "frontend": [
+      "front/src/services/crops/types.ts"
+    ],
+    "fields": [
+      "farmid",
+      "name",
+      "location",
+      "description",
+      "owner",
+      "contact",
+      "phone",
+      "social",
+      "practice",
+      "availability",
+      "tags",
+      "banner",
+      "media",
+      "avgRating",
+      "reviewCount",
+      "favoritesCount",
+      "createdBy",
+      "createdAt",
+      "updatedAt",
+      "crops"
+    ]
+  },
+  "home": {
+    "backend": [
+      "backend/internal/home/home.go"
+    ],
+    "frontend": [
+      "front/src/services/home/api.ts",
+      "front/src/services/home/listingcon.ts"
+    ],
+    "fields": [
+      "banner",
+      "title",
+      "description",
+      "href"
+    ]
+  },
+  "itinerary": {
+    "backend": [
+      "backend/internal/itinerary/itineraryModels.go"
+    ],
+    "frontend": [
+      "front/src/services/itinerary/types.ts"
+    ],
+    "fields": [
+      "itineraryid",
+      "userid",
+      "userId",
+      "name",
+      "description",
+      "start_date",
+      "startDate",
+      "end_date",
+      "endDate",
+      "status",
+      "published",
+      "forked_from",
+      "forkedFrom",
+      "days",
+      "date",
+      "visits",
+      "location",
+      "start_time",
+      "startTime",
+      "end_time",
+      "endTime",
+      "transport"
+    ]
+  },
+  "places": {
+    "backend": [
+      "backend/internal/places/placeModels.go"
+    ],
+    "frontend": [
+      "front/src/services/place/types.ts"
+    ],
+    "fields": [
+      "placeid",
+      "name",
+      "short_desc",
+      "description",
+      "category",
+      "banner",
+      "website_url",
+      "website",
+      "status",
+      "tags",
+      "created_at",
+      "updated_at",
+      "city",
+      "country",
+      "zipCode",
+      "location",
+      "phone",
+      "distance",
+      "views",
+      "reviewcount",
+      "amenities",
+      "events",
+      "operatinghours",
+      "keywords",
+      "latitude",
+      "longitude",
+      "address",
+      "capacity",
+      "date"
+    ]
+  },
+  "products": {
+    "backend": [
+      "backend/internal/products/models.go",
+      "backend/internal/farms/farmModels.go"
+    ],
+    "frontend": [
+      "front/src/services/products/types.ts"
+    ],
+    "fields": [
+      "productid",
+      "userid",
+      "userId",
+      "name",
+      "category",
+      "price",
+      "discount",
+      "quantity",
+      "unit",
+      "sku",
+      "availableFrom",
+      "availableTo",
+      "description",
+      "featured",
+      "banner",
+      "photo",
+      "images",
+      "type"
+    ]
+  },
+  "profile": {
+    "backend": [
+      "backend/internal/profile/profileModels.go"
+    ],
+    "frontend": [
+      "front/src/services/profile/types.ts"
+    ],
+    "fields": [
+      "userid",
+      "username",
+      "name",
+      "email",
+      "bio",
+      "avatar",
+      "banner",
+      "phone_number",
+      "phoneNumber",
+      "is_following",
+      "isFollowing",
+      "social_links",
+      "socialLinks",
+      "followerscount",
+      "followscount",
+      "lastlogin",
+      "lastLogin"
+    ]
+  },
+  "recipes": {
+    "backend": [
+      "backend/internal/recipes/recipe.go"
+    ],
+    "frontend": [
+      "front/src/services/recipes/types/recipe.ts"
+    ],
+    "fields": [
+      "recipeid",
+      "userid",
+      "userId",
+      "title",
+      "name",
+      "description",
+      "ingredients",
+      "steps",
+      "cookTime",
+      "servings",
+      "cuisine",
+      "portionSize",
+      "season",
+      "dietary",
+      "tags",
+      "images",
+      "difficulty",
+      "videoUrl",
+      "notes",
+      "banner",
+      "createdAt",
+      "views"
+    ]
+  },
+  "reporting": {
+    "backend": [
+      "backend/internal/reports/reportModels.go"
+    ],
+    "frontend": [
+      "front/src/services/reporting/types.ts"
+    ],
+    "fields": [
+      "id",
+      "reportedBy",
+      "targetId",
+      "targetType",
+      "reason",
+      "notes",
+      "status",
+      "reviewedBy",
+      "reviewNotes",
+      "createdAt",
+      "updatedAt",
+      "parentType",
+      "parentId",
+      "notified"
+    ]
+  },
+  "reviews": {
+    "backend": [
+      "backend/internal/verticals/reviews/reviewModels.go"
+    ],
+    "frontend": [
+      "front/src/services/reviews/reviewTypes.ts"
+    ],
+    "fields": [
+      "reviewid",
+      "userid",
+      "userId",
+      "entityType",
+      "entityId",
+      "rating",
+      "comment",
+      "likes",
+      "dislikes",
+      "createdAt",
+      "updatedAt"
+    ]
+  },
+  "merch": {
+    "backend": [
+      "backend/internal/verticals/merch/merchModels.go"
+    ],
+    "frontend": [
+      "front/src/services/merch/types.ts"
+    ],
+    "fields": [
+      "merchid",
+      "name",
+      "slug",
+      "sku",
+      "category",
+      "price",
+      "discount",
+      "stock",
+      "stock_status",
+      "merch_pic",
+      "gallery",
+      "entity_id",
+      "entity_type",
+      "description",
+      "short_desc",
+      "rating",
+      "review_count",
+      "weight",
+      "dimensions",
+      "tags",
+      "created_at",
+      "updated_at",
+      "deleted_at",
+      "userid"
+    ]
+  },
+  "vendors": {
+    "backend": [
+      "backend/internal/vendors/vendorModels.go"
+    ],
+    "frontend": [
+      "front/src/services/jobs/vendors/vendorService.ts"
+    ],
+    "fields": [
+      "vendorid",
+      "userid",
+      "name",
+      "category",
+      "description",
+      "email",
+      "phone",
+      "location",
+      "rating",
+      "rating_count",
+      "profile_image",
+      "portfolio",
+      "verified",
+      "available",
+      "created_at",
+      "updated_at",
+      "hiringid",
+      "eventid",
+      "status",
+      "hired_at"
+    ]
+  },
+  "tickets": {
+    "backend": [
+      "backend/internal/verticals/tickets/ticketModels.go"
+    ],
+    "frontend": [
+      "front/src/services/tickets/types.ts"
+    ],
+    "fields": [
+      "ticketid",
+      "eventid",
+      "eventID",
+      "userid",
+      "userID",
+      "uniqueCode",
+      "uniquecode",
+      "status",
+      "name",
+      "price",
+      "currency",
+      "quantity",
+      "entity_id",
+      "entity_type",
+      "available",
+      "total",
+      "created_at",
+      "createdAt",
+      "updated_at",
+      "updatedAt",
+      "description",
+      "sold",
+      "seatstart",
+      "seatend",
+      "seats",
+      "seat_number",
+      "buyerName",
+      "buyername",
+      "purchasedate",
+      "purchaseDate",
+      "canceled",
+      "canceledAt",
+      "transferred",
+      "transferredTo",
+      "transferredto"
+    ]
+  }
+}
