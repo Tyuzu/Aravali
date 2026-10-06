@@ -227,43 +227,6 @@
   margin-top: auto;
 }
 
-.buttonx {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  height: 34px;
-  padding: 0 0.9rem;
-  border-radius: var(--fluent-radius-sm);
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-primary);
-  border: 1px solid var(--fluent-border-subtle);
-  cursor: pointer;
-  transition: all var(--fluent-transition);
-}
-
-.buttonx:hover {
-  background-color: var(--fluent-bg-tertiary);
-  border-color: var(--fluent-border-strong);
-}
-
-.buttonx.delete-btn {
-  background-color: var(--fluent-danger-bg);
-  color: var(--fluent-danger-fg);
-  border-color: transparent;
-}
-
-.buttonx.delete-btn:hover {
-  background-color: var(--fluent-danger-fg);
-  color: #ffffff;
-}
-
-.buttonx:active {
-  transform: scale(0.98);
-}
-  
 #add-ticket-btn {
   background-color: var(--fluent-accent);
   color: #ffffff;

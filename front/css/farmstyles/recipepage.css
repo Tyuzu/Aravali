@@ -229,50 +229,7 @@
 }
 
 /* Fluent General Buttons */
-.buttonx,
-.media-section button.primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  height: 34px;
-  padding: 0 1rem;
-  border-radius: var(--fluent-radius-sm);
-  cursor: pointer;
-  user-select: none;
-  transition: all var(--fluent-transition);
-  box-sizing: border-box;
-}
-
-.buttonx.primary,
-.media-section button.primary {
-  background-color: var(--fluent-accent);
-  color: #ffffff;
-  border: none;
-}
-
-.buttonx.primary:hover,
-.media-section button.primary:hover {
-  background-color: var(--fluent-accent-hover);
-}
-
-.buttonx.secondary {
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-primary);
-  border: 1px solid var(--fluent-border-subtle);
-}
-
-.buttonx.secondary:hover {
-  background-color: var(--fluent-bg-tertiary);
-  border-color: var(--fluent-border-strong);
-}
-
-.buttonx:active,
-.media-section button.primary:active {
-  transform: scale(0.98);
-}
+/* Shared button styling is centralized in the global Button.css component. */
 
 /* Tiny Actions Buttons (Edit/Delete) */
 .inline-actions {

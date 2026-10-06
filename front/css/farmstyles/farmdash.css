@@ -227,7 +227,6 @@
 }
 
 /* Button UI Components */
-.buttonx,
 .primary-button {
   display: inline-flex;
   align-items: center;

@@ -83,6 +83,19 @@
   width: 100%;
 }
 
+/* Primary Variant */
+.buttonx.primary,
+button.primary {
+  background-color: var(--color-primary);
+  color: var(--color-primary-fg, #fff);
+  border-color: var(--color-primary);
+}
+
+.buttonx.primary:hover,
+button.primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
 /* Secondary Variant */
 .buttonx.secondary {
   background-color: var(--color-bg-tertiary);
@@ -108,11 +121,14 @@
 }
 
 /* Danger / Destructive Variant */
-.buttonx.danger {
+.buttonx.danger,
+.buttonx.delete-btn {
   background-color: var(--color-danger);
   color: #fff;
+  border-color: transparent;
 }
 
-.buttonx.danger:hover {
+.buttonx.danger:hover,
+.buttonx.delete-btn:hover {
   background-color: #b91c1c;
 }

@@ -45,8 +45,6 @@ export const farmsRoutes: AppRoute[] = [
     functionName: "CreateFarm",
     meta: {
       requiresAuth: true,
-      roles: ["farmer", "admin"],
-      roleMatchMode: "ANY",
       title: "Create Farm"
     }
   },

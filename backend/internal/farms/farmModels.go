@@ -46,29 +46,28 @@ type AvailableSlot struct {
 type WeeklyAvailability map[string]AvailableSlot
 
 type Farm struct {
-	FarmID         string             `db:"farmid,omitempty"         json:"farmid"`
-	Name           string             `db:"name"                  json:"name"`
-	Location       string             `db:"location"              json:"location"`
-	Latitude       float64            `db:"latitude,omitempty"    json:"latitude,omitempty"`
-	Longitude      float64            `db:"longitude,omitempty"   json:"longitude,omitempty"`
-	Description    string             `db:"description,omitempty" json:"description,omitempty"`
-	Owner          string             `db:"owner"                 json:"owner"`
-	ContactInfo    ContactInfo        `db:"contactInfo,omitempty" json:"contactInfo,omitempty"`
-	Availability   WeeklyAvailability `json:"availability" db:"availability"`
-	Tags           []string           `db:"tags,omitempty"        json:"tags,omitempty"`
-	Banner         string             `db:"banner,omitempty"       json:"photo,omitempty"`
-	Crops          []Crop             `db:"crops" json:"crops,omitempty"` // loaded via lookup or separate query
-	Media          []string           `db:"media,omitempty"       json:"media,omitempty"`
-	AvgRating      float64            `db:"avgRating,omitempty"   json:"avgRating,omitempty"`
-	ReviewCount    int                `db:"reviewCount,omitempty" json:"reviewCount,omitempty"`
-	FavoritesCount int64              `db:"favoritesCount,omitempty" json:"favoritesCount,omitempty"`
-	CreatedBy      string             `db:"createdBy"             json:"createdBy"`
-	CreatedAt      time.Time          `db:"createdAt"             json:"createdAt"`
-	UpdatedAt      time.Time          `db:"updatedAt"             json:"updatedAt"`
-	Contact        string             `json:"contact"`
-
-	Social   string `json:"social,omitempty" db:"social,omitempty"`
-	Practice string `json:"practice,omitempty" db:"practice,omitempty"`
+	FarmID         string             `db:"farmid,omitempty"          json:"farmid"`
+	Name           string             `db:"name"                     json:"name"`
+	Location       string             `db:"location"                 json:"location"`
+	Latitude       float64            `db:"latitude,omitempty"       json:"latitude,omitempty"`
+	Longitude      float64            `db:"longitude,omitempty"      json:"longitude,omitempty"`
+	Description    string             `db:"description,omitempty"    json:"description,omitempty"`
+	Owner          string             `db:"owner"                    json:"owner"`
+	ContactInfo    ContactInfo        `db:"-"                        json:"contactInfo,omitempty"`
+	Availability   WeeklyAvailability `db:"availability"             json:"availability"`
+	Tags           []string           `db:"tags,omitempty"           json:"tags,omitempty"`
+	Banner         string             `db:"banner,omitempty"         json:"photo,omitempty"`
+	Crops          []Crop             `db:"crops"                    json:"crops,omitempty"`
+	Media          []string           `db:"media,omitempty"          json:"media,omitempty"`
+	AvgRating      float64            `db:"avg_rating,omitempty"     json:"avgRating,omitempty"`
+	ReviewCount    int                `db:"review_count,omitempty"   json:"reviewCount,omitempty"`
+	FavoritesCount int64              `db:"favorites_count,omitempty" json:"favoritesCount,omitempty"`
+	CreatedBy      string             `db:"created_by"               json:"createdBy"`
+	CreatedAt      time.Time          `db:"created_at"               json:"createdAt"`
+	UpdatedAt      time.Time          `db:"updated_at"               json:"updatedAt"`
+	Contact        string             `db:"contact"                  json:"contact"`
+	Social         string             `db:"social,omitempty"        json:"social,omitempty"`
+	Practice       string             `db:"practice,omitempty"      json:"practice,omitempty"`
 }
 
 type PricePoint struct {

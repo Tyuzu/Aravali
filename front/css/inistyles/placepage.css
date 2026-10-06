@@ -200,64 +200,6 @@
    BUTTON CONTROLS
    ========================================================================== */
 
-.buttonx,
-button.primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  height: 36px;
-  padding: 0 1rem;
-  border-radius: var(--fluent-radius-sm);
-  cursor: pointer;
-  user-select: none;
-  border: 1px solid transparent;
-  transition: all var(--fluent-transition);
-  box-sizing: border-box;
-}
-
-.buttonx.secondary,
-.buttonx:not(.primary):not(.delete-btn) {
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-primary);
-  border-color: var(--fluent-border-subtle);
-}
-
-.buttonx.secondary:hover,
-.buttonx:not(.primary):not(.delete-btn):hover {
-  background-color: var(--fluent-bg-tertiary);
-  border-color: var(--fluent-border-strong);
-}
-
-.buttonx.primary,
-button.primary {
-  background-color: var(--fluent-accent);
-  color: #ffffff;
-}
-
-.buttonx.primary:hover,
-button.primary:hover {
-  background-color: var(--fluent-accent-hover);
-}
-
-.buttonx.delete-btn {
-  background-color: var(--fluent-danger-bg);
-  color: var(--fluent-danger-fg);
-}
-
-.buttonx.delete-btn:hover {
-  background-color: var(--fluent-danger-fg);
-  color: #ffffff;
-}
-
-.buttonx:active,
-button.primary:active {
-  transform: scale(0.98);
-}
-
-
 .place-info {
   margin-top: 1rem;
   display: grid;

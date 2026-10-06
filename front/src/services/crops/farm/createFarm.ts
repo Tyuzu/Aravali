@@ -1,5 +1,6 @@
 import { apiFetch } from "../../../api/api.js";
 import { navigate } from "../../../routes/navigate.js";
+import { getState, setState } from "../../../state/state.js";
 import { createFarmForm } from "./createOrEditFarm.js";
 
 export interface FarmFormData {
@@ -34,6 +35,13 @@ export function createFarm(isLoggedIn: boolean, container: HTMLElement | null): 
       const res = await apiFetch<CreateFarmResponse>("/farms", "POST", formData as any);
 
       if (res?.success && res.id) {
+        const existingRoles = Array.isArray(getState("roles")) ? getState("roles") : [];
+        const nextRoles = Array.from(new Set([
+          ...existingRoles.map((role: unknown) => String(role).trim()).filter(Boolean),
+          "farmer"
+        ]));
+
+        setState("roles", nextRoles, true);
         navigate(`/farm/${res.id}`);
         return true;
       } else {

@@ -49,7 +49,60 @@ func EnsureMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	if err := ensureAuthUserColumns(ctx, pool); err != nil {
 		return err
 	}
+	if err := ensureFarmColumns(ctx, pool); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func ensureFarmColumns(ctx context.Context, pool *pgxpool.Pool) error {
+	exists, err := tableExists(ctx, pool, "farms")
+	if err != nil {
+		return fmt.Errorf("check farms table: %w", err)
+	}
+	if !exists {
+		return nil
+	}
+
+	columns := []struct {
+		name       string
+		definition string
+	}{
+		{name: "name", definition: "TEXT"},
+		{name: "location", definition: "TEXT"},
+		{name: "latitude", definition: "DOUBLE PRECISION DEFAULT 0"},
+		{name: "longitude", definition: "DOUBLE PRECISION DEFAULT 0"},
+		{name: "description", definition: "TEXT"},
+		{name: "owner", definition: "TEXT"},
+		{name: "contact", definition: "TEXT"},
+		{name: "social", definition: "TEXT"},
+		{name: "practice", definition: "TEXT"},
+		{name: "availability", definition: "JSONB DEFAULT '{}'::JSONB"},
+		{name: "tags", definition: "TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]"},
+		{name: "crops", definition: "JSONB DEFAULT '[]'::JSONB"},
+		{name: "banner", definition: "TEXT"},
+		{name: "media", definition: "TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]"},
+		{name: "avg_rating", definition: "DOUBLE PRECISION NOT NULL DEFAULT 0"},
+		{name: "review_count", definition: "INTEGER NOT NULL DEFAULT 0"},
+		{name: "favorites_count", definition: "BIGINT NOT NULL DEFAULT 0"},
+		{name: "created_by", definition: "TEXT"},
+		{name: "updated_by", definition: "TEXT"},
+		{name: "metadata", definition: "JSONB NOT NULL DEFAULT '{}'::JSONB"},
+	}
+
+	for _, column := range columns {
+		present, err := columnExists(ctx, pool, "farms", column.name)
+		if err != nil {
+			return fmt.Errorf("check farms.%s: %w", column.name, err)
+		}
+		if present {
+			continue
+		}
+		if _, err := pool.Exec(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s", quoteIdent("farms"), quoteIdent(column.name), column.definition)); err != nil {
+			return fmt.Errorf("add farms.%s: %w", column.name, err)
+		}
+	}
 	return nil
 }
 

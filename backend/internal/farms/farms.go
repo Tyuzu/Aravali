@@ -3,6 +3,7 @@
 package farms
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	log "scav/utils/logger"
@@ -13,10 +14,28 @@ import (
 	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/mq"
+	"scav/internal/admin"
 	"scav/internal/beats/auditlog"
 	"scav/middleware"
 	"scav/utils"
 )
+
+func mergeFarmerRole(existing []string) []string {
+	return admin.MergeRoleList(existing, "farmer")
+}
+
+func grantFarmerRoleIfMissing(ctx context.Context, app *infra.Deps, userID string) error {
+	var user struct {
+		Role []string `json:"role" db:"role"`
+	}
+
+	if err := admin.GetUserRoles(ctx, app, userID, &user); err != nil {
+		return err
+	}
+
+	_, err := admin.UpdateUserRoles(ctx, app, userID, mergeFarmerRole(user.Role))
+	return err
+}
 
 // --------------------------------------------------
 // Create
@@ -114,6 +133,10 @@ func CreateFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
+		if err := grantFarmerRoleIfMissing(ctx, app, requestingUserID); err != nil {
+			log.Printf("Farm creation: failed to grant farmer role to user %s: %v", requestingUserID, err)
+		}
+
 		go auditlog.LogAction(
 			ctx,
 			app,
@@ -129,7 +152,13 @@ func CreateFarm(app *infra.Deps) http.HandlerFunc {
 			},
 		)
 
-		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.FarmCreatedEvent, mqevent.FarmCreatedPayload{}); err != nil {
+		if err := mq.PublishWithMeta(ctx, app.MQ, mqevent.FarmCreatedEvent, mqevent.FarmCreatedPayload{
+			FarmID:     farm.FarmID,
+			UserID:     requestingUserID,
+			FarmName:   farm.Name,
+			Location:   farm.Location,
+			OccurredAt: time.Now(),
+		}); err != nil {
 			log.Printf("failed to publish farm created event: %v", err)
 		}
 

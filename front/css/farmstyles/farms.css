@@ -326,37 +326,6 @@
   gap: 0.5rem;
 }
 
-.buttonx {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg-secondary);
-  color: var(--color-fg);
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.buttonx:hover {
-  border-color: var(--color-primary);
-  background-color: var(--color-bg-tertiary);
-  color: var(--color-primary);
-}
-
-.buttonx:active {
-  transform: scale(0.98);
-}
-
-.buttonx:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
 /* Sidebar Weather & Map Widgets */
 .farm__weather h3,
 .farm__featured h3,
