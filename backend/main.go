@@ -14,6 +14,7 @@ import (
 
 	"scav/config"
 	"scav/infra"
+	"scav/infra/sqldb/bootstrap"
 	"scav/internal/mechat"
 	"scav/internal/newchat"
 	"scav/middleware"
@@ -42,11 +43,16 @@ func main() {
 		logger.L.Sugar().Fatalw("Failed to initialize infrastructure", "error", err)
 	}
 
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+
+	if err := bootstrap.EnsureModuleSchemas(appCtx, app.PGPool); err != nil {
+		logger.L.Sugar().Fatalw("module schema bootstrap failed", "error", err)
+	}
+
 	// =====================
 	// Application Lifecycle
 	// =====================
-	appCtx, appCancel := context.WithCancel(context.Background())
-	defer appCancel()
 
 	// =====================
 	// MQ Subscribers

@@ -646,7 +646,8 @@ func extractColumnsAndValues(record any) ([]string, []any, []string, error) {
 
 func quoteIdent(name string) string {
 	re := regexp.MustCompile(`[^a-zA-Z0-9_]+`)
-	return `"` + re.ReplaceAllString(name, "_") + `"`
+	normalized := re.ReplaceAllString(name, "_")
+	return `"` + strings.ToLower(normalized) + `"`
 }
 
 func quoteIdents(names []string) []string {

@@ -68,6 +68,18 @@ func TestExtractColumnsAndValuesSkipsNilOptionalFields(t *testing.T) {
 	}
 }
 
+func TestQuoteIdentNormalizesPostgresColumnNames(t *testing.T) {
+	if got, want := quoteIdent("cookTime"), "\"cooktime\""; got != want {
+		t.Fatalf("quoteIdent(cookTime) = %s, want %s", got, want)
+	}
+	if got, want := quoteIdent("videoUrl"), "\"videourl\""; got != want {
+		t.Fatalf("quoteIdent(videoUrl) = %s, want %s", got, want)
+	}
+	if got, want := quoteIdent("created_at"), "\"created_at\""; got != want {
+		t.Fatalf("quoteIdent(created_at) = %s, want %s", got, want)
+	}
+}
+
 func TestParseCreateIndexTarget(t *testing.T) {
 	tests := []struct {
 		name     string
