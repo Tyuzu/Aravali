@@ -5,8 +5,8 @@ package middleware
 import (
 	"net/http"
 
+	"scav/infra/logger"
 	"scav/utils"
-	"scav/utils/logger"
 )
 
 // SafeError represents a sanitized error for client responses

@@ -10,9 +10,9 @@ import (
 
 	"scav/config/mqevent"
 	"scav/infra"
+	"scav/infra/logger"
 	"scav/infra/mq"
 	"scav/utils"
-	"scav/utils/logger"
 )
 
 func parseTags(raw string) []string {

@@ -12,9 +12,9 @@ import (
 
 	"scav/config/mqevent"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/infra/mq"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 const checkoutTimeout = 15 * time.Second

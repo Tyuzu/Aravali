@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/utils"
-	log "scav/utils/logger"
 	"strconv"
 	"time"
 )

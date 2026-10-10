@@ -12,8 +12,8 @@ import (
 
 	"scav/config"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 func SuggestFollowers(app *infra.Deps) http.HandlerFunc {

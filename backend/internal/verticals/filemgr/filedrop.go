@@ -11,10 +11,10 @@ import (
 
 	"scav/config/mqevent"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/infra/mq"
 	mediaworker "scav/infra/workers"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 func FiledropHandler(app *infra.Deps) http.HandlerFunc {

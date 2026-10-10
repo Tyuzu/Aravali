@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"strings"
 
 	"github.com/google/uuid"

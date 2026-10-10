@@ -6,7 +6,7 @@ import (
 	"context"
 	"math/rand"
 	"net/http"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"strconv"
 	"time"
 

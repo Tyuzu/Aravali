@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	log "scav/infra/logger"
 	mediaworker "scav/infra/workers"
 	"scav/utils"
-	log "scav/utils/logger"
 	"strings"
 )
 

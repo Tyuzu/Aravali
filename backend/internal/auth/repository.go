@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"scav/infra"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 )
 
 type Repository interface {

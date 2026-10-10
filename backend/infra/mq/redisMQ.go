@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"scav/infra/logger"
 
 	"github.com/redis/go-redis/v9"
-
-	"scav/utils/logger"
 )
 
 type redisMQ struct {

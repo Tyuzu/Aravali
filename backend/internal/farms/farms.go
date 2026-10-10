@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"strings"
 	"time"
 

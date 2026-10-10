@@ -5,11 +5,9 @@ package musicon
 import (
 	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	"scav/infra"
-	"scav/infra/sqldb"
 )
 
 // --------------------------- Helpers ---------------------------
@@ -35,16 +33,7 @@ func GetRecommendedSongs(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		limit, page := getPaginationParams(r)
-		limit, page = sanitizePagination(limit, page)
-
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64((page - 1) * limit),
-			OrderBy: "plays DESC",
-		}
-
-		filter := map[string]any{"published": true}
-		songs, err := getRecommendedSongsList(ctx, app, filter, opts)
+		songs, err := getRecommendedSongsPage(ctx, app, limit, page, "")
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommended songs")
 			return
@@ -60,16 +49,7 @@ func GetRecommendedAlbums(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		limit, page := getPaginationParams(r)
-		limit, page = sanitizePagination(limit, page)
-
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64((page - 1) * limit),
-			OrderBy: "releasedate DESC",
-		}
-
-		filter := map[string]any{"published": true}
-		albums, err := getRecommendedAlbumsList(ctx, app, filter, opts)
+		albums, err := getRecommendedAlbumsPage(ctx, app, limit, page)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommended albums")
 			return
@@ -84,28 +64,9 @@ func GetRecommendations(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		basedOn := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("based_on")))
-		filter := map[string]any{"published": true}
-
-		switch basedOn {
-		case "recently_played":
-			filter["plays"] = 0
-		case "language_en":
-			filter["language"] = "en"
-		case "genre_pop":
-			filter["genre"] = "Pop"
-		}
-
+		basedOn := r.URL.Query().Get("based_on")
 		limit, page := getPaginationParams(r)
-		limit, page = sanitizePagination(limit, page)
-
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64((page - 1) * limit),
-			OrderBy: "plays DESC",
-		}
-
-		songs, err := getRecommendedSongsList(ctx, app, filter, opts)
+		songs, err := getRecommendedSongsPage(ctx, app, limit, page, basedOn)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "Failed to fetch recommendations")
 			return

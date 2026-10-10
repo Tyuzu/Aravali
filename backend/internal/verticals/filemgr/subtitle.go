@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	log "scav/infra/logger"
 	"scav/utils"
-	log "scav/utils/logger"
 	"strconv"
 	"strings"
 

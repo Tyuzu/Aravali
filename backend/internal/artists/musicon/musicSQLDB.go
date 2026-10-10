@@ -198,6 +198,42 @@ func getRecommendedAlbumsList(ctx context.Context, app *infra.Deps, filter map[s
 	return albums, nil
 }
 
+func buildRecommendationFilter(basedOn string) map[string]any {
+	filter := map[string]any{"published": true}
+
+	switch strings.ToLower(strings.TrimSpace(basedOn)) {
+	case "recently_played":
+		filter["plays"] = 0
+	case "language_en":
+		filter["language"] = "en"
+	case "genre_pop":
+		filter["genre"] = "Pop"
+	}
+
+	return filter
+}
+
+func buildRecommendationQueryOptions(limit, page int, orderBy string) sqldb.FindManyOptions {
+	limit, page = sanitizePagination(limit, page)
+	return sqldb.FindManyOptions{
+		Limit:   int64(limit),
+		Offset:  int64((page - 1) * limit),
+		OrderBy: orderBy,
+	}
+}
+
+func getRecommendedSongsPage(ctx context.Context, app *infra.Deps, limit, page int, basedOn string) ([]Song, error) {
+	filter := buildRecommendationFilter(basedOn)
+	opts := buildRecommendationQueryOptions(limit, page, "plays DESC")
+	return getRecommendedSongsList(ctx, app, filter, opts)
+}
+
+func getRecommendedAlbumsPage(ctx context.Context, app *infra.Deps, limit, page int) ([]Album, error) {
+	filter := map[string]any{"published": true}
+	opts := buildRecommendationQueryOptions(limit, page, "releasedate DESC")
+	return getRecommendedAlbumsList(ctx, app, filter, opts)
+}
+
 func buildFilterQuery(filter map[string]any) (string, []any) {
 	if len(filter) == 0 {
 		return "1 = 1", nil

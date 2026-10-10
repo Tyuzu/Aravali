@@ -5,11 +5,9 @@ package comments
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -63,49 +61,13 @@ func GetComments(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		/* ---------- Pagination ---------- */
-		page := 1
-		limit := 10
+		page, limit := parseCommentPageLimit(r.URL.Query().Get("page"), r.URL.Query().Get("limit"))
+		sortBy := r.URL.Query().Get("sort")
 
-		if v := r.URL.Query().Get("page"); v != "" {
-			if p, err := strconv.Atoi(v); err == nil && p > 0 {
-				page = p
-			}
-		}
-
-		if v := r.URL.Query().Get("limit"); v != "" {
-			if l, err := strconv.Atoi(v); err == nil && l > 0 && l <= 50 {
-				limit = l
-			}
-		}
-
-		skip := (page - 1) * limit
-		sortBy := r.URL.Query().Get("sort") // new | old | likes
-
-		/* ---------- Sorting (ORDERED) ---------- */
-		orderBy := "created_at DESC, commentid DESC"
-		switch sortBy {
-		case "old":
-			orderBy = "created_at ASC, commentid ASC"
-		case "likes":
-			orderBy = "likes DESC, created_at DESC"
-		}
-
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64(skip),
-			OrderBy: orderBy,
-		}
-
-		var comments []Comment
-		if err := findCommentsByEntity(ctx, app, entityType, entityID, opts, &comments); err != nil {
+		comments, err := getCommentPage(ctx, app, entityType, entityID, page, limit, sortBy)
+		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"message": "Failed to fetch comments"})
 			return
-		}
-
-		// Always return array (never null)
-		if comments == nil {
-			comments = []Comment{}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, comments)

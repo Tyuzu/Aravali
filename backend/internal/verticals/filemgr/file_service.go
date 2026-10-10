@@ -10,9 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/infra/mq"
 	mediaworker "scav/infra/workers"
-	log "scav/utils/logger"
 	"strings"
 )
 

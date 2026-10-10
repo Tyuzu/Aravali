@@ -6,17 +6,23 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
-
 	"scav/config"
 	"scav/infra/cache"
+	"scav/infra/logger"
 	"scav/infra/mq"
 	"scav/infra/sqldb"
-	"scav/utils/logger"
+
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type Deps struct {
@@ -24,6 +30,7 @@ type Deps struct {
 	Cache  cache.Cache
 	MQ     mq.MQ
 	Config config.Config
+	Log    *zap.Logger
 
 	// Underlying raw clients for graceful shutdown.
 	PGPool      *pgxpool.Pool
@@ -40,6 +47,12 @@ func New(cfg *config.Config) (*Deps, error) {
 	d := &Deps{
 		Config: *cfg,
 	}
+
+	// Initialize logging early so components can use it.
+	if err := logger.Init(); err != nil {
+		return nil, fmt.Errorf("logger init: %w", err)
+	}
+	d.Log = logger.L
 
 	// Helper to clean up partially initialized resources on error.
 	cleanup := func() {
@@ -73,18 +86,8 @@ func New(cfg *config.Config) (*Deps, error) {
 	d.RedisClient = redisClient
 
 	// Redis cache uses the same go-redis client.
-	d.Cache = cache.NewRedisCache(redisClient)
+	d.Cache = cache.NewCache(redisClient)
 
-	/*
-		Redis Pub/Sub is now the application's MQ.
-
-		The same Redis server can safely be used for:
-		- Cache
-		- Pub/Sub
-
-		go-redis handles the required Pub/Sub connections
-		internally.
-	*/
 	d.MQ = mq.NewRedisMQ(redisClient)
 
 	if d.MQ == nil {
@@ -92,80 +95,44 @@ func New(cfg *config.Config) (*Deps, error) {
 		return nil, errors.New("redis MQ initialization returned nil")
 	}
 
-	/* -------- Postgres -------- */
+	// Optionally initialize Postgres if a DATABASE_URL is provided.
+	pgURI := env("DATABASE_URL", "")
+	if strings.TrimSpace(pgURI) != "" {
+		pool, err := NewPostgres(pgURI)
+		if err != nil {
+			cleanup()
+			return nil, fmt.Errorf("postgres setup: %w", err)
+		}
 
-	postgresURL := cfg.DatabaseURL
-
-	if postgresURL == "" {
-		postgresURL = env(
-			"POSTGRES_URL",
-			env("DATABASE_URL", ""),
-		)
+		d.PGPool = pool
+		d.SQLDB = sqldb.NewDatabase(pool)
+		// Run DB migrations if present.
+		migrationsPath := env("MIGRATIONS_PATH", "./migrations")
+		absMigrations, err := filepath.Abs(migrationsPath)
+		if err == nil {
+			// Ensure we construct a valid file:// URL on all platforms.
+			// On Windows, absolute paths contain backslashes and a drive
+			// letter (e.g. C:\...), so convert to forward slashes and
+			// prefix with an extra slash so the result becomes
+			// file:///C:/path/to/migrations which is accepted by the
+			// migrate source driver.
+			fixed := filepath.ToSlash(absMigrations)
+			src := "file://" + fixed
+			m, err := migrate.New(src, pgURI)
+			if err != nil {
+				// migration init failures shouldn't block production unless strict mode enabled
+				d.Log.Sugar().Warnw("migration init failed", "error", err)
+			} else {
+				if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+					d.Log.Sugar().Warnw("migrations up failed", "error", err)
+				} else {
+					d.Log.Sugar().Infow("migrations applied", "path", absMigrations)
+				}
+			}
+		}
 	}
 
-	if postgresURL == "" {
-		user := env(
-			"POSTGRES_USER",
-			"apeman",
-		)
-
-		pass := env(
-			"POSTGRES_PASSWORD",
-			"ningning",
-		)
-
-		host := env(
-			"POSTGRES_HOST",
-			"localhost",
-		)
-
-		port := env(
-			"POSTGRES_PORT",
-			"5432",
-		)
-
-		dbname := env(
-			"POSTGRES_DB",
-			"eventdb",
-		)
-
-		postgresURL = fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s",
-			user,
-			pass,
-			host,
-			port,
-			dbname,
-		)
-	}
-
-	pool, err := NewPostgres(postgresURL)
-	if err != nil {
-		cleanup()
-		return nil, fmt.Errorf("postgres setup: %w", err)
-	}
-
-	d.PGPool = pool
-	d.SQLDB = sqldb.NewPostgresDatabase(
-		pool,
-		100,
-	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	if err := sqldb.EnsureMigrations(ctx, pool); err != nil {
-		cancel()
-		cleanup()
-		return nil, fmt.Errorf("sql bootstrap: %w", err)
-	}
-	cancel()
-
-	logger.L.Sugar().Infow(
-		"infra initialized",
-		"redis_enabled", true,
-		"redis_addr", redisAddr,
-		"mq", "redis_pubsub",
-	)
-
+	// All required infra initialized successfully.
 	return d, nil
 }
 

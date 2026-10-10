@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"scav/infra"
-	db "scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -29,7 +28,6 @@ func GetUserNotifications(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		/* ---------- Pagination ---------- */
 		page := 1
 		limit := 20
 
@@ -45,23 +43,8 @@ func GetUserNotifications(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		skip := (page - 1) * limit
-
-		opts := db.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64(skip),
-			OrderBy: notificationSort(),
-		}
-
-		var notifs []Notification
-
-		if err := findNotificationsByUser(
-			ctx,
-			app.SQLDB,
-			userID,
-			opts,
-			&notifs,
-		); err != nil {
+		notifs, err := getUserNotificationsPage(ctx, app.SQLDB, userID, page, limit)
+		if err != nil {
 			utils.RespondWithJSON(
 				w,
 				http.StatusInternalServerError,
@@ -70,10 +53,6 @@ func GetUserNotifications(app *infra.Deps) http.HandlerFunc {
 				},
 			)
 			return
-		}
-
-		if notifs == nil {
-			notifs = []Notification{}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, notifs)

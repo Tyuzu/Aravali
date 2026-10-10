@@ -22,9 +22,9 @@ import (
 
 	"scav/config/mqevent"
 	"scav/infra"
+	"scav/infra/logger"
 	"scav/infra/mq"
 	"scav/utils"
-	"scav/utils/logger"
 )
 
 const OTPExpiry = 10 * time.Minute

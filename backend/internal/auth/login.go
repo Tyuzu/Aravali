@@ -18,7 +18,7 @@ import (
 	"scav/middleware"
 	"scav/utils"
 
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -112,9 +112,9 @@ func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds Lo
 	if !matched && len(user.Password) > 0 && isBcrypt(user.Password) {
 		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)) == nil {
 			matched = true
-				if _, err := MigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
-					log.Printf("auth: failed to migrate password hash for userid=%s: %v", user.UserID, err)
-				}
+			if _, err := MigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
+				log.Printf("auth: failed to migrate password hash for userid=%s: %v", user.UserID, err)
+			}
 		}
 	}
 

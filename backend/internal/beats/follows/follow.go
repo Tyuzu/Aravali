@@ -3,17 +3,15 @@
 package follows
 
 import (
-	"context"
 	"net/http"
 
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/infra/mq"
-	"scav/infra/sqldb"
 	"scav/internal/beats/userdata"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 func HandleFollowAction(
@@ -64,30 +62,4 @@ func ToggleUnFollow(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		HandleFollowAction(w, r, "unfollow", app)
 	}
-}
-
-/* -------------------------------------------------------
-   Follow data + caching utilities
-------------------------------------------------------- */
-
-// GetUserFollowData returns followers and follows for a user
-func GetUserFollowData(ctx context.Context, userID string, database sqldb.Database) (UserFollow, error) {
-	var uf UserFollow
-	where := "userid = $1"
-	args := []any{userID}
-	if err := database.FindOne(ctx, followingsTable, where, args, &uf); err != nil {
-		return UserFollow{
-			Followers: []string{},
-			Follows:   []string{},
-		}, nil
-	}
-
-	if uf.UserID == "" {
-		return UserFollow{
-			Followers: []string{},
-			Follows:   []string{},
-		}, nil
-	}
-
-	return uf, nil
 }

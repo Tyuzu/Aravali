@@ -5,7 +5,7 @@ package userdata
 import (
 	"context"
 	"scav/infra"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"time"
 )
 

@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"scav/infra"
+	"scav/infra/logger"
+	log "scav/infra/logger"
 	"scav/utils"
-	"scav/utils/logger"
-	log "scav/utils/logger"
 )
 
 /* -------------------- Helpers -------------------- */

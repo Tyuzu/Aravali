@@ -7,10 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"scav/infra"
-	"scav/infra/sqldb"
-	"scav/internal/farms"
 	"scav/utils"
-	"strings"
 	"time"
 )
 
@@ -23,47 +20,14 @@ func GetItems(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		query := "1 = 1"
-		args := []any{}
-		if t := r.URL.Query().Get("type"); t != "" {
-			query += " AND type = $1"
-			args = append(args, t)
-		}
-		if c := r.URL.Query().Get("category"); c != "" {
-			query += " AND category = $2"
-			args = append(args, c)
-		}
-		if s := r.URL.Query().Get("search"); s != "" {
-			query += " AND LOWER(name) LIKE $3"
-			args = append(args, "%"+strings.ToLower(s)+"%")
-		}
-
+		itemType := r.URL.Query().Get("type")
+		category := r.URL.Query().Get("category")
+		search := r.URL.Query().Get("search")
 		skip, limit := utils.ParsePagination(r, 10, 100)
-		orderBy := "name ASC"
-		switch r.URL.Query().Get("sort") {
-		case "price_asc":
-			orderBy = "price ASC"
-		case "price_desc":
-			orderBy = "price DESC"
-		case "name_desc":
-			orderBy = "name DESC"
-		}
 
-		opts := sqldb.FindManyOptions{
-			Offset:  int64(skip),
-			Limit:   int64(limit),
-			OrderBy: orderBy,
-		}
-
-		var items []farms.Product
-		if err := FindProductsWithOptions(ctx, app, query, args, opts, &items); err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch items")
-			return
-		}
-
-		total, err := CountProducts(ctx, app, query, args)
+		items, total, err := getProductsPage(ctx, app, itemType, category, search, skip, limit, r.URL.Query().Get("sort"))
 		if err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count items")
+			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch items")
 			return
 		}
 

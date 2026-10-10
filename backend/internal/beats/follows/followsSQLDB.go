@@ -11,8 +11,9 @@ import (
 
 	"scav/config"
 	"scav/infra"
+	log "scav/infra/logger"
+	"scav/infra/sqldb"
 	"scav/internal/auth"
-	log "scav/utils/logger"
 )
 
 var followingsTable = config.Tables.FollowingsTable
@@ -125,4 +126,26 @@ func FindUsersByIDsForFollow(ctx context.Context, app *infra.Deps, userIDs []str
 	args := []any{userIDs}
 
 	return app.SQLDB.FindMany(ctx, usersTable, where, args, out)
+}
+
+// GetUserFollowData returns followers and follows for a user.
+func GetUserFollowData(ctx context.Context, userID string, database sqldb.Database) (UserFollow, error) {
+	var uf UserFollow
+	where := "userid = $1"
+	args := []any{userID}
+	if err := database.FindOne(ctx, followingsTable, where, args, &uf); err != nil {
+		return UserFollow{
+			Followers: []string{},
+			Follows:   []string{},
+		}, nil
+	}
+
+	if uf.UserID == "" {
+		return UserFollow{
+			Followers: []string{},
+			Follows:   []string{},
+		}, nil
+	}
+
+	return uf, nil
 }

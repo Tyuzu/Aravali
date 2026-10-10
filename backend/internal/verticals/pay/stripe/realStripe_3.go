@@ -8,12 +8,12 @@ import (
 	"io"
 	"net/http"
 	"os"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"time"
 
 	"scav/infra"
+	"scav/infra/logger"
 	"scav/utils"
-	"scav/utils/logger"
 
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v83"

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/middleware"
 	"scav/utils"
-	log "scav/utils/logger"
 
 	"github.com/gorilla/websocket"
 )

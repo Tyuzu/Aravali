@@ -6,7 +6,6 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/utils"
 	"time"
 )
@@ -31,34 +30,10 @@ func GetRelatedPosts(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		query := "postid <> $1"
-		args := []any{postID}
-		if category != "" {
-			query += " AND category = $2"
-			args = append(args, category)
-		}
-		if subcategory != "" {
-			query += " AND subcategory = $3"
-			args = append(args, subcategory)
-		}
-		if len(tags) > 0 {
-			query += " AND tags && $4"
-			args = append(args, tags)
-		}
-
-		opts := sqldb.FindManyOptions{
-			Limit:   10,
-			OrderBy: "created_at DESC",
-		}
-
-		var related []Post
-		if err := FindRelatedPostsWithOptions(ctx, app, query, args, opts, &related); err != nil {
+		related, err := GetRelatedPostsPage(ctx, app, postID, category, subcategory, tags)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
-		}
-
-		if related == nil {
-			related = []Post{}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{

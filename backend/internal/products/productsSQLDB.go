@@ -4,6 +4,8 @@ package products
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"scav/config"
 	"scav/infra"
@@ -31,6 +33,71 @@ func GetProductByID(ctx context.Context, app *infra.Deps, id string, out *farms.
 
 func FindProductsWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, out *[]farms.Product) error {
 	return app.SQLDB.FindManyWithOptions(ctx, productsTable, query, args, opts, out)
+}
+
+func buildProductSearchQuery(itemType, category, search string) (string, []any) {
+	query := "1 = 1"
+	args := []any{}
+
+	if itemType != "" {
+		query += " AND type = $" + strconv.Itoa(len(args)+1)
+		args = append(args, itemType)
+	}
+	if category != "" {
+		query += " AND category = $" + strconv.Itoa(len(args)+1)
+		args = append(args, category)
+	}
+	if search != "" {
+		query += " AND LOWER(name) LIKE $" + strconv.Itoa(len(args)+1)
+		args = append(args, "%"+strings.ToLower(search)+"%")
+	}
+
+	return query, args
+}
+
+func buildProductListOptions(skip, limit int, sort string) sqldb.FindManyOptions {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if skip < 0 {
+		skip = 0
+	}
+
+	orderBy := "name ASC"
+	switch sort {
+	case "price_asc":
+		orderBy = "price ASC"
+	case "price_desc":
+		orderBy = "price DESC"
+	case "name_desc":
+		orderBy = "name DESC"
+	}
+
+	return sqldb.FindManyOptions{
+		Offset:  int64(skip),
+		Limit:   int64(limit),
+		OrderBy: orderBy,
+	}
+}
+
+func getProductsPage(ctx context.Context, app *infra.Deps, itemType, category, search string, skip, limit int, sort string) ([]farms.Product, int64, error) {
+	query, args := buildProductSearchQuery(itemType, category, search)
+	opts := buildProductListOptions(skip, limit, sort)
+
+	var items []farms.Product
+	if err := FindProductsWithOptions(ctx, app, query, args, opts, &items); err != nil {
+		return nil, 0, err
+	}
+
+	total, err := CountProducts(ctx, app, query, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return items, total, nil
 }
 
 func CountProducts(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {

@@ -5,11 +5,9 @@ package recipes
 import (
 	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -39,52 +37,19 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		query := "1 = 1"
-		args := []any{}
-		if search := r.URL.Query().Get("search"); search != "" {
-			query += " AND (LOWER(title) LIKE $1 OR LOWER(description) LIKE $1)"
-			args = append(args, "%"+strings.ToLower(search)+"%")
-		}
-		if ing := r.URL.Query().Get("ingredient"); ing != "" {
-			query += " AND ingredients::text ILIKE $2"
-			args = append(args, "%"+strings.ToLower(ing)+"%")
-		}
-		if tags := r.URL.Query().Get("tags"); tags != "" {
-			query += " AND tags::text ILIKE $3"
-			args = append(args, "%"+strings.ToLower(tags)+"%")
-		}
-
+		search := r.URL.Query().Get("search")
+		ingredient := r.URL.Query().Get("ingredient")
+		tags := r.URL.Query().Get("tags")
 		skip, limit := utils.ParsePagination(r, 10, 100)
-		orderBy := "created_at DESC"
-		switch r.URL.Query().Get("sort") {
-		case "oldest":
-			orderBy = "created_at ASC"
-		case "views":
-			orderBy = "views DESC"
-		case "prepTime":
-			orderBy = "preptime ASC"
-		}
 
-		opts := sqldb.FindManyOptions{
-			Offset:  int64(skip),
-			Limit:   int64(limit),
-			OrderBy: orderBy,
-		}
-
-		var recipes []Recipe
-		if err := FindRecipesWithOptions(ctx, app, query, args, opts, &recipes); err != nil {
+		recipes, totalCount, err := getRecipesPage(ctx, app, search, ingredient, tags, skip, limit, r.URL.Query().Get("sort"))
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch recipes")
 			return
 		}
 
 		for i := range recipes {
 			normalizeRecipeSlices(&recipes[i])
-		}
-
-		totalCount, err := CountRecipes(ctx, app, query, args)
-		if err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to count recipes")
-			return
 		}
 
 		hasMore := (skip + limit) < int(totalCount)

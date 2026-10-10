@@ -6,9 +6,8 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
-	"scav/infra/sqldb"
+	log "scav/infra/logger"
 	"scav/utils"
-	log "scav/utils/logger"
 	"time"
 )
 
@@ -57,14 +56,8 @@ func GetEvents(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64(skip),
-			OrderBy: "created_at DESC",
-		}
-
 		var rawEvents []Event
-		if err := listEvents(ctx, app, filter, opts, &rawEvents); err != nil {
+		if err := getPaginatedEvents(ctx, app, filter, skip, limit, &rawEvents); err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch events")
 			return
 		}

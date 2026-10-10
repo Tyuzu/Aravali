@@ -33,6 +33,42 @@ func insertBulkNotifications(ctx context.Context, database sqldb.Database, notif
 	return database.InsertMany(ctx, notifsTable, docs)
 }
 
+func buildNotificationQueryOptions(page, limit int) sqldb.FindManyOptions {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	skip := (page - 1) * limit
+	return sqldb.FindManyOptions{
+		Limit:   int64(limit),
+		Offset:  int64(skip),
+		OrderBy: notificationSort(),
+	}
+}
+
+func getUserNotificationsPage(
+	ctx context.Context,
+	database sqldb.Database,
+	userID string,
+	page, limit int,
+) ([]Notification, error) {
+	opts := buildNotificationQueryOptions(page, limit)
+	var notifs []Notification
+	if err := findNotificationsByUser(ctx, database, userID, opts, &notifs); err != nil {
+		return nil, err
+	}
+	if notifs == nil {
+		return []Notification{}, nil
+	}
+	return notifs, nil
+}
+
 func findNotificationsByUser(
 	ctx context.Context,
 	database sqldb.Database,

@@ -15,7 +15,7 @@ import (
 	"scav/infra/mq"
 	"scav/utils"
 
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 )
 
 const updateCartTimeout = 8 * time.Second

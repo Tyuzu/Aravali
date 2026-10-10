@@ -12,7 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"time"
 
 	"scav/config/mqevent"

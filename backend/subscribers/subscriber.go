@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"scav/infra"
+	"scav/infra/logger"
 	"scav/infra/mq"
-	"scav/utils/logger"
 )
 
 // registration describes a single subscription to a subject.

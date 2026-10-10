@@ -11,10 +11,10 @@ import (
 	"scav/config"
 	"scav/config/mqevent"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/infra/mq"
 	"scav/internal/beats/userdata"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 // BuyMenu validates the request, atomically decreases stock, records the purchase,

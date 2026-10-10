@@ -11,9 +11,9 @@ import (
 
 	"scav/config/mqevent"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/infra/mq"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 //

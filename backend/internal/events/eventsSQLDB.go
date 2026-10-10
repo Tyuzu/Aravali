@@ -115,6 +115,29 @@ func listEvents(ctx context.Context, app *infra.Deps, filter map[string]any, opt
 	return SQLlistEvents(ctx, app, where, args, opts, result)
 }
 
+func buildEventListOptions(skip, limit int) sqldb.FindManyOptions {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if skip < 0 {
+		skip = 0
+	}
+
+	return sqldb.FindManyOptions{
+		Limit:   int64(limit),
+		Offset:  int64(skip),
+		OrderBy: "created_at DESC",
+	}
+}
+
+func getPaginatedEvents(ctx context.Context, app *infra.Deps, filter map[string]any, skip, limit int, result *[]Event) error {
+	opts := buildEventListOptions(skip, limit)
+	return listEvents(ctx, app, filter, opts, result)
+}
+
 func buildEventQuery(filter map[string]any) (string, []any) {
 	if len(filter) == 0 {
 		return "1 = 1", nil

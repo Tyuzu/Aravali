@@ -5,7 +5,7 @@ package filemgr
 import (
 	"fmt"
 	"net/http"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"strings"
 
 	"scav/config"

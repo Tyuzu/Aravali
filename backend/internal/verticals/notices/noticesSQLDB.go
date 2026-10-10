@@ -4,6 +4,7 @@ package notices
 
 import (
 	"context"
+	"strings"
 
 	"scav/config"
 	"scav/infra"
@@ -26,6 +27,65 @@ func findNoticeByID(ctx context.Context, app *infra.Deps, noticeID string) (Noti
 
 func listNoticesWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, out *[]Notice) error {
 	return app.SQLDB.FindManyWithOptions(ctx, noticesTable, query, args, opts, out)
+}
+
+func buildNoticeQuery(entityType, entityID string) (string, []any) {
+	if strings.TrimSpace(entityType) == "" || strings.TrimSpace(entityID) == "" {
+		return "1 = 0", nil
+	}
+
+	return "entityType = $1 AND entityId = $2", []any{entityType, entityID}
+}
+
+func buildNoticeListOptions(page, limit int, sortBy string) sqldb.FindManyOptions {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	orderBy := "createdAt DESC"
+	if sortBy == "old" {
+		orderBy = "createdAt ASC"
+	}
+
+	return sqldb.FindManyOptions{
+		Limit:   int64(limit),
+		Offset:  int64((page - 1) * limit),
+		OrderBy: orderBy,
+	}
+}
+
+func getNoticesPage(ctx context.Context, app *infra.Deps, entityType, entityID string, page, limit int, sortBy string) ([]Notice, error) {
+	query, args := buildNoticeQuery(entityType, entityID)
+	opts := buildNoticeListOptions(page, limit, sortBy)
+	var notices []Notice
+	if err := listNoticesWithOptions(ctx, app, query, args, opts, &notices); err != nil {
+		return nil, err
+	}
+	return notices, nil
+}
+
+func buildNoticeSummary(notices []Notice) []map[string]any {
+	if notices == nil {
+		return []map[string]any{}
+	}
+
+	resp := make([]map[string]any, len(notices))
+	for i, n := range notices {
+		resp[i] = map[string]any{
+			"noticeid":  n.NoticeID,
+			"title":     n.Title,
+			"summary":   n.Summary,
+			"createdBy": n.CreatedBy,
+			"createdAt": n.CreatedAt,
+		}
+	}
+	return resp
 }
 
 func updateNoticeByID(ctx context.Context, app *infra.Deps, noticeID string, update map[string]any) error {

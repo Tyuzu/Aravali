@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"scav/config/mqevent"
+	log "scav/infra/logger"
 	"scav/infra/mq"
 	"scav/utils"
-	log "scav/utils/logger"
 )
 
 func (p *PaymentService) Transfer(w http.ResponseWriter, r *http.Request) {

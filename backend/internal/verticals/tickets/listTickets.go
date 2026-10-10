@@ -5,7 +5,7 @@ package tickets
 import (
 	"context"
 	"net/http"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"sort"
 	"time"
 

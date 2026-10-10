@@ -13,7 +13,7 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 )
 
 // Helper to write standardized JSON error responses

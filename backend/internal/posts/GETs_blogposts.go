@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -38,34 +37,15 @@ func GetAllPosts(app *infra.Deps) http.HandlerFunc {
 
 		if l := query.Get("limit"); l != "" {
 			_, _ = fmt.Sscanf(l, "%d", &limit)
-			if limit > 100 {
-				limit = 100
-			}
 		}
 		if p := query.Get("page"); p != "" {
 			_, _ = fmt.Sscanf(p, "%d", &page)
-			if page < 1 {
-				page = 1
-			}
 		}
 
-		skip := (page - 1) * limit
-
-		// --- Fetch posts ---
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64(skip),
-			OrderBy: "created_at DESC",
-		}
-
-		var posts []BlogPost
-		if err := FindPostsWithOptions(ctx, app, "1 = 1", nil, opts, &posts); err != nil {
+		posts, err := GetPostsPage(ctx, app, limit, page)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch posts")
 			return
-		}
-
-		if posts == nil {
-			posts = []BlogPost{}
 		}
 
 		// --- Collect unique user IDs ---

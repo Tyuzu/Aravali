@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/middleware"
 	"scav/utils"
-	log "scav/utils/logger"
 	"time"
 )
 

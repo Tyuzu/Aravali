@@ -19,6 +19,11 @@ func NewRedisCache(client *redis.Client) *RedisCache {
 	}
 }
 
+// NewCache returns a Cache backed by Redis.
+func NewCache(client *redis.Client) Cache {
+	return NewRedisCache(client)
+}
+
 func (r *RedisCache) Ping(ctx context.Context) ([]byte, error) {
 	val, err := r.client.Ping(ctx).Result()
 	if err != nil {

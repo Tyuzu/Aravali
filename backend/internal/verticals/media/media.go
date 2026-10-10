@@ -5,8 +5,8 @@ package media
 import (
 	"encoding/json"
 	"net/http"
+	log "scav/infra/logger"
 	"scav/infra/mq"
-	log "scav/utils/logger"
 	"strings"
 	"time"
 

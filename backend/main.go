@@ -14,13 +14,12 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb/bootstrap"
+	"scav/infra/logger"
 	"scav/internal/mechat"
 	"scav/internal/newchat"
 	"scav/middleware"
 	"scav/routes"
 	"scav/subscribers"
-	"scav/utils/logger"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -45,10 +44,6 @@ func main() {
 
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
-
-	if err := bootstrap.EnsureModuleSchemas(appCtx, app.PGPool); err != nil {
-		logger.L.Sugar().Fatalw("module schema bootstrap failed", "error", err)
-	}
 
 	// =====================
 	// Application Lifecycle

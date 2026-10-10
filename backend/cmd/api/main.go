@@ -12,14 +12,13 @@ import (
 
 	"scav/config"
 	"scav/infra"
+	"scav/infra/logger"
 	mq "scav/infra/mq"
-	"scav/infra/workers"
 	"scav/internal/mechat"
 	"scav/internal/newchat"
 	"scav/middleware"
 	"scav/routes"
 	"scav/subscribers"
-	"scav/utils/logger"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -87,29 +86,7 @@ func main() {
 			"MQ subscribers registered",
 			"mq", "redis_pubsub",
 		)
-
-		// Start media worker consumer so background workers process media.jobs.
-		if sub, err := workers.StartMediaWorker(
-			appCtx,
-			app.MQ,
-		); err != nil {
-			logger.L.Sugar().Errorw(
-				"failed to start media worker",
-				"error", err,
-			)
-		} else {
-			mediaSub = sub
-
-			logger.L.Sugar().Infow(
-				"media worker started",
-			)
-		}
-	} else {
-		logger.L.Sugar().Warnw(
-			"MQ is not configured; skipping MQ subscribers",
-		)
 	}
-
 	// =====================
 	// Rate Limiter
 	// =====================

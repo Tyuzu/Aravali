@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"scav/utils/logger"
+	"scav/infra/logger"
 )
 
 // loggingMiddleware logs each request method, path, remote address, and duration.

@@ -7,7 +7,7 @@ import (
 	"html"
 	"net/http"
 	"regexp"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"strings"
 )
 

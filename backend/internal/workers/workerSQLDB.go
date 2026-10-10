@@ -6,6 +6,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"scav/config"
@@ -101,4 +103,71 @@ func touchUserUpdatedAt(ctx context.Context, app *infra.Deps, userID string) err
 		return nil
 	}
 	return err
+}
+
+func buildWorkerQuery(search string, skill string) (string, []any) {
+	clauses := make([]string, 0, 2)
+	args := make([]any, 0, 4)
+
+	if search != "" {
+		searchTerm := "%" + strings.ToLower(search) + "%"
+		namePH := fmt.Sprintf("$%d", len(args)+1)
+		args = append(args, searchTerm)
+		locPH := fmt.Sprintf("$%d", len(args)+1)
+		args = append(args, searchTerm)
+		bioPH := fmt.Sprintf("$%d", len(args)+1)
+		args = append(args, searchTerm)
+		clauses = append(clauses, fmt.Sprintf("(LOWER(name) LIKE LOWER(%s) OR LOWER(location) LIKE LOWER(%s) OR LOWER(bio) LIKE LOWER(%s))", namePH, locPH, bioPH))
+	}
+
+	if skill != "" {
+		skillTerm := "%" + strings.ToLower(skill) + "%"
+		skillPH := fmt.Sprintf("$%d", len(args)+1)
+		args = append(args, skillTerm)
+		clauses = append(clauses, fmt.Sprintf("(LOWER(CAST(preferred AS TEXT)) LIKE LOWER(%s))", skillPH))
+	}
+
+	if len(clauses) == 0 {
+		return "TRUE", nil
+	}
+
+	return strings.Join(clauses, " AND "), args
+}
+
+func buildWorkerListOptions(skip, limit int) sqldb.FindManyOptions {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if skip < 0 {
+		skip = 0
+	}
+
+	return sqldb.FindManyOptions{
+		Limit:  int64(limit),
+		Offset: int64(skip),
+		Sort: []sqldb.OrderBy{{
+			Column:     "createdat",
+			Descending: true,
+		}},
+	}
+}
+
+func getWorkersPage(ctx context.Context, app *infra.Deps, search, skill string, skip, limit int) ([]BaitoWorkersResponse, int64, error) {
+	whereClause, args := buildWorkerQuery(search, skill)
+	opts := buildWorkerListOptions(skip, limit)
+
+	workers, err := findWorkersFromDB(ctx, app, whereClause, args, opts)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := countWorkersFromDB(ctx, app, whereClause, args)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return workers, total, nil
 }

@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	log "scav/utils/logger"
+	log "scav/infra/logger"
 	"time"
 
 	"scav/config/mqevent"

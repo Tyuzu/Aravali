@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"scav/infra"
+	"scav/infra/logger"
 	"scav/internal/verticals/pay"
 	"scav/utils"
-	"scav/utils/logger"
 )
 
 const defaultOrdersTimeout = 10 * time.Second

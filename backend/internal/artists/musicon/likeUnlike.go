@@ -6,8 +6,8 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
+	log "scav/infra/logger"
 	"scav/utils"
-	log "scav/utils/logger"
 	"time"
 )
 

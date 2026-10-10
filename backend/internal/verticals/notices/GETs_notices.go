@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -33,46 +32,13 @@ func GetNotices(app *infra.Deps) http.HandlerFunc {
 		}
 
 		sortBy := r.URL.Query().Get("sort")
-		orderBy := "createdAt DESC"
-		if sortBy == "old" {
-			orderBy = "createdAt ASC"
-		}
-
-		query := "entityType = $1 AND entityId = $2"
-		args := []any{entityType, entityID}
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64((page - 1) * limit),
-			OrderBy: orderBy,
-		}
-
-		var notices []Notice
-		if err := listNoticesWithOptions(ctx, app, query, args, opts, &notices); err != nil {
+		notices, err := getNoticesPage(ctx, app, entityType, entityID, page, limit, sortBy)
+		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch notices")
 			return
 		}
 
-		// Only return summary fields
-		type NoticeSummary struct {
-			ID        string    `json:"noticeid"`
-			Title     string    `json:"title"`
-			Summary   string    `json:"summary"`
-			CreatedBy string    `json:"createdBy"`
-			CreatedAt time.Time `json:"createdAt"`
-		}
-
-		resp := make([]NoticeSummary, len(notices))
-		for i, n := range notices {
-			resp[i] = NoticeSummary{
-				ID:        n.NoticeID, // string ID
-				Title:     n.Title,
-				Summary:   n.Summary,
-				CreatedBy: n.CreatedBy,
-				CreatedAt: n.CreatedAt,
-			}
-		}
-
-		utils.RespondWithJSON(w, http.StatusOK, resp)
+		utils.RespondWithJSON(w, http.StatusOK, buildNoticeSummary(notices))
 	}
 }
 

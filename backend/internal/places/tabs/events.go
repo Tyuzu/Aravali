@@ -6,9 +6,6 @@ import (
 	"context"
 	"net/http"
 	"scav/infra"
-	"scav/infra/sqldb"
-	"scav/internal/events"
-	placedb "scav/internal/places/placedb"
 	"scav/utils"
 	"strconv"
 	"time"
@@ -73,48 +70,15 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 			limit = l
 		}
 
-		skip := (page - 1) * limit
 		now := time.Now()
 
 		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer cancel()
 
-		// Filter: upcoming events for this place
-		query := "placeid = $1 AND date >= $2"
-		args := []any{placeID, now}
-
-		// Count total
-		total, err := placedb.CountEvents(ctx, app, query, args)
+		placeevents, total, err := getPlaceEventsPage(ctx, app, placeID, page, limit, now)
 		if err != nil {
-			http.Error(w, "Failed to count events", http.StatusInternalServerError)
-			return
-		}
-
-		// Fetch events
-		opts := sqldb.FindManyOptions{
-			Limit:   int64(limit),
-			Offset:  int64(skip),
-			OrderBy: "date ASC",
-			Columns: []string{
-				"eventid",
-				"title",
-				"description",
-				"start_date_time",
-				"end_date_time",
-				"placename",
-				"banner",
-				"category",
-			},
-		}
-
-		var placeevents []events.Event
-		if err := placedb.FindEventsWithOptions(ctx, app, query, args, opts, &placeevents); err != nil {
 			http.Error(w, "Failed to fetch events", http.StatusInternalServerError)
 			return
-		}
-
-		if placeevents == nil {
-			placeevents = []events.Event{}
 		}
 
 		response := map[string]any{
