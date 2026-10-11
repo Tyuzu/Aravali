@@ -4,6 +4,7 @@ package profile
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -40,13 +41,58 @@ func SQLfindUser(ctx context.Context, app *infra.Deps, query string, args []any)
 	if query == "" {
 		query = "1 = 1"
 	}
+
 	var user auth.User
-	row := app.SQLDB.QueryRow(ctx, `SELECT * FROM `+usersTable+` WHERE `+query+` LIMIT 1`, args...)
+	var socialLinks []byte
+	row := app.SQLDB.QueryRow(ctx, `
+		SELECT
+			userid,
+			username,
+			email,
+			name,
+			bio,
+			online,
+			last_login,
+			avatar,
+			banner,
+			profile_views,
+			phone_number,
+			address,
+			social_links,
+			is_verified,
+			email_verified,
+			followerscount,
+			followscount,
+			wallet_balance
+		FROM `+usersTable+` WHERE `+query+` LIMIT 1`, args...)
 	if row == nil {
 		return &user, nil
 	}
-	if err := row.Scan(&user.UserID, &user.Username, &user.Email, &user.Name); err != nil {
+	if err := row.Scan(
+		&user.UserID,
+		&user.Username,
+		&user.Email,
+		&user.Name,
+		&user.Bio,
+		&user.Online,
+		&user.LastLogin,
+		&user.Avatar,
+		&user.Banner,
+		&user.ProfileViews,
+		&user.PhoneNumber,
+		&user.Address,
+		&socialLinks,
+		&user.IsVerified,
+		&user.EmailVerified,
+		&user.FollowersCount,
+		&user.FollowingCount,
+		&user.WalletBalance,
+	); err != nil {
 		return &user, err
+	}
+	if len(socialLinks) > 0 && string(socialLinks) != "null" {
+		user.SocialLinks = map[string]string{}
+		_ = json.Unmarshal(socialLinks, &user.SocialLinks)
 	}
 	return &user, nil
 }

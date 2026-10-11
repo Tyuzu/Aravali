@@ -38,6 +38,13 @@ type Deps struct {
 
 /* -------------------- Constructor -------------------- */
 
+func resolveDatabaseURI(cfg *config.Config) string {
+	if cfg != nil && strings.TrimSpace(cfg.DatabaseURL) != "" {
+		return cfg.DatabaseURL
+	}
+	return env("DATABASE_URL", "")
+}
+
 func New(cfg *config.Config) (*Deps, error) {
 	if cfg == nil {
 		return nil, errors.New("nil config provided")
@@ -81,7 +88,7 @@ func New(cfg *config.Config) (*Deps, error) {
 
 	/* -------- Postgres & Migrations -------- */
 
-	pgURI := env("DATABASE_URL", "")
+	pgURI := resolveDatabaseURI(cfg)
 	if strings.TrimSpace(pgURI) != "" {
 		pool, err := NewPostgres(pgURI)
 		if err != nil {

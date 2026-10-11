@@ -4,6 +4,7 @@ package artists
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -54,30 +55,150 @@ func InsertArtist(ctx context.Context, app *infra.Deps, artist *Artist) error {
 	return err
 }
 
+func parseArtistMetadata(metadata any) Artist {
+	artist := Artist{}
+	if metadata == nil {
+		return artist
+	}
+
+	var payload map[string]any
+	switch v := metadata.(type) {
+	case []byte:
+		if len(v) == 0 {
+			return artist
+		}
+		_ = json.Unmarshal(v, &payload)
+	case string:
+		if v == "" {
+			return artist
+		}
+		_ = json.Unmarshal([]byte(v), &payload)
+	case map[string]any:
+		payload = v
+	case map[string]string:
+		payload = make(map[string]any, len(v))
+		for k, val := range v {
+			payload[k] = val
+		}
+	}
+	if len(payload) == 0 {
+		return artist
+	}
+
+	artist.Category = stringFromAny(payload["category"])
+	artist.Name = stringFromAny(payload["name"])
+	artist.Place = stringFromAny(payload["place"])
+	artist.Country = stringFromAny(payload["country"])
+	artist.Bio = stringFromAny(payload["bio"])
+	artist.DOB = stringFromAny(payload["dob"])
+	artist.Photo = stringFromAny(payload["photo"])
+	artist.Banner = stringFromAny(payload["banner"])
+	artist.CreatorID = stringFromAny(payload["creatorid"])
+	artist.Genres = stringSliceFromAny(payload["genres"])
+	artist.Socials = stringMapFromAny(payload["socials"])
+
+	if createdAt := stringFromAny(payload["createdAt"]); createdAt != "" {
+		if ts, err := time.Parse(time.RFC3339, createdAt); err == nil {
+			artist.CreatedAt = ts
+		}
+	}
+	if artist.CreatedAt.IsZero() {
+		if createdAt := stringFromAny(payload["created_at"]); createdAt != "" {
+			if ts, err := time.Parse(time.RFC3339, createdAt); err == nil {
+				artist.CreatedAt = ts
+			}
+		}
+	}
+	return artist
+}
+
+func stringFromAny(v any) string {
+	switch x := v.(type) {
+	case string:
+		return x
+	case fmt.Stringer:
+		return x.String()
+	case []byte:
+		return string(x)
+	default:
+		return ""
+	}
+}
+
+func stringSliceFromAny(v any) []string {
+	switch x := v.(type) {
+	case []string:
+		return append([]string(nil), x...)
+	case []any:
+		out := make([]string, 0, len(x))
+		for _, item := range x {
+			if s := stringFromAny(item); s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	case string:
+		if x == "" {
+			return nil
+		}
+		return []string{x}
+	default:
+		return nil
+	}
+}
+
+func stringMapFromAny(v any) map[string]string {
+	out := make(map[string]string)
+	switch x := v.(type) {
+	case map[string]string:
+		for k, val := range x {
+			out[k] = val
+		}
+	case map[string]any:
+		for k, val := range x {
+			if s := stringFromAny(val); s != "" {
+				out[k] = s
+			}
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 func FindArtistByID(ctx context.Context, app *infra.Deps, artistID string, artist *Artist) error {
 	if app == nil || app.SQLDB == nil || artist == nil {
 		return nil
 	}
 	if artistID == "" {
 		*artist = Artist{}
-		return nil
+		return sql.ErrNoRows
 	}
-	row := app.SQLDB.QueryRow(ctx, fmt.Sprintf("SELECT artistid, category, name, place, country, bio, dob, photo, banner, genres, socials, createdat, creatorid FROM %s WHERE artistid = $1 LIMIT 1", ArtistsTable), artistID)
-	var got Artist
-	var genresRaw, socialsRaw any
-	if err := row.Scan(&got.ArtistID, &got.Category, &got.Name, &got.Place, &got.Country, &got.Bio, &got.DOB, &got.Photo, &got.Banner, &genresRaw, &socialsRaw, &got.CreatedAt, &got.CreatorID); err != nil {
+	row := app.SQLDB.QueryRow(ctx, fmt.Sprintf("SELECT artistid, name, bio, userids, status, created_at, updated_at, metadata FROM %s WHERE artistid = $1 LIMIT 1", ArtistsTable), artistID)
+	var (
+		artistIDDB, name, bio, status sql.NullString
+		userIDs                       []string
+		createdAt, updatedAt          time.Time
+		metadata                      []byte
+	)
+	if err := row.Scan(&artistIDDB, &name, &bio, &userIDs, &status, &createdAt, &updatedAt, &metadata); err != nil {
 		*artist = Artist{}
-		return nil
+		return err
 	}
-	if genresRaw != nil {
-		if b, ok := genresRaw.([]byte); ok {
-			_ = json.Unmarshal(b, &got.Genres)
-		}
+	got := parseArtistMetadata(metadata)
+	got.ArtistID = artistIDDB.String
+	if got.Name == "" {
+		got.Name = name.String
 	}
-	if socialsRaw != nil {
-		if b, ok := socialsRaw.([]byte); ok {
-			_ = json.Unmarshal(b, &got.Socials)
-		}
+	if got.Bio == "" {
+		got.Bio = bio.String
+	}
+	if got.CreatedAt.IsZero() {
+		got.CreatedAt = createdAt
+	}
+	if got.CreatedAt.IsZero() {
+		got.CreatedAt = updatedAt
 	}
 	*artist = got
 	return nil
@@ -172,6 +293,10 @@ func FindArtistsByEventID(ctx context.Context, app *infra.Deps, eventID string, 
 		*result = nil
 		return nil
 	}
+	if _, err := app.SQLDB.Exec(ctx, fmt.Sprintf("SELECT 1 FROM %s LIMIT 1", ArtistEventsTable)); err != nil {
+		*result = []Artist{}
+		return nil
+	}
 	rows, err := app.SQLDB.Query(ctx, fmt.Sprintf("SELECT a.* FROM %s a JOIN %s e ON e.artistid = a.artistid WHERE e.eventid = $1", ArtistsTable, ArtistEventsTable), eventID)
 	if err != nil {
 		return err
@@ -185,12 +310,43 @@ func FindAllArtists(ctx context.Context, app *infra.Deps, result *[]Artist) erro
 	if app == nil || app.SQLDB == nil || result == nil {
 		return nil
 	}
-	rows, err := app.SQLDB.Query(ctx, fmt.Sprintf("SELECT * FROM %s ORDER BY createdat DESC", ArtistsTable))
+	rows, err := app.SQLDB.Query(ctx, fmt.Sprintf("SELECT artistid, name, bio, userids, status, created_at, updated_at, metadata FROM %s ORDER BY created_at DESC", ArtistsTable))
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
-	*result = nil
+
+	artists := make([]Artist, 0)
+	for rows.Next() {
+		var (
+			artistID, name, bio, status sql.NullString
+			userIDs                     []string
+			createdAt, updatedAt        time.Time
+			metadata                    []byte
+		)
+		if err := rows.Scan(&artistID, &name, &bio, &userIDs, &status, &createdAt, &updatedAt, &metadata); err != nil {
+			return err
+		}
+		artist := parseArtistMetadata(metadata)
+		artist.ArtistID = artistID.String
+		if artist.Name == "" {
+			artist.Name = name.String
+		}
+		if artist.Bio == "" {
+			artist.Bio = bio.String
+		}
+		if artist.CreatedAt.IsZero() {
+			artist.CreatedAt = createdAt
+		}
+		if artist.CreatedAt.IsZero() {
+			artist.CreatedAt = updatedAt
+		}
+		artists = append(artists, artist)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	*result = artists
 	return nil
 }
 
@@ -320,22 +476,13 @@ func AddArtistToEventDB(ctx context.Context, app *infra.Deps, artistEvent Artist
 }
 
 func AddEventToDB(ctx context.Context, app *infra.Deps, artistEvent ArtistEvent) error {
-	var event events.Event
-	dateString := artistEvent.Date
-	layout := "2006-01-02"
-	dateToSave, _ := time.Parse(layout, dateString)
+	if app == nil {
+		return nil
+	}
+	if artistEvent.EventID == "" || artistEvent.ArtistID == "" {
+		return nil
+	}
 
-	event.CreatorID = artistEvent.CreatorID
-	event.CreatedAt = time.Now().UTC()
-	event.Date = dateToSave.UTC()
-	event.Status = "active"
-	event.EventID = artistEvent.EventID
-	event.Artists = []string{artistEvent.ArtistID}
-	event.Title = artistEvent.Title
-	event.Location = artistEvent.Venue
-	event.Published = "draft"
-	event.Category = "concert"
-
-	userdata.SetUserData("event", event.EventID, artistEvent.ArtistID, "", "", app)
+	userdata.SetUserData("event", artistEvent.EventID, artistEvent.ArtistID, "", "", app)
 	return nil
 }
