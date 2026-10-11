@@ -22,8 +22,8 @@ import (
 ========================= */
 
 func isValidEntityType(t string) bool {
-	switch t {
-	case "blogpost", "feedpost", "article", "profile", "recipe": // Added "recipe"
+	switch strings.ToLower(strings.TrimSpace(t)) {
+	case "event", "blogpost", "feedpost", "article", "profile", "recipe", "place", "farm", "product":
 		return true
 	default:
 		return false

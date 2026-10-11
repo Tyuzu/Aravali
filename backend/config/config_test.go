@@ -2,7 +2,10 @@
 
 package config
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestInitConfig_AllowsExplicitLocalPostgresValuesInProduction(t *testing.T) {
 	t.Setenv("ENV", "production")
@@ -28,5 +31,20 @@ func TestInitConfig_AllowsExplicitLocalPostgresValuesInProduction(t *testing.T) 
 	}
 	if cfg.Env != "production" {
 		t.Fatalf("Env = %q, want production", cfg.Env)
+	}
+}
+
+func TestInitConfig_EnablesSSLDisableForLocalPostgres(t *testing.T) {
+	t.Setenv("ENV", "development")
+	t.Setenv("ALLOWED_ORIGINS", "http://localhost:5173")
+	t.Setenv("REDIS_URL", "localhost:6379")
+	t.Setenv("POSTGRES_URL", "postgres://apeman:ningning@localhost:5432/eventdb")
+	cfg, err := InitConfig()
+	if err != nil {
+		t.Fatalf("InitConfig() returned unexpected error: %v", err)
+	}
+
+	if !strings.Contains(cfg.DatabaseURL, "sslmode=disable") {
+		t.Fatalf("DatabaseURL = %q, want localhost Postgres URL with sslmode=disable", cfg.DatabaseURL)
 	}
 }

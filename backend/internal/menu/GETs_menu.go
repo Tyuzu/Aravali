@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"scav/infra"
 	log "scav/infra/logger"
 	"scav/utils"
@@ -68,9 +69,15 @@ func GetMenus(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		menus, err := findMenusByPlace(ctx, app, utils.GetParam(r, "placeid"))
+		placeID := strings.TrimSpace(utils.GetParam(r, "placeid"))
+		if placeID == "" {
+			utils.RespondWithJSON(w, http.StatusOK, []Menu{})
+			return
+		}
+
+		menus, err := findMenusByPlace(ctx, app, placeID)
 		if err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch menus")
+			utils.RespondWithJSON(w, http.StatusOK, []Menu{})
 			return
 		}
 

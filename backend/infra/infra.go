@@ -40,9 +40,9 @@ type Deps struct {
 
 func resolveDatabaseURI(cfg *config.Config) string {
 	if cfg != nil && strings.TrimSpace(cfg.DatabaseURL) != "" {
-		return cfg.DatabaseURL
+		return config.NormalizeDatabaseURL(cfg.DatabaseURL)
 	}
-	return env("DATABASE_URL", "")
+	return config.NormalizeDatabaseURL(env("DATABASE_URL", ""))
 }
 
 func New(cfg *config.Config) (*Deps, error) {

@@ -32,7 +32,13 @@ func (p *PaymentService) GetBalance(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := utils.GetUserIDFromRequest(r)
 
-	acc, err := p.getAccountByUserID(ctx, userID)
+	accountID, err := p.getOrCreateAccount(ctx, userID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, "account not found")
+		return
+	}
+
+	acc, err := p.getAccountByID(ctx, accountID)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusNotFound, "account not found")
 		return

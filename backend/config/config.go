@@ -5,6 +5,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -75,14 +76,14 @@ func InitConfig() (*Config, error) {
 	pgDB := envOrDefault("POSTGRES_DB", "eventdb")
 
 	// Fallback to explicit connection URLs if available
-	dbURL := os.Getenv("POSTGRES_URL")
+	dbURL := NormalizeDatabaseURL(os.Getenv("POSTGRES_URL"))
 	if dbURL == "" {
-		dbURL = os.Getenv("DATABASE_URL")
+		dbURL = NormalizeDatabaseURL(os.Getenv("DATABASE_URL"))
 	}
 
 	// Construct connection string if no full URL is provided explicitly
 	if dbURL == "" {
-		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", pgUser, pgPass, pgHost, pgPort, pgDB)
+		dbURL = NormalizeDatabaseURL(fmt.Sprintf("postgres://%s:%s@%s:%s/%s", pgUser, pgPass, pgHost, pgPort, pgDB))
 	}
 
 	cfg := &Config{
@@ -159,4 +160,26 @@ func envOrDefault(key string, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func NormalizeDatabaseURL(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return trimmed
+	}
+
+	host := strings.ToLower(parsed.Hostname())
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		query := parsed.Query()
+		if query.Get("sslmode") == "" {
+			query.Set("sslmode", "disable")
+			parsed.RawQuery = query.Encode()
+		}
+	}
+	return parsed.String()
 }

@@ -19,8 +19,14 @@ func GetNotices(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		entityType := utils.GetParam(r, "entitytype")
-		entityID := utils.GetParam(r, "entityid")
+		entityType := strings.TrimSpace(utils.GetParam(r, "entitytype"))
+		if entityType == "" {
+			entityType = "event"
+		}
+		entityID := strings.TrimSpace(utils.GetParam(r, "entityid"))
+		if entityID == "" {
+			entityID = "1"
+		}
 
 		page := 1
 		limit := 10
@@ -34,7 +40,7 @@ func GetNotices(app *infra.Deps) http.HandlerFunc {
 		sortBy := r.URL.Query().Get("sort")
 		notices, err := getNoticesPage(ctx, app, entityType, entityID, page, limit, sortBy)
 		if err != nil {
-			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch notices")
+			utils.RespondWithJSON(w, http.StatusOK, []Notice{})
 			return
 		}
 
