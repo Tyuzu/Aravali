@@ -27,6 +27,7 @@ export interface AppState {
     socket: any | null;
     environment: Record<string, any>;
     lang: string;
+    isI18nLoaded: boolean;
     lastPath: string;
     currentRoute: any | null;
     routeCache: Map<any, any>;

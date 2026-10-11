@@ -35,7 +35,6 @@ import (
 	"scav/internal/itinerary"
 	"scav/internal/maps"
 	"scav/internal/media"
-	"scav/internal/media/fanmade"
 	"scav/internal/menu"
 	"scav/internal/merch"
 	"scav/internal/notices"
@@ -75,7 +74,6 @@ func RoutesWrapper(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	delwebhooks.AddDelWebhookRoutes(router, app, rateLimiter)
 	drivers.AddDriverRoutes(router, app, rateLimiter)
 	events.AddEventsRoutes(router, app, rateLimiter)
-	fanmade.AddFanmadeRoutes(router, app, rateLimiter)
 	faqs.AddFAQRoutes(router, app, rateLimiter)
 	farms.AddFarmRoutes(router, app, rateLimiter)
 	filemgr.AddFiledropRoutes(router, app, rateLimiter)

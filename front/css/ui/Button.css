@@ -10,6 +10,7 @@
   justify-content: center;
   gap: var(--space-xs);
   width: fit-content;
+  margin-right: var(--space-sm);
 
   /* Sizing & Typography */
   padding: var(--space-sm) var(--space-md);

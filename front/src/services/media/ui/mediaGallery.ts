@@ -6,7 +6,7 @@ import { showMediaUploadForm } from "./mediaUploadForm.js";
 import { lazyMediaObserver, clear, groupMedia, createAddMediaButton, createMediaActions, confirmDelete } from "../mediaCommon.js";
 import { resolveImagePath, PictureType, EntityType } from "../../../utils/imagePaths.js";
 import Imagex from "../../../components/base/Imagex.js";
-import { handleTranslationToggle } from "../../fanmade/translate.js";
+import { handleTranslationToggle } from "../translate.js";
 import Sightbox from "../../../components/ui/Sightbox_zoom.js";
 import LightBox from "../../../components/ui/Lightbox.js";
 import { generateVideoPlayer } from "../../../components/ui/vidpopHelpers/index.js";

@@ -1,6 +1,5 @@
-/* Media and Fanmade Lists */
-.media-list,
-.fanmade-list {
+/* Media Lists */
+.media-list {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -50,7 +49,6 @@
 
 
 .delete-media-btn,
-.delete-fanmade-btn,
 .report-btn {
   background-color: #e81123;
   color: white;

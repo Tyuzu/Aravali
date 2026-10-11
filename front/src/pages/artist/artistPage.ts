@@ -1,6 +1,6 @@
 import "../../../css/inistyles/artistpage.css";
 import "../../../css/subpages/artistsongstab.css";
-import "../../../css/subpages/fanmedia.css";
+import "../../../css/subpages/media.css";
 import "../../../css/subpages/livpage.css";
 import "../../../css/subpages/livcon.css";
 import { displayArtist } from "../../services/artist/artistPage.js";

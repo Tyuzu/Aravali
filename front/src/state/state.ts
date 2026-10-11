@@ -30,6 +30,7 @@ const allowedKeys = new Set<string>([
     "token", "user", "username", "userProfile", "socket",
     "favFarms",
     "roles", "permissions", "auth", "environment", "lang",
+    "isI18nLoaded",
     "lastPath", "currentRoute", "routeCache", "routeState",
     "currentChatId", "isLoading", "userid", "unreadMessages",
     "unreadNotifications", "isLoggedIn"
@@ -190,6 +191,7 @@ const rawState: AppState = {
     socket: null,
     environment: {},
     lang: "en",
+    isI18nLoaded: false,
     lastPath: typeof window !== "undefined" ? window.location.pathname + window.location.search : "/",
     currentRoute: null,
     routeCache,
@@ -653,6 +655,7 @@ function buildPublicSnapshot(): Partial<AppState> & Record<string, any> {
         auth: state.auth,
         environment: state.environment,
         lang: state.lang,
+        isI18nLoaded: state.isI18nLoaded,
         lastPath: state.lastPath,
         currentRoute: state.currentRoute,
         routeCache,

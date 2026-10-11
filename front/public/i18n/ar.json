@@ -25,6 +25,7 @@
     "advertisement": "إعلان"
   },
   "nav": {
+    "dash": "لوحة التحكم",
     "farms": "المزارع",
     "products": "المنتجات",
     "grocery": "البقالة",
@@ -36,7 +37,13 @@
     "social": "التواصل الاجتماعي",
     "posts": "المنشورات",
     "baito": "بايتو",
-    "hire": "توظيف"
+    "baitos": "بايتوس",
+    "chats": "الدردشات",
+    "map": "الخريطة",
+    "admin": "الإدارة",
+    "hire": "توظيف",
+    "tools": "الأدوات",
+    "more": "المزيد"
   },
   "baito": {
     "yourProfile": "ملفك الشخصي",
@@ -142,6 +149,16 @@
     "disclaimer": "بيان إخلاء المسؤولية",
     "blog": "المدونة",
     "allRightsReserved": "جميع الحقوق محفوظة",
-    "feedback": "التعليقات"
+    "feedback": "التعليقات",
+    "languageLabel": "اختر لغة الصفحة",
+    "lang": {
+      "en": "English",
+      "es": "Español",
+      "fr": "Français",
+      "hi": "हिन्दी",
+      "ar": "العربية",
+      "jp": "日本語"
+    },
+    "copyright": "© {year} {site}. جميع الحقوق محفوظة."
   }
 }

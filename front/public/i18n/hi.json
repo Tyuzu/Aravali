@@ -25,6 +25,7 @@
     "advertisement": "विज्ञापन"
   },
   "nav": {
+    "dash": "डैशबोर्ड",
     "farms": "खेत",
     "products": "उत्पाद",
     "grocery": "किराना",
@@ -36,9 +37,13 @@
     "social": "सामाजिक",
     "posts": "पोस्ट",
     "baito": "बैितो",
+    "baitos": "बैितो",
+    "chats": "चैट",
+    "map": "नक्शा",
+    "admin": "एडमिन",
     "hire": "नियुक्त करें",
     "tools": "औजार",
-    "dash": "डैशबोर्ड"
+    "more": "अधिक"
   },
   "baito": {
     "yourProfile": "आपकी प्रोफ़ाइल",
@@ -144,6 +149,16 @@
     "disclaimer": "अस्वीकरण",
     "blog": "ब्लॉग",
     "allRightsReserved": "सर्वाधिकार सुरक्षित",
-    "feedback": "प्रतिक्रिया"
+    "feedback": "प्रतिक्रिया",
+    "languageLabel": "पृष्ठ की भाषा चुनें",
+    "lang": {
+      "en": "English",
+      "es": "Español",
+      "fr": "Français",
+      "hi": "हिन्दी",
+      "ar": "العربية",
+      "jp": "日本語"
+    },
+    "copyright": "© {year} {site}. सर्वाधिकार सुरक्षित।"
   }
 }

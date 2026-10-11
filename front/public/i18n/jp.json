@@ -25,6 +25,7 @@
     "advertisement": "広告"
   },
   "nav": {
+    "dash": "ダッシュボード",
     "farms": "農場",
     "products": "商品",
     "grocery": "食料品",
@@ -36,7 +37,13 @@
     "social": "ソーシャル",
     "posts": "投稿",
     "baito": "バイト",
-    "hire": "採用"
+    "baitos": "バイト",
+    "chats": "チャット",
+    "map": "地図",
+    "admin": "管理",
+    "hire": "採用",
+    "tools": "ツール",
+    "more": "もっと見る"
   },
   "baito": {
     "yourProfile": "あなたのプロフィール",
@@ -142,6 +149,16 @@
     "disclaimer": "免責事項",
     "blog": "ブログ",
     "allRightsReserved": "著作権所有",
-    "feedback": "フィードバック"
+    "feedback": "フィードバック",
+    "languageLabel": "ページの言語を選択",
+    "lang": {
+      "en": "English",
+      "es": "Español",
+      "fr": "Français",
+      "hi": "हिन्दी",
+      "ar": "العربية",
+      "jp": "日本語"
+    },
+    "copyright": "© {year} {site}. All rights reserved."
   }
 }

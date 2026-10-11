@@ -1,5 +1,4 @@
 // postsTab.ts
-import { displayFanMedia } from "../fanmade/mediaGallery.js";
 import { displayMedia } from "../media/ui/mediaGallery.js";
 import { persistTabs } from "../../utils/persistTabs.js";
 
@@ -19,11 +18,6 @@ export async function renderPostsTab(
     isLoggedIn: boolean
 ): Promise<void> {
     const tabs: TabItem[] = [
-        { 
-            title: "Fanmade", 
-            id: "artist-fanmade", 
-            render: (c: HTMLElement) => displayFanMedia(c, "fanmade", artistID, isLoggedIn) 
-        },
         { 
             title: "Artist", 
             id: "artist-posts", 

@@ -25,6 +25,7 @@
     "advertisement": "Publicidad"
   },
   "nav": {
+    "dash": "Panel",
     "farms": "Granjas",
     "products": "Productos",
     "grocery": "Tienda",
@@ -36,7 +37,13 @@
     "social": "Social",
     "posts": "Publicaciones",
     "baito": "Baito",
-    "hire": "Contratar"
+    "baitos": "Baitos",
+    "chats": "Chats",
+    "map": "Mapa",
+    "admin": "Admin",
+    "hire": "Contratar",
+    "tools": "Herramientas",
+    "more": "Más"
   },
   "baito": {
     "yourProfile": "Tu Perfil",
@@ -142,6 +149,16 @@
     "disclaimer": "Descargo de Responsabilidad",
     "blog": "Blog",
     "allRightsReserved": "Todos los derechos reservados",
-    "feedback": "Comentarios"
+    "feedback": "Comentarios",
+    "languageLabel": "Selecciona el idioma de la página",
+    "lang": {
+      "en": "English",
+      "es": "Español",
+      "fr": "Français",
+      "hi": "हिन्दी",
+      "ar": "العربية",
+      "jp": "日本語"
+    },
+    "copyright": "© {year} {site}. Todos los derechos reservados."
   }
 }
