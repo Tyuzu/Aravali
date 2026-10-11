@@ -6,10 +6,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"scav/config"
-	"scav/infra/sqldb"
+	"scav/infra"
 )
 
 var (
@@ -21,40 +20,21 @@ var (
    DATABASE OPERATIONS
 ========================= */
 
-func insertNotification(ctx context.Context, database sqldb.Database, notif Notification) error {
-	return database.InsertOne(ctx, notifsTable, notif)
+func insertNotification(ctx context.Context, app infra.Deps, notif Notification) error {
+
 }
 
-func insertBulkNotifications(ctx context.Context, database sqldb.Database, notifs []Notification) error {
-	docs := make([]any, len(notifs))
-	for i, v := range notifs {
-		docs[i] = v
-	}
-	return database.InsertMany(ctx, notifsTable, docs)
+func insertBulkNotifications(ctx context.Context, app infra.Deps, notifs []Notification) error {
+
 }
 
-func buildNotificationQueryOptions(page, limit int) sqldb.FindManyOptions {
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
+func buildNotificationQueryOptions(page, limit int) map[string]any {
 
-	skip := (page - 1) * limit
-	return sqldb.FindManyOptions{
-		Limit:   int64(limit),
-		Offset:  int64(skip),
-		OrderBy: notificationSort(),
-	}
 }
 
 func getUserNotificationsPage(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	userID string,
 	page, limit int,
 ) ([]Notification, error) {
@@ -71,102 +51,71 @@ func getUserNotificationsPage(
 
 func findNotificationsByUser(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	userID string,
-	opts sqldb.FindManyOptions,
+	opts map[string]any,
 	notifs *[]Notification,
 ) error {
-	where := "userid = $1"
-	args := []any{userID}
 
-	return database.FindManyWithOptions(ctx, notifsTable, where, args, opts, notifs)
 }
 
 func countUnreadNotifications(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	userID string,
 ) (int64, error) {
-	where := "userid = $1 AND is_read = false"
-	args := []any{userID}
 
-	return database.Count(ctx, notifsTable, where, args)
 }
 
 func updateMarkAsRead(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	notificationID string,
 	userID string,
 ) (int64, error) {
-	where := "notificationid = $1 AND userid = $2"
-	args := []any{notificationID, userID}
 
-	updateValues := map[string]any{
-		"is_read":    true,
-		"updated_at": time.Now(),
-	}
-
-	return database.UpdateOne(ctx, notifsTable, where, args, updateValues)
 }
 
 func updateMarkAllAsRead(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	userID string,
 ) (int64, error) {
-	where := "userid = $1 AND is_read = false"
-	args := []any{userID}
 
-	updateValues := map[string]any{
-		"is_read":    true,
-		"updated_at": time.Now(),
-	}
-
-	return database.UpdateMany(ctx, notifsTable, where, args, updateValues)
 }
 
 func deleteNotificationByID(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	notificationID string,
 	userID string,
 ) (int64, error) {
-	where := "notificationid = $1 AND userid = $2"
-	args := []any{notificationID, userID}
 
-	return database.DeleteOne(ctx, notifsTable, where, args)
 }
 
 func deleteAllNotificationsByUser(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	userID string,
 ) (int64, error) {
-	where := "userid = $1"
-	args := []any{userID}
 
-	return database.DeleteMany(ctx, notifsTable, where, args)
 }
 
 func findPreferencesByUser(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	userID string,
 	pref *NotificationPreferences,
 ) error {
-	where := "userid = $1"
-	args := []any{userID}
 
-	return database.FindOne(ctx, preferencesTable, where, args, pref)
 }
 
 func upsertPreferences(
 	ctx context.Context,
-	database sqldb.Database,
+	app infra.Deps,
 	pref NotificationPreferences,
 ) error {
-	return database.Upsert(ctx, preferencesTable, "userid", pref)
+
 }
 
 /* =========================

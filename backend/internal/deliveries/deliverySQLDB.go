@@ -14,47 +14,28 @@ import (
 var deliveriesTable = config.Tables.DeliveriesTable
 
 func findDeliveryByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
-	return app.SQLDB.FindOne(ctx, deliveriesTable, query, args, out)
+
 }
 
 func findMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID string) ([]Delivery, error) {
-	query := "userid = $1 AND tenantid = $2"
-	args := []any{userID, tenantID}
 
 	var deliveries []Delivery
-	if err := app.SQLDB.FindMany(ctx, deliveriesTable, query, args, &deliveries); err != nil {
-		return nil, err
-	}
-	if len(deliveries) == 0 {
-		return []Delivery{}, nil
-	}
+
 	return deliveries, nil
 }
 
 func saveDelivery(ctx context.Context, app *infra.Deps, delivery Delivery) error {
-	return app.SQLDB.InsertOne(ctx, deliveriesTable, delivery)
+
 }
 
 func findDeliveryAndUpdate(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (Delivery, error) {
-	if _, err := app.SQLDB.UpdateOne(ctx, deliveriesTable, query, args, update); err != nil {
-		return Delivery{}, err
-	}
 
 	var updated Delivery
-	if err := app.SQLDB.FindOne(ctx, deliveriesTable, query, args, &updated); err != nil {
-		return Delivery{}, err
-	}
 	return updated, nil
 }
 
 func fetchDeliveryForRead(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
 	var delivery Delivery
-	query := "id = $1 AND tenantid = $2"
-	args := []any{deliveryID, tenantID}
-
-	if err := app.SQLDB.FindOne(ctx, deliveriesTable, query, args, &delivery); err != nil {
-		return Delivery{}, err
-	}
 	return delivery, nil
 }
 
@@ -101,15 +82,6 @@ func findDeliveryByIDTenant(ctx context.Context, app *infra.Deps, deliveryID, te
 
 func listDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
 	var events []map[string]any
-	query := "deliveryid = $1 AND tenantid = $2"
-	args := []any{deliveryID, tenantID}
-
-	if err := app.SQLDB.FindMany(ctx, "delivery_events", query, args, &events); err != nil {
-		return nil, err
-	}
-	if len(events) == 0 {
-		return []map[string]any{}, nil
-	}
 	return events, nil
 }
 
@@ -146,12 +118,6 @@ func upsertDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, 
 
 func updateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
 	var currentDelivery Delivery
-	query := "id = $1 AND tenantid = $2"
-	args := []any{deliveryID, tenantID}
-
-	if err := app.SQLDB.FindOne(ctx, deliveriesTable, query, args, &currentDelivery); err != nil {
-		return nil, fmt.Errorf("delivery not found")
-	}
 	if err := ValidateTransition(currentDelivery.Status, newStatus); err != nil {
 		return nil, err
 	}

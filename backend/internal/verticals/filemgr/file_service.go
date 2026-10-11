@@ -12,7 +12,6 @@ import (
 	"scav/infra"
 	log "scav/infra/logger"
 	"scav/infra/mq"
-	mediaworker "scav/infra/workers"
 	"strings"
 )
 
@@ -153,34 +152,10 @@ func (fs *FileService) processFeedFile(app *infra.Deps, r *http.Request, fileHea
 						tmpThumbPath = ""
 					}
 				}
-				job := mediaworker.MediaJob{
-					JobID:         generateUniqueID(),
-					Type:          "video",
-					SavedPath:     savedPath,
-					UploadDir:     uploadDir,
-					PosterDir:     posterDir,
-					ThumbnailPath: tmpThumbPath,
-					UniqueID:      uniqueID,
-					Filename:      uniqueID,
-					Ext:           ".mp4",
-					ThumbWidth:    defaultThumbWidth,
-					UserID:        userid,
-				}
 				_ = mq.PublishWithMeta(r.Context(), app.MQ, "media.jobs", job)
 				return []Attachment{{Filename: uniqueID, Extension: ".mp4", Key: string(picType), Resolutions: nil}}, nil
 			}
 
-			// audio
-			job := mediaworker.MediaJob{
-				JobID:     generateUniqueID(),
-				Type:      "audio",
-				SavedPath: savedPath,
-				UploadDir: uploadDir,
-				UniqueID:  uniqueID,
-				Filename:  uniqueID,
-				Ext:       ".mp3",
-				UserID:    userid,
-			}
 			_ = mq.PublishWithMeta(r.Context(), app.MQ, "media.jobs", job)
 			return []Attachment{{Filename: uniqueID, Extension: ".mp3", Key: string(picType), Resolutions: nil}}, nil
 		}
@@ -207,17 +182,9 @@ func (fs *FileService) processFeedFile(app *infra.Deps, r *http.Request, fileHea
 				}
 			}
 
-			resolutions, _, err := mediaworker.ProcessVideo(savedPath, uploadDir, uniqueID, posterDir, tmpThumbPath)
-			if tmpThumbPath != "" {
-				_ = os.Remove(tmpThumbPath)
-			}
-			if err != nil {
-				return nil, fmt.Errorf("video processing failed: %w", err)
-			}
 			return []Attachment{{Filename: uniqueID, Extension: ".mp4", Key: string(picType), Resolutions: resolutions}}, nil
 		}
 
-		resolutions, _ := mediaworker.ProcessAudio(savedPath, uploadDir, uniqueID)
 		return []Attachment{{Filename: uniqueID, Extension: ".mp3", Key: string(picType), Resolutions: resolutions}}, nil
 	}
 

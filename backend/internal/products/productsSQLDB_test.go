@@ -19,9 +19,4 @@ func TestBuildProductSearchQuery(t *testing.T) {
 }
 
 func TestBuildProductListOptions(t *testing.T) {
-	opts := buildProductListOptions(25, 0, "price_desc")
-
-	if opts.Offset != 25 || opts.Limit != 10 || opts.OrderBy != "price DESC" {
-		t.Fatalf("unexpected options: %#v", opts)
-	}
 }

@@ -3,15 +3,8 @@
 package filemgr
 
 import (
-	"context"
-	"fmt"
-
 	"scav/infra"
 )
 
 func updateEntityMediaInDB(app *infra.Deps, Table, idField, entityID string, update map[string]any) (int64, error) {
-	query := fmt.Sprintf("%s = $1", idField)
-	args := []any{entityID}
-
-	return app.SQLDB.UpdateOne(context.Background(), Table, query, args, update)
 }

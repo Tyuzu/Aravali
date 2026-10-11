@@ -12,24 +12,16 @@ import (
 var mediaTable = config.Tables.MediaTable
 
 func insertMedia(ctx context.Context, app *infra.Deps, media Media) error {
-	return app.SQLDB.Insert(ctx, mediaTable, media)
+
 }
 
 func getMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (Media, error) {
 	var media Media
-	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
-	args := []any{entityID, entityType, mediaID}
-
-	err := app.SQLDB.FindOne(ctx, mediaTable, query, args, &media)
 	return media, err
 }
 
 func listMediaByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]Media, error) {
-	query := "entityid = $1 AND entitytype = $2"
-	args := []any{entityID, entityType}
-
 	var medias []Media
-	err := app.SQLDB.FindMany(ctx, mediaTable, query, args, &medias)
 	return medias, err
 }
 
@@ -56,14 +48,7 @@ func getMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType, en
 }
 
 func updateMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, updateFields map[string]any) ([]Media, error) {
-	query := "mediagroupid = $1"
-	args := []any{mediaGroupID}
-
-	if _, err := app.SQLDB.UpdateMany(ctx, mediaTable, query, args, updateFields); err != nil {
-		return nil, err
-	}
 
 	var updatedMedias []Media
-	err := app.SQLDB.FindMany(ctx, mediaTable, query, args, &updatedMedias)
 	return updatedMedias, err
 }

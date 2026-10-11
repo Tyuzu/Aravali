@@ -8,7 +8,6 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/internal/events"
 	placedb "scav/internal/places/placedb"
 )
@@ -22,7 +21,7 @@ func buildPlaceEventQuery(placeID string, now time.Time) (string, []any) {
 	return "placeid = $1 AND date >= $2", []any{placeID, now}
 }
 
-func buildPlaceEventListOptions(page, limit int) sqldb.FindManyOptions {
+func buildPlaceEventListOptions(page, limit int) map[string]any {
 	if page < 1 {
 		page = 1
 	}
@@ -34,7 +33,7 @@ func buildPlaceEventListOptions(page, limit int) sqldb.FindManyOptions {
 	}
 
 	skip := (page - 1) * limit
-	return sqldb.FindManyOptions{
+	return map[string]any{
 		Limit:   int64(limit),
 		Offset:  int64(skip),
 		OrderBy: "date ASC",

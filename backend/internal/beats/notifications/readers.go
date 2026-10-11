@@ -43,7 +43,7 @@ func GetUserNotifications(app *infra.Deps) http.HandlerFunc {
 			}
 		}
 
-		notifs, err := getUserNotificationsPage(ctx, app.SQLDB, userID, page, limit)
+		notifs, err := getUserNotificationsPage(ctx, app, userID, page, limit)
 		if err != nil {
 			utils.RespondWithJSON(
 				w,
@@ -71,7 +71,7 @@ func GetUnreadCount(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		count, err := countUnreadNotifications(ctx, app.SQLDB, userID)
+		count, err := countUnreadNotifications(ctx, app, userID)
 		if err != nil {
 			utils.RespondWithError(
 				w,
@@ -103,7 +103,7 @@ func GetPreferences(app *infra.Deps) http.HandlerFunc {
 
 		var pref NotificationPreferences
 
-		err := findPreferencesByUser(ctx, app.SQLDB, userID, &pref)
+		err := findPreferencesByUser(ctx, app, userID, &pref)
 
 		if err != nil {
 			if isNoDocumentsError(err) {

@@ -16,9 +16,7 @@ var (
 )
 
 func ListPublishedSongsByArtist(ctx context.Context, app *infra.Deps, artistID string, result *[]ArtistSong) error {
-	query := "artistid = $1 AND published = true"
-	args := []any{artistID}
-	return app.SQLDB.FindMany(ctx, SongsTable, query, args, result)
+
 }
 
 func FindSongsByArtist(ctx context.Context, app *infra.Deps, artistID string, result *[]ArtistSong) error {
@@ -26,13 +24,11 @@ func FindSongsByArtist(ctx context.Context, app *infra.Deps, artistID string, re
 }
 
 func FindSongByArtistAndID(ctx context.Context, app *infra.Deps, artistID, songID string, result *ArtistSong) error {
-	query := "artistid = $1 AND songid = $2"
-	args := []any{artistID, songID}
-	return app.SQLDB.FindOne(ctx, SongsTable, query, args, result)
+
 }
 
 func SaveSong(ctx context.Context, app *infra.Deps, song *ArtistSong) error {
-	return app.SQLDB.Insert(ctx, SongsTable, song)
+
 }
 
 func InsertArtistSong(ctx context.Context, app *infra.Deps, song *ArtistSong) error {
@@ -65,13 +61,9 @@ func UpdateArtistSongFromPayload(ctx context.Context, app *infra.Deps, artistID,
 }
 
 func UpdateArtistSong(ctx context.Context, app *infra.Deps, artistID, songID string, update map[string]any) (int64, error) {
-	query := "artistid = $1 AND songid = $2"
-	args := []any{artistID, songID}
-	return app.SQLDB.UpdateOne(ctx, SongsTable, query, args, update)
+
 }
 
 func DeleteArtistSong(ctx context.Context, app *infra.Deps, artistID, songID string) error {
-	query := "artistid = $1 AND songid = $2"
-	_, err := app.SQLDB.DeleteOne(ctx, SongsTable, query, []any{artistID, songID})
-	return err
+
 }

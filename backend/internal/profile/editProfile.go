@@ -53,9 +53,6 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 
 		// 6. Respond with updated profile
 		RespondWithUserProfileDeps(w, claims.UserID, app)
-		// if err := RespondWithUserProfile(w, claims.UserID, app.SQLDB); err != nil {
-		// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
-		// }
 	}
 }
 

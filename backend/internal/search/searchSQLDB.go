@@ -4,13 +4,11 @@ package search
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb"
 )
 
 type SearchResult struct {
@@ -74,14 +72,6 @@ func GetAutocompleteSuggestions(ctx context.Context, app *infra.Deps, prefix str
 
 	for _, tbl := range tables {
 		var results []map[string]any
-		where := fmt.Sprintf("LOWER(%s) LIKE $1", tbl.field)
-		args := []any{pattern}
-
-		err := app.SQLDB.FindMany(ctx, tbl.table, where, args, &results)
-		if err != nil {
-			continue // Skip individual table errors
-		}
-
 		for _, result := range results {
 			if val, ok := result[tbl.field]; ok {
 				if str, ok := val.(string); ok && str != "" {
@@ -196,24 +186,7 @@ func SearchByEntity(ctx context.Context, app *infra.Deps, entityType, query stri
 		return results, nil
 	}
 
-	// Construct SQL WHERE clause for multi-field case-insensitive search
-	var whereConditions []string
-	args := []any{pattern}
-	for _, field := range info.fields {
-		whereConditions = append(whereConditions, fmt.Sprintf("LOWER(%s) LIKE $1", field))
-	}
-	where := "(" + strings.Join(whereConditions, " OR ") + ")"
-
 	var docs []map[string]any
-	opts := sqldb.FindManyOptions{
-		Limit: 50,
-	}
-
-	err := app.SQLDB.FindManyWithOptions(ctx, info.table, where, args, opts, &docs)
-	if err != nil {
-		return results, err
-	}
-
 	for _, doc := range docs {
 		result := SearchResult{
 			Title: getStringField(doc, info.titleField),

@@ -52,7 +52,7 @@ func GetFilteredCrops(app *infra.Deps) http.HandlerFunc {
 		}
 
 		query, args := buildCropFilterQuery(filter)
-		crops, err := findFilteredCrops(ctx, app.SQLDB, query, args)
+		crops, err := findFilteredCrops(ctx, app, query, args)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch crops")
 			return
@@ -95,7 +95,7 @@ func GetPreCropCatalogue(app *infra.Deps) http.HandlerFunc {
 		/* 2. Database                                      */
 		/* ------------------------------------------------ */
 
-		if items, err := findCatalogueItems(ctx, app.SQLDB, "1 = 1", nil); err == nil && len(items) > 0 {
+		if items, err := findCatalogueItems(ctx, app, "1 = 1", nil); err == nil && len(items) > 0 {
 			crops = items
 			if jsonBytes, err := json.Marshal(crops); err == nil {
 				_ = app.Cache.Set(ctx, cacheKey, jsonBytes, 2*time.Hour)
@@ -189,7 +189,7 @@ func GetCropCatalogue(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		allCrops, err := getAllCrops(ctx, app.SQLDB)
+		allCrops, err := getAllCrops(ctx, app)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
@@ -225,7 +225,7 @@ func GetCropTypes(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		crops, err := getAllCrops(ctx, app.SQLDB)
+		crops, err := getAllCrops(ctx, app)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,

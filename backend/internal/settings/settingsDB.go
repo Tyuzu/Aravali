@@ -28,25 +28,13 @@ func sqlUpsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSe
 
 func GetUserSettingsByUserID(ctx context.Context, app *infra.Deps, userID string) (UserSettings, error) {
 	var settings UserSettings
-	where := "user_id = $1"
-	args := []any{userID}
-
-	if err := app.SQLDB.FindOne(ctx, settingsTable, where, args, &settings); err != nil {
-		return UserSettings{}, err
-	}
 	return settings, nil
 }
 
 func InsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {
-	return app.SQLDB.InsertOne(ctx, settingsTable, settings)
 }
 
 func UpdateUserSettings(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) error {
-	where := "user_id = $1"
-	args := []any{userID}
-
-	_, err := app.SQLDB.UpdateOne(ctx, settingsTable, where, args, updates)
-	return err
 }
 
 func UpsertUserSettings(ctx context.Context, app *infra.Deps, settings UserSettings) error {

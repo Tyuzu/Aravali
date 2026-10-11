@@ -7,32 +7,21 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/internal/verticals/media"
 )
 
 var fanmadeMediaTable = config.Tables.MediaTable
 
 func insertFanMedia(ctx context.Context, app *infra.Deps, media media.Media) error {
-	return app.SQLDB.Insert(ctx, fanmadeMediaTable, media)
 }
 
 func getFanMediaByID(ctx context.Context, app *infra.Deps, entityType, entityID, mediaID string) (media.Media, error) {
 	var media media.Media
-	query := "entityid = $1 AND entitytype = $2 AND mediaid = $3"
-	args := []any{entityID, entityType, mediaID}
-
-	err := app.SQLDB.FindOne(ctx, fanmadeMediaTable, query, args, &media)
 	return media, err
 }
 
 func listFanMediasByEntity(ctx context.Context, app *infra.Deps, entityType, entityID string) ([]media.Media, error) {
 	var medias []media.Media
-	query := "entityid = $1 AND entitytype = $2"
-	args := []any{entityID, entityType}
-
-	opts := sqldb.FindManyOptions{}
-	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaTable, query, args, opts, &medias)
 	return medias, err
 }
 
@@ -59,22 +48,9 @@ func listFanMediaGroupsByEntity(ctx context.Context, app *infra.Deps, entityType
 }
 
 func updateFanMediaGroup(ctx context.Context, app *infra.Deps, mediaGroupID string, update map[string]any) ([]media.Media, error) {
-	query := "mediagroupid = $1"
-	args := []any{mediaGroupID}
-
-	if _, err := app.SQLDB.UpdateMany(ctx, fanmadeMediaTable, query, args, update); err != nil {
-		return nil, err
-	}
-
 	var updatedMedias []media.Media
-	opts := sqldb.FindManyOptions{}
-	err := app.SQLDB.FindManyWithOptions(ctx, fanmadeMediaTable, query, args, opts, &updatedMedias)
 	return updatedMedias, err
 }
 
 func deleteFanMediaByID(ctx context.Context, app *infra.Deps, mediaID string) (int64, error) {
-	query := "mediaid = $1"
-	args := []any{mediaID}
-
-	return app.SQLDB.DeleteOne(ctx, fanmadeMediaTable, query, args)
 }

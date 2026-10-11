@@ -219,7 +219,6 @@ func DeleteTicket(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		// Perform deletion (using hard delete; replace DeleteOne with app.SQLDB.SoftDelete if applicable)
 		if _, err := DeleteTicketDB(ctx, app, "eventid = $1 AND ticketid = $2", []any{eventID, ticketID}); err != nil {
 			http.Error(w, "Failed to delete ticket", http.StatusInternalServerError)
 			return

@@ -28,7 +28,7 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		crops, err := getCropsByCropID(ctx, app.SQLDB, cropID)
+		crops, err := getCropsByCropID(ctx, app, cropID)
 		if err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop not found")
 			return
@@ -42,7 +42,7 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 			farmIDs = append(farmIDs, c.FarmID)
 		}
 
-		farms, err := getFarmsByIDs(ctx, app.SQLDB, farmIDs)
+		farms, err := getFarmsByIDs(ctx, app, farmIDs)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
 			return
@@ -106,7 +106,7 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		crops, err := getCropsByNameFilter(ctx, app.SQLDB, cropName)
+		crops, err := getCropsByNameFilter(ctx, app, cropName)
 		if err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop type not found")
 			return
@@ -119,7 +119,7 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 			farmIDs = append(farmIDs, c.FarmID)
 		}
 
-		farms, err := getFarmsByIDs(ctx, app.SQLDB, farmIDs)
+		farms, err := getFarmsByIDs(ctx, app, farmIDs)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
 			return
@@ -213,7 +213,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		id := utils.GetParam(r, "id")
 
-		farm, err := getFarmByID(ctx, app.SQLDB, id)
+		farm, err := getFarmByID(ctx, app, id)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
@@ -222,7 +222,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		crops, _ := getCropsByFarmID(ctx, app.SQLDB, id)
+		crops, _ := getCropsByFarmID(ctx, app, id)
 
 		farm.Crops = crops
 
@@ -245,7 +245,7 @@ func GetPaginatedFarms(app *infra.Deps) http.HandlerFunc {
 		skip, limit := utils.ParsePagination(r, 10, 100)
 		search := r.URL.Query().Get("search")
 
-		farms, total, err := getPaginatedFarms(ctx, app.SQLDB, search, skip, limit)
+		farms, total, err := getPaginatedFarms(ctx, app, search, skip, limit)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Error fetching farms")
 			return

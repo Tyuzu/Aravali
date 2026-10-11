@@ -13,7 +13,6 @@ import (
 	"scav/infra"
 	log "scav/infra/logger"
 	"scav/infra/mq"
-	mediaworker "scav/infra/workers"
 	"scav/utils"
 )
 
@@ -120,50 +119,6 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 			picType := PictureType(att.Key)
 			savedPath := filepath.Join(ResolvePath(EntityType(entityType), picType), att.Filename+att.Extension)
 
-			if isImageType(picType) {
-				// Metadata Extraction Job
-				metaJob := mediaworker.MediaJob{
-					JobID:      generateUniqueID(),
-					Type:       "image_metadata",
-					SavedPath:  savedPath,
-					UploadDir:  ResolvePath(EntityType(entityType), picType),
-					UniqueID:   att.Filename,
-					Filename:   att.Filename,
-					Ext:        att.Extension,
-					ThumbWidth: defaultThumbWidth,
-					UserID:     userid,
-				}
-				publishJob(ctx, app, metaJob)
-
-				// Thumbnail Job
-				thumbJob := mediaworker.MediaJob{
-					JobID:      generateUniqueID(),
-					Type:       "image",
-					SavedPath:  savedPath,
-					UploadDir:  ResolvePath(EntityType(entityType), PicThumb),
-					UniqueID:   att.Filename,
-					Filename:   att.Filename,
-					Ext:        att.Extension,
-					ThumbWidth: defaultThumbWidth,
-					UserID:     userid,
-				}
-				publishJob(ctx, app, thumbJob)
-			} else if picType == PicVideo {
-				// Video Poster Job
-				videoJob := mediaworker.MediaJob{
-					JobID:      generateUniqueID(),
-					Type:       "video",
-					SavedPath:  savedPath,
-					UploadDir:  ResolvePath(EntityType(entityType), picType),
-					PosterDir:  ResolvePath(EntityType(entityType), PicThumb),
-					UniqueID:   att.Filename,
-					Filename:   att.Filename,
-					Ext:        att.Extension,
-					ThumbWidth: defaultThumbWidth,
-					UserID:     userid,
-				}
-				publishJob(ctx, app, videoJob)
-			}
 		}
 
 		utils.RespondWithJSON(w, http.StatusOK, convertToAttachments(attachments))
@@ -171,7 +126,7 @@ func FiledropHandler(app *infra.Deps) http.HandlerFunc {
 }
 
 // Helper to marshal and publish media jobs safely
-func publishJob(ctx context.Context, app *infra.Deps, job mediaworker.MediaJob) {
+func publishJob(ctx context.Context, app *infra.Deps, job string) {
 	data, err := json.Marshal(job)
 	if err != nil {
 		log.Printf("[Filedrop] failed to marshal job %s: %v", job.JobID, err)

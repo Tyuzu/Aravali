@@ -45,7 +45,7 @@ package notifications
 // 			UpdatedAt:      time.Now(),
 // 		}
 
-// 		if err := insertNotification(ctx, app.SQLDB, notif); err != nil {
+// 		if err := insertNotification(ctx, app, notif); err != nil {
 // 			utils.RespondWithError(w, http.StatusInternalServerError, "DB insert failed")
 // 			return
 // 		}
@@ -111,7 +111,7 @@ package notifications
 // 			return
 // 		}
 
-// 		if err := insertBulkNotifications(ctx, app.SQLDB, notifications); err != nil {
+// 		if err := insertBulkNotifications(ctx, app, notifications); err != nil {
 // 			utils.RespondWithError(w, http.StatusInternalServerError, "DB bulk insert failed")
 // 			return
 // 		}

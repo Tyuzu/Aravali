@@ -17,8 +17,4 @@ func FindUsersByIDs(ctx context.Context, app *infra.Deps, ids []string, out any)
 		return nil
 	}
 
-	query := "userid = ANY($1)"
-	args := []any{ids}
-
-	return app.SQLDB.FindMany(ctx, usersTable, query, args, out)
 }

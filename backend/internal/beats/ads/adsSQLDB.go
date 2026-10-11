@@ -18,43 +18,18 @@ var (
 
 func FetchActiveAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	var dbAds []Ad
-	where := "status = $1"
-	args := []any{"active"}
-
-	err := app.SQLDB.FindMany(ctx, adsTable, where, args, &dbAds)
-	if err != nil {
-		return nil, err
-	}
 
 	return dbAds, nil
 }
 
 func ListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 	var ads []Ad
-	where := "1=1"
-	args := []any{}
 
-	if err := app.SQLDB.FindMany(ctx, adsTable, where, args, &ads); err != nil {
-		return nil, err
-	}
-	if ads == nil {
-		ads = []Ad{}
-	}
 	return ads, nil
 }
 
 func CreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
-	ad.CreatedAt = time.Now()
-	ad.UpdatedAt = time.Now()
 
-	if ad.Status == "" {
-		ad.Status = "active"
-	}
-	if ad.Type == "" {
-		ad.Type = TypeExternal
-	}
-
-	return app.SQLDB.InsertOne(ctx, adsTable, ad)
 }
 
 // PromotePost creates an Ad entry sourced directly from an existing post.
@@ -66,14 +41,6 @@ func PromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, positio
 		Summary  string `db:"summary"`
 		CoverImg string `db:"cover_image"`
 		Category string `db:"category"`
-	}
-
-	where := "id = $1"
-	args := []any{postID}
-
-	err := app.SQLDB.FindOne(ctx, postsTable, where, args, &post)
-	if err != nil {
-		return nil, fmt.Errorf("post not found: %w", err)
 	}
 
 	if category == "" {
@@ -95,41 +62,19 @@ func PromotePostInDB(ctx context.Context, app *infra.Deps, postID, page, positio
 		UpdatedAt:   time.Now(),
 	}
 
-	err = app.SQLDB.InsertOne(ctx, adsTable, ad)
-	if err != nil {
-		return nil, err
-	}
-
 	return ad, nil
 }
 
 func GetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, error) {
 	var ad Ad
-	where := "id = $1"
-	args := []any{id}
-
-	err := app.SQLDB.FindOne(ctx, adsTable, where, args, &ad)
-	if err != nil {
-		return nil, err
-	}
 
 	return &ad, nil
 }
 
 func UpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData map[string]any) error {
-	where := "id = $1"
-	args := []any{id}
 
-	updateData["updated_at"] = time.Now()
-
-	_, err := app.SQLDB.UpdateOne(ctx, adsTable, where, args, updateData)
-	return err
 }
 
 func DeleteAdInDB(ctx context.Context, app *infra.Deps, id string) error {
-	where := "id = $1"
-	args := []any{id}
 
-	_, err := app.SQLDB.DeleteOne(ctx, adsTable, where, args)
-	return err
 }

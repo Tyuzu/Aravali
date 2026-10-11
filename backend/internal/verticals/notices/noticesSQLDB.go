@@ -8,25 +8,21 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb"
 )
 
 var noticesTable = config.Tables.NoticesTable
 
 func createNotice(ctx context.Context, app *infra.Deps, notice Notice) error {
-	return app.SQLDB.Insert(ctx, noticesTable, notice)
+
 }
 
 func findNoticeByID(ctx context.Context, app *infra.Deps, noticeID string) (Notice, error) {
 	var notice Notice
-	query := "noticeid = $1"
-	args := []any{noticeID}
-	err := app.SQLDB.FindOne(ctx, noticesTable, query, args, &notice)
 	return notice, err
 }
 
-func listNoticesWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, out *[]Notice) error {
-	return app.SQLDB.FindManyWithOptions(ctx, noticesTable, query, args, opts, out)
+func listNoticesWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, out *[]Notice) error {
+
 }
 
 func buildNoticeQuery(entityType, entityID string) (string, []any) {
@@ -37,27 +33,8 @@ func buildNoticeQuery(entityType, entityID string) (string, []any) {
 	return "entityType = $1 AND entityId = $2", []any{entityType, entityID}
 }
 
-func buildNoticeListOptions(page, limit int, sortBy string) sqldb.FindManyOptions {
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 {
-		limit = 10
-	}
-	if limit > 100 {
-		limit = 100
-	}
+func buildNoticeListOptions(page, limit int, sortBy string) map[string]any {
 
-	orderBy := "createdAt DESC"
-	if sortBy == "old" {
-		orderBy = "createdAt ASC"
-	}
-
-	return sqldb.FindManyOptions{
-		Limit:   int64(limit),
-		Offset:  int64((page - 1) * limit),
-		OrderBy: orderBy,
-	}
 }
 
 func getNoticesPage(ctx context.Context, app *infra.Deps, entityType, entityID string, page, limit int, sortBy string) ([]Notice, error) {
@@ -89,15 +66,9 @@ func buildNoticeSummary(notices []Notice) []map[string]any {
 }
 
 func updateNoticeByID(ctx context.Context, app *infra.Deps, noticeID string, update map[string]any) error {
-	query := "noticeid = $1"
-	args := []any{noticeID}
-	_, err := app.SQLDB.Update(ctx, noticesTable, query, args, update)
-	return err
+
 }
 
 func deleteNoticeByID(ctx context.Context, app *infra.Deps, noticeID string) error {
-	query := "noticeid = $1"
-	args := []any{noticeID}
-	_, err := app.SQLDB.Delete(ctx, noticesTable, query, args)
-	return err
+
 }

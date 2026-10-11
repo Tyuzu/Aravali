@@ -10,8 +10,6 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb"
-	"scav/utils"
 )
 
 var (
@@ -22,67 +20,31 @@ var (
 )
 
 func SQLinsertEvent(ctx context.Context, app *infra.Deps, event Event) error {
-	return app.SQLDB.InsertOne(ctx, eventsTable, event)
+
 }
 
 func SQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Event) {
-	if event == nil {
-		return
-	}
 
-	event.EventID = utils.GenerateRandomString(14)
-	var existingEvent Event
-	query := "eventid = $1"
-	args := []any{event.EventID}
-
-	if err := app.SQLDB.FindOne(ctx, eventsTable, query, args, &existingEvent); err == nil {
-		event.EventID = utils.GenerateRandomString(14)
-	}
 }
 
 func SQLfindEventByID(ctx context.Context, app *infra.Deps, eventID string, event *Event) error {
-	query := "eventid = $1"
-	args := []any{eventID}
 
-	return app.SQLDB.FindOne(ctx, eventsTable, query, args, event)
 }
 
 func SQLupdateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (int64, error) {
-	query := "eventid = $1"
-	args := []any{eventID}
 
-	return app.SQLDB.UpdateOne(ctx, eventsTable, query, args, updates)
 }
 
 func SQLaggregateEvent(ctx context.Context, app *infra.Deps, eventID string, result *[]Event) error {
-	rawQuery := `
-		SELECT 
-			e.*,
-			COALESCE(
-				(SELECT json_agg(t.*) FROM ` + ticksTable + ` t WHERE t.eventid = e.eventid),
-				'[]'
-			) AS tickets,
-			COALESCE(
-				(SELECT json_agg(m.*) FROM ` + mediaTable + ` m WHERE m.entityid = e.eventid AND m.entitytype = 'event'),
-				'[]'
-			) AS media,
-			COALESCE(
-				(SELECT json_agg(mc.*) FROM ` + merchTable + ` mc WHERE mc.entity_id = e.eventid AND mc.entity_type = 'event'),
-				'[]'
-			) AS merch
-		FROM ` + eventsTable + ` e
-		WHERE e.eventid = $1
-	`
 
-	return app.SQLDB.QueryRaw(ctx, rawQuery, []any{eventID}, result)
 }
 
-func SQLlistEvents(ctx context.Context, app *infra.Deps, query string, args []any, opts sqldb.FindManyOptions, result *[]Event) error {
-	return app.SQLDB.FindManyWithOptions(ctx, eventsTable, query, args, opts, result)
+func SQLlistEvents(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, result *[]Event) error {
+
 }
 
 func SQLcountEvents(ctx context.Context, app *infra.Deps, whereClause string, args []any) (int64, error) {
-	return app.SQLDB.Count(ctx, eventsTable, whereClause, args)
+
 }
 
 func insertEvent(ctx context.Context, app *infra.Deps, event Event) error {
@@ -110,27 +72,13 @@ func countEvents(ctx context.Context, app *infra.Deps, filter map[string]any) (i
 	return SQLcountEvents(ctx, app, where, args)
 }
 
-func listEvents(ctx context.Context, app *infra.Deps, filter map[string]any, opts sqldb.FindManyOptions, result *[]Event) error {
+func listEvents(ctx context.Context, app *infra.Deps, filter map[string]any, opts map[string]any, result *[]Event) error {
 	where, args := buildEventQuery(filter)
 	return SQLlistEvents(ctx, app, where, args, opts, result)
 }
 
-func buildEventListOptions(skip, limit int) sqldb.FindManyOptions {
-	if limit <= 0 {
-		limit = 10
-	}
-	if limit > 100 {
-		limit = 100
-	}
-	if skip < 0 {
-		skip = 0
-	}
+func buildEventListOptions(skip, limit int) map[string]any {
 
-	return sqldb.FindManyOptions{
-		Limit:   int64(limit),
-		Offset:  int64(skip),
-		OrderBy: "created_at DESC",
-	}
 }
 
 func getPaginatedEvents(ctx context.Context, app *infra.Deps, filter map[string]any, skip, limit int, result *[]Event) error {

@@ -5,8 +5,6 @@ package stripe
 import (
 	"context"
 	"errors"
-	"fmt"
-	"time"
 
 	"scav/config"
 	"scav/infra"
@@ -23,8 +21,6 @@ func updatePaymentStatus(
 	paymentIntentId string,
 	app *infra.Deps,
 ) (int64, error) {
-	var Table string
-	var idField string
 
 	switch entityType {
 	case "funding":
@@ -37,21 +33,4 @@ func updatePaymentStatus(
 		return 0, errors.New("invalid entityType")
 	}
 
-	query := fmt.Sprintf("%s = $1", idField)
-	args := []any{entityId}
-
-	update := map[string]any{
-		"paid":            true,
-		"amount":          amount,
-		"paymentIntentId": paymentIntentId,
-		"paidAt":          time.Now().UTC(),
-	}
-
-	return app.SQLDB.Update(
-		ctx,
-		Table,
-		query,
-		args,
-		update,
-	)
 }

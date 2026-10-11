@@ -13,7 +13,6 @@ import (
 
 	"scav/config"
 	"scav/infra"
-	"scav/infra/sqldb"
 	"scav/utils"
 )
 
@@ -29,31 +28,11 @@ const (
 )
 
 func insertActivities(ctx context.Context, app *infra.Deps, activities []Activity) error {
-	docs := make([]any, len(activities))
-	for i := range activities {
-		docs[i] = activities[i]
-	}
 
-	return app.SQLDB.InsertMany(ctx, ActivitiesTable, docs)
 }
 
 func getActivities(ctx context.Context, app *infra.Deps, userID string, cursor time.Time, limit int) ([]Activity, error) {
-	where := "userid = $1"
-	args := []any{userID}
 
-	if !cursor.IsZero() {
-		where += " AND timestamp < $2"
-		args = append(args, cursor)
-	}
-
-	opts := sqldb.FindManyOptions{
-		Limit:   int64(limit),
-		OrderBy: "timestamp DESC",
-	}
-
-	var activities []Activity
-	err := app.SQLDB.FindManyWithOptions(ctx, ActivitiesTable, where, args, opts, &activities)
-	return activities, err
 }
 
 type analyticsEventRow struct {
@@ -128,7 +107,6 @@ func insertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload Analyti
 		return 0, nil
 	}
 
-	err := app.SQLDB.InsertMany(ctx, AnalyticsTable, docsToInsert)
 	return len(docsToInsert), err
 }
 
