@@ -1,6 +1,4 @@
 // File: main.go
-
-// main.go
 package main
 
 import (
@@ -46,10 +44,6 @@ func main() {
 	defer appCancel()
 
 	// =====================
-	// Application Lifecycle
-	// =====================
-
-	// =====================
 	// MQ Subscribers
 	// =====================
 	if app.MQ != nil {
@@ -65,10 +59,10 @@ func main() {
 		logger.L.Sugar().Warnw("MQ is not configured; skipping MQ subscribers")
 	}
 
-	// Distributed/Redis rate limiter preferred for multi-instance scaling
+	// Distributed/Redis rate limiter for multi-instance scaling
 	rateLimiter := middleware.NewRateLimiter(1, 12, 10*time.Minute, 10000)
 
-	// Run both chat hubs
+	// Run chat hubs
 	hub := newchat.NewHub()
 	go hub.Run()
 
@@ -125,11 +119,13 @@ func main() {
 
 	corsHandler := cors.New(corsOpts).Handler(handler)
 
+	// Production server configuration with robust timeouts
 	server := &http.Server{
 		Addr:              cfg.HTTPPort,
 		Handler:           corsHandler,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 2 * time.Second,
+		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
 
@@ -167,8 +163,6 @@ func main() {
 	mehub.Stop()
 
 	// 4. Drain and close all infrastructure dependencies cleanly.
-	// Redis may already be closed by outstanding Pub/Sub subscriptions during shutdown,
-	// so treat redis.ErrClosed as an expected terminal state instead of a failure.
 	if err := app.Close(shutdownCtx); err != nil {
 		logger.L.Sugar().Errorw("Failed to close infrastructure dependencies", "error", err)
 	}

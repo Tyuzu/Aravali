@@ -36,28 +36,23 @@ func getRoomMessages(ctx context.Context, app *infra.Deps, room string) ([]Messa
 }
 
 func insertMessage(ctx context.Context, app *infra.Deps, msg Message) error {
-
+	return nil
 }
 
 func updateChatLastMessage(ctx context.Context, app *infra.Deps, chatID, userID string, timestamp time.Time, previewText string) error {
-
-	return err
+	return nil
 }
 
 func UpdatexMessage(userID string, id string, newContent string, app *infra.Deps) error {
-
 	return nil
 }
 
 func DeletexMessage(userID string, id string, app *infra.Deps) error {
-
 	return nil
 }
 
 func findMessageRoom(id string, app *infra.Deps) (string, error) {
-
-	var msg Message
-	return msg.Room, nil
+	return "", nil
 }
 
 func findMessageByID(ctx context.Context, app *infra.Deps, msgID string) (Message, error) {
@@ -66,15 +61,15 @@ func findMessageByID(ctx context.Context, app *infra.Deps, msgID string) (Messag
 }
 
 func updateMessageText(ctx context.Context, app *infra.Deps, msgID, text string) error {
-	return err
+	return nil
 }
 
 func deleteMessageByID(ctx context.Context, app *infra.Deps, msgID string) error {
-	return err
+	return nil
 }
 
 func touchChatUpdatedAt(ctx context.Context, app *infra.Deps, chatID string) error {
-	return err
+	return nil
 }
 
 func findChatByUsers(ctx context.Context, app *infra.Deps, users []string) (Chat, error) {
@@ -83,7 +78,7 @@ func findChatByUsers(ctx context.Context, app *infra.Deps, users []string) (Chat
 }
 
 func createChat(ctx context.Context, app *infra.Deps, chat Chat) error {
-
+	return nil
 }
 
 func getUserChats(ctx context.Context, app *infra.Deps, userID string) ([]Chat, error) {

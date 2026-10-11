@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -59,6 +60,51 @@ func normalizeRoleRequestStatus(status string) string {
 	default:
 		return ""
 	}
+}
+
+func buildFilterQuery(filter map[string]any) (string, []any) {
+	if len(filter) == 0 {
+		return "1 = 1", nil
+	}
+
+	clauses := make([]string, 0, len(filter))
+	args := make([]any, 0, len(filter))
+
+	for key, value := range filter {
+		if value == nil {
+			continue
+		}
+
+		switch v := value.(type) {
+		case map[string]any:
+			if inVals, ok := v["$in"]; ok {
+				clauses = append(clauses, fmt.Sprintf("%s = ANY($%d)", key, len(args)+1))
+				args = append(args, inVals)
+				continue
+			}
+			if inVals, ok := v["$nin"]; ok {
+				clauses = append(clauses, fmt.Sprintf("NOT (%s = ANY($%d))", key, len(args)+1))
+				args = append(args, inVals)
+				continue
+			}
+		}
+
+		if strings.HasSuffix(key, "_ne") {
+			keyName := strings.TrimSuffix(key, "_ne")
+			clauses = append(clauses, fmt.Sprintf("%s <> $%d", keyName, len(args)+1))
+			args = append(args, value)
+			continue
+		}
+
+		clauses = append(clauses, fmt.Sprintf("%s = $%d", key, len(args)+1))
+		args = append(args, value)
+	}
+
+	if len(clauses) == 0 {
+		return "1 = 1", nil
+	}
+
+	return strings.Join(clauses, " AND "), args
 }
 
 func isFinalRoleRequestStatus(status string) bool {

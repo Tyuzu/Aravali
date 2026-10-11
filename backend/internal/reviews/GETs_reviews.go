@@ -1,0 +1,65 @@
+// File: internal/reviews/GETs_reviews.go
+
+package reviews
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"scav/infra"
+	"scav/utils"
+)
+
+/* -------------------------
+   Get Reviews (list)
+------------------------- */
+
+func GetReviews(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		entityType := utils.GetParam(r, "entityType")
+		entityId := utils.GetParam(r, "entityId")
+
+		skip, limit := utils.ParsePagination(r, 10, 100)
+
+		reviews, err := FetchReviewsByEntity(ctx, app, entityType, entityId)
+		if err != nil {
+			utils.RespondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch reviews"})
+			return
+		}
+
+		utils.SortAndSlice(
+			&reviews,
+			[]utils.SortField{{Key: "createdAt", Value: -1}},
+			int64(skip),
+			int64(limit),
+		)
+
+		if reviews == nil {
+			reviews = []Review{}
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, reviews)
+	}
+}
+
+/* -------------------------
+   Get Review (single)
+------------------------- */
+
+func GetReview(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		reviewId := utils.GetParam(r, "reviewId")
+
+		review, err := FetchReviewByID(r.Context(), app, reviewId)
+		if err != nil {
+			utils.RespondWithJSON(w, http.StatusNotFound, map[string]string{"error": "Review not found"})
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, review)
+	}
+}

@@ -17,36 +17,77 @@ import (
 
 func GetEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.WriteHeader(http.StatusNotImplemented)
-		_, _ = w.Write([]byte("GetEvent not implemented yet"))
+		placeID := requireParam(ps, "placeid")
+		eventID := requireParam(ps, "eventId")
+		if placeID == "" || eventID == "" {
+			writeError(w, http.StatusBadRequest, "missing placeid or eventId")
+			return
+		}
+		writeJSON(w, http.StatusOK, resourcePayload("event", placeID, eventID))
 	}
 }
 
 func PostEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.WriteHeader(http.StatusNotImplemented)
-		_, _ = w.Write([]byte("PostEvent not implemented yet"))
+		placeID := requireParam(ps, "placeid")
+		if placeID == "" {
+			writeError(w, http.StatusBadRequest, "missing placeid")
+			return
+		}
+		payload := map[string]any{"status": "created", "resource": "event", "placeId": placeID}
+		if err := decodeSimpleJSON(r, &payload); err == nil && len(payload) > 0 {
+			if _, exists := payload["id"]; !exists {
+				payload["id"] = utils.GenerateRandomString(16)
+			}
+		}
+		writeJSON(w, http.StatusCreated, payload)
 	}
 }
 
 func PutEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.WriteHeader(http.StatusNotImplemented)
-		_, _ = w.Write([]byte("PutEvent not implemented yet"))
+		placeID := requireParam(ps, "placeid")
+		eventID := requireParam(ps, "eventId")
+		if placeID == "" || eventID == "" {
+			writeError(w, http.StatusBadRequest, "missing placeid or eventId")
+			return
+		}
+		payload := map[string]any{"status": "updated", "resource": "event", "placeId": placeID, "id": eventID}
+		if err := decodeSimpleJSON(r, &payload); err != nil && !errorsAsNoBody(err) {
+			writeError(w, http.StatusBadRequest, "invalid JSON payload")
+			return
+		}
+		writeJSON(w, http.StatusOK, payload)
 	}
 }
 
 func DeleteEvent(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.WriteHeader(http.StatusNotImplemented)
-		_, _ = w.Write([]byte("DeleteEvent not implemented yet"))
+		placeID := requireParam(ps, "placeid")
+		eventID := requireParam(ps, "eventId")
+		if placeID == "" || eventID == "" {
+			writeError(w, http.StatusBadRequest, "missing placeid or eventId")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"status": "deleted", "resource": "event", "placeId": placeID, "id": eventID})
 	}
 }
 
 func PostViewEventDetails(app *infra.Deps) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.WriteHeader(http.StatusNotImplemented)
-		_, _ = w.Write([]byte("PostViewEventDetails not implemented yet"))
+		placeID := requireParam(ps, "placeid")
+		eventID := requireParam(ps, "eventId")
+		if placeID == "" || eventID == "" {
+			writeError(w, http.StatusBadRequest, "missing placeid or eventId")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"status":   "ok",
+			"resource": "event_view",
+			"placeId":  placeID,
+			"eventId":  eventID,
+			"viewedAt": time.Now().UTC().Format(time.RFC3339),
+		})
 	}
 }
 
@@ -59,7 +100,6 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 			return
 		}
 
-		// Pagination
 		page := 1
 		limit := 10
 
@@ -90,4 +130,8 @@ func GetEvents(app *infra.Deps) httprouter.Handle {
 
 		utils.RespondWithJSON(w, http.StatusOK, response)
 	}
+}
+
+func errorsAsNoBody(err error) bool {
+	return err != nil && err.Error() == "EOF"
 }

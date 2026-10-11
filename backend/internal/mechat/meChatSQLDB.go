@@ -25,21 +25,19 @@ type UnreadCountResult struct {
 func SQLnowUTC() time.Time { return nowUTC() }
 
 func dbEnsureChatAccess(ctx context.Context, app *infra.Deps, chatID, user string) error {
-
+	return nil
 }
 
 func dbFindChat(ctx context.Context, app *infra.Deps, query string, args []any, out *Chat) error {
-
+	return nil
 }
 
 func dbInsertChat(ctx context.Context, app *infra.Deps, chat Chat) error {
-
+	return nil
 }
 
 func dbFindMessagesForChat(ctx context.Context, app *infra.Deps, chatID string, user string, limit, offset int) ([]Message, error) {
-
-	var msgs []Message
-	return msgs, nil
+	return nil, nil
 }
 
 func dbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user string) (Chat, error) {
@@ -48,9 +46,7 @@ func dbFindChatByUser(ctx context.Context, app *infra.Deps, chatID, user string)
 }
 
 func dbFindUserChats(ctx context.Context, app *infra.Deps, user string, offset, limit int) ([]Chat, error) {
-
-	var chats []Chat
-	return chats, nil
+	return nil, nil
 }
 
 func dbPersistAttachmentMessage(ctx context.Context, app *infra.Deps, chatID, user string, msg *Message) error {
@@ -63,6 +59,7 @@ func dbUpdateLastMessage(ctx context.Context, app *infra.Deps, chatID string, ms
 }
 
 func dbInsertMessage(ctx context.Context, app *infra.Deps, msg *Message) error {
+	return nil
 }
 
 func dbEditMessage(ctx context.Context, app *infra.Deps, msgID, userID, newContent string) (*Message, error) {
@@ -76,9 +73,11 @@ func dbDeleteMessage(ctx context.Context, app *infra.Deps, msgID, userID string)
 }
 
 func dbMarkAsRead(ctx context.Context, app *infra.Deps, msgID, userID string) error {
+	return nil
 }
 
 func dbUpdateReaction(ctx context.Context, app *infra.Deps, msgID, userID string, add bool) error {
+	return nil
 }
 
 func dbGetChatParticipants(ctx context.Context, app *infra.Deps, chatID string) ([]string, error) {
@@ -98,7 +97,5 @@ func dbGetUnreadCountsPerChat(ctx context.Context, app *infra.Deps, user string)
 }
 
 func dbSearchMessages(ctx context.Context, app *infra.Deps, chatID, term string, limit, offset int) ([]Message, error) {
-
-	var msgs []Message
-	return msgs, nil
+	return nil, nil
 }

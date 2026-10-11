@@ -14,24 +14,19 @@ import (
 var deliveriesTable = config.Tables.DeliveriesTable
 
 func findDeliveryByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
-
+	return nil
 }
 
 func findMyDeliveries(ctx context.Context, app *infra.Deps, userID, tenantID string) ([]Delivery, error) {
-
-	var deliveries []Delivery
-
-	return deliveries, nil
+	return nil, nil
 }
 
 func saveDelivery(ctx context.Context, app *infra.Deps, delivery Delivery) error {
-
+	return nil
 }
 
 func findDeliveryAndUpdate(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (Delivery, error) {
-
-	var updated Delivery
-	return updated, nil
+	return Delivery{}, nil
 }
 
 func fetchDeliveryForRead(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (Delivery, error) {
@@ -117,7 +112,10 @@ func upsertDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, 
 }
 
 func updateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID, tenantID, userID, newStatus string) (*Delivery, error) {
-	var currentDelivery Delivery
+	currentDelivery, err := fetchDeliveryForRead(ctx, app, deliveryID, tenantID)
+	if err != nil {
+		return nil, err
+	}
 	if err := ValidateTransition(currentDelivery.Status, newStatus); err != nil {
 		return nil, err
 	}
@@ -130,12 +128,13 @@ func updateDeliveryStatusRecord(ctx context.Context, app *infra.Deps, deliveryID
 	}
 
 	updatedHistory := append(currentDelivery.StatusHistory, newHistoryItem)
-
 	update := map[string]any{
 		"status":         newStatus,
 		"updated_at":     now,
 		"status_history": updatedHistory,
 	}
+	query := "id = $1 AND tenantid = $2"
+	args := []any{deliveryID, tenantID}
 
 	updatedDelivery, err := findDeliveryAndUpdate(ctx, app, query, args, update)
 	if err != nil {

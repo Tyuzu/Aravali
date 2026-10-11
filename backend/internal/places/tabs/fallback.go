@@ -9,17 +9,28 @@ import (
 )
 
 func notImplemented(w http.ResponseWriter, methodName string) {
-	w.WriteHeader(http.StatusNotImplemented)
-	_, _ = w.Write([]byte(methodName + " not implemented yet"))
+	writeJSON(w, http.StatusNotImplemented, map[string]any{
+		"status":  "not_implemented",
+		"method":  methodName,
+		"message": methodName + " is not implemented yet",
+	})
 }
 
 // ❓ Fallback
 func GetPlaceDetailsFallback(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.WriteHeader(http.StatusNotImplemented)
-	_, _ = w.Write([]byte("GetPlaceDetailsFallback not implemented yet"))
+	placeID := requireParam(ps, "placeid")
+	if placeID == "" {
+		writeError(w, http.StatusBadRequest, "missing placeid")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "resource": "place_details", "placeId": placeID})
 }
 
 func GetDetailsFallback(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	w.WriteHeader(http.StatusNotImplemented)
-	_, _ = w.Write([]byte("GetDetailsFallback not implemented yet"))
+	placeID := requireParam(ps, "placeid")
+	if placeID == "" {
+		writeError(w, http.StatusBadRequest, "missing placeid")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "resource": "details", "placeId": placeID})
 }

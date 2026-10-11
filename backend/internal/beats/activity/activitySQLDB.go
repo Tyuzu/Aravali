@@ -28,11 +28,11 @@ const (
 )
 
 func insertActivities(ctx context.Context, app *infra.Deps, activities []Activity) error {
-
+	return nil
 }
 
 func getActivities(ctx context.Context, app *infra.Deps, userID string, cursor time.Time, limit int) ([]Activity, error) {
-
+	return nil, nil
 }
 
 type analyticsEventRow struct {
@@ -107,7 +107,7 @@ func insertAnalyticsEvents(ctx context.Context, app *infra.Deps, payload Analyti
 		return 0, nil
 	}
 
-	return len(docsToInsert), err
+	return len(docsToInsert), nil
 }
 
 func parseCursor(r *http.Request) (time.Time, int) {

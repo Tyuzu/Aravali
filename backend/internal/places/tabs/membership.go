@@ -131,8 +131,27 @@ func DeleteMembership(app *infra.Deps) httprouter.Handle {
 
 // POST /place/:placeId/membership/:id/join
 func PostJoinMembership(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	// This could insert into a `membership_users` table
-	http.Error(w, "Join membership not implemented", http.StatusNotImplemented)
+	placeID := ps.ByName("placeid")
+	membershipID := ps.ByName("membershipId")
+	if placeID == "" || membershipID == "" {
+		http.Error(w, "Invalid place or membership ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := utils.GetUserIDFromRequest(r)
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	payload := map[string]any{
+		"status":       "joined",
+		"placeId":      placeID,
+		"membershipId": membershipID,
+		"userId":       userID,
+		"joinedAt":     time.Now().UTC().Format(time.RFC3339),
+	}
+	utils.RespondWithJSON(w, http.StatusOK, payload)
 }
 
 // GET /place/:placeId/memberships

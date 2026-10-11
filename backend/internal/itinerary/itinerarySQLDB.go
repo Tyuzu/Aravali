@@ -12,29 +12,25 @@ import (
 var ItineraryTable = config.Tables.ItineraryTable
 
 func insertItinerary(ctx context.Context, app *infra.Deps, itinerary Itinerary) error {
-
+	return nil
 }
 
 func findItineraryByID(ctx context.Context, app *infra.Deps, itineraryID string) (Itinerary, error) {
-	var itinerary Itinerary
-
-	return itinerary, nil
+	return Itinerary{}, nil
 }
 
 func findItineraries(ctx context.Context, app *infra.Deps, query string, args []any) ([]Itinerary, error) {
-	var itineraries []Itinerary
-
-	return itineraries, nil
+	return nil, nil
 }
 
 func updateItineraryFields(ctx context.Context, app *infra.Deps, itineraryID string, update map[string]any) (int64, error) {
-
+	return 0, nil
 }
 
 func softDeleteItinerary(ctx context.Context, app *infra.Deps, itineraryID, userID string) (int64, error) {
-
+	return 0, nil
 }
 
 func publishItinerary(ctx context.Context, app *infra.Deps, itineraryID, userID string) (int64, error) {
-
+	return 0, nil
 }

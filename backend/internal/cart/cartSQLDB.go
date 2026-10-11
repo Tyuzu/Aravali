@@ -4,6 +4,7 @@ package cart
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,7 +13,9 @@ import (
 	"scav/config"
 	"scav/infra"
 	"scav/internal/auth"
-	"scav/internal/verticals/pay"
+	"scav/internal/pay"
+
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -25,19 +28,69 @@ var (
 /* ───────────────────────── Cart Operations ───────────────────────── */
 
 func findUserByID(ctx context.Context, app *infra.Deps, userID string) (auth.User, bool) {
+	userID = strings.TrimSpace(userID)
+	if userID == "" || app == nil || app.SQLDB == nil {
+		return auth.User{}, false
+	}
+
 	var user auth.User
+	err := app.SQLDB.QueryRow(
+		ctx,
+		`SELECT userid, username, email, name, phone_number, address, avatar, banner, role, online, is_verified, email_verified, followerscount, followscount, wallet_balance, created_at, updated_at, last_login FROM `+config.Tables.UserTable+` WHERE userid = $1 LIMIT 1`,
+		userID,
+	).Scan(
+		&user.UserID,
+		&user.Username,
+		&user.Email,
+		&user.Name,
+		&user.PhoneNumber,
+		&user.Address,
+		&user.Avatar,
+		&user.Banner,
+		&user.Role,
+		&user.Online,
+		&user.IsVerified,
+		&user.EmailVerified,
+		&user.FollowersCount,
+		&user.FollowingCount,
+		&user.WalletBalance,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.LastLogin,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return auth.User{}, false
+		}
+		return auth.User{}, false
+	}
 	return user, true
 }
 
 func findCouponByFilter(ctx context.Context, app *infra.Deps, filter map[string]any) (Coupon, error) {
-
+	if app == nil || app.SQLDB == nil {
+		return Coupon{}, errors.New("database unavailable")
+	}
+	query, args := buildSQLFilter(filter)
+	rows, err := app.SQLDB.Query(ctx, `SELECT code, discount, expiresat, active, entityid, entitytype FROM `+couponTable+` WHERE `+query+` LIMIT 1`, args...)
+	if err != nil {
+		return Coupon{}, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return Coupon{}, errors.New("coupon not found")
+	}
 	var coupon Coupon
+	var expiresAt time.Time
+	if err := rows.Scan(&coupon.Code, &coupon.Discount, &expiresAt, &coupon.Active, &coupon.EntityID, &coupon.EntityType); err != nil {
+		return Coupon{}, err
+	}
+	coupon.ExpiresAt = expiresAt
 	return coupon, nil
 }
 
 func findCouponByCode(ctx context.Context, app *infra.Deps, code string) (Coupon, error) {
-	var coupon Coupon
-	return coupon, nil
+	return findCouponByFilter(ctx, app, map[string]any{"code": strings.TrimSpace(strings.ToLower(code))})
 }
 
 func validateCouponServer(ctx context.Context, code string, subtotal int64, app *infra.Deps) (*CouponResult, error) {
@@ -69,23 +122,186 @@ func validateCouponServer(ctx context.Context, code string, subtotal int64, app 
 }
 
 func insertFarmOrderRecord(ctx context.Context, app *infra.Deps, order FarmOrder) error {
-
+	if app == nil || app.SQLDB == nil {
+		return nil
+	}
+	payload, err := json.Marshal(map[string]any{
+		"orderid":  order.OrderID,
+		"farmid":   order.FarmID,
+		"cropid":   order.CropID,
+		"userid":   order.UserID,
+		"items":    order.Items,
+		"quantity": order.Quantity,
+		"subtotal": order.Subtotal,
+		"discount": order.Discount,
+		"tax":      order.Tax,
+		"delivery": order.Delivery,
+		"total":    order.Total,
+		"address":  order.Address,
+		"name":     order.Name,
+		"phone":    order.Phone,
+		"status":   string(order.Status),
+		"approved": order.ApprovedBy,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = app.SQLDB.Exec(
+		ctx,
+		`INSERT INTO `+farmOrdersTable+` (orderid, farmid, userid, status, total, created_at, updated_at, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (orderid) DO UPDATE SET farmid = EXCLUDED.farmid, userid = EXCLUDED.userid, status = EXCLUDED.status, total = EXCLUDED.total, updated_at = NOW(), metadata = EXCLUDED.metadata`,
+		order.OrderID,
+		order.FarmID,
+		order.UserID,
+		string(order.Status),
+		float64(order.Total)/100,
+		order.CreatedAt,
+		time.Now(),
+		payload,
+	)
+	return err
 }
 
 func insertGeneralOrderRecord(ctx context.Context, app *infra.Deps, order Order) error {
-
+	if app == nil || app.SQLDB == nil {
+		return nil
+	}
+	payload, err := json.Marshal(map[string]any{
+		"orderid":       order.OrderID,
+		"ordertype":     order.OrderType,
+		"userid":        order.UserID,
+		"items":         order.Items,
+		"address":       order.Address,
+		"paymentmethod": order.PaymentMethod,
+		"status":        order.Status,
+		"approvedby":    order.ApprovedBy,
+		"subtotal":      order.Subtotal,
+		"discount":      order.Discount,
+		"tax":           order.Tax,
+		"delivery":      order.Delivery,
+		"total":         order.Total,
+		"name":          order.Name,
+		"phone":         order.Phone,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = app.SQLDB.Exec(
+		ctx,
+		`INSERT INTO `+ordersTable+` (orderid, userid, total, status, created_at, updated_at, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (orderid) DO UPDATE SET userid = EXCLUDED.userid, total = EXCLUDED.total, status = EXCLUDED.status, updated_at = NOW(), metadata = EXCLUDED.metadata`,
+		order.OrderID,
+		order.UserID,
+		float64(order.Total)/100,
+		order.Status,
+		order.CreatedAt,
+		time.Now(),
+		payload,
+	)
+	return err
 }
 
 func fetchTransactionsByOrderIDs(ctx context.Context, app *infra.Deps, orderIDs []string) map[string]pay.Transaction {
-	txnMap := make(map[string]pay.Transaction)
+	if app == nil || app.SQLDB == nil || len(orderIDs) == 0 {
+		return map[string]pay.Transaction{}
+	}
+	rows, err := app.SQLDB.Query(
+		ctx,
+		`SELECT entity_id, userid, type, method, status, amount FROM transactions WHERE entity_type = 'order' AND entity_id = ANY($1)`,
+		orderIDs,
+	)
+	if err != nil {
+		return map[string]pay.Transaction{}
+	}
+	defer rows.Close()
 
-	return txnMap
+	result := make(map[string]pay.Transaction)
+	for rows.Next() {
+		var txn pay.Transaction
+		if err := rows.Scan(&txn.EntityID, &txn.UserID, &txn.Type, &txn.Method, &txn.Status, &txn.Amount); err != nil {
+			continue
+		}
+		result[txn.EntityID] = txn
+	}
+	return result
 }
 
 func fetchUserNamesByIDs(ctx context.Context, app *infra.Deps, userIDs map[string]struct{}) map[string]string {
-	nameMap := make(map[string]string)
+	if app == nil || app.SQLDB == nil || len(userIDs) == 0 {
+		return map[string]string{}
+	}
+	ids := make([]string, 0, len(userIDs))
+	for id := range userIDs {
+		if strings.TrimSpace(id) != "" {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return map[string]string{}
+	}
 
-	return nameMap
+	rows, err := app.SQLDB.Query(ctx, `SELECT userid, name FROM `+config.Tables.UserTable+` WHERE userid = ANY($1)`, ids)
+	if err != nil {
+		return map[string]string{}
+	}
+	defer rows.Close()
+
+	result := make(map[string]string, len(ids))
+	for rows.Next() {
+		var userID, name string
+		if err := rows.Scan(&userID, &name); err != nil {
+			continue
+		}
+		result[userID] = name
+	}
+	return result
+}
+
+func coerceCartDocs(docs []any) ([]CartItem, error) {
+	items := make([]CartItem, 0, len(docs))
+	for _, doc := range docs {
+		switch v := doc.(type) {
+		case CartItem:
+			items = append(items, v)
+		case map[string]any:
+			blob, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			var item CartItem
+			if err := json.Unmarshal(blob, &item); err != nil {
+				return nil, err
+			}
+			items = append(items, item)
+		default:
+			blob, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			var item CartItem
+			if err := json.Unmarshal(blob, &item); err != nil {
+				return nil, err
+			}
+			items = append(items, item)
+		}
+	}
+	return items, nil
+}
+
+func normalizeCartItems(userID string, items []CartItem) []CartItem {
+	normalized := make([]CartItem, 0, len(items))
+	for _, item := range items {
+		item.UserID = userID
+		if strings.TrimSpace(item.ItemID) == "" {
+			continue
+		}
+		if item.AddedAt.IsZero() && !item.UpdatedAt.IsZero() {
+			item.AddedAt = item.UpdatedAt
+		}
+		if item.UpdatedAt.IsZero() {
+			item.UpdatedAt = item.AddedAt
+		}
+		normalized = append(normalized, item)
+	}
+	return normalized
 }
 
 func getCartItemsFromDB(
@@ -96,9 +312,29 @@ func getCartItemsFromDB(
 	if strings.TrimSpace(userID) == "" {
 		return nil, errors.New("invalid user id")
 	}
+	if app == nil || app.SQLDB == nil {
+		return []CartItem{}, nil
+	}
 
-	items := make([]CartItem, 0)
+	var raw []byte
+	err := app.SQLDB.QueryRow(ctx, `SELECT items FROM `+cartTable+` WHERE userid = $1 LIMIT 1`, userID).Scan(&raw)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return []CartItem{}, nil
+		}
+		return nil, err
+	}
+	if len(raw) == 0 || string(raw) == "null" || string(raw) == "[]" || strings.TrimSpace(string(raw)) == "" {
+		return []CartItem{}, nil
+	}
 
+	var items []CartItem
+	if err := json.Unmarshal(raw, &items); err != nil {
+		return nil, err
+	}
+	for i := range items {
+		items[i].UserID = userID
+	}
 	return items, nil
 }
 
@@ -108,7 +344,32 @@ func replaceCartItemsInDB(
 	docs []any,
 	app *infra.Deps,
 ) error {
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return errors.New("invalid user id")
+	}
+	if app == nil || app.SQLDB == nil {
+		return nil
+	}
 
+	items, err := coerceCartDocs(docs)
+	if err != nil {
+		return err
+	}
+	items = normalizeCartItems(userID, items)
+	payload, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+	cartID := "cart:" + userID
+	_, err = app.SQLDB.Exec(
+		ctx,
+		`INSERT INTO `+cartTable+` (cartid, userid, items, subtotal, discount, total, created_at, updated_at) VALUES ($1, $2, $3::jsonb, 0, 0, 0, NOW(), NOW()) ON CONFLICT (cartid) DO UPDATE SET userid = EXCLUDED.userid, items = EXCLUDED.items, updated_at = NOW()`,
+		cartID,
+		userID,
+		string(payload),
+	)
+	return err
 }
 
 func upsertCartItemInDB(
@@ -117,7 +378,36 @@ func upsertCartItemInDB(
 	item CartItem,
 	app *infra.Deps,
 ) error {
+	items, err := getCartItemsFromDB(ctx, userID, app)
+	if err != nil {
+		return err
+	}
 
+	item.UserID = userID
+	if item.AddedAt.IsZero() {
+		item.AddedAt = time.Now()
+	}
+	if item.UpdatedAt.IsZero() {
+		item.UpdatedAt = item.AddedAt
+	}
+
+	updated := false
+	for i, current := range items {
+		if current.ItemID == item.ItemID && current.Category == item.Category && current.EntityID == item.EntityID && current.EntityType == item.EntityType {
+			items[i] = item
+			updated = true
+			break
+		}
+	}
+	if !updated {
+		items = append(items, item)
+	}
+
+	docs := make([]any, 0, len(items))
+	for i := range items {
+		docs = append(docs, items[i])
+	}
+	return replaceCartItemsInDB(ctx, userID, docs, app)
 }
 
 func updateCartItemQuantityInDB(
@@ -130,6 +420,38 @@ func updateCartItemQuantityInDB(
 	entityType string,
 	app *infra.Deps,
 ) (int64, error) {
+	items, err := getCartItemsFromDB(ctx, userID, app)
+	if err != nil {
+		return 0, err
+	}
+	updated := int64(0)
+	filtered := make([]CartItem, 0, len(items))
+	for _, item := range items {
+		match := item.ItemID == itemID && strings.EqualFold(strings.TrimSpace(item.Category), strings.TrimSpace(category)) && strings.EqualFold(strings.TrimSpace(item.EntityID), strings.TrimSpace(entityID)) && strings.EqualFold(strings.TrimSpace(item.EntityType), strings.TrimSpace(entityType))
+		if match {
+			if quantity <= 0 {
+				updated = 1
+				continue
+			}
+			item.Quantity = quantity
+			item.UpdatedAt = time.Now()
+			filtered = append(filtered, item)
+			updated = 1
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	if updated == 0 {
+		return 0, errors.New("item not found")
+	}
+	docs := make([]any, 0, len(filtered))
+	for i := range filtered {
+		docs = append(docs, filtered[i])
+	}
+	if err := replaceCartItemsInDB(ctx, userID, docs, app); err != nil {
+		return 0, err
+	}
+	return updated, nil
 }
 
 func deleteCartItemFromDB(
@@ -141,6 +463,22 @@ func deleteCartItemFromDB(
 	entityType string,
 	app *infra.Deps,
 ) error {
+	items, err := getCartItemsFromDB(ctx, userID, app)
+	if err != nil {
+		return err
+	}
+	filtered := make([]CartItem, 0, len(items))
+	for _, item := range items {
+		if item.ItemID == itemID && strings.EqualFold(strings.TrimSpace(item.Category), strings.TrimSpace(category)) && strings.EqualFold(strings.TrimSpace(item.EntityID), strings.TrimSpace(entityID)) && strings.EqualFold(strings.TrimSpace(item.EntityType), strings.TrimSpace(entityType)) {
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	docs := make([]any, 0, len(filtered))
+	for i := range filtered {
+		docs = append(docs, filtered[i])
+	}
+	return replaceCartItemsInDB(ctx, userID, docs, app)
 }
 
 func clearCartForUser(
@@ -148,6 +486,20 @@ func clearCartForUser(
 	userID string,
 	app *infra.Deps,
 ) error {
+	if strings.TrimSpace(userID) == "" {
+		return errors.New("invalid user id")
+	}
+	if app == nil || app.SQLDB == nil {
+		return nil
+	}
+	cartID := "cart:" + userID
+	_, err := app.SQLDB.Exec(
+		ctx,
+		`INSERT INTO `+cartTable+` (cartid, userid, items, subtotal, discount, total, created_at, updated_at) VALUES ($1, $2, '[]'::jsonb, 0, 0, 0, NOW(), NOW()) ON CONFLICT (cartid) DO UPDATE SET userid = EXCLUDED.userid, items = EXCLUDED.items, subtotal = 0, discount = 0, total = 0, updated_at = NOW()`,
+		cartID,
+		userID,
+	)
+	return err
 }
 
 func getGroupedCart(
@@ -156,6 +508,18 @@ func getGroupedCart(
 	category string,
 	app *infra.Deps,
 ) (map[string][]CartItem, error) {
+	items, err := getCartItemsFromDB(ctx, userID, app)
+	if err != nil {
+		return nil, err
+	}
+	grouped := make(map[string][]CartItem)
+	for _, item := range items {
+		if strings.TrimSpace(category) != "" && !strings.EqualFold(strings.TrimSpace(item.Category), strings.TrimSpace(category)) {
+			continue
+		}
+		grouped[item.Category] = append(grouped[item.Category], item)
+	}
+	return grouped, nil
 }
 
 /* ───────────────────────── Orders Operations ───────────────────────── */
@@ -165,6 +529,49 @@ func fetchUserOrdersFromDB(
 	userID string,
 	app *infra.Deps,
 ) ([]Order, []FarmOrder, error) {
+	if strings.TrimSpace(userID) == "" {
+		return nil, nil, errors.New("invalid user id")
+	}
+	if app == nil || app.SQLDB == nil {
+		return []Order{}, []FarmOrder{}, nil
+	}
+
+	regularOrders := make([]Order, 0)
+	rows, err := app.SQLDB.Query(ctx, `SELECT orderid, userid, total, status, created_at, metadata FROM `+ordersTable+` WHERE userid = $1 ORDER BY created_at DESC`, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var order Order
+		var metadata []byte
+		if err := rows.Scan(&order.OrderID, &order.UserID, &order.Total, &order.Status, &order.CreatedAt, &metadata); err != nil {
+			continue
+		}
+		if len(metadata) > 0 {
+			_ = json.Unmarshal(metadata, &order)
+		}
+		regularOrders = append(regularOrders, order)
+	}
+
+	farmOrders := make([]FarmOrder, 0)
+	farmRows, err := app.SQLDB.Query(ctx, `SELECT orderid, farmid, userid, status, total, created_at, metadata FROM `+farmOrdersTable+` WHERE userid = $1 ORDER BY created_at DESC`, userID)
+	if err != nil {
+		return regularOrders, nil, err
+	}
+	defer farmRows.Close()
+	for farmRows.Next() {
+		var order FarmOrder
+		var metadata []byte
+		if err := farmRows.Scan(&order.OrderID, &order.FarmID, &order.UserID, &order.Status, &order.Total, &order.CreatedAt, &metadata); err != nil {
+			continue
+		}
+		if len(metadata) > 0 {
+			_ = json.Unmarshal(metadata, &order)
+		}
+		farmOrders = append(farmOrders, order)
+	}
+	return regularOrders, farmOrders, nil
 }
 
 /* ───────────────────────── Item Resolution ───────────────────────── */
@@ -250,10 +657,17 @@ func lookupItemDetails(
 /* ───────────────────────── Product ───────────────────────── */
 
 func lookupProduct(
-	ctx context.Context,
+	_ context.Context,
 	productID string,
 	app *infra.Deps,
 ) (*ItemDetails, error) {
+	if strings.TrimSpace(productID) == "" {
+		return nil, errors.New("product id is required")
+	}
+	if app == nil || app.SQLDB == nil {
+		return nil, errors.New("product lookup unavailable")
+	}
+
 	var product struct {
 		ProductID string  `db:"productid"`
 		Name      string  `db:"name"`
@@ -300,10 +714,17 @@ func lookupProduct(
 /* ───────────────────────── Crop ───────────────────────── */
 
 func lookupCrop(
-	ctx context.Context,
+	_ context.Context,
 	cropID string,
 	app *infra.Deps,
 ) (*ItemDetails, error) {
+	if strings.TrimSpace(cropID) == "" {
+		return nil, errors.New("crop id is required")
+	}
+	if app == nil || app.SQLDB == nil {
+		return nil, errors.New("crop lookup unavailable")
+	}
+
 	var crop struct {
 		CropID       string  `db:"cropid"`
 		Name         string  `db:"name"`
@@ -357,6 +778,39 @@ func lookupMenu(
 	menuID string,
 	app *infra.Deps,
 ) (*ItemDetails, error) {
+	if strings.TrimSpace(menuID) == "" {
+		return nil, errors.New("menu id is required")
+	}
+	if app == nil || app.SQLDB == nil {
+		return nil, errors.New("menu lookup unavailable")
+	}
+
+	var menu struct {
+		MenuID      string  `db:"menuid"`
+		PlaceID     string  `db:"placeid"`
+		Name        string  `db:"name"`
+		Price       float64 `db:"price"`
+		Discount    float64 `db:"discount"`
+		Stock       int     `db:"stock"`
+		MenuPhoto   string  `db:"menu_pic"`
+		Description string  `db:"description"`
+		UserID      string  `db:"userid"`
+	}
+
+	row := app.SQLDB.QueryRow(
+		ctx,
+		`SELECT menuid, placeid, name, price, discount, stock, menu_pic, description, userid FROM `+config.Tables.MenuTable+` WHERE menuid = $1 LIMIT 1`,
+		menuID,
+	)
+	if err := row.Scan(&menu.MenuID, &menu.PlaceID, &menu.Name, &menu.Price, &menu.Discount, &menu.Stock, &menu.MenuPhoto, &menu.Description, &menu.UserID); err != nil {
+		return nil, err
+	}
+	if menu.Stock <= 0 {
+		return nil, errors.New("menu out of stock")
+	}
+	if menu.Price < 0 {
+		return nil, errors.New("invalid menu price")
+	}
 
 	return &ItemDetails{
 		Name:       menu.Name,
@@ -366,7 +820,6 @@ func lookupMenu(
 		Discount:   SQLclampDiscount(menu.Discount),
 		Unit:       "unit",
 		EntityID:   menu.PlaceID,
-		EntityName: menu.Place,
 		EntityType: "place",
 		Available:  menu.Stock,
 	}, nil
@@ -375,10 +828,17 @@ func lookupMenu(
 /* ───────────────────────── Merchandise ───────────────────────── */
 
 func lookupMerchandise(
-	ctx context.Context,
+	_ context.Context,
 	merchID string,
 	app *infra.Deps,
 ) (*ItemDetails, error) {
+	if strings.TrimSpace(merchID) == "" {
+		return nil, errors.New("merchandise id is required")
+	}
+	if app == nil || app.SQLDB == nil {
+		return nil, errors.New("merchandise lookup unavailable")
+	}
+
 	var merch struct {
 		MerchID    string  `db:"merchid"`
 		Name       string  `db:"name"`

@@ -34,10 +34,10 @@ func buildPlaceEventListOptions(page, limit int) map[string]any {
 
 	skip := (page - 1) * limit
 	return map[string]any{
-		Limit:   int64(limit),
-		Offset:  int64(skip),
-		OrderBy: "date ASC",
-		Columns: []string{
+		"limit":   int64(limit),
+		"offset":  int64(skip),
+		"orderBy": "date ASC",
+		"columns": []string{
 			"eventid",
 			"title",
 			"description",

@@ -18,23 +18,20 @@ var (
 	catalogueTable  = config.Tables.CatalogueTable
 )
 
-func insertCrop(ctx context.Context, app infra.Deps, crop farms.Crop) error {
-
+func insertCrop(ctx context.Context, app *infra.Deps, crop farms.Crop) error {
+	return nil
 }
 
-func updateCrop(ctx context.Context, app infra.Deps, cropID string, update map[string]any) error {
-
+func updateCrop(ctx context.Context, app *infra.Deps, cropID string, update map[string]any) error {
+	return nil
 }
 
-func findFilteredCrops(ctx context.Context, app infra.Deps, query string, args []any) ([]farms.Crop, error) {
-	var crops []farms.Crop
-	return crops, nil
+func findFilteredCrops(ctx context.Context, app *infra.Deps, query string, args []any) ([]farms.Crop, error) {
+	return nil, nil
 }
 
-func findCatalogueItems(ctx context.Context, app infra.Deps, query string, args []any) ([]farms.CropCatalogueItem, error) {
-	var items []farms.CropCatalogueItem
-
-	return items, nil
+func findCatalogueItems(ctx context.Context, app *infra.Deps, query string, args []any) ([]farms.CropCatalogueItem, error) {
+	return nil, nil
 }
 
 func buildCropFilterQuery(filter map[string]any) (string, []any) {
@@ -74,32 +71,26 @@ func buildCropFilterQuery(filter map[string]any) (string, []any) {
 	return strings.Join(clauses, " AND "), args
 }
 
-func getAllCrops(ctx context.Context, app infra.Deps) ([]farms.Crop, error) {
-	var crops []farms.Crop
-
-	return crops, nil
+func getAllCrops(ctx context.Context, app *infra.Deps) ([]farms.Crop, error) {
+	return nil, nil
 }
 
-func createCropAbout(ctx context.Context, app infra.Deps, crop *CropAbout) error {
-
+func createCropAbout(ctx context.Context, app *infra.Deps, crop *CropAbout) error {
+	return nil
 }
 
-func getCropAboutByID(ctx context.Context, app infra.Deps, cropID string) (*CropAbout, error) {
-	var crop CropAbout
-
-	return &crop, nil
+func getCropAboutByID(ctx context.Context, app *infra.Deps, cropID string) (*CropAbout, error) {
+	return &CropAbout{}, nil
 }
 
-func getAllCropAbouts(ctx context.Context, app infra.Deps) ([]CropAbout, error) {
-	var crops []CropAbout
-
-	return crops, nil
+func getAllCropAbouts(ctx context.Context, app *infra.Deps) ([]CropAbout, error) {
+	return nil, nil
 }
 
-func updateCropAbout(ctx context.Context, app infra.Deps, cropID string, crop *CropAbout) (int64, error) {
-
+func updateCropAbout(ctx context.Context, app *infra.Deps, cropID string, crop *CropAbout) (int64, error) {
+	return 0, nil
 }
 
-func deleteCropAbout(ctx context.Context, app infra.Deps, cropID string) error {
-
+func deleteCropAbout(ctx context.Context, app *infra.Deps, cropID string) error {
+	return nil
 }

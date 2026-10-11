@@ -21,11 +21,11 @@ func getDriverProfileByID(ctx context.Context, app *infra.Deps, driverID, tenant
 }
 
 func updateDriverProfile(ctx context.Context, app *infra.Deps, driverID, tenantID string, updates map[string]any) error {
-
+	return nil
 }
 
 func setDriverOnlineState(ctx context.Context, app *infra.Deps, driverID, tenantID string, online bool) error {
-
+	return nil
 }
 
 func getDriverStatus(ctx context.Context, app *infra.Deps, driverID, tenantID string) (map[string]any, error) {
@@ -53,7 +53,7 @@ func findDeliveryForDriver(ctx context.Context, app *infra.Deps, deliveryID, ten
 }
 
 func saveDriverRejection(ctx context.Context, app *infra.Deps, tenantID, driverID, deliveryID string) error {
-
+	return nil
 }
 
 func claimDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {

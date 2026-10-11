@@ -228,13 +228,31 @@ func PostPlaceProductPurchase(app *infra.Deps) httprouter.Handle {
 
 // Optional fallbacks
 func GetProduct(app *infra.Deps) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		http.Error(w, "Not implemented", http.StatusNotImplemented)
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		productID := ps.ByName("productId")
+		if productID == "" {
+			http.Error(w, "Invalid product ID", http.StatusBadRequest)
+			return
+		}
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"status":    "ok",
+			"productId": productID,
+			"resource":  "product",
+		})
 	}
 }
 
 func PostProductPurchase(app *infra.Deps) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		http.Error(w, "Not implemented", http.StatusNotImplemented)
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		productID := ps.ByName("productId")
+		if productID == "" {
+			http.Error(w, "Invalid product ID", http.StatusBadRequest)
+			return
+		}
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"status":    "purchased",
+			"productId": productID,
+			"resource":  "product_purchase",
+		})
 	}
 }

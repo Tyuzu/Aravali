@@ -2,7 +2,10 @@
 
 package cart
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestResolveLookupTypeAlias(t *testing.T) {
 	tests := []struct {
@@ -23,5 +26,12 @@ func TestResolveLookupTypeAlias(t *testing.T) {
 				t.Fatalf("resolveLookupTypeAlias(%q, %q) = %q; want %q", tt.itemType, tt.category, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFindUserByIDRejectsBlankUserID(t *testing.T) {
+	_, ok := findUserByID(context.Background(), nil, "")
+	if ok {
+		t.Fatal("findUserByID should reject blank user IDs")
 	}
 }

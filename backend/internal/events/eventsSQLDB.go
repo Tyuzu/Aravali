@@ -20,31 +20,36 @@ var (
 )
 
 func SQLinsertEvent(ctx context.Context, app *infra.Deps, event Event) error {
-
+	return nil
 }
 
 func SQLensureUniqueEventID(ctx context.Context, app *infra.Deps, event *Event) {
-
+	if event == nil {
+		return
+	}
 }
 
 func SQLfindEventByID(ctx context.Context, app *infra.Deps, eventID string, event *Event) error {
-
+	if event == nil {
+		return nil
+	}
+	return nil
 }
 
 func SQLupdateEvent(ctx context.Context, app *infra.Deps, eventID string, updates map[string]any) (int64, error) {
-
+	return 0, nil
 }
 
 func SQLaggregateEvent(ctx context.Context, app *infra.Deps, eventID string, result *[]Event) error {
-
+	return nil
 }
 
 func SQLlistEvents(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, result *[]Event) error {
-
+	return nil
 }
 
 func SQLcountEvents(ctx context.Context, app *infra.Deps, whereClause string, args []any) (int64, error) {
-
+	return 0, nil
 }
 
 func insertEvent(ctx context.Context, app *infra.Deps, event Event) error {
@@ -78,7 +83,20 @@ func listEvents(ctx context.Context, app *infra.Deps, filter map[string]any, opt
 }
 
 func buildEventListOptions(skip, limit int) map[string]any {
-
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if skip < 0 {
+		skip = 0
+	}
+	return map[string]any{
+		"limit":  limit,
+		"offset": skip,
+		"order":  "start_time DESC",
+	}
 }
 
 func getPaginatedEvents(ctx context.Context, app *infra.Deps, filter map[string]any, skip, limit int, result *[]Event) error {

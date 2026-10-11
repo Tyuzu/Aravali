@@ -22,11 +22,9 @@ func findFollowDataByUserID(ctx context.Context, app *infra.Deps, userID string)
 }
 
 func findSuggestedUsers(ctx context.Context, app *infra.Deps, where string, args []any) ([]UserSuggest, error) {
-	var users []UserSuggest
-	return users, err
+	return nil, nil
 }
 
 func findNearbyPlaces(ctx context.Context, app *infra.Deps, where string, args []any) ([]places.Place, error) {
-	var nearbyPlaces []places.Place
-	return nearbyPlaces, err
+	return nil, nil
 }

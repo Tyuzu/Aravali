@@ -9,6 +9,5 @@ import (
 )
 
 func fetchHomeCardsFromDB(ctx context.Context, app *infra.Deps, category string, offset, limit int) ([]HomeCard, error) {
-
-	return cards, nil
+	return []HomeCard{}, nil
 }

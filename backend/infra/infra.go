@@ -32,8 +32,7 @@ type Deps struct {
 	Config config.Config
 	Log    *zap.Logger
 
-	// Underlying raw clients for graceful shutdown.
-	PGPool      *pgxpool.Pool
+	// Underlying raw client for graceful shutdown (Redis MQ relies on it).
 	RedisClient *redis.Client
 }
 
@@ -61,41 +60,27 @@ func New(cfg *config.Config) (*Deps, error) {
 
 	/* -------- Redis -------- */
 
-	redisAddr := env(
-		"REDIS_ADDR",
-		"localhost:6379",
-	)
-
-	redisPassword := env(
-		"REDIS_PASSWORD",
-		"",
-	)
-
+	redisAddr := env("REDIS_ADDR", "localhost:6379")
+	redisPassword := env("REDIS_PASSWORD", "")
 	redisDB := 0
 
-	redisClient, err := NewRedis(
-		redisAddr,
-		redisPassword,
-		redisDB,
-	)
+	redisClient, err := NewRedis(redisAddr, redisPassword, redisDB)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("redis setup: %w", err)
 	}
 
 	d.RedisClient = redisClient
-
-	// Redis cache uses the same go-redis client.
 	d.Cache = cache.NewCache(redisClient)
 
 	d.MQ = mq.NewRedisMQ(redisClient)
-
 	if d.MQ == nil {
 		cleanup()
 		return nil, errors.New("redis MQ initialization returned nil")
 	}
 
-	// Optionally initialize Postgres if a DATABASE_URL is provided.
+	/* -------- Postgres & Migrations -------- */
+
 	pgURI := env("DATABASE_URL", "")
 	if strings.TrimSpace(pgURI) != "" {
 		pool, err := NewPostgres(pgURI)
@@ -104,35 +89,35 @@ func New(cfg *config.Config) (*Deps, error) {
 			return nil, fmt.Errorf("postgres setup: %w", err)
 		}
 
-		d.PGPool = pool
-		d.SQLDB = sqldb.NewDatabase(pool)
+		sqlDB, err := sqldb.NewDatabase(pool)
+		if err != nil {
+			pool.Close()
+			cleanup()
+			return nil, fmt.Errorf("sqldb init: %w", err)
+		}
+		d.SQLDB = sqlDB
+
 		// Run DB migrations if present.
 		migrationsPath := env("MIGRATIONS_PATH", "./migrations")
 		absMigrations, err := filepath.Abs(migrationsPath)
 		if err == nil {
-			// Ensure we construct a valid file:// URL on all platforms.
-			// On Windows, absolute paths contain backslashes and a drive
-			// letter (e.g. C:\...), so convert to forward slashes and
-			// prefix with an extra slash so the result becomes
-			// file:///C:/path/to/migrations which is accepted by the
-			// migrate source driver.
 			fixed := filepath.ToSlash(absMigrations)
 			src := "file://" + fixed
 			m, err := migrate.New(src, pgURI)
 			if err != nil {
-				// migration init failures shouldn't block production unless strict mode enabled
 				d.Log.Sugar().Warnw("migration init failed", "error", err)
 			} else {
-				if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+				if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 					d.Log.Sugar().Warnw("migrations up failed", "error", err)
 				} else {
 					d.Log.Sugar().Infow("migrations applied", "path", absMigrations)
 				}
+				// Ensure migration instance is closed to avoid leaks
+				_, _ = m.Close()
 			}
 		}
 	}
 
-	// All required infra initialized successfully.
 	return d, nil
 }
 
@@ -150,35 +135,25 @@ func (d *Deps) Close(ctx context.Context) error {
 	var errs []string
 
 	/*
-		1. Close PostgreSQL.
+		1. Close PostgreSQL via the Database interface.
 	*/
-	if d.PGPool != nil {
-		d.PGPool.Close()
-		d.PGPool = nil
+	if d.SQLDB != nil {
+		d.SQLDB.Close()
+		d.SQLDB = nil
 	}
 
 	/*
 		2. Close Redis.
-
-		The Redis MQ implementation creates/owns its Pub/Sub
-		connections through the underlying Redis client, so closing
-		the client shuts down the Redis resources as well.
 	*/
 	if d.RedisClient != nil {
 		if err := d.RedisClient.Close(); err != nil && !errors.Is(err, redis.ErrClosed) {
-			errs = append(
-				errs,
-				fmt.Sprintf("redis close: %v", err),
-			)
+			errs = append(errs, fmt.Sprintf("redis close: %v", err))
 		}
 		d.RedisClient = nil
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf(
-			"close errors: %s",
-			strings.Join(errs, "; "),
-		)
+		return fmt.Errorf("close errors: %s", strings.Join(errs, "; "))
 	}
 
 	return nil
@@ -186,29 +161,22 @@ func (d *Deps) Close(ctx context.Context) error {
 
 /* -------------------- Redis -------------------- */
 
-func NewRedis(
-	addr string,
-	password string,
-	dbIndex int,
-) (*redis.Client, error) {
+func NewRedis(addr string, password string, dbIndex int) (*redis.Client, error) {
 	if strings.TrimSpace(addr) == "" {
 		return nil, errors.New("redis address is empty")
 	}
 
-	client := redis.NewClient(
-		&redis.Options{
-			Addr:     addr,
-			Password: password,
-			DB:       dbIndex,
-		},
-	)
+	client := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       dbIndex,
+	})
 
-	ctx, cancel := cancelTimeout(5 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
 		_ = client.Close()
-
 		return nil, err
 	}
 
@@ -217,16 +185,12 @@ func NewRedis(
 
 /* -------------------- Postgres -------------------- */
 
-func NewPostgres(
-	uri string,
-) (*pgxpool.Pool, error) {
+func NewPostgres(uri string) (*pgxpool.Pool, error) {
 	if strings.TrimSpace(uri) == "" {
-		return nil, errors.New(
-			"postgres URL is empty",
-		)
+		return nil, errors.New("postgres URL is empty")
 	}
 
-	ctx, cancel := cancelTimeout(10 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	pool, err := pgxpool.New(ctx, uri)
@@ -244,22 +208,9 @@ func NewPostgres(
 
 /* -------------------- Helpers -------------------- */
 
-func env(
-	key string,
-	fallback string,
-) string {
+func env(key string, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
 	}
-
 	return fallback
-}
-
-func cancelTimeout(
-	duration time.Duration,
-) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(
-		context.Background(),
-		duration,
-	)
 }

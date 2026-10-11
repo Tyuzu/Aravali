@@ -1,0 +1,212 @@
+// File: internal/pay/transfer.go
+
+package pay
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"scav/config/mqevent"
+	log "scav/infra/logger"
+	"scav/infra/mq"
+	"scav/utils"
+)
+
+func (p *PaymentService) Transfer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	senderID := utils.GetUserIDFromRequest(r)
+
+	var req struct {
+		Recipient   string `json:"recipient"`
+		RecipientID string `json:"recipient_id"`
+		Amount      int64  `json:"amount"`
+		Note        string `json:"note"`
+		Description string `json:"description"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	if req.Recipient == "" {
+		req.Recipient = req.RecipientID
+	}
+	if req.Amount <= 0 || req.Recipient == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	if senderID == req.Recipient {
+		utils.RespondWithError(w, http.StatusBadRequest, "cannot transfer to yourself")
+		return
+	}
+
+	senderAcc, err := p.getOrCreateAccount(ctx, senderID)
+	if err != nil {
+		if err.Error() == "user_not_found" {
+			utils.RespondWithError(w, http.StatusBadRequest, "sender not found")
+			return
+		}
+		utils.RespondWithError(w, http.StatusInternalServerError, "account error")
+		return
+	}
+
+	recipientAcc, err := p.getOrCreateAccount(ctx, req.Recipient)
+	if err != nil {
+		if err.Error() == "user_not_found" {
+			utils.RespondWithError(w, http.StatusBadRequest, "recipient not found")
+			return
+		}
+		utils.RespondWithError(w, http.StatusInternalServerError, "recipient error")
+		return
+	}
+
+	recipientAccount, err := p.getAccountByID(ctx, recipientAcc)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "recipient account error")
+		return
+	}
+
+	if err := p.ensureAccountActive(recipientAccount); err != nil {
+		utils.RespondWithError(w, http.StatusForbidden, "recipient account is not active")
+		return
+	}
+
+	// ────────── DETERMINISTIC LOCK ORDERING ──────────
+
+	lockA := senderAcc
+	lockB := recipientAcc
+
+	if lockB < lockA {
+		lockA, lockB = lockB, lockA
+	}
+
+	lockKeyA := "transfer_lock:" + lockA
+	lockKeyB := "transfer_lock:" + lockB
+
+	tokenA := utils.GetUUID()
+	tokenB := utils.GetUUID()
+
+	locked, err := p.app.Cache.SetNX(
+		ctx,
+		lockKeyA,
+		[]byte(tokenA),
+		30*time.Second,
+	)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "lock error")
+		return
+	}
+
+	if !locked {
+		utils.RespondWithError(w, http.StatusTooManyRequests, "retry")
+		return
+	}
+
+	defer func() {
+		_ = p.app.Cache.Del(ctx, lockKeyA)
+	}()
+
+	locked, err = p.app.Cache.SetNX(
+		ctx,
+		lockKeyB,
+		[]byte(tokenB),
+		30*time.Second,
+	)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "lock error")
+		return
+	}
+
+	if !locked {
+		utils.RespondWithError(w, http.StatusTooManyRequests, "retry")
+		return
+	}
+
+	defer func() {
+		_ = p.app.Cache.Del(ctx, lockKeyB)
+	}()
+
+	// ────────── BALANCE CHECK ──────────
+
+	sender, err := p.getAccountByID(ctx, senderAcc)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "account error")
+		return
+	}
+
+	if sender.CachedBalance < req.Amount {
+		utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
+			"success": false,
+			"message": "insufficient balance",
+		})
+		return
+	}
+
+	// ────────── TRANSACTION ──────────
+
+	txnID := utils.GetUUID()
+	now := time.Now()
+
+	master := Transaction{
+		ID:          txnID,
+		Type:        "transfer",
+		Method:      "wallet",
+		FromAccount: senderAcc,
+		ToAccount:   recipientAcc,
+		Amount:      req.Amount,
+		Currency:    "INR",
+		Status:      "initiated",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Meta:        Meta{"note": "user transfer"},
+	}
+
+	if err := p.createTransactionRecord(ctx, master); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	j := JournalEntry{
+		ID:            utils.GetUUID(),
+		TxnID:         txnID,
+		DebitAccount:  senderAcc,
+		CreditAccount: recipientAcc,
+		Amount:        req.Amount,
+		Currency:      "INR",
+		CreatedAt:     now,
+	}
+
+	if err := p.createJournalEntryRecord(ctx, j); err != nil {
+		p.failTxn(ctx, txnID)
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	if err := p.applyBalanceDelta(ctx, senderAcc, -req.Amount); err != nil {
+		p.failTxn(ctx, txnID)
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	if err := p.applyBalanceDelta(ctx, recipientAcc, req.Amount); err != nil {
+		p.failTxn(ctx, txnID)
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	// Derived per-user transaction views (best-effort)
+	_ = p.createTransferViews(ctx, txnID, senderID, req.Recipient, req.Amount, now)
+
+	p.successTxn(ctx, txnID)
+
+	if err := mq.PublishWithMeta(ctx, p.app.MQ, mqevent.MoneyTransferredEvent, mqevent.MoneyTransferredPayload{}); err != nil {
+		log.Printf("failed to publish money transferred event: %v", err)
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"success":        true,
+		"transaction_id": txnID,
+	})
+}

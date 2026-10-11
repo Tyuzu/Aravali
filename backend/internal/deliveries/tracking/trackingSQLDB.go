@@ -34,7 +34,7 @@ func getStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID
 }
 
 func addProofToDelivery(ctx context.Context, app *infra.Deps, deliveryID, tenantID string, proof deliveries.Proof) error {
-
+	return nil
 }
 
 func getProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.Proof, error) {

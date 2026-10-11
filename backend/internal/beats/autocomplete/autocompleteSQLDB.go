@@ -16,9 +16,9 @@ var (
 )
 
 func findPlacesByQuery(ctx context.Context, app *infra.Deps, query string, places *[]places.Place) error {
-
+	return nil
 }
 
 func findUsersByQuery(ctx context.Context, app *infra.Deps, query string, users *[]auth.User) error {
-
+	return nil
 }

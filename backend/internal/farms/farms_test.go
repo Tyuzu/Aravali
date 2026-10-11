@@ -36,3 +36,10 @@ func TestMergeFarmerRole(t *testing.T) {
 		})
 	}
 }
+
+func TestGetFarmByIDRejectsBlankID(t *testing.T) {
+	_, err := getFarmByID(t.Context(), nil, "")
+	if err == nil {
+		t.Fatal("getFarmByID should reject blank farm IDs")
+	}
+}

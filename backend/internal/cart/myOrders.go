@@ -12,7 +12,7 @@ import (
 
 	"scav/infra"
 	"scav/infra/logger"
-	"scav/internal/verticals/pay"
+	"scav/internal/pay"
 	"scav/utils"
 )
 

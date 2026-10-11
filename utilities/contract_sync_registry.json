@@ -441,7 +441,7 @@
   },
   "reviews": {
     "backend": [
-      "backend/internal/verticals/reviews/reviewModels.go"
+      "backend/internal/reviews/reviewModels.go"
     ],
     "frontend": [
       "front/src/services/reviews/reviewTypes.ts"
@@ -462,7 +462,7 @@
   },
   "merch": {
     "backend": [
-      "backend/internal/verticals/merch/merchModels.go"
+      "backend/internal/merch/merchModels.go"
     ],
     "frontend": [
       "front/src/services/merch/types.ts"
@@ -526,7 +526,7 @@
   },
   "tickets": {
     "backend": [
-      "backend/internal/verticals/tickets/ticketModels.go"
+      "backend/internal/tickets/ticketModels.go"
     ],
     "frontend": [
       "front/src/services/tickets/types.ts"

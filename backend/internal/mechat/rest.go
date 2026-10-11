@@ -5,7 +5,7 @@ package mechat
 import (
 	"encoding/json"
 	"net/http"
-	"scav/internal/verticals/media"
+	"scav/internal/media"
 	"sort"
 	"strconv"
 	"strings"

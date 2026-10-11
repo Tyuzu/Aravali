@@ -1,0 +1,58 @@
+// File: internal/tickets/verifyTicket.go
+
+package tickets
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"scav/infra"
+	"scav/utils"
+	"time"
+)
+
+func VerifyTicket(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		eventID := utils.GetParam(r, "eventid")
+		uniqueCode := r.URL.Query().Get("uniqueCode")
+
+		if uniqueCode == "" {
+			http.Error(w, "Unique code is required for verification", http.StatusBadRequest)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		ticket, err := FindPurchasedTicketByUnique(ctx, app, eventID, uniqueCode)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Ticket verification failed: %v", err), http.StatusNotFound)
+			return
+		}
+
+		// SECURITY: Check if ticket has been canceled
+		if ticket.Canceled {
+			utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+				"isValid":      false,
+				"reason":       "Ticket has been canceled",
+				"canceledAt":   ticket.CanceledAt,
+				"cancelReason": ticket.CanceledReason,
+			})
+			return
+		}
+
+		// SECURITY: Check if ticket has been transferred
+		if ticket.Transferred {
+			utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+				"isValid":       false,
+				"reason":        "Ticket has been transferred",
+				"transferredTo": ticket.TransferredTo,
+			})
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]bool{
+			"isValid": true,
+		})
+	}
+}

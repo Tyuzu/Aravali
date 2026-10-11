@@ -1,0 +1,176 @@
+// File: internal/pay/refund.go
+
+package pay
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"scav/config/mqevent"
+	log "scav/infra/logger"
+	"scav/infra/mq"
+	"scav/utils"
+)
+
+func (p *PaymentService) Refund(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID := utils.GetUserIDFromRequest(r)
+
+	var req struct {
+		TransactionID string `json:"transaction_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TransactionID == "" {
+		utils.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	orig, err := p.findTransactionByID(ctx, req.TransactionID)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusNotFound, "not found")
+		return
+	}
+
+	// Verify user owns the transaction
+	if orig.UserID == "" || orig.UserID != userID {
+		utils.RespondWithError(w, http.StatusForbidden, "unauthorized")
+		return
+	}
+
+	if orig.Type != "payment" {
+		utils.RespondWithError(w, http.StatusBadRequest, "only payment transactions are refundable")
+		return
+	}
+
+	if orig.Status != "success" {
+		utils.RespondWithError(w, http.StatusBadRequest, "not refundable")
+		return
+	}
+
+	fromAcc := orig.ToAccount
+	toAcc := orig.FromAccount
+
+	// Consistent lock ordering prevents deadlocks
+	lockA := fromAcc
+	lockB := toAcc
+
+	if lockB < lockA {
+		lockA, lockB = lockB, lockA
+	}
+
+	// ────────── REDIS LOCKS ──────────
+
+	lockKeyA := "refund_lock:" + lockA
+	lockTokenA := utils.GetUUID()
+
+	locked, err := p.app.Cache.SetNX(
+		ctx,
+		lockKeyA,
+		[]byte(lockTokenA),
+		30*time.Second,
+	)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "lock error")
+		return
+	}
+
+	if !locked {
+		utils.RespondWithError(w, http.StatusTooManyRequests, "retry")
+		return
+	}
+
+	defer func() {
+		_ = p.app.Cache.Del(ctx, lockKeyA)
+	}()
+
+	lockKeyB := "refund_lock:" + lockB
+	lockTokenB := utils.GetUUID()
+
+	locked, err = p.app.Cache.SetNX(
+		ctx,
+		lockKeyB,
+		[]byte(lockTokenB),
+		30*time.Second,
+	)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "lock error")
+		return
+	}
+
+	if !locked {
+		utils.RespondWithError(w, http.StatusTooManyRequests, "retry")
+		return
+	}
+
+	defer func() {
+		_ = p.app.Cache.Del(ctx, lockKeyB)
+	}()
+
+	// ────────── REFUND TRANSACTION ──────────
+
+	txnID := utils.GetUUID()
+	now := time.Now()
+
+	refund := Transaction{
+		ID:          txnID,
+		UserID:      orig.UserID,
+		Type:        "refund",
+		Method:      "wallet",
+		FromAccount: fromAcc,
+		ToAccount:   toAcc,
+		Amount:      orig.Amount,
+		Currency:    orig.Currency,
+		Status:      "initiated",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Meta:        Meta{"original_txn": orig.ID},
+	}
+
+	if err := p.createTransactionRecord(ctx, refund); err != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	j := JournalEntry{
+		ID:            utils.GetUUID(),
+		TxnID:         txnID,
+		DebitAccount:  fromAcc,
+		CreditAccount: toAcc,
+		Amount:        refund.Amount,
+		Currency:      refund.Currency,
+		CreatedAt:     now,
+	}
+
+	if err := p.createJournalEntryRecord(ctx, j); err != nil {
+		p.failTxn(ctx, txnID)
+		http.Error(w, "failed", http.StatusInternalServerError)
+		return
+	}
+
+	if err := p.applyBalanceDelta(ctx, fromAcc, -refund.Amount); err != nil {
+		p.failTxn(ctx, txnID)
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	if err := p.applyBalanceDelta(ctx, toAcc, refund.Amount); err != nil {
+		p.failTxn(ctx, txnID)
+		utils.RespondWithError(w, http.StatusInternalServerError, "failed")
+		return
+	}
+
+	p.successTxn(ctx, txnID)
+
+	// mark original reversed (best-effort)
+	_ = p.markTransactionReversed(ctx, orig.ID, now)
+
+	if err := mq.PublishWithMeta(ctx, p.app.MQ, mqevent.RefundCompletedEvent, mqevent.RefundCompletedPayload{}); err != nil {
+		log.Printf("failed to publish refund completed event: %v", err)
+	}
+
+	utils.RespondWithJSON(w, http.StatusOK, map[string]interface{}{
+		"success":        true,
+		"transaction_id": txnID,
+	})
+}

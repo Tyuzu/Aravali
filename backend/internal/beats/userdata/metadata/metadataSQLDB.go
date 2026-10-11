@@ -16,5 +16,5 @@ func FindUsersByIDs(ctx context.Context, app *infra.Deps, ids []string, out any)
 	if len(ids) == 0 {
 		return nil
 	}
-
+	return nil
 }

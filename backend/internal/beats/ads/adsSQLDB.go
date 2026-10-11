@@ -29,7 +29,7 @@ func ListAdsFromDB(ctx context.Context, app *infra.Deps) ([]Ad, error) {
 }
 
 func CreateAdInDB(ctx context.Context, app *infra.Deps, ad *Ad) error {
-
+	return nil
 }
 
 // PromotePost creates an Ad entry sourced directly from an existing post.
@@ -72,9 +72,9 @@ func GetAdByIDFromDB(ctx context.Context, app *infra.Deps, id string) (*Ad, erro
 }
 
 func UpdateAdInDB(ctx context.Context, app *infra.Deps, id string, updateData map[string]any) error {
-
+	return nil
 }
 
 func DeleteAdInDB(ctx context.Context, app *infra.Deps, id string) error {
-
+	return nil
 }

@@ -28,7 +28,7 @@ func GetProfile(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		userFollow, err := follows.GetUserFollowData(ctx, user.UserID, app)
+		userFollow, err := follows.GetUserFollowData(ctx, user.UserID, *app)
 		if err == nil && userFollow.UserID != "" {
 			user.FollowersCount = len(userFollow.Followers)
 			user.FollowingCount = len(userFollow.Follows)
@@ -71,7 +71,7 @@ func GetUserProfile(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		userFollow, _ := follows.GetUserFollowData(ctx, user.UserID, app)
+		userFollow, _ := follows.GetUserFollowData(ctx, user.UserID, *app)
 
 		isFollowing := false
 		if userFollow.UserID != "" {
