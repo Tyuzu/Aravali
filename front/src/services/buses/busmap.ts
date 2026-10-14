@@ -1,6 +1,13 @@
 // buses/busmap.ts
 
 import { apiFetch } from "../../api/api.js";
+import {
+  createBusEmptyState,
+  createBusErrorState,
+  createBusSkeleton,
+  getCurrentLocation,
+  sortStopsByDistance
+} from "./busUtils.js";
 
 type BusStop = {
   id?: string;
@@ -37,98 +44,120 @@ export async function displayBusMap(
   _isLoggedIn: boolean,
   container: HTMLElement
 ): Promise<void> {
-  container.replaceChildren();
+  const wrapper = document.createElement("div");
+  wrapper.className = "bus-page";
+  wrapper.appendChild(createBusSkeleton());
+  container.replaceChildren(wrapper);
 
-  try {
-    const data = await apiFetch<BusMapResponse>("/bus/map", "GET");
-    const stops = data.stops ?? [];
-    const routes = data.routes ?? [];
+  const load = async (): Promise<void> => {
+    try {
+      const data = await apiFetch<BusMapResponse>("/bus/map", "GET");
+      const stops = data.stops ?? [];
+      const routes = data.routes ?? [];
+      const location = await getCurrentLocation();
+      const nearbyStops = sortStopsByDistance(stops, location);
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
+      wrapper.replaceChildren();
 
-    const title = document.createElement("h2");
-    title.textContent = "Bus Network Map";
+      const title = document.createElement("h2");
+      title.textContent = "Bus Network Map";
 
-    const map = document.createElement("div");
-    map.className = "bus-map";
-    map.style.position = "relative";
-    map.style.minHeight = "280px";
-    map.style.border = "1px solid #d9d9d9";
-    map.style.borderRadius = "12px";
-    map.style.background = "linear-gradient(135deg, #f7fafc, #edf2f7)";
+      const map = document.createElement("div");
+      map.className = "bus-map";
+      map.style.position = "relative";
+      map.style.minHeight = "280px";
+      map.style.border = "1px solid #d9d9d9";
+      map.style.borderRadius = "12px";
+      map.style.background = "linear-gradient(135deg, #f7fafc, #edf2f7)";
 
-    if (stops.length > 0) {
-      const lats = stops.map((stop) => stop.lat ?? 0);
-      const lngs = stops.map((stop) => stop.lng ?? 0);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLng = Math.min(...lngs);
-      const maxLng = Math.max(...lngs);
+      if (stops.length > 0) {
+        const lats = stops.map((stop) => stop.lat ?? 0);
+        const lngs = stops.map((stop) => stop.lng ?? 0);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
 
-      stops.forEach((stop) => {
-        const point = pointFor(
-          stop.lat ?? 0,
-          stop.lng ?? 0,
-          minLat,
-          maxLat,
-          minLng,
-          maxLng
-        );
+        stops.forEach((stop) => {
+          const point = pointFor(
+            stop.lat ?? 0,
+            stop.lng ?? 0,
+            minLat,
+            maxLat,
+            minLng,
+            maxLng
+          );
 
-        const marker = document.createElement("div");
-        marker.textContent = stop.code ?? stop.name?.slice(0, 1) ?? "•";
-        marker.title = `${stop.name ?? "Stop"} (${stop.code ?? "N/A"})`;
-        marker.style.position = "absolute";
-        marker.style.left = `${Math.min(Math.max(point.x, 4), 96)}%`;
-        marker.style.top = `${Math.min(Math.max(point.y, 4), 96)}%`;
-        marker.style.transform = "translate(-50%, -50%)";
-        marker.style.width = "24px";
-        marker.style.height = "24px";
-        marker.style.borderRadius = "50%";
-        marker.style.background = "#1d4ed8";
-        marker.style.color = "#fff";
-        marker.style.display = "grid";
-        marker.style.placeItems = "center";
-        marker.style.fontSize = "10px";
-        marker.style.fontWeight = "700";
-        marker.style.cursor = "pointer";
-        marker.style.boxShadow = "0 2px 8px rgba(29, 78, 216, 0.35)";
-        map.appendChild(marker);
+          const marker = document.createElement("div");
+          marker.textContent = stop.code ?? stop.name?.slice(0, 1) ?? "•";
+          marker.title = `${stop.name ?? "Stop"} (${stop.code ?? "N/A"})`;
+          marker.style.position = "absolute";
+          marker.style.left = `${Math.min(Math.max(point.x, 4), 96)}%`;
+          marker.style.top = `${Math.min(Math.max(point.y, 4), 96)}%`;
+          marker.style.transform = "translate(-50%, -50%)";
+          marker.style.width = "24px";
+          marker.style.height = "24px";
+          marker.style.borderRadius = "50%";
+          marker.style.background = "#1d4ed8";
+          marker.style.color = "#fff";
+          marker.style.display = "grid";
+          marker.style.placeItems = "center";
+          marker.style.fontSize = "10px";
+          marker.style.fontWeight = "700";
+          marker.style.cursor = "pointer";
+          marker.style.boxShadow = "0 2px 8px rgba(29, 78, 216, 0.35)";
+          map.appendChild(marker);
+        });
+      }
+
+      const info = document.createElement("p");
+      info.textContent = `Map Center Coordinate: ${data.center_lat ?? "—"}, ${data.center_lng ?? "—"} • Zoom Level: ${data.zoom ?? "—"} • Total Stops: ${stops.length}`;
+
+      const locationNote = document.createElement("p");
+      locationNote.className = "bus-inline-note";
+      if (location) {
+        const nearby = nearbyStops.slice(0, 5).map((stop) => stop.name ?? stop.code ?? "Stop").join(", ");
+        locationNote.textContent = nearby ? `Closest stops near you: ${nearby}` : "Location found. Nearby stops are ready to review.";
+      } else {
+        locationNote.textContent = "Enable location permission to sort stops closest to you.";
+      }
+
+      const routeList = document.createElement("div");
+      routeList.className = "bus-list";
+
+      routes.forEach((route) => {
+        const card = document.createElement("article");
+        card.className = "bus-card";
+        const heading = document.createElement("h3");
+        heading.textContent = route.name ?? "Route";
+        const details = document.createElement("p");
+        details.textContent = `${route.alias ?? ""}${route.status ? ` • Status: ${route.status}` : ""}`.trim();
+        card.append(heading, details);
+        routeList.appendChild(card);
       });
+
+      const stopList = document.createElement("ul");
+      stopList.className = "bus-stop-list";
+      const displayStops = nearbyStops.length ? nearbyStops : stops;
+      if (!displayStops.length) {
+        stopList.appendChild(createBusEmptyState("No stops available", "There are no stop markers for the network right now."));
+      } else {
+        displayStops.forEach((stop) => {
+          const item = document.createElement("li");
+          const distanceText = location && stop.lat != null && stop.lng != null
+            ? ` • ${Math.round((Math.abs(stop.lat - location.latitude) + Math.abs(stop.lng - location.longitude)) * 111)} km away`
+            : "";
+          item.textContent = `${stop.name ?? "Stop"} (Code: ${stop.code ?? "—"})${distanceText}`;
+          stopList.appendChild(item);
+        });
+      }
+
+      wrapper.append(title, info, locationNote, map, routeList, stopList);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to load map data.";
+      wrapper.replaceChildren(createBusErrorState(message, load));
     }
+  };
 
-    const info = document.createElement("p");
-    info.textContent = `Map Center Coordinate: ${data.center_lat ?? "—"}, ${data.center_lng ?? "—"} • Zoom Level: ${data.zoom ?? "—"} • Total Stops: ${stops.length}`;
-
-    const routeList = document.createElement("div");
-    routeList.className = "bus-list";
-
-    routes.forEach((route) => {
-      const card = document.createElement("article");
-      card.className = "bus-card";
-      const heading = document.createElement("h3");
-      heading.textContent = route.name ?? "Route";
-      const details = document.createElement("p");
-      details.textContent = `${route.alias ?? ""}${route.status ? ` • Status: ${route.status}` : ""}`.trim();
-      card.append(heading, details);
-      routeList.appendChild(card);
-    });
-
-    const stopList = document.createElement("ul");
-    stopList.className = "bus-stop-list";
-    stops.forEach((stop) => {
-      const item = document.createElement("li");
-      item.textContent = `${stop.name ?? "Stop"} (Code: ${stop.code ?? "—"})`;
-      stopList.appendChild(item);
-    });
-
-    wrapper.append(title, info, map, routeList, stopList);
-    container.appendChild(wrapper);
-  } catch (error) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = `<h2>Bus map</h2><p>${error instanceof Error ? error.message : "Unable to load map data."}</p>`;
-    container.appendChild(wrapper);
-  }
+  await load();
 }
