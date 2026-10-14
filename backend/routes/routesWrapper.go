@@ -21,6 +21,7 @@ import (
 	"scav/internal/beats/suggestions"
 	"scav/internal/beats/userdata"
 	"scav/internal/booking"
+	"scav/internal/bustime"
 	"scav/internal/cart"
 	"scav/internal/comments"
 	"scav/internal/crops"
@@ -67,6 +68,7 @@ func RoutesWrapper(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	autocomplete.AddAutocompleteRoutes(router, app, rateLimiter)
 	baito.AddBaitoRoutes(router, app, rateLimiter)
 	booking.AddBookingRoutes(router, app, rateLimiter)
+	bustime.AddBustimeRoutes(router, app, rateLimiter)
 	cart.AddCartRoutes(router, app, rateLimiter)
 	comments.AddCommentsRoutes(router, app, rateLimiter)
 	crops.AddCropRoutes(router, app, rateLimiter)

@@ -9,86 +9,93 @@
 
   <!-- Primary document metadata -->
   <title>Scav</title>
-  <meta name="description"
-    content="Scav is a fast, lightweight web application designed for responsive client-side navigation and reliable performance." />
+  <meta name="description" content="Scav is a fast, lightweight web application designed for responsive client-side navigation and reliable performance." />
   <meta name="author" content="Scav Team" />
 
   <!-- Adaptive browser status bar color -->
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#202124" media="(prefers-color-scheme: dark)" />
 
-  <!-- Prevent automatic phone/email detection from changing the UI -->
-  <meta name="format-detection" content="telephone=no" />
+  <!-- Prevent automatic phone/email detection -->
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
 
   <!-- Canonical URL -->
   <link rel="canonical" href="https://indium.netlify.app/" />
 
-  <!-- Open Graph -->
+  <!-- Open Graph / Social Sharing -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://indium.netlify.app/" />
   <meta property="og:title" content="Scav" />
-  <meta property="og:description"
-    content="A fast, lightweight web application built for responsive navigation and reliable performance." />
+  <meta property="og:description" content="A fast, lightweight web application built for responsive navigation and reliable performance." />
   <meta property="og:image" content="https://indium.netlify.app/assets/preview.png" />
-  <meta property="og:image:alt" content="Scav application preview" />
+  <meta property="og:image:secure_url" content="https://indium.netlify.app/assets/preview.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Scav application preview dashboard" />
   <meta property="og:site_name" content="Scav" />
+  <meta property="og:locale" content="en_US" />
 
-  <!-- Twitter / X -->
+  <!-- Twitter / X Card -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@scavapp" />
+  <meta name="twitter:creator" content="@scavteam" />
   <meta name="twitter:url" content="https://indium.netlify.app/" />
   <meta name="twitter:title" content="Scav" />
-  <meta name="twitter:description"
-    content="A fast, lightweight web application built for responsive navigation and reliable performance." />
+  <meta name="twitter:description" content="A fast, lightweight web application built for responsive navigation and reliable performance." />
   <meta name="twitter:image" content="https://indium.netlify.app/assets/preview.png" />
-  <meta name="twitter:image:alt" content="Scav application preview" />
+  <meta name="twitter:image:alt" content="Scav application preview dashboard" />
 
-  <!-- PWA / application -->
+  <!-- PWA & Mobile Web App Config -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Scav" />
 
-  <!-- Icons -->
+  <!-- Icons & Favicons -->
   <link rel="icon" href="/assets/favicon.ico" sizes="any" />
   <link rel="icon" href="/assets/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="apple-touch-icon" href="/assets/icon-192.png" sizes="192x192" />
+  <link rel="mask-icon" href="/assets/safari-pinned-tab.svg" color="#0078d4" />
 
   <!-- Sitemap -->
   <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 
-  <!-- Backend connection -->
+  <!-- Backend Connection Hints -->
   <link rel="dns-prefetch" href="https://thresher-o6i4.onrender.com" />
   <link rel="preconnect" href="https://thresher-o6i4.onrender.com" crossorigin />
 
-  <!-- Critical stylesheet -->
+  <!-- Critical Stylesheet -->
   <link rel="stylesheet" href="/css/style.css" />
 
-  <!-- Main application module preload and script -->
+  <!-- Main Application Preload & Script -->
   <link rel="modulepreload" href="/src/app.js" />
   <script type="module" src="/src/app.js"></script>
 
-  <!-- Dynamic SPA Head Utility -->
+  <!-- Enhanced Dynamic SPA Head Utility -->
   <script>
     (() => {
       "use strict";
 
       const SITE_BASE_URL = "https://indium.netlify.app";
+      const SITE_TITLE_TEMPLATE = "%s | Scav";
 
       window.updateHeadTag = (key, value, attr = "content") => {
-        if (!key || value == null) return;
+        if (!key) return;
 
-        const stringKey = String(key);
-        const stringValue = String(value);
-
-        // 1. Handle Document Title
-        if (stringKey === "title") {
-          document.title = stringValue;
+        // 1. Handle Document Title with optional branding template
+        if (key === "title") {
+          const titleText = value == null ? "Scav" : String(value);
+          document.title = titleText.includes("|") 
+            ? titleText 
+            : SITE_TITLE_TEMPLATE.replace("%s", titleText);
           return;
         }
 
         // 2. Handle Canonical URL
-        if (stringKey === "canonical") {
+        if (key === "canonical") {
+          if (value == null) return;
           let canonicalLink = document.querySelector('link[rel="canonical"]');
           if (!canonicalLink) {
             canonicalLink = document.createElement("link");
@@ -96,6 +103,7 @@
             document.head.appendChild(canonicalLink);
           }
 
+          const stringValue = String(value);
           const fullUrl = stringValue.startsWith("http")
             ? stringValue
             : `${SITE_BASE_URL}${stringValue.startsWith("/") ? "" : "/"}${stringValue}`;
@@ -104,31 +112,25 @@
           return;
         }
 
-        // 3. Handle Metadata Tags (Description, Open Graph, Twitter)
-        let element = null;
+        // 3. Handle Metadata Tags (Name vs Property attributes)
+        if (value == null) return;
+        const stringKey = String(key);
+        const stringValue = String(value);
+        
+        const isPropertyTag = stringKey.startsWith("og:") || stringKey.startsWith("article:");
+        const selectorAttr = isPropertyTag ? "property" : "name";
 
+        let element = null;
         try {
-          element = document.querySelector(stringKey);
+          const escapedKey = window.CSS?.escape ? CSS.escape(stringKey) : stringKey;
+          element = document.querySelector(`meta[${selectorAttr}="${escapedKey}"]`);
         } catch {
           element = null;
         }
 
         if (!element) {
-          const escapedKey = window.CSS?.escape
-            ? CSS.escape(stringKey)
-            : stringKey.replace(/"/g, '\\"');
-
-          element = document.querySelector(
-            `meta[name="${escapedKey}"], meta[property="${escapedKey}"]`
-          );
-        }
-
-        if (!element) {
           element = document.createElement("meta");
-          element.setAttribute(
-            stringKey.startsWith("og:") ? "property" : "name",
-            stringKey
-          );
+          element.setAttribute(selectorAttr, stringKey);
           document.head.appendChild(element);
         }
 
@@ -145,26 +147,18 @@
   <noscript>
     <div class="noscript-message" role="alert">
       <h1>JavaScript is required</h1>
-      <p>
-        Please enable JavaScript in your browser settings to use Scav.
-      </p>
+      <p>Please enable JavaScript in your browser settings to use Scav.</p>
     </div>
   </noscript>
 
   <!-- Application shell populated dynamically by SPA router -->
   <div id="app" class="app">
     <header id="pageheader" class="pageheader" role="banner"></header>
-
     <nav id="primary-nav" class="primary-nav" aria-label="Main navigation"></nav>
-
     <div id="secnav" class="secnav" role="region" aria-label="Secondary navigation" aria-live="polite"></div>
-
     <main id="content" class="content-main" tabindex="-1" aria-live="polite"></main>
-
     <div id="announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-
     <div id="modalcon" role="region" aria-live="polite" aria-atomic="true"></div>
-
     <footer id="pagefooter" class="pagefooter" role="contentinfo"></footer>
   </div>
 </body>

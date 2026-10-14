@@ -18,6 +18,7 @@ type SQLDB struct {
 	BaitoWorkerTable              string
 	BlogPostsTable                string
 	BookingsTable                 string
+	BustimeTable                  string
 	BehindTheScenesTable          string
 	CartTable                     string
 	CatalogueTable                string
@@ -102,6 +103,7 @@ var Tables = SQLDB{
 	BlogPostsTable:                "blogposts",
 	BookingsTable:                 "bookings",
 	BehindTheScenesTable:          "bts",
+	BustimeTable:                  "bustime",
 	CartTable:                     "cart",
 	CatalogueTable:                "catalogue",
 	ChatsTable:                    "chats",

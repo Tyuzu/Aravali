@@ -1,0 +1,219 @@
+/* =================================================================
+   Haryana Roadways Bus Module Stylesheet (Fluent Design System)
+   ================================================================ */
+
+.bus-page {
+  padding: var(--space-lg);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  font-family: var(--font-base);
+  color: var(--color-fg);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+}
+
+.bus-page h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-heading);
+  margin-bottom: var(--space-md);
+  color: var(--color-fg);
+}
+
+.bus-page h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-heading);
+  margin: var(--space-lg) 0 var(--space-sm) 0;
+  color: var(--color-fg);
+}
+
+.bus-page p {
+  color: var(--color-muted);
+  margin-bottom: var(--space-md);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Summary / Stat Counters Grid */
+.bus-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.bus-stat {
+  background: var(--color-card-bg);
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-elev-1);
+  display: flex;
+  flex-direction: column;
+}
+
+.bus-stat strong {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.bus-stat span {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Search and Filter Controls */
+.bus-controls {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.bus-controls input[type="text"],
+.bus-controls select {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  background: var(--color-input-bg);
+  color: var(--color-fg);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.bus-controls input[type="text"]:focus,
+.bus-controls select:focus {
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.bus-controls input[type="text"] {
+  flex: 1;
+  min-width: 240px;
+}
+
+/* Card Grid Layout */
+.bus-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.bus-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bus-card:hover {
+  transform: translateY(-2px);
+  background-color: var(--color-card-hover);
+  box-shadow: var(--shadow-elev-2);
+}
+
+.bus-card h3, 
+.bus-card h4 {
+  margin-top: 0;
+  margin-bottom: var(--space-sm);
+  color: var(--color-fg);
+}
+
+.bus-card p {
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-sm);
+}
+
+/* Meta Information inside Cards */
+.bus-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  background: var(--color-bg-secondary);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-md);
+}
+
+/* Action Links & Buttons */
+.bus-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: auto;
+}
+
+.bus-actions a,
+.bus-card a {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-fg);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  text-align: center;
+  transition: background-color var(--transition);
+}
+
+.bus-actions a:hover,
+.bus-card a:hover {
+  background-color: var(--color-btn-hover-bg);
+  color: var(--color-btn-fg);
+}
+
+/* Stop Lists & Ordered Lists */
+.bus-stop-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-md) 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.bus-stop-list li {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-sm);
+  color: var(--color-fg);
+}
+
+.bus-stop-list li:last-child {
+  border-bottom: none;
+}
+
+/* Map Preview Container */
+.bus-map {
+  position: relative;
+  min-height: 280px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  margin-bottom: var(--space-lg);
+  overflow: hidden;
+}
+
+/* Error States */
+.bus-error {
+  background-color: #fde8e8;
+  border: 1px solid var(--color-error);
+  color: var(--color-danger);
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-md);
+  font-weight: var(--font-weight-medium);
+}

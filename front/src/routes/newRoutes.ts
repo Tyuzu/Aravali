@@ -18,6 +18,7 @@ import {
 ========================================================= */
 
 import { adminRoutes } from "./modules/admin.js";
+import { busRoutes } from "./modules/bus.js";
 import { farmsRoutes } from "./modules/farms.js";
 import { eventsRoutes } from "./modules/events.js";
 import { baitoRoutes } from "./modules/baito.js";
@@ -349,6 +350,7 @@ const errorRoutes: Route[] = [
 ========================================================= */
 
 const featureModules: Record<string, Route[]> = {
+  bus: busRoutes,
   admin: adminRoutes,
   farms: farmsRoutes,
   events: eventsRoutes,
