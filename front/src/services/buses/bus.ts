@@ -37,18 +37,10 @@ const formatTimestamp = (value?: string): string => {
 };
 
 export async function displayBus(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement
 ): Promise<void> {
   container.replaceChildren();
-
-  if (!isLoggedIn) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = "<h2>Bus</h2><p>Sign in to access the full bus overview.</p>";
-    container.appendChild(wrapper);
-    return;
-  }
 
   const wrapper = document.createElement("div");
   wrapper.className = "bus-page";

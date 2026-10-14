@@ -34,18 +34,10 @@ const pointFor = (lat: number, lng: number, minLat: number, maxLat: number, minL
 });
 
 export async function displayBusMap(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement
 ): Promise<void> {
   container.replaceChildren();
-
-  if (!isLoggedIn) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = "<h2>Bus map</h2><p>Sign in to access live map details.</p>";
-    container.appendChild(wrapper);
-    return;
-  }
 
   try {
     const data = await apiFetch<BusMapResponse>("/bus/map", "GET");

@@ -30,20 +30,12 @@ const asRouteId = (params?: Record<string, string | undefined> | string): string
 };
 
 export async function displayBusLiveTracking(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement,
   params?: Record<string, string | undefined> | string
 ): Promise<void> {
   const routeId = asRouteId(params);
   container.replaceChildren();
-
-  if (!isLoggedIn) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = `<h2>Live tracking: ${routeId}</h2><p>Sign in to view live tracking.</p>`;
-    container.appendChild(wrapper);
-    return;
-  }
 
   const wrapper = document.createElement("div");
   wrapper.className = "bus-page";

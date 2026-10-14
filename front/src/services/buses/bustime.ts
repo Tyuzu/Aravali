@@ -29,18 +29,10 @@ type BusTimingResponse = {
 const asRouteId = (route: BusRoute): string => route.route_id ?? route.id ?? "unknown";
 
 export async function displayBusTime(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement
 ): Promise<void> {
   container.replaceChildren();
-
-  if (!isLoggedIn) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = "<h2>Bus Timetable</h2><p>Sign in to view bus timetable data.</p>";
-    container.appendChild(wrapper);
-    return;
-  }
 
   try {
     const data = await apiFetch<BusTimingResponse>("/bus/time", "GET");

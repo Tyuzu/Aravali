@@ -28,20 +28,12 @@ const asDepotId = (params?: Record<string, string | undefined> | string): string
 };
 
 export async function displayBusDepot(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement,
   params?: Record<string, string | undefined> | string
 ): Promise<void> {
   const depotId = asDepotId(params);
   container.replaceChildren();
-
-  if (!isLoggedIn) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = `<h2>Bus depot ${depotId}</h2><p>Sign in to view depot info.</p>`;
-    container.appendChild(wrapper);
-    return;
-  }
 
   try {
     const depot = await apiFetch<BusDepot>(`/bus/depot/${encodeURIComponent(depotId)}`, "GET");

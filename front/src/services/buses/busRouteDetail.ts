@@ -48,20 +48,12 @@ const asRouteId = (params?: Record<string, string | undefined> | string): string
 };
 
 export async function displayRouteDetails(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement,
   params?: Record<string, string | undefined> | string
 ): Promise<void> {
   const routeId = asRouteId(params);
   container.replaceChildren();
-
-  if (!isLoggedIn) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "bus-page";
-    wrapper.innerHTML = `<h2>Bus route ${routeId}</h2><p>Sign in to view route details.</p>`;
-    container.appendChild(wrapper);
-    return;
-  }
 
   try {
     const route = await apiFetch<BusRoute>(`/bustime/${encodeURIComponent(routeId)}`, "GET");

@@ -3,9 +3,9 @@
 import { displayRouteDetails } from "./busRouteDetail.js";
 
 export async function displayBusRoute(
-  isLoggedIn: boolean,
+  _isLoggedIn: boolean,
   container: HTMLElement,
   params?: Record<string, string | undefined> | string
 ): Promise<void> {
-  await displayRouteDetails(isLoggedIn, container, params);
+  await displayRouteDetails(_isLoggedIn, container, params);
 }
