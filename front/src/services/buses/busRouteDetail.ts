@@ -1,5 +1,4 @@
-// buses/busRouteDetail.ts
-
+import { createElement } from "../../components/createElement.js";
 import { apiFetch } from "../../api/api.js";
 import {
   buildFavoriteButton,
@@ -61,9 +60,7 @@ export async function displayRouteDetails(
   params?: Record<string, string | undefined> | string
 ): Promise<void> {
   const routeId = asRouteId(params);
-  const wrapper = document.createElement("div");
-  wrapper.className = "bus-page";
-  wrapper.appendChild(createBusSkeleton());
+  const wrapper = createElement("div", { class: "bus-page" }, [createBusSkeleton()]) as HTMLDivElement;
   container.replaceChildren(wrapper);
 
   const load = async (): Promise<void> => {
@@ -73,73 +70,54 @@ export async function displayRouteDetails(
 
       wrapper.replaceChildren();
 
-      const header = document.createElement("div");
-      header.className = "bus-detail-header";
+      const header = createElement("div", { class: "bus-detail-header" }, [
+        createElement("h2", {}, [`${route.name ?? "Bus route"} ${route.alias ? `(${route.alias})` : ""}`.trim()]),
+        buildFavoriteButton(routeId, route.name ?? routeId)
+      ]);
 
-      const title = document.createElement("h2");
-      title.textContent = `${route.name ?? "Bus route"} ${route.alias ? `(${route.alias})` : ""}`.trim();
-      header.appendChild(title);
-      header.appendChild(buildFavoriteButton(routeId, route.name ?? routeId));
+      const metrics = createElement("div", { class: "bus-summary" }, [
+        createElement("div", { class: "bus-stat" }, [
+          createElement("strong", {}, [route.status ?? "—"]),
+          createElement("span", {}, ["Status"])
+        ]),
+        createElement("div", { class: "bus-stat" }, [
+          createElement("strong", {}, [route.next_departure ?? "—"]),
+          createElement("span", {}, ["Next departure"])
+        ]),
+        createElement("div", { class: "bus-stat" }, [
+          createElement("strong", {}, [String(route.headway_minutes ?? "—")]),
+          createElement("span", {}, ["Headway mins"])
+        ])
+      ]);
 
-      const metrics = document.createElement("div");
-      metrics.className = "bus-summary";
+      const details = createElement("p", {}, [`Depot: ${route.depot_name ?? route.depot_id ?? "Unknown"} • Estimated Total Time: ${route.distance_minutes ?? "—"} mins`]);
 
-      const stat1 = document.createElement("div");
-      stat1.className = "bus-stat";
-      stat1.innerHTML = `<strong>${route.status ?? "—"}</strong><span>Status</span>`;
+      const nearbyNote = createElement("p", { class: "bus-inline-note" }, [
+        nearbyStops.length
+          ? `Stops near you: ${nearbyStops.slice(0, 3).map((stop) => stop.name ?? stop.code ?? "Stop").join(", ")}`
+          : "Location access is off. Turn on geolocation to see stops nearest to you."
+      ]);
 
-      const stat2 = document.createElement("div");
-      stat2.className = "bus-stat";
-      stat2.innerHTML = `<strong>${route.next_departure ?? "—"}</strong><span>Next departure</span>`;
-
-      const stat3 = document.createElement("div");
-      stat3.className = "bus-stat";
-      stat3.innerHTML = `<strong>${route.headway_minutes ?? "—"}</strong><span>Headway mins</span>`;
-
-      metrics.append(stat1, stat2, stat3);
-
-      const details = document.createElement("p");
-      details.textContent = `Depot: ${route.depot_name ?? route.depot_id ?? "Unknown"} • Estimated Total Time: ${route.distance_minutes ?? "—"} mins`;
-
-      const nearbyNote = document.createElement("p");
-      nearbyNote.className = "bus-inline-note";
-      if (nearbyStops.length) {
-        const top = nearbyStops.slice(0, 3).map((stop) => stop.name ?? stop.code ?? "Stop").join(", ");
-        nearbyNote.textContent = `Stops near you: ${top}`;
-      } else {
-        nearbyNote.textContent = "Location access is off. Turn on geolocation to see stops nearest to you.";
-      }
-
-      const stopsHeader = document.createElement("h3");
-      stopsHeader.textContent = "Route Stops";
-      const stopList = document.createElement("ul");
-      stopList.className = "bus-stop-list";
+      const stopsHeader = createElement("h3", {}, ["Route Stops"]);
+      const stopList = createElement("ul", { class: "bus-stop-list" });
       if (!route.stops?.length) {
         stopList.appendChild(createBusEmptyState("No stops listed", "This route is currently missing stop data."));
       } else {
         nearbyStops.forEach((stop) => {
-          const item = document.createElement("li");
-          item.textContent = `${stop.order ?? "-"}. ${stop.name ?? "Stop"} (Code: ${stop.code ?? "—"})${stop.arrival ? ` • Arrival: ${stop.arrival}` : ""}`;
-          stopList.appendChild(item);
+          stopList.appendChild(createElement("li", {}, [`${stop.order ?? "-"}. ${stop.name ?? "Stop"} (Code: ${stop.code ?? "—"})${stop.arrival ? ` • Arrival: ${stop.arrival}` : ""}`]));
         });
       }
 
-      const vehiclesHeader = document.createElement("h3");
-      vehiclesHeader.textContent = "Assigned Vehicles";
-      const vehicleList = document.createElement("div");
-      vehicleList.className = "bus-list";
+      const vehiclesHeader = createElement("h3", {}, ["Assigned Vehicles"]);
+      const vehicleList = createElement("div", { class: "bus-list" });
       if (!route.vehicles?.length) {
         vehicleList.appendChild(createBusEmptyState("No active vehicles", "Vehicle tracking is unavailable for this route right now."));
       } else {
         route.vehicles.forEach((vehicle) => {
-          const card = document.createElement("article");
-          card.className = "bus-card";
-          const heading = document.createElement("h4");
-          heading.textContent = `Vehicle #${vehicle.id ?? "Unknown"} (${vehicle.status ?? "Unknown status"})`;
-          const info = document.createElement("p");
-          info.textContent = `Capacity: ${vehicle.capacity ?? "—"}% • Coordinates: ${vehicle.lat ?? "—"}, ${vehicle.lng ?? "—"}`;
-          card.append(heading, info);
-          vehicleList.appendChild(card);
+          vehicleList.appendChild(createElement("article", { class: "bus-card" }, [
+            createElement("h4", {}, [`Vehicle #${vehicle.id ?? "Unknown"} (${vehicle.status ?? "Unknown status"})`]),
+            createElement("p", {}, [`Capacity: ${vehicle.capacity ?? "—"}% • Coordinates: ${vehicle.lat ?? "—"}, ${vehicle.lng ?? "—"}`])
+          ]));
         });
       }
 

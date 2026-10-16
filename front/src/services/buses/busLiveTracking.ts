@@ -1,5 +1,4 @@
-// buses/busLiveTracking.ts
-
+import { createElement } from "../../components/createElement.js";
 import { apiFetch } from "../../api/api.js";
 
 type BusVehicle = {
@@ -37,17 +36,11 @@ export async function displayBusLiveTracking(
   const routeId = asRouteId(params);
   container.replaceChildren();
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "bus-page";
+  const title = createElement("h2", {}, [`Live tracking: ${routeId}`]);
+  const updated = createElement("p", {}, []);
+  const list = createElement("div", { class: "bus-list" });
+  const wrapper = createElement("div", { class: "bus-page" }, [title, updated, list]) as HTMLDivElement;
 
-  const title = document.createElement("h2");
-  title.textContent = `Live tracking: ${routeId}`;
-
-  const updated = document.createElement("p");
-  const list = document.createElement("div");
-  list.className = "bus-list";
-
-  wrapper.append(title, updated, list);
   container.appendChild(wrapper);
 
   let timer: number | null = null;
@@ -63,33 +56,41 @@ export async function displayBusLiveTracking(
       list.replaceChildren();
 
       if (vehicles.length === 0) {
-        const emptyMsg = document.createElement("p");
-        emptyMsg.textContent = "No active vehicles currently reporting location on this route.";
-        list.appendChild(emptyMsg);
+        list.appendChild(createElement("p", {}, ["No active vehicles currently reporting location on this route."]));
         return;
       }
 
       vehicles.forEach((vehicle) => {
-        const card = document.createElement("article");
-        card.className = "bus-card";
-
-        const heading = document.createElement("h3");
-        heading.textContent = `Vehicle #${vehicle.id ?? "Unknown"} (${vehicle.status ?? "Active"})`;
-
-        const info = document.createElement("p");
-        info.textContent = `GPS Coordinates: ${vehicle.lat ?? "—"}, ${vehicle.lng ?? "—"}`;
-
-        const capacityBar = document.createElement("div");
-        capacityBar.style.marginTop = "8px";
         const capacityValue = vehicle.capacity ?? 50;
-        capacityBar.innerHTML = `
-          <div style="font-size: 12px; margin-bottom: 3px;">Estimated Capacity: ${capacityValue}%</div>
-          <div style="background: #e2e8f0; border-radius: 4px; height: 8px; width: 100%; overflow: hidden;">
-            <div style="background: ${capacityValue > 80 ? '#ef4444' : capacityValue > 50 ? '#f59e0b' : '#10b981'}; width: ${capacityValue}%; height: 100%;"></div>
-          </div>
-        `;
+        const card = createElement("article", { class: "bus-card" }, [
+          createElement("h3", {}, [`Vehicle #${vehicle.id ?? "Unknown"} (${vehicle.status ?? "Active"})`]),
+          createElement("p", {}, [`GPS Coordinates: ${vehicle.lat ?? "—"}, ${vehicle.lng ?? "—"}`]),
+          createElement("div", {
+            style: {
+              marginTop: "8px",
+              fontSize: "12px",
+              marginBottom: "3px"
+            }
+          }, [`Estimated Capacity: ${capacityValue}%`]),
+          createElement("div", {
+            style: {
+              background: "#e2e8f0",
+              borderRadius: "4px",
+              height: "8px",
+              width: "100%",
+              overflow: "hidden"
+            }
+          }, [
+            createElement("div", {
+              style: {
+                background: capacityValue > 80 ? "#ef4444" : capacityValue > 50 ? "#f59e0b" : "#10b981",
+                width: `${capacityValue}%`,
+                height: "100%"
+              }
+            })
+          ])
+        ]) as HTMLElement;
 
-        card.append(heading, info, capacityBar);
         list.appendChild(card);
       });
     } catch (error) {
@@ -100,7 +101,6 @@ export async function displayBusLiveTracking(
   await fetchData();
   timer = window.setInterval(fetchData, 15000);
 
-  // Clean up interval if container gets replaced
   const observer = new MutationObserver(() => {
     if (!document.body.contains(container)) {
       if (timer) clearInterval(timer);

@@ -1,3 +1,5 @@
+// farm/browseByCategory.ts
+
 import { createElement } from "../../../components/createElement.js";
 import { createTabs } from "../../../utils/persistTabs.js";
 import { renderCategoryItems } from "./renderCategoryItems.js";

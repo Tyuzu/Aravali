@@ -1,5 +1,4 @@
-// buses/bus.ts
-
+import { createElement } from "../../components/createElement.js";
 import { apiFetch } from "../../api/api.js";
 import {
   buildFavoriteButton,
@@ -47,9 +46,7 @@ export async function displayBus(
   _isLoggedIn: boolean,
   container: HTMLElement
 ): Promise<void> {
-  const wrapper = document.createElement("div");
-  wrapper.className = "bus-page";
-  wrapper.appendChild(createBusSkeleton());
+  const wrapper = createElement("div", { class: "bus-page" }, [createBusSkeleton()]) as HTMLDivElement;
   container.replaceChildren(wrapper);
 
   const load = async (): Promise<void> => {
@@ -59,56 +56,49 @@ export async function displayBus(
 
       wrapper.replaceChildren();
 
-      const heading = document.createElement("h2");
-      heading.textContent = "Bus overview";
+      const heading = createElement("h2", {}, ["Bus overview"]);
 
-      const summary = document.createElement("div");
-      summary.className = "bus-summary";
+      const summary = createElement("div", { class: "bus-summary" }, [
+        createElement("div", { class: "bus-stat" }, [
+          createElement("strong", {}, [String(data.total_routes ?? routes.length)]),
+          createElement("span", {}, ["Total routes"])
+        ]),
+        createElement("div", { class: "bus-stat" }, [
+          createElement("strong", {}, [String(routes.filter((route) => route.status === "On Time").length)]),
+          createElement("span", {}, ["On time"])
+        ]),
+        createElement("div", { class: "bus-stat" }, [
+          createElement("strong", {}, [formatTimestamp(data.generated_at)]),
+          createElement("span", {}, ["Updated"])
+        ])
+      ]);
 
-      const total = document.createElement("div");
-      total.className = "bus-stat";
-      total.innerHTML = `<strong>${data.total_routes ?? routes.length}</strong><span>Total routes</span>`;
+      const controls = createElement("div", { class: "bus-controls" }, [
+        createElement("input", {
+          type: "text",
+          placeholder: "Search routes or depots..."
+        }),
+        createElement("select", {}, [
+          createElement("option", { value: "" }, ["All Statuses"]),
+          createElement("option", { value: "On Time" }, ["On Time"]),
+          createElement("option", { value: "Delayed" }, ["Delayed"])
+        ]),
+        createElement("label", {
+          class: "bus-inline-btn",
+          style: { display: "inline-flex", alignItems: "center", gap: "0.5rem" }
+        }, [
+          createElement("input", {
+            type: "checkbox",
+            "aria-label": "Show saved routes only"
+          }),
+          createElement("span", {}, ["Saved only"])
+        ])
+      ]);
 
-      const updated = document.createElement("div");
-      updated.className = "bus-stat";
-      updated.innerHTML = `<strong>${routes.filter((route) => route.status === "On Time").length}</strong><span>On time</span>`;
-
-      const generated = document.createElement("div");
-      generated.className = "bus-stat";
-      generated.innerHTML = `<strong>${formatTimestamp(data.generated_at)}</strong><span>Updated</span>`;
-
-      summary.append(total, updated, generated);
-
-      const controls = document.createElement("div");
-      controls.className = "bus-controls";
-
-      const searchInput = document.createElement("input");
-      searchInput.type = "text";
-      searchInput.placeholder = "Search routes or depots...";
-
-      const statusFilter = document.createElement("select");
-      statusFilter.innerHTML = `
-        <option value="">All Statuses</option>
-        <option value="On Time">On Time</option>
-        <option value="Delayed">Delayed</option>
-      `;
-
-      const favoriteOnly = document.createElement("label");
-      favoriteOnly.className = "bus-inline-btn";
-      favoriteOnly.style.display = "inline-flex";
-      favoriteOnly.style.alignItems = "center";
-      favoriteOnly.style.gap = "0.5rem";
-      const favoriteToggle = document.createElement("input");
-      favoriteToggle.type = "checkbox";
-      favoriteToggle.setAttribute("aria-label", "Show saved routes only");
-      const favoriteText = document.createElement("span");
-      favoriteText.textContent = "Saved only";
-      favoriteOnly.append(favoriteToggle, favoriteText);
-
-      controls.append(searchInput, statusFilter, favoriteOnly);
-
-      const list = document.createElement("div");
-      list.className = "bus-list";
+      const searchInput = controls.querySelector("input[type='text']") as HTMLInputElement;
+      const statusFilter = controls.querySelector("select") as HTMLSelectElement;
+      const favoriteToggle = controls.querySelector("input[type='checkbox']") as HTMLInputElement;
+      const list = createElement("div", { class: "bus-list" }) as HTMLDivElement;
 
       const renderList = (filteredRoutes: BusRouteSummary[]) => {
         list.replaceChildren();
@@ -120,41 +110,27 @@ export async function displayBus(
 
         filteredRoutes.forEach((route) => {
           const routeId = asRouteId(route);
-          const card = document.createElement("article");
-          card.className = "bus-card";
-
-          const header = document.createElement("div");
-          header.className = "bus-card-header";
-
-          const title = document.createElement("h3");
-          title.textContent = `${route.name ?? "Bus route"} ${route.alias ? `(${route.alias})` : ""}`.trim();
-
-          const favoriteButton = buildFavoriteButton(routeId, route.name ?? routeId);
-          header.append(title, favoriteButton);
-
-          const meta = document.createElement("p");
-          meta.textContent = `${route.status ?? "Unknown status"} • ${route.depot_name ?? "Unknown depot"} • Next departure: ${route.next_departure ?? "—"}`;
-
-          const details = document.createElement("div");
-          details.className = "bus-meta";
-          details.innerHTML = `
-            <span>Headway: ${route.headway_minutes ?? 0} mins</span>
-            <span>Vehicles: ${route.vehicles?.length ?? 0}</span>
-          `;
-
-          const actions = document.createElement("div");
-          actions.className = "bus-actions";
-
-          const timetableLink = document.createElement("a");
-          timetableLink.href = `/bus/time/${encodeURIComponent(routeId)}`;
-          timetableLink.textContent = "Timetable";
-
-          const liveLink = document.createElement("a");
-          liveLink.href = `/bus/live/${encodeURIComponent(routeId)}`;
-          liveLink.textContent = "Live";
-
-          actions.append(timetableLink, liveLink);
-          card.append(header, meta, details, actions);
+          const card = createElement("article", { class: "bus-card" }, [
+            createElement("div", { class: "bus-card-header" }, [
+              createElement("h3", {}, [
+                `${route.name ?? "Bus route"} ${route.alias ? `(${route.alias})` : ""}`.trim()
+              ]),
+              buildFavoriteButton(routeId, route.name ?? routeId)
+            ]),
+            createElement("p", {}, [
+              `${route.status ?? "Unknown status"} • ${route.depot_name ?? "Unknown depot"} • Next departure: ${route.next_departure ?? "—"}`
+            ]),
+            createElement("div", {
+              class: "bus-meta"
+            }, [
+              createElement("span", {}, [`Headway: ${route.headway_minutes ?? 0} mins`]),
+              createElement("span", {}, [`Vehicles: ${route.vehicles?.length ?? 0}`])
+            ]),
+            createElement("div", { class: "bus-actions" }, [
+              createElement("a", { href: `/bus/time/${encodeURIComponent(routeId)}` }, ["Timetable"]),
+              createElement("a", { href: `/bus/live/${encodeURIComponent(routeId)}` }, ["Live"])
+            ])
+          ]);
           list.appendChild(card);
         });
       };

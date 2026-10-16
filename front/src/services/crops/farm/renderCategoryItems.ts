@@ -1,3 +1,6 @@
+// farm/renderCategoryItems.ts
+
+import { createElement } from "../../../components/createElement.js";
 import { displayCropCard } from "../crop/components/displayCropCard.js";
 import { fetchCategoryItems } from "../api.js";
 
@@ -42,9 +45,9 @@ export async function renderCategoryItems(
   // Clear previous content cleanly
   container.replaceChildren();
 
-  const loadingState = document.createElement("p");
-  loadingState.className = "category-items__loading";
-  loadingState.textContent = "Loading...";
+  const loadingState = createElement("p", {
+    class: "category-items__loading"
+  }, "Loading...");
   container.append(loadingState);
 
   try {
@@ -72,9 +75,9 @@ export async function renderCategoryItems(
 
     if (!res?.success || !Array.isArray(res?.crops) || res.crops.length === 0) {
       container.replaceChildren();
-      const emptyState = document.createElement("p");
-      emptyState.className = "category-items__empty";
-      emptyState.textContent = "No items found in this category.";
+      const emptyState = createElement("p", {
+        class: "category-items__empty"
+      }, "No items found in this category.");
       container.append(emptyState);
       return;
     }
@@ -100,9 +103,9 @@ export async function renderCategoryItems(
     console.error("Failed to fetch category items:", err);
 
     container.replaceChildren();
-    const errorState = document.createElement("p");
-    errorState.className = "category-items__error";
-    errorState.textContent = "❌ Failed to load items.";
+    const errorState = createElement("p", {
+      class: "category-items__error"
+    }, "❌ Failed to load items.");
     container.append(errorState);
   }
 }

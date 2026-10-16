@@ -1,3 +1,5 @@
+import { createElement } from "../../components/createElement.js";
+
 type BusCoordinate = {
   latitude: number;
   longitude: number;
@@ -37,66 +39,40 @@ export function toggleBusFavorite(routeId: string): string[] {
 }
 
 export function createBusSkeleton(): HTMLElement {
-  const shell = document.createElement("div");
-  shell.className = "bus-page";
-
-  const heading = document.createElement("div");
-  heading.className = "bus-skeleton bus-skeleton-title";
-  shell.appendChild(heading);
-
-  const summary = document.createElement("div");
-  summary.className = "bus-summary";
-  [0, 1, 2].forEach(() => {
-    const stat = document.createElement("div");
-    stat.className = "bus-stat bus-skeleton-box";
-    shell.appendChild(stat);
-  });
-
-  const controls = document.createElement("div");
-  controls.className = "bus-controls";
-  const search = document.createElement("div");
-  search.className = "bus-skeleton bus-skeleton-input";
-  const filter = document.createElement("div");
-  filter.className = "bus-skeleton bus-skeleton-input short";
-  controls.append(search, filter);
-  shell.appendChild(controls);
-
-  const list = document.createElement("div");
-  list.className = "bus-list";
-  [0, 1, 2].forEach(() => {
-    const card = document.createElement("div");
-    card.className = "bus-card bus-skeleton-box";
-    list.appendChild(card);
-  });
-  shell.appendChild(list);
-
-  return shell;
+  return createElement("div", { class: "bus-page" }, [
+    createElement("div", { class: "bus-skeleton bus-skeleton-title" }),
+    createElement("div", { class: "bus-summary" }, [
+      createElement("div", { class: "bus-stat bus-skeleton-box" }),
+      createElement("div", { class: "bus-stat bus-skeleton-box" }),
+      createElement("div", { class: "bus-stat bus-skeleton-box" })
+    ]),
+    createElement("div", { class: "bus-controls" }, [
+      createElement("div", { class: "bus-skeleton bus-skeleton-input" }),
+      createElement("div", { class: "bus-skeleton bus-skeleton-input short" })
+    ]),
+    createElement("div", { class: "bus-list" }, [
+      createElement("div", { class: "bus-card bus-skeleton-box" }),
+      createElement("div", { class: "bus-card bus-skeleton-box" }),
+      createElement("div", { class: "bus-card bus-skeleton-box" })
+    ])
+  ]) as HTMLElement;
 }
 
 export function createBusEmptyState(title: string, message: string): HTMLElement {
-  const block = document.createElement("div");
-  block.className = "bus-empty-state";
-
-  const h3 = document.createElement("h3");
-  h3.textContent = title;
-
-  const p = document.createElement("p");
-  p.textContent = message;
-
-  block.append(h3, p);
-  return block;
+  return createElement("div", { class: "bus-empty-state" }, [
+    createElement("h3", {}, [title]),
+    createElement("p", {}, [message])
+  ]) as HTMLElement;
 }
 
 export function createBusErrorState(message: string, retryAction?: () => void): HTMLElement {
-  const error = document.createElement("div");
-  error.className = "bus-error";
-  error.textContent = message;
+  const error = createElement("div", { class: "bus-error" }, [message]) as HTMLDivElement;
 
   if (retryAction) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "bus-retry-btn";
-    button.textContent = "Retry";
+    const button = createElement("button", {
+      type: "button",
+      class: "bus-retry-btn"
+    }, ["Retry"]) as HTMLButtonElement;
     button.addEventListener("click", retryAction);
     error.appendChild(button);
   }
@@ -105,18 +81,22 @@ export function createBusErrorState(message: string, retryAction?: () => void): 
 }
 
 export function buildFavoriteButton(routeId: string, label: string): HTMLButtonElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "bus-favorite-btn";
-  button.textContent = readBusFavorites().includes(routeId) ? "★ Saved" : "☆ Save";
-  button.title = readBusFavorites().includes(routeId) ? `Remove ${label} from saved routes` : `Save ${label}`;
-  button.setAttribute("aria-pressed", String(readBusFavorites().includes(routeId)));
+  const isSaved = readBusFavorites().includes(routeId);
+  const button = createElement("button", {
+    type: "button",
+    class: "bus-favorite-btn",
+    title: isSaved ? `Remove ${label} from saved routes` : `Save ${label}`,
+    "aria-pressed": String(isSaved)
+  }, [isSaved ? "★ Saved" : "☆ Save"]) as HTMLButtonElement;
+
   button.addEventListener("click", () => {
     const favorites = toggleBusFavorite(routeId);
-    button.textContent = favorites.includes(routeId) ? "★ Saved" : "☆ Save";
-    button.title = favorites.includes(routeId) ? `Remove ${label} from saved routes` : `Save ${label}`;
-    button.setAttribute("aria-pressed", String(favorites.includes(routeId)));
+    const saved = favorites.includes(routeId);
+    button.textContent = saved ? "★ Saved" : "☆ Save";
+    button.title = saved ? `Remove ${label} from saved routes` : `Save ${label}`;
+    button.setAttribute("aria-pressed", String(saved));
   });
+
   return button;
 }
 
