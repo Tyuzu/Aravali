@@ -212,7 +212,7 @@ func hiringFromRow(hiringID, userID, vendorID, status string, createdAt, updated
 	return result, nil
 }
 
-func rewriteVendorQuery(query string, args []any) string {
+func rewriteVendorQuery(query string, _ []any) string {
 	if query == "" {
 		return "1 = 1"
 	}

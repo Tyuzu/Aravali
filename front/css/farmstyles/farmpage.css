@@ -33,57 +33,10 @@
   gap: 1.25rem;
 }
 
-/* ==========================================================================
-   BREADCRUMB NAVIGATION
-   ========================================================================== */
-
 .farm-header {
   margin-block-end: 1rem;
 }
 
-.breadcrumb__list {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 0;
-  padding: 0;
-  color: var(--color-fg-muted);
-  font-size: var(--font-size-sm, 0.875rem);
-  list-style: none;
-}
-
-.breadcrumb__item {
-  display: inline-flex;
-  align-items: center;
-}
-
-.breadcrumb__link {
-  color: var(--color-fg-muted);
-  text-decoration: none;
-  transition: color var(--transition);
-}
-
-.breadcrumb__link:hover {
-  color: var(--color-primary);
-  text-decoration: underline;
-}
-
-.breadcrumb__link:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: var(--radius-xs);
-}
-
-.breadcrumb__separator {
-  margin-inline: 0.5rem;
-  color: var(--color-fg-muted);
-  opacity: 0.6;
-}
-
-.breadcrumb__item--active .breadcrumb__text {
-  color: var(--color-fg);
-  font-weight: var(--font-weight-bold, 700);
-}
 
 /* ==========================================================================
    FARM BANNER & MAIN CONTENT
@@ -353,105 +306,6 @@
   font-weight: var(--font-weight-bold, 700);
 }
 
-/* ==========================================================================
-   ADVERTISEMENT SLOTS
-   ========================================================================== */
-
-.advert {
-  width: 100%;
-}
-
-.ad-card-link {
-  display: flex;
-  gap: 1rem;
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-card);
-  color: inherit;
-  text-decoration: none;
-  box-shadow: var(--shadow-sm);
-  transition: border-color var(--transition);
-}
-
-.ad-card-link:hover {
-  border-color: var(--color-primary);
-}
-
-.ad-card-link:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-.ad-card-media {
-  position: relative;
-  flex-shrink: 0;
-  overflow: hidden;
-  width: 120px;
-  height: 80px;
-  border-radius: var(--radius-sm);
-}
-
-.ad-card-img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.ad-badge {
-  position: absolute;
-  inset-block-start: 4px;
-  inset-inline-start: 4px;
-  padding-block: 1px;
-  padding-inline: 5px;
-  border-radius: var(--radius-xs);
-  background: rgb(0 0 0 / 60%);
-  color: #ffffff;
-  font-size: var(--font-size-xs, 0.65rem);
-  text-transform: uppercase;
-}
-
-.ad-card-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-.ad-card-title {
-  overflow: hidden;
-  font-size: var(--font-size-sm, 0.875rem);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ad-card-desc {
-  display: -webkit-box;
-  overflow: hidden;
-  margin-block: 0.25rem 0.5rem;
-  color: var(--color-fg-muted);
-  font-size: var(--font-size-xs, 0.75rem);
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.ad-card-cta {
-  color: var(--color-primary);
-  font-size: var(--font-size-xs, 0.75rem);
-  font-weight: var(--font-weight-bold, 700);
-}
-
-/* Aside Vertical Ad Specific Overrides */
-.ad-layout-vertical .ad-card-link {
-  flex-direction: column;
-}
-
-.ad-layout-vertical .ad-card-media {
-  width: 100%;
-  height: 120px;
-}
 
 /* ==========================================================================
    RESPONSIVE LAYOUT MEDIA QUERIES

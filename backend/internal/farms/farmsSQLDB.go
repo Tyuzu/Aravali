@@ -235,6 +235,10 @@ func getFarmByCreatedBy(ctx context.Context, app *infra.Deps, userID string) (Fa
 }
 
 func getCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Crop, error) {
+	return GetCropsByFarmID(ctx, app, farmID)
+}
+
+func GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Crop, error) {
 	farmID = strings.TrimSpace(farmID)
 	if farmID == "" {
 		return nil, errors.New("farm id is required")

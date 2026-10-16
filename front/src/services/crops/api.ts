@@ -12,6 +12,10 @@ export async function fetchFarmDetails(farmId: string | number): Promise<any> {
   return await apiFetch(`/farms/farm/${farmId}`);
 }
 
+export async function fetchFarmCrops(farmId: string | number): Promise<any> {
+  return await apiFetch(`/farms/farm/${farmId}/crops`);
+}
+
 export async function fetchFarms(page: number, limit: number): Promise<any> {
   return await apiFetch(`/farms?page=${page}&limit=${limit}`);
 }
@@ -65,6 +69,7 @@ export default {
   createCropForFarm,
   updateFarm,
   fetchFarmDetails,
+  fetchFarmCrops,
   fetchFarms,
   fetchMyFarms,
   fetchCategoryItems,

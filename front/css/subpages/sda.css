@@ -40,6 +40,8 @@
   width: 100%;
   margin: 1.5rem 0;
   box-sizing: border-box;
+  aspect-ratio: 16 / 9;
+  background-color: var(--ad-bg);
 }
 
 .ad-slot {
@@ -157,6 +159,7 @@
   object-fit: cover;
   display: block;
   transition: transform 0.3s ease;
+  aspect-ratio: 16 / 9;
 }
 
 .ad-slot:hover .ad-card-img {

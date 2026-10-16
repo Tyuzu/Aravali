@@ -239,7 +239,7 @@ func ticketFromRow(ticketID, eventID, title string, priceValue any, quantityValu
 	return t, nil
 }
 
-func purchasedTicketFromRow(purchasedTicketID, userID, eventID, ticketID, status string, amount any, createdAt, updatedAt time.Time, metadata []byte) (*PurchasedTicket, error) {
+func purchasedTicketFromRow(purchasedTicketID, userID, eventID, ticketID, status string, amount any, createdAt, _ time.Time, metadata []byte) (*PurchasedTicket, error) {
 	p := &PurchasedTicket{
 		EventID:      eventID,
 		TicketID:     ticketID,
@@ -338,7 +338,7 @@ func purchasedTicketFromRow(purchasedTicketID, userID, eventID, ticketID, status
 	return p, nil
 }
 
-func refundFromRow(refundID, userID, orderID, status string, amount any, createdAt, updatedAt time.Time, metadata []byte) (*RefundRequest, error) {
+func refundFromRow(_, userID, orderID, status string, amount any, createdAt, _ time.Time, metadata []byte) (*RefundRequest, error) {
 	r := &RefundRequest{
 		EventID:     "",
 		TicketID:    "",

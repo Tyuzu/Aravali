@@ -1,6 +1,6 @@
 import "../../../../css/ui/createTabs.css";
 import { createElement } from "../../../components/createElement.js";
-import { fetchFarmDetails } from "../api.js";
+import { fetchFarmDetails, fetchFarmCrops } from "../api.js";
 import Button, { ButtonOptions } from "../../../components/base/Button.js";
 import { editFarm } from "./editFarm.js";
 import { getState } from "../../../state/state.js";
@@ -82,8 +82,27 @@ export async function displayFarm(
   }
 
   const normalizedFarmId = String(farm.farmid);
-  const currentUser = getState("user")?.userid;
-  const isCreator = Boolean(currentUser && currentUser === farm.createdBy);
+  let cropsList: Crop[] = Array.isArray(farm.crops) ? farm.crops : [];
+
+  try {
+    const cropsResponse = await fetchFarmCrops(normalizedFarmId);
+    const farmCrops = Array.isArray(cropsResponse)
+      ? cropsResponse
+      : Array.isArray(cropsResponse?.crops)
+        ? cropsResponse.crops
+        : [];
+
+    if (farmCrops.length > 0) {
+      cropsList = farmCrops;
+      farm.crops = farmCrops;
+    }
+  } catch (error) {
+    console.error("Failed to fetch farm crops list:", error);
+  }
+
+  const currentUser = getState("user")?.userid ?? getState("userid") ?? getState("user")?.id ?? null;
+  const farmCreatorId = farm.createdBy ?? farm.createdby ?? (farm as any).owner ?? (farm as any).userid ?? (farm as any).userId ?? null;
+  const isCreator = Boolean(currentUser && farmCreatorId && String(currentUser) === String(farmCreatorId));
 
   // ─────────── Header & Breadcrumb ───────────
   const farmBreadcrumb = createBreadcrumb([
@@ -130,7 +149,6 @@ export async function displayFarm(
   ]);
 
   // ─────────── Aside Panel ───────────
-  const cropsList: Crop[] = Array.isArray(farm.crops) ? farm.crops : [];
   const summaryStats = renderCropSummary(cropsList);
   const cropDistribution = renderCropEmojiMap(cropsList);
 
@@ -176,7 +194,7 @@ export async function displayFarm(
           id: "cta-chat-btn",
           classes: "buttonx",
           events: {
-            click: () => farmChat(String(farm.createdBy), normalizedFarmId)
+            click: () => farmChat(String(farm.createdBy ?? farm.createdby ?? (farm as any).owner ?? ""), normalizedFarmId)
           }
         })
       ]

@@ -233,6 +233,42 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 	}
 }
 
+func GetFarmCrops(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		farmID := utils.GetParam(r, "id")
+
+		if strings.TrimSpace(farmID) == "" {
+			utils.RespondWithJSON(w, http.StatusBadRequest, utils.M{
+				"success": false,
+				"message": "Missing farm id",
+			})
+			return
+		}
+
+		crops, err := GetCropsByFarmID(ctx, app, farmID)
+		if err != nil {
+			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
+				"success": false,
+				"message": "Farm not found",
+			})
+			return
+		}
+
+		farm, err := getFarmByID(ctx, app, farmID)
+		if err != nil {
+			farm = Farm{FarmID: farmID}
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, utils.M{
+			"success": true,
+			"farmId":  farmID,
+			"farm":    farm,
+			"crops":   crops,
+		})
+	}
+}
+
 /* ---------------------------------------------------- */
 /* Paginated farms with lookup                          */
 /* ---------------------------------------------------- */

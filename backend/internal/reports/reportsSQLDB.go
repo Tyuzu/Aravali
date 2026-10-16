@@ -200,7 +200,7 @@ func UpdateAppealByID(ctx context.Context, app *infra.Deps, appealID string, upd
 	return 0, nil
 }
 
-func setEntityDeletedFlagInDB(ctx context.Context, app *infra.Deps, table, idField, id string, deleted bool, by string) error {
+func setEntityDeletedFlagInDB(_ context.Context, app *infra.Deps, _, _, _ string, _ bool, _ string) error {
 	if err := ensureReportsDB(app); err != nil {
 		return err
 	}

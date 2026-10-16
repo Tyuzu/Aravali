@@ -6,6 +6,6 @@ import (
 	"scav/infra"
 )
 
-func updateEntityMediaInDB(app *infra.Deps, Table, idField, entityID string, update map[string]any) (int64, error) {
+func updateEntityMediaInDB(_ *infra.Deps, _, _, _ string, _ map[string]any) (int64, error) {
 	return 0, nil
 }

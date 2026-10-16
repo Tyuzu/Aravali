@@ -13,19 +13,19 @@ import (
 var deliveriesTable = config.Tables.DeliveriesTable
 var deliveryEventsTable = config.Tables.DeliveryEventsTable
 
-func getTrackingDetails(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (map[string]any, error) {
+func getTrackingDetails(_ context.Context, _ *infra.Deps, _, _ string) (map[string]any, error) {
 	var result map[string]any
 
 	return result, nil
 }
 
-func getDeliveryEvents(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]map[string]any, error) {
+func getDeliveryEvents(_ context.Context, _ *infra.Deps, _, _ string) ([]map[string]any, error) {
 	var events []map[string]any
 
 	return events, nil
 }
 
-func getStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.StatusHistoryItem, error) {
+func getStatusHistory(_ context.Context, _ *infra.Deps, _, _ string) ([]deliveries.StatusHistoryItem, error) {
 	var res struct {
 		StatusHistory []deliveries.StatusHistoryItem `db:"status_history" json:"status_history"`
 	}
@@ -33,11 +33,11 @@ func getStatusHistory(ctx context.Context, app *infra.Deps, deliveryID, tenantID
 	return res.StatusHistory, nil
 }
 
-func addProofToDelivery(ctx context.Context, app *infra.Deps, deliveryID, tenantID string, proof deliveries.Proof) error {
+func addProofToDelivery(_ context.Context, _ *infra.Deps, _, _ string, _ deliveries.Proof) error {
 	return nil
 }
 
-func getProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) ([]deliveries.Proof, error) {
+func getProofs(_ context.Context, _ *infra.Deps, _, _ string) ([]deliveries.Proof, error) {
 	var res struct {
 		Proofs []deliveries.Proof `db:"proofs" json:"proofs"`
 	}
@@ -45,7 +45,7 @@ func getProofs(ctx context.Context, app *infra.Deps, deliveryID, tenantID string
 	return res.Proofs, nil
 }
 
-func getPublicTrackingInfo(ctx context.Context, app *infra.Deps, token string) (map[string]any, error) {
+func getPublicTrackingInfo(_ context.Context, _ *infra.Deps, _ string) (map[string]any, error) {
 	var res map[string]any
 
 	return res, nil

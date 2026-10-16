@@ -5,6 +5,7 @@ package crops
 import (
 	"net/http"
 	"scav/infra"
+	"scav/internal/farms"
 	"scav/middleware"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,6 +17,7 @@ func AddCropRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	authmidware := middleware.Authenticate(app)
 
 	// 🌱 Crops (within farm)
+	router.HandlerFunc(http.MethodGet, "/api/v1/farms/farm/:id/crops", rateLimiter.Limit(farms.GetFarmCrops(app)))
 	router.HandlerFunc(http.MethodPost, "/api/v1/farms/farm/:id/crops", rateLimiter.Limit(authmidware(AddCrop(app))))
 	router.HandlerFunc(http.MethodPut, "/api/v1/farms/farm/:id/crops/:cropid", rateLimiter.Limit(authmidware(EditCrop(app))))
 	router.HandlerFunc(http.MethodDelete, "/api/v1/farms/farm/:id/crops/:cropid", rateLimiter.Limit(authmidware(DeleteCrop(app))))

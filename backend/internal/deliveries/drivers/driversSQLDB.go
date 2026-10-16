@@ -14,49 +14,49 @@ import (
 var driversTable = config.Tables.DriversTable
 var driverJobRejectionsTable = config.Tables.DriverJobRejectionsTable
 
-func getDriverProfileByID(ctx context.Context, app *infra.Deps, driverID, tenantID string) (deliveries.Driver, error) {
+func getDriverProfileByID(_ context.Context, _ *infra.Deps, _, _ string) (deliveries.Driver, error) {
 	var driver deliveries.Driver
 
 	return driver, nil
 }
 
-func updateDriverProfile(ctx context.Context, app *infra.Deps, driverID, tenantID string, updates map[string]any) error {
+func updateDriverProfile(_ context.Context, _ *infra.Deps, _, _ string, _ map[string]any) error {
 	return nil
 }
 
-func setDriverOnlineState(ctx context.Context, app *infra.Deps, driverID, tenantID string, online bool) error {
+func setDriverOnlineState(_ context.Context, _ *infra.Deps, _, _ string, _ bool) error {
 	return nil
 }
 
-func getDriverStatus(ctx context.Context, app *infra.Deps, driverID, tenantID string) (map[string]any, error) {
+func getDriverStatus(_ context.Context, _ *infra.Deps, _, _ string) (map[string]any, error) {
 	var status map[string]any
 
 	return status, nil
 }
 
-func getAvailableJobsForTenant(ctx context.Context, app *infra.Deps, tenantID string) ([]deliveries.Delivery, error) {
+func getAvailableJobsForTenant(_ context.Context, _ *infra.Deps, _ string) ([]deliveries.Delivery, error) {
 	var jobs []deliveries.Delivery
 
 	return jobs, nil
 }
 
-func getActiveJobsForDriver(ctx context.Context, app *infra.Deps, driverID, tenantID string) ([]deliveries.Delivery, error) {
+func getActiveJobsForDriver(_ context.Context, _ *infra.Deps, _, _ string) ([]deliveries.Delivery, error) {
 	var active []deliveries.Delivery
 
 	return active, nil
 }
 
-func findDeliveryForDriver(ctx context.Context, app *infra.Deps, deliveryID, tenantID string) (deliveries.Delivery, error) {
+func findDeliveryForDriver(_ context.Context, _ *infra.Deps, _, _ string) (deliveries.Delivery, error) {
 	var current deliveries.Delivery
 
 	return current, nil
 }
 
-func saveDriverRejection(ctx context.Context, app *infra.Deps, tenantID, driverID, deliveryID string) error {
+func saveDriverRejection(_ context.Context, _ *infra.Deps, _, _, _ string) error {
 	return nil
 }
 
-func claimDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {
+func claimDeliveryAssignment(_ context.Context, _ *infra.Deps, _, _, _ string) (deliveries.Delivery, error) {
 	var current deliveries.Delivery
 
 	if current.DriverID != nil && *current.DriverID != "" {
@@ -71,7 +71,7 @@ func claimDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, t
 	return updated, nil
 }
 
-func acceptDeliveryAssignment(ctx context.Context, app *infra.Deps, deliveryID, tenantID, driverID string) (deliveries.Delivery, error) {
+func acceptDeliveryAssignment(_ context.Context, _ *infra.Deps, _, _, _ string) (deliveries.Delivery, error) {
 	var updated deliveries.Delivery
 	return updated, nil
 }

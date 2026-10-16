@@ -43,3 +43,10 @@ func TestGetFarmByIDRejectsBlankID(t *testing.T) {
 		t.Fatal("getFarmByID should reject blank farm IDs")
 	}
 }
+
+func TestGetCropsByFarmIDRejectsBlankID(t *testing.T) {
+	_, err := GetCropsByFarmID(t.Context(), nil, "")
+	if err == nil {
+		t.Fatal("GetCropsByFarmID should reject blank farm IDs")
+	}
+}

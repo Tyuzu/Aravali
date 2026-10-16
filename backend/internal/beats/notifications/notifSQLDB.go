@@ -21,10 +21,30 @@ var (
 ========================= */
 
 func insertNotification(ctx context.Context, app *infra.Deps, notif Notification) error {
-	return nil
+	if app == nil || app.SQLDB == nil {
+		return nil
+	}
+	_, err := app.SQLDB.Exec(ctx,
+		`INSERT INTO notifications (notificationid, userid, title, message, type, is_read, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) ON CONFLICT (notificationid) DO NOTHING`,
+		notif.NotificationID,
+		notif.UserID,
+		notif.Title,
+		notif.Message,
+		notif.Type,
+		notif.IsRead,
+	)
+	return err
 }
 
 func insertBulkNotifications(ctx context.Context, app *infra.Deps, notifs []Notification) error {
+	if app == nil || app.SQLDB == nil || len(notifs) == 0 {
+		return nil
+	}
+	for _, notif := range notifs {
+		if err := insertNotification(ctx, app, notif); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -69,10 +89,34 @@ func findNotificationsByUser(
 	opts map[string]any,
 	notifs *[]Notification,
 ) error {
-	if notifs != nil {
-		*notifs = []Notification{}
+	if app == nil || app.SQLDB == nil || notifs == nil {
+		return nil
 	}
-	return nil
+	if userID == "" {
+		*notifs = []Notification{}
+		return nil
+	}
+	query := `SELECT notificationid, userid, title, message, type, is_read, created_at, updated_at FROM notifications WHERE userid = $1 ORDER BY created_at DESC`
+	limit := 20
+	if v, ok := opts["limit"].(int); ok && v > 0 {
+		limit = v
+	}
+	query += ` LIMIT $2`
+	rows, err := app.SQLDB.Query(ctx, query, userID, limit)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	items := make([]Notification, 0)
+	for rows.Next() {
+		var item Notification
+		if err := rows.Scan(&item.NotificationID, &item.UserID, &item.Title, &item.Message, &item.Type, &item.IsRead, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return err
+		}
+		items = append(items, item)
+	}
+	*notifs = items
+	return rows.Err()
 }
 
 func countUnreadNotifications(
@@ -80,7 +124,12 @@ func countUnreadNotifications(
 	app *infra.Deps,
 	userID string,
 ) (int64, error) {
-	return 0, nil
+	if app == nil || app.SQLDB == nil || userID == "" {
+		return 0, nil
+	}
+	var count int64
+	err := app.SQLDB.QueryRow(ctx, `SELECT COUNT(*) FROM notifications WHERE userid = $1 AND is_read = false`, userID).Scan(&count)
+	return count, err
 }
 
 func updateMarkAsRead(
@@ -89,7 +138,14 @@ func updateMarkAsRead(
 	notificationID string,
 	userID string,
 ) (int64, error) {
-	return 0, nil
+	if app == nil || app.SQLDB == nil || notificationID == "" {
+		return 0, nil
+	}
+	result, err := app.SQLDB.Exec(ctx, `UPDATE notifications SET is_read = true, updated_at = NOW() WHERE notificationid = $1 AND userid = $2`, notificationID, userID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 func updateMarkAllAsRead(
@@ -97,7 +153,14 @@ func updateMarkAllAsRead(
 	app *infra.Deps,
 	userID string,
 ) (int64, error) {
-	return 0, nil
+	if app == nil || app.SQLDB == nil || userID == "" {
+		return 0, nil
+	}
+	result, err := app.SQLDB.Exec(ctx, `UPDATE notifications SET is_read = true, updated_at = NOW() WHERE userid = $1`, userID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 func deleteNotificationByID(
@@ -106,7 +169,14 @@ func deleteNotificationByID(
 	notificationID string,
 	userID string,
 ) (int64, error) {
-	return 0, nil
+	if app == nil || app.SQLDB == nil || notificationID == "" {
+		return 0, nil
+	}
+	result, err := app.SQLDB.Exec(ctx, `DELETE FROM notifications WHERE notificationid = $1 AND userid = $2`, notificationID, userID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 func deleteAllNotificationsByUser(
@@ -114,7 +184,14 @@ func deleteAllNotificationsByUser(
 	app *infra.Deps,
 	userID string,
 ) (int64, error) {
-	return 0, nil
+	if app == nil || app.SQLDB == nil || userID == "" {
+		return 0, nil
+	}
+	result, err := app.SQLDB.Exec(ctx, `DELETE FROM notifications WHERE userid = $1`, userID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 func findPreferencesByUser(
@@ -123,7 +200,11 @@ func findPreferencesByUser(
 	userID string,
 	pref *NotificationPreferences,
 ) error {
-	return nil
+	if app == nil || app.SQLDB == nil || pref == nil || userID == "" {
+		return nil
+	}
+	row := app.SQLDB.QueryRow(ctx, `SELECT userid, email_notifs, push_notifs, in_app_notifs, updated_at FROM notificationpreferences WHERE userid = $1 LIMIT 1`, userID)
+	return row.Scan(&pref.UserID, &pref.EmailNotifs, &pref.PushNotifs, &pref.InAppNotifs, &pref.UpdatedAt)
 }
 
 func upsertPreferences(
@@ -131,7 +212,17 @@ func upsertPreferences(
 	app *infra.Deps,
 	pref NotificationPreferences,
 ) error {
-	return nil
+	if app == nil || app.SQLDB == nil {
+		return nil
+	}
+	_, err := app.SQLDB.Exec(ctx,
+		`INSERT INTO notificationpreferences (userid, email_notifs, push_notifs, in_app_notifs, updated_at) VALUES ($1, $2, $3, $4, NOW()) ON CONFLICT (userid) DO UPDATE SET email_notifs = EXCLUDED.email_notifs, push_notifs = EXCLUDED.push_notifs, in_app_notifs = EXCLUDED.in_app_notifs, updated_at = NOW()`,
+		pref.UserID,
+		pref.EmailNotifs,
+		pref.PushNotifs,
+		pref.InAppNotifs,
+	)
+	return err
 }
 
 /* =========================
