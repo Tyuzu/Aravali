@@ -1,5 +1,5 @@
-import { createElement } from "../../../components/createElement";
-import Notify, { NotifyOptions } from "../../../components/ui/Notify";
+import { createElement } from "../../../../components/createElement";
+import Notify, { NotifyOptions } from "../../../../components/ui/Notify";
 
 /**
  * Clears all child nodes from a given DOM element.

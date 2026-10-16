@@ -1,4 +1,4 @@
-import type { AvailabilitySchedule, CropListing as SharedCropListing } from "../types.js";
+import type { AvailabilitySchedule, CropListing as SharedCropListing } from "../../types.js";
 
 export type AvailabilityMap = AvailabilitySchedule;
 export type CropListing = SharedCropListing;

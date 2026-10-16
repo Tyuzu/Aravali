@@ -57,7 +57,7 @@ export const farmsRoutes: AppRoute[] = [
     path: "/tools",
     component: () =>
       import(
-        "../../pages/farm/tools.js"
+        "../../pages/product/tools.js"
       ),
     functionName: "Tools",
     meta: {
@@ -69,7 +69,7 @@ export const farmsRoutes: AppRoute[] = [
     path: "/products",
     component: () =>
       import(
-        "../../pages/farm/products.js"
+        "../../pages/product/products.js"
       ),
     functionName: "Products",
     meta: {

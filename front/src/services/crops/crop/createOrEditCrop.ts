@@ -1,6 +1,6 @@
 import { createElement } from "../../../components/createElement";
 import { createFormGroup } from "../../../components/form/createFormGroupEnhanced";
-import { cropCategoryMap } from "./cropCategories";
+import { cropCategoryMap } from "./components/cropCategories";
 
 export interface CropData {
     name?: string;

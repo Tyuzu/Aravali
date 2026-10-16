@@ -1,5 +1,5 @@
 import { createElement } from "../../../../components/createElement";
-import type { FilterValues } from "../types";
+import type { FilterValues } from "./types";
 
 export function createFilterForm(): HTMLFormElement {
   const fields = [

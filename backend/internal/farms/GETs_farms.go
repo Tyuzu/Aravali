@@ -4,6 +4,8 @@ package farms
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -245,6 +247,8 @@ func GetFarmCrops(app *infra.Deps) http.HandlerFunc {
 			})
 			return
 		}
+		app.Log.Debug(fmt.Sprintf("fetching crops for farm ID: %s", farmID))
+		log.Printf("_|_|_|_|_|_|_|_|_|_|: %s", farmID)
 
 		crops, err := GetCropsByFarmID(ctx, app, farmID)
 		if err != nil {

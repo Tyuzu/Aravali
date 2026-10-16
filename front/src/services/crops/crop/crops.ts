@@ -1,6 +1,6 @@
 import { createElement } from "../../../components/createElement.js";
 import { apiFetch } from "../../../api/api.js";
-import { guessCategoryFromName } from "./displayCropshelpers.js";
+import { guessCategoryFromName } from "./components/displayCropshelpers.js";
 import { navigate } from "../../../routes/navigate.js";
 import { renderCropCard } from "./components/cropCard.js";
 import { debounce } from "../../../utils/deutils.js";

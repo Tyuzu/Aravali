@@ -3,7 +3,7 @@ import Imagex from "../../../../components/base/Imagex";
 import { resolveImagePath, PictureType, EntityType } from "../../../../utils/imagePaths";
 import { createUserControls } from "../../farm/displayFarmHelpers";
 import { formatRelativeDate, formatAvailability, getStockStatus } from "../controllers/helpers";
-import type { CropListing } from "../types";
+import type { CropListing } from "./types";
 import { navigate } from "../../../../routes/navigate";
 
 export function createListingCard(listing: CropListing, cropName: string, isLoggedIn: boolean): HTMLElement {

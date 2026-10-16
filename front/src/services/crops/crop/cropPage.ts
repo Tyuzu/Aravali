@@ -6,7 +6,7 @@ import Notify from "../../../components/ui/Notify";
 import Button from "../../../components/base/Button";
 import { createFilterForm } from "./components/filterForm";
 import { createListingCard } from "./components/listingCard";
-import type { CropApiResponse, CropListing } from "./types";
+import type { CropApiResponse, CropListing } from "./components/types";
 
 /**
  * Main entry function to fetch and display crop listings.

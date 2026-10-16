@@ -1,5 +1,5 @@
 import Notify from "../../../../components/ui/Notify";
-import type { SetupFilterInteractionsParams } from "../types";
+import type { SetupFilterInteractionsParams } from "../components/types";
 import { debounce } from "./utils";
 
 export function setupFilterInteractions({ filterForm, toggleFiltersBtn, listings, onFiltered }: SetupFilterInteractionsParams): void {

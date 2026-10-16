@@ -1,4 +1,4 @@
-import type { AvailabilityMap } from "../types";
+import type { AvailabilityMap } from "../components/types";
 
 export function formatAvailability(availability?: AvailabilityMap): string {
   if (!availability || typeof availability !== "object") {

@@ -1,9 +1,9 @@
-import { createElement } from "../../../components/createElement";
-import Button from "../../../components/base/Button";
-import { navigate } from "../../../routes/navigate";
-import { getState } from "../../../state/state";
-import { createQuantityControl } from "./components/quantityControl";
-import { handleAddToCart as addToCartController } from "./controllers/cartController";
+import { createElement } from "../../../../components/createElement";
+import Button from "../../../../components/base/Button";
+import { navigate } from "../../../../routes/navigate";
+import { getState } from "../../../../state/state";
+import { createQuantityControl } from "./quantityControl";
+import { handleAddToCart as addToCartController } from "../controllers/cartController";
 
 // --- Types & Interfaces ---
 
