@@ -10,8 +10,6 @@ import {
   renderFarmDetails,
   renderCropSummary,
   renderCropEmojiMap,
-  renderCrops,
-  createSortDropdown,
   Farm as HelperFarm
 } from "./displayFarmHelpers.js";
 import { displayReviews } from "../../reviews/displayReviews.js";
@@ -21,12 +19,11 @@ import { persistTabs, TabItem } from "../../../utils/persistTabs.js";
 import { displayNotices } from "../../notices/notices.js";
 import { displayMedia } from "../../media/ui/mediaGallery.js";
 import { renderWeatherDetails } from "../weather/weather.js";
-import { createCrop } from "../crop/createCrop.js";
-import Modal from "../../../components/ui/Modal.js";
 import { renderAvailabilityWidget } from "../../../components/ui/Availability.js";
 import { createMainLayout } from "../../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../../components/layout/asideLayout.js";
 import { createBreadcrumb } from "../../../components/ui/Breadcrumb.js";
+import { displayFarmCrops } from "../crop/displayFarmCrops.js";
 
 interface Crop {
   id?: string | number;
@@ -243,69 +240,13 @@ export async function displayFarm(
     {
       title: "Crops",
       id: "crops-tab",
-      render: async (tabContainer: HTMLElement) => {
-        tabContainer.replaceChildren();
-
-        const cropsContainer = createElement("div", {
-          class: "crop-list grid-view"
-        }) as HTMLElement;
-
-        const cropHeader = createElement("div", { class: "crop-header" }, [
-          createElement("h3", {}, ["🌾 Available Crops"]),
-          createSortDropdown((sortBy: string) =>
-            renderCrops(
-              farm,
-              cropsContainer,
-              normalizedFarmId,
-              mainColumn,
-              editContainer,
-              isLoggedIn,
-              sortBy,
-              isCreator
-            )
-          )
-        ]);
-
-        if (isCreator) {
-          tabContainer.append(
-            Button({
-              title: "Add Crop",
-              id: "add-crop-btn",
-              classes: "buttonx",
-              events: {
-                click: async () => {
-                  const modalRef = Modal({
-                    title: "Add Crop",
-                    content: createElement("p", {}, ["Loading..."]),
-                    size: "medium",
-                    closeOnOverlayClick: true
-                  });
-
-                  try {
-                    const formEl = await createCrop(normalizedFarmId, () => modalRef.close());
-                    const body = modalRef.dialog?.querySelector(".modal-body");
-                    if (body && formEl) {
-                      body.replaceChildren(formEl);
-                    }
-                  } catch (err) {
-                    console.error("Failed to render Add Crop form:", err);
-                  }
-                }
-              }
-            })
-          );
-        }
-
-        tabContainer.append(cropHeader, cropsContainer);
-
-        await renderCrops(
-          farm,
-          cropsContainer,
+      render: (tabContainer: HTMLElement) => {
+        void displayFarmCrops(
+          tabContainer,
           normalizedFarmId,
           mainColumn,
           editContainer,
           isLoggedIn,
-          "name",
           isCreator
         );
       }

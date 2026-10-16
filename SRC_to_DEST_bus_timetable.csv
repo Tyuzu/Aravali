@@ -1,4 +1,0 @@
-route_id,name,alias,depot_id,depot_name,status,next_departure,headway_minutes,stops
-HR-101,Narnaul - Gurugram Express,NRN-GUG,dep-narnaul,Narnaul Depot,On Time,07:30,20,"s1|Narnaul Bus Stand|NRN|28.044|76.107|1|07:30;s2|Rewari Junction|REW|28.183|76.618|2|08:25;s3|IFFCO Chowk Gurugram|GUG|28.472|77.072|3|09:30"
-HR-102,Rewari - Delhi ISBT,REW-DEL,dep-rewari,Rewari Depot,Delayed,08:15,15,"s10|Rewari Bus Stand|REW|28.183|76.618|1|08:15;s11|Dharuhera Chowk|DHR|28.210|76.790|2|08:45;s12|Kashmere Gate ISBT|DEL|28.667|77.228|3|10:15"
-HR-103,Narnaul - Mahendragarh Circular,NRN-MHG,dep-narnaul,Narnaul Depot,On Time,08:00,30,"s20|Narnaul Bus Stand|NRN|28.044|76.107|1|08:00;s21|Ateli Mandi|ATL|28.112|76.262|2|08:25;s22|Mahendragarh Fort|MHG|28.272|76.151|3|09:00"

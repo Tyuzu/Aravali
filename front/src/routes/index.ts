@@ -1,5 +1,5 @@
 import { createheader } from "../components/layout/header.js";
-import { createNav, highlightActiveNav } from "../components/layout/navigation.js";
+import { createNav, highlightActiveNav, renderSecondaryNavForPath } from "../components/layout/navigation.js";
 import { Footer } from "../components/layout/footer.js";
 import { render } from "./router.js";
 import { getState, setState, restoreScroll, subscribe } from "../state/state.js";
@@ -119,6 +119,8 @@ function renderStaticLayout(): void {
         if (n) nav.replaceChildren(n);
         layoutState.navRendered = true;
     }
+
+    renderSecondaryNavForPath(window.location.pathname);
     if (!layoutState.footerRendered) {
         const f = Footer();
         if (f) footer.replaceChildren(f);
@@ -159,6 +161,7 @@ export async function loadContent(
 
     const parsed = parseAppLocation(rawLocation);
     const result = await render(parsed.fullPath, main);
+    renderSecondaryNavForPath(parsed.fullPath || window.location.pathname);
 
     /* --- ROUTER REDIRECT --- */
     const routeResult = result as any;

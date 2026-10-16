@@ -4,6 +4,7 @@ import { navigate } from "../../routes/navigate.js";
 import { getCurrentAllowedFeatures } from "../../config/domainFeatures.js";
 import { getState, subscribe } from "../../state/state.js";
 import { enableDragDrop, getNavOrder } from "./navigationDrag.js";
+import { createSecondaryNav as createSectionNav } from "./secNav.js";
 import { createElement } from "../createElement.js";
 
 export interface NavItemConfig {
@@ -24,8 +25,13 @@ const getCurrentUserRoles = (): string[] => {
 
 /** Highlight current active link within a target container or entire document */
 export const highlightActiveNav = (path: string, container: ParentNode = document): void => {
+  const normalizedPath = path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
+
   container.querySelectorAll<HTMLAnchorElement>(".navigation__link").forEach((link) => {
-    link.classList.toggle("active", link.getAttribute("href") === path);
+    const href = link.getAttribute("href") || "";
+    const normalizedHref = href.endsWith("/") && href !== "/" ? href.slice(0, -1) : href;
+    const isActive = normalizedPath === normalizedHref || normalizedPath.startsWith(`${normalizedHref}/`);
+    link.classList.toggle("active", isActive);
   });
 };
 
@@ -78,22 +84,21 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 /** Build nav links fragment based on master configuration and ordering */
 const buildNavList = (): HTMLUListElement => {
   const allNavItems: NavItemConfig[] = [
-    // { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
-    // { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
-    // { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
-    // { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
-    // { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
-    // { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
-    // { href: "/events", label: t("nav.events", {}, "Events"), feature: "events" },
-    // { href: "/posts", label: t("nav.posts", {}, "Posts"), feature: "social" },
-    // { href: "/baitos", label: t("nav.baitos", {}, "Baitos"), feature: "baito" },
-    // { href: "/merechats", label: t("nav.chats", {}, "Chats"), feature: "chats" },
-    // { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" },
-    // { href: "/map", label: t("nav.map", {}, "Map"), feature: "places" },
-    // { href: "/admin", label: t("nav.admin", {}, "Admin"), feature: "admin", roles: ["admin"] }
+    { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
+    { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
+    { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
+    { href: "/recipes", label: t("nav.recipes", {}, "Recipes"), feature: "farms" },
+    { href: "/products", label: t("nav.products", {}, "Products"), feature: "farms" },
+    { href: "/tools", label: t("nav.tools", {}, "Tools"), feature: "farms" },
+    { href: "/events", label: t("nav.events", {}, "Events"), feature: "events" },
+    { href: "/posts", label: t("nav.posts", {}, "Posts"), feature: "social" },
+    { href: "/baitos", label: t("nav.baitos", {}, "Baitos"), feature: "baito" },
+    { href: "/baitos/hire", label: t("nav.hire_workers", {}, "Hire Workers"), feature: "baito" },
+    { href: "/merechats", label: t("nav.chats", {}, "Chats"), feature: "chats" },
+    { href: "/places", label: t("nav.places", {}, "Places"), feature: "places" },
+    { href: "/map", label: t("nav.map", {}, "Map"), feature: "places" },
+    { href: "/admin", label: t("nav.admin", {}, "Admin"), feature: "admin", roles: ["admin"] },
     { href: "/bus", label: t("nav.bus", {}, "Bus"), feature: "places" },
-    { href: "/bus/time", label: t("nav.bustime", {}, "Bustime"), feature: "places" },
-    { href: "/bus/map", label: t("nav.busmap", {}, "Bus Map"), feature: "places" },
   ];
 
   const defaultNavItems = getPermittedNavItems(allNavItems);
@@ -171,5 +176,54 @@ const createNav = (): HTMLDivElement => {
 
   return nav;
 };
+
+function getBusSecondaryNavItems(currentPath: string): Parameters<typeof createSectionNav>[0] {
+  const normalizedPath = currentPath.endsWith("/") && currentPath !== "/" ? currentPath.slice(0, -1) : currentPath;
+
+  const isPathMatch = (href: string): boolean => {
+    if (href === "/bus") {
+      return normalizedPath === "/bus";
+    }
+
+    if (href === "/bus/time") {
+      return normalizedPath === "/bus/time" || normalizedPath.startsWith("/bus/time/");
+    }
+
+    if (href === "/bus/map") {
+      return normalizedPath === "/bus/map" || normalizedPath.startsWith("/bus/map/");
+    }
+
+    return normalizedPath === href;
+  };
+
+  return [
+    { href: "/bus", label: t("nav.bus", {}, "Overview"), active: isPathMatch("/bus") },
+    { href: "/bus/time", label: t("nav.bustime", {}, "Bustime"), active: isPathMatch("/bus/time") },
+    { href: "/bus/map", label: t("nav.busmap", {}, "Bus Map"), active: isPathMatch("/bus/map") }
+  ];
+}
+
+export function renderSecondaryNavForPath(path: string = window.location.pathname): void {
+  const target = document.getElementById("secnav");
+  if (!target) {
+    return;
+  }
+
+  const existing = target.firstElementChild as { _cleanupDrag?: () => void } | null;
+  if (existing?._cleanupDrag) {
+    existing._cleanupDrag();
+  }
+
+  target.replaceChildren();
+
+  if (!path.startsWith("/bus")) {
+    return;
+  }
+
+  const busSecondaryNav = createSectionNav(getBusSecondaryNavItems(path));
+  if (busSecondaryNav) {
+    target.appendChild(busSecondaryNav);
+  }
+}
 
 export { createNav, createNavItem };

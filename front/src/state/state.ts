@@ -539,6 +539,14 @@ function setAuthState(value: Partial<AuthState>, persist = false): void {
     }
 }
 
+function normalizeUnreadCount(value: unknown): number {
+    const nextValue = Number(value);
+    if (!Number.isFinite(nextValue)) {
+        return 0;
+    }
+    return Math.max(0, Math.floor(nextValue));
+}
+
 function setState(keyOrObject: string | Record<string, any>, persistOrValue: boolean | any = false, maybeValue: any = undefined): void {
     const updates: Record<string, any> = typeof keyOrObject === "object" && keyOrObject !== null ? keyOrObject : {
         [keyOrObject as string]: persistOrValue
@@ -554,6 +562,10 @@ function setState(keyOrObject: string | Record<string, any>, persistOrValue: boo
         }
         if (key === ROUTE_CACHE_KEY || key === ROUTE_STATE_KEY) {
             throw new Error(`${key} is read-only. Use dedicated route cache helpers.`);
+        }
+        if (key === "unreadNotifications") {
+            const normalizedValue = normalizeUnreadCount(value);
+            updates[key] = normalizedValue;
         }
         if (AUTH_ALIAS_KEYS.has(key)) {
             hasAuthUpdate = true;

@@ -9,25 +9,27 @@ import { addSystemLog } from "../../utils/idxDB.js"; // Import IndexedDB persist
 export type NotificationType = "info" | "success" | "error" | "warning";
 
 export interface NotifyOptions {
-  userId?: string; // Optional explicit userId override
+  userId?: string | number;
   title?: string;
   type?: NotificationType;
   duration?: number;
   dismissible?: boolean;
+  trackUnread?: boolean;
 }
 
 function normalizeNotifyOptions(
   options?: NotifyOptions | NotificationType
 ): NotifyOptions & { type: NotificationType } {
   if (typeof options === "string") {
-    return { title: "", type: options as NotificationType, duration: 0, dismissible: true };
+    return { title: "", type: options as NotificationType, duration: 0, dismissible: true, trackUnread: false };
   }
   return {
     title: "",
     duration: 0,
     dismissible: true,
+    trackUnread: false,
     ...options,
-    type: options && typeof options === "object" && options.type ? options.type : (typeof options === "string" ? options : "info")
+    type: options && typeof options === "object" && options.type ? options.type : "info"
   };
 }
 
@@ -39,11 +41,10 @@ const Notify = (
   options?: NotifyOptions | NotificationType
 ): HTMLDivElement => {
   const normalizedOptions = normalizeNotifyOptions(options);
-  const { title = "", type = "info", duration = 0, dismissible = true } = normalizedOptions;
+  const { title = "", type = "info", duration = 0, dismissible = true, trackUnread = false } = normalizedOptions;
 
-  // Resolve current user ID from options, or directly from state ("user.id" or "userId")
-  const currentUser = getState("user") as { id?: string } | undefined;
-  const currentUserId = normalizedOptions.userId ?? currentUser?.id ?? (getState("userid") as string | undefined);
+  const currentUser = getState("user") as { id?: string | number; userid?: string | number } | undefined;
+  const currentUserId = normalizedOptions.userId ?? currentUser?.id ?? currentUser?.userid ?? (getState("userid") as string | number | undefined);
 
   // Track browser window timeouts
   let hideTimeoutId: number | null = null;
@@ -55,7 +56,8 @@ const Notify = (
     notify.remove();
   };
 
-  const children: (HTMLElement | string)[] = [message];
+  const messageNode = createElement("span", { class: "notify-message" }, [message]);
+  const children: HTMLElement[] = [messageNode];
 
   if (dismissible) {
     const closeBtn = createElement(
@@ -105,7 +107,11 @@ const Notify = (
   }, timeout);
 
   // Global app state & Side Effects
-  setState("unreadNotifications", ((getState("unreadNotifications") as number) || 0) + 1);
+  if (trackUnread && currentUserId) {
+    const unreadTotal = Number(getState("unreadNotifications") || 0);
+    const safeUnreadTotal = Number.isFinite(unreadTotal) ? unreadTotal : 0;
+    setState("unreadNotifications", safeUnreadTotal + 1);
+  }
   playSoundAlert({ type: "notification" });
 
   // Persistent System Log Storage (Async save to IndexedDB)

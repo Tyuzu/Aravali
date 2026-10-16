@@ -6,7 +6,7 @@ export type SystemLogType = "success" | "error" | "info" | "warning";
 
 export interface SystemLogEntry {
   id: string | number;
-  userId: string;
+  userId: string | number;
   title: string;
   message: string;
   type: SystemLogType;
@@ -16,7 +16,7 @@ export interface SystemLogEntry {
 }
 
 export interface AddSystemLogOptions {
-  userId: string;
+  userId: string | number;
   title: string;
   message: string;
   type?: SystemLogType | string;
@@ -54,13 +54,14 @@ function normalizeLogType(type?: SystemLogType | string): SystemLogType {
 }
 
 function normalizeLogEntry<T extends Partial<SystemLogEntry>>(value: T): T & SystemLogEntry {
-  if (!value.userId) {
+  const userId = value.userId == null || value.userId === "" ? "" : String(value.userId);
+  if (!userId) {
     throw new Error("IndexedDB log entry must include a valid userId.");
   }
 
   return {
     id: value.id ?? `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    userId: String(value.userId),
+    userId,
     title: String(value.title ?? "System Message"),
     message: String(value.message ?? ""),
     type: normalizeLogType(value.type),
@@ -131,7 +132,7 @@ function openDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-async function pruneOldLogs(userId: string): Promise<void> {
+async function pruneOldLogs(userId: string | number): Promise<void> {
   try {
     const logs = await getAll<SystemLogEntry>(userId);
     if (logs.length <= MAX_LOGS_PER_USER) return;
@@ -149,7 +150,7 @@ async function pruneOldLogs(userId: string): Promise<void> {
 
 export async function get<T extends SystemLogEntry = SystemLogEntry>(
   id: IDBValidKey,
-  userId: string
+  userId: string | number
 ): Promise<T | undefined> {
   if (!isIndexedDBAvailable() || !userId) return undefined;
 
@@ -201,7 +202,7 @@ export async function put<T extends SystemLogEntry = SystemLogEntry>(value: T): 
   return set(value);
 }
 
-export async function remove(id: IDBValidKey, userId: string): Promise<void> {
+export async function remove(id: IDBValidKey, userId: string | number): Promise<void> {
   if (!isIndexedDBAvailable() || !userId) return;
 
   const existing = await get(id, userId);
@@ -220,10 +221,10 @@ export async function remove(id: IDBValidKey, userId: string): Promise<void> {
 }
 
 export async function getAll<T extends SystemLogEntry = SystemLogEntry>(
-  userId: string,
+  userId: string | number,
   options: GetAllOptions = {}
 ): Promise<T[]> {
-  if (!isIndexedDBAvailable() || !userId) return [];
+  if (!isIndexedDBAvailable() || userId === undefined || userId === null || userId === "") return [];
 
   try {
     const db = await openDB();
@@ -260,8 +261,8 @@ export async function getAll<T extends SystemLogEntry = SystemLogEntry>(
   }
 }
 
-export async function count(userId: string): Promise<number> {
-  if (!isIndexedDBAvailable() || !userId) return 0;
+export async function count(userId: string | number): Promise<number> {
+  if (!isIndexedDBAvailable() || userId === undefined || userId === null || userId === "") return 0;
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
@@ -278,8 +279,8 @@ export async function count(userId: string): Promise<number> {
 /**
  * Optimized single-transaction cursor cleanup for user logs.
  */
-export async function clear(userId: string): Promise<void> {
-  if (!isIndexedDBAvailable() || !userId) return;
+export async function clear(userId: string | number): Promise<void> {
+  if (!isIndexedDBAvailable() || userId === undefined || userId === null || userId === "") return;
   const db = await openDB();
 
   return new Promise<void>((resolve, reject) => {
@@ -302,8 +303,8 @@ export async function clear(userId: string): Promise<void> {
   });
 }
 
-export async function markAllAsRead(userId: string): Promise<number> {
-  if (!userId) return 0;
+export async function markAllAsRead(userId: string | number): Promise<number> {
+  if (userId === undefined || userId === null || userId === "") return 0;
 
   const unread = await getAll<SystemLogEntry>(userId, { unreadOnly: true });
   if (!unread.length) return 0;
@@ -318,7 +319,7 @@ export async function addSystemLog({
   message,
   type = "info"
 }: AddSystemLogOptions): Promise<SystemLogEntry> {
-  if (!userId) throw new Error("Cannot add system log without a valid userId.");
+  if (userId === undefined || userId === null || userId === "") throw new Error("Cannot add system log without a valid userId.");
 
   const logItem: SystemLogEntry = normalizeLogEntry({
     id: generateLogId(),
