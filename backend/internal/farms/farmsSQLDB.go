@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -188,20 +189,30 @@ func getFarmByID(ctx context.Context, app *infra.Deps, farmID string) (Farm, err
 	var farm Farm
 	var metadata []byte
 	var createdAt, updatedAt time.Time
+	var status string // Scan status into a temporary variable if needed
+
 	if err := app.SQLDB.QueryRow(
 		ctx,
 		`SELECT farmid, name, description, userid, status, created_at, updated_at, metadata FROM `+farmsTable+` WHERE farmid = $1 LIMIT 1`,
 		farmID,
-	).Scan(&farm.FarmID, &farm.Name, &farm.Description, &farm.CreatedBy, &farm.Owner, &createdAt, &updatedAt, &metadata); err != nil {
+	).Scan(&farm.FarmID, &farm.Name, &farm.Description, &farm.CreatedBy, &status, &createdAt, &updatedAt, &metadata); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Farm{}, errors.New("farm not found")
 		}
 		return Farm{}, err
 	}
+
 	farm.CreatedAt = createdAt
 	farm.UpdatedAt = updatedAt
-	farm.Owner = farm.CreatedBy
+
+	// 1. Unmarshal metadata first
 	parseFarmMetadata(metadata, &farm)
+
+	// 2. Ensure database-authoritative fields take precedence over metadata if required
+	if farm.CreatedBy != "" {
+		farm.Owner = farm.CreatedBy
+	}
+
 	return farm, nil
 }
 
@@ -249,7 +260,7 @@ func GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Cr
 
 	rows, err := app.SQLDB.Query(
 		ctx,
-		`SELECT cropid, name, farmid, metadata, created_at, updated_at FROM `+cropsTable+` WHERE farmid = $1 ORDER BY created_at DESC`,
+		`SELECT cropid, name, farmid, metadata, created_at, updatedAt FROM `+cropsTable+` WHERE farmid = $1 ORDER BY created_at DESC`,
 		farmID,
 	)
 	if err != nil {
@@ -265,11 +276,30 @@ func GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Cr
 		if err := rows.Scan(&crop.CropId, &crop.Name, &crop.FarmID, &metadata, &createdAt, &updatedAt); err != nil {
 			continue
 		}
+
+		// Cache authoritative database columns
+		dbCropID := crop.CropId
+		dbName := crop.Name
+		dbFarmID := crop.FarmID
+
+		// Unmarshal metadata JSON
+		parseCropMetadata(metadata, &crop)
+
+		// Protect relational columns from being overwritten by blank or stale metadata JSON keys
+		crop.CropId = dbCropID
+		if strings.TrimSpace(crop.Name) == "" {
+			crop.Name = dbName
+		}
+		if strings.TrimSpace(crop.FarmID) == "" {
+			crop.FarmID = dbFarmID
+		}
+
 		crop.CreatedAt = createdAt
 		crop.UpdatedAt = updatedAt
-		parseCropMetadata(metadata, &crop)
 		items = append(items, crop)
 	}
+	log.Println("-----||-------||-----", items)
+
 	return items, nil
 }
 

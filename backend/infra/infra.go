@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -105,22 +106,26 @@ func New(cfg *config.Config) (*Deps, error) {
 		d.SQLDB = sqlDB
 
 		// Run DB migrations if present.
-		migrationsPath := env("MIGRATIONS_PATH", "./migrations")
+		migrationsPath := env("MIGRATIONS_PATH", filepath.Join(".", "migrations"))
 		absMigrations, err := filepath.Abs(migrationsPath)
-		if err == nil {
-			fixed := filepath.ToSlash(absMigrations)
-			src := "file://" + fixed
-			m, err := migrate.New(src, pgURI)
-			if err != nil {
-				d.Log.Sugar().Warnw("migration init failed", "error", err)
+		if err != nil {
+			d.Log.Sugar().Warnw("resolve migrations path failed", "path", migrationsPath, "error", err)
+		} else {
+			if _, statErr := os.Stat(absMigrations); statErr != nil {
+				d.Log.Sugar().Warnw("migrations directory not found", "path", absMigrations, "error", statErr)
 			} else {
-				if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-					d.Log.Sugar().Warnw("migrations up failed", "error", err)
+				src := (&url.URL{Scheme: "file", Path: filepath.ToSlash(absMigrations)}).String()
+				m, err := migrate.New(src, pgURI)
+				if err != nil {
+					d.Log.Sugar().Warnw("migration init failed", "path", absMigrations, "source", src, "error", err)
 				} else {
-					d.Log.Sugar().Infow("migrations applied", "path", absMigrations)
+					if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+						d.Log.Sugar().Warnw("migrations up failed", "path", absMigrations, "source", src, "error", err)
+					} else {
+						d.Log.Sugar().Infow("migrations applied", "path", absMigrations)
+					}
+					_, _ = m.Close()
 				}
-				// Ensure migration instance is closed to avoid leaks
-				_, _ = m.Close()
 			}
 		}
 	}

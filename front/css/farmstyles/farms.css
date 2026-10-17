@@ -75,10 +75,6 @@
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
-.farm__search,
-.farm__location {
-  flex: 1 1 180px;
-}
 
 .farm__sort {
   flex: 0 0 auto;

@@ -248,8 +248,7 @@ func GetFarmCrops(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 		app.Log.Debug(fmt.Sprintf("fetching crops for farm ID: %s", farmID))
-		log.Printf("_|_|_|_|_|_|_|_|_|_|: %s", farmID)
-
+		log.Println("-----------------", "Fetching crops for farm ID:", farmID)
 		crops, err := GetCropsByFarmID(ctx, app, farmID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
