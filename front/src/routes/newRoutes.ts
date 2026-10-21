@@ -20,8 +20,8 @@ import {
 
 // import { adminRoutes } from "./modules/admin.js";
 // import { busRoutes } from "./modules/bus.js";
-// import { farmsRoutes } from "./modules/farms.js";
-// import { cropRoutes } from "./modules/crops.js";
+import { farmsRoutes } from "./modules/farms.js";
+import { cropRoutes } from "./modules/crops.js";
 // import { eventsRoutes } from "./modules/events.js";
 // import { baitoRoutes } from "./modules/baito.js";
 // import { socialRoutes } from "./modules/social.js";
@@ -214,7 +214,7 @@ const errorRoutes: Route[] = [
 const featureModules: Record<string, Route[]> = {
   // bus: busRoutes,
   // admin: adminRoutes,
-  // farms: [...farmsRoutes, ...cropRoutes],
+  farms: [...farmsRoutes, ...cropRoutes],
   // events: eventsRoutes,
   // baito: baitoRoutes,
   // social: socialRoutes,

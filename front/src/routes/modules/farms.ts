@@ -6,10 +6,10 @@ export const farmsRoutes: AppRoute[] = [
   ======================================================= */
 
   {
-    path: "/dash",
+    path: "/farmdash",
     component: () =>
       import(
-        "../../pages/dash/dash.js"
+        "../../pages/farm/farmdash.js"
       ),
     functionName: "Dash",
     meta: {
