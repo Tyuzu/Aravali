@@ -13,11 +13,8 @@ import (
 	"scav/config"
 	"scav/infra"
 	"scav/infra/logger"
-	"scav/internal/mechat"
-	"scav/internal/newchat"
 	"scav/middleware"
 	"scav/routes"
-	"scav/subscribers"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -40,39 +37,11 @@ func main() {
 		logger.L.Sugar().Fatalw("Failed to initialize infrastructure", "error", err)
 	}
 
-	appCtx, appCancel := context.WithCancel(context.Background())
-	defer appCancel()
-
-	// =====================
-	// MQ Subscribers
-	// =====================
-	if app.MQ != nil {
-		if err := subscribers.RegisterAll(appCtx, app); err != nil {
-			logger.L.Sugar().Fatalw(
-				"failed to register MQ subscribers",
-				"error", err,
-			)
-		}
-
-		logger.L.Sugar().Infow("MQ subscribers registered")
-	} else {
-		logger.L.Sugar().Warnw("MQ is not configured; skipping MQ subscribers")
-	}
-
 	// Distributed/Redis rate limiter for multi-instance scaling
 	rateLimiter := middleware.NewRateLimiter(1, 12, 10*time.Minute, 10000)
 
-	// Run chat hubs
-	hub := newchat.NewHub()
-	go hub.Run()
-
-	mehub := mechat.NewHub()
-	go mehub.Run()
-
 	router := routes.SetupRouter(app, rateLimiter)
 
-	newchat.AddNewChatRoutes(router, hub, app, rateLimiter)
-	mechat.AddMeChatRoutes(router, mehub, app, rateLimiter)
 	routes.AddStaticRoutes(router)
 
 	// Hardened readiness check using direct connectivity test
@@ -152,16 +121,9 @@ func main() {
 		logger.L.Sugar().Errorw("HTTP server shutdown error", "error", err)
 	}
 
-	// 2. Cancel appCtx to trigger subscriber unsubscriptions
-	logger.L.Sugar().Infow("Stopping MQ subscribers...")
-	appCancel()
-
 	// 3. Stop background workers
 	logger.L.Sugar().Infow("Stopping application workers...")
 	rateLimiter.Stop()
-	hub.Stop()
-	mehub.Stop()
-
 	// 4. Drain and close all infrastructure dependencies cleanly.
 	if err := app.Close(shutdownCtx); err != nil {
 		logger.L.Sugar().Errorw("Failed to close infrastructure dependencies", "error", err)

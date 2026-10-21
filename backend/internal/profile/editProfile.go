@@ -4,17 +4,19 @@ package profile
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"scav/config/mqevent"
+	"scav/config/mqevents"
 	"scav/infra"
 	"scav/infra/cache"
 	"scav/infra/mq"
 	"scav/middleware"
 	"scav/utils"
+
+	log "scav/infra/logger"
 )
 
 /* -------------------------------------------------------
@@ -25,8 +27,12 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// 1. Validate JWT
-		claims := &middleware.Claims{Username: utils.GetUsernameFromRequest(r), UserID: utils.GetUserIDFromRequest(r)}
+		// 1. Validate JWT before trusting request context.
+		claims, err := validateJWT(r)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 
 		// 2. Parse form data (~10 MB)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
@@ -49,6 +55,17 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 		if _, err := ApplyProfileUpdatesDeps(ctx, app, claims.UserID, updates); err != nil {
 			http.Error(w, "Failed to update profile", http.StatusInternalServerError)
 			return
+		}
+
+		if app != nil && app.MQ != nil {
+			evtCtx := mq.WithServiceName(ctx, "profile")
+			if err := mq.PublishWithMeta(evtCtx, app.MQ, mqevents.SubjectUserProfileUpdated, mqevents.UserProfileUpdatedEvent{
+				UserID:    claims.UserID,
+				Username:  claims.Username,
+				UpdatedAt: time.Now().UTC(),
+			}); err != nil {
+				log.L.Sugar().Warnw("profile: publish update event failed", "userid", claims.UserID, "error", err)
+			}
 		}
 
 		// 6. Respond with updated profile
@@ -80,12 +97,18 @@ func DeleteProfile(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
+		if app != nil && app.MQ != nil {
+			evtCtx := mq.WithServiceName(ctx, "profile")
+			if err := mq.PublishWithMeta(evtCtx, app.MQ, mqevents.SubjectUserProfileDeleted, mqevents.UserProfileDeletedEvent{
+				UserID:    claims.UserID,
+				Username:  claims.Username,
+				DeletedAt: time.Now().UTC(),
+			}); err != nil {
+				log.L.Sugar().Warnw("profile: publish delete event failed", "userid", claims.UserID, "error", err)
+			}
+		}
+
 		// Success response
-
-		mqpayload, _ := json.Marshal(mqevent.ProfileDeletedPayload{})
-
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.ProfileDeletedEvent, mqpayload)
-
 		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
 			"message": "Profile deleted successfully",
 		})

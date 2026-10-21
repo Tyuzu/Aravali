@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var UsersTable = config.Tables.UserTable
+var UsersTable = config.TablesConfig.UserTable
 
 func ensureAuthDB(app *infra.Deps) error {
 	if app == nil || app.SQLDB == nil {

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"scav/config/mqevent"
+	"scav/config/mqevents"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/middleware"
@@ -65,8 +65,20 @@ func Login(app *infra.Deps) http.HandlerFunc {
 
 		_ = ClearRateLimitCounter(ctx, app, failKey)
 
+		if app != nil && app.MQ != nil {
+			evtCtx := mq.WithServiceName(ctx, "auth")
+			if err := mq.PublishWithMeta(evtCtx, app.MQ, mqevents.SubjectUserLoggedIn, mqevents.UserLoggedInEvent{
+				UserID:    userID,
+				Username:  creds.Username,
+				IP:        ip,
+				UserAgent: r.UserAgent(),
+				Timestamp: time.Now().UTC(),
+			}); err != nil {
+				log.L.Sugar().Warnw("auth: publish login event failed", "userid", userID, "error", err)
+			}
+		}
+
 		setRefreshCookie(w, r, refreshToken)
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserLoggedIn, mqevent.UserLoggedInPayload{})
 
 		utils.RespondWithJSON(w, http.StatusOK, LoginResponse{
 			Message: "Login successful",

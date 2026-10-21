@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"scav/config/mqevent"
+	"scav/config/mqevents"
 	"scav/infra"
 	log "scav/infra/logger"
 	"scav/infra/mq"
@@ -52,6 +52,18 @@ func Register(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
+		if app != nil && app.MQ != nil {
+			evtCtx := mq.WithServiceName(ctx, "auth")
+			if err := mq.PublishWithMeta(evtCtx, app.MQ, mqevents.SubjectUserRegistered, mqevents.UserRegisteredEvent{
+				UserID:    user.UserID,
+				Username:  user.Username,
+				Email:     user.Email,
+				Timestamp: time.Now().UTC(),
+			}); err != nil {
+				log.L.Sugar().Warnw("auth: publish registration event failed", "userid", user.UserID, "error", err)
+			}
+		}
+
 		utils.RespondWithJSON(w, http.StatusCreated, SignUpResponse{
 			Message: "User registered successfully",
 			UserID:  user.UserID,
@@ -82,13 +94,6 @@ func ProcessRegistration(ctx context.Context, app *infra.Deps, input SignUpReque
 	if err := CreateUser(ctx, app, user); err != nil {
 		return User{}, err
 	}
-
-	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserRegistered, mqevent.UserRegisteredPayload{
-		UserID:     user.UserID,
-		Username:   user.Username,
-		Email:      user.Email,
-		OccurredAt: time.Now().UTC(),
-	})
 
 	return user, nil
 }

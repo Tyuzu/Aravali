@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"time"
 
-	"scav/config/mqevent"
+	"scav/config/mqevents"
 	"scav/infra"
 	"scav/infra/mq"
 	"scav/middleware"
 	"scav/utils"
+
+	log "scav/infra/logger"
 )
 
 /* ============================================================
@@ -62,7 +64,16 @@ func RevokeSessionAndEmit(ctx context.Context, app *infra.Deps, hashedToken stri
 		return err
 	}
 
-	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserLoggedOut, mqevent.UserLoggedOutPayload{})
+	if app != nil && app.MQ != nil {
+		evtCtx := mq.WithServiceName(ctx, "auth")
+		if err := mq.PublishWithMeta(evtCtx, app.MQ, mqevents.SubjectUserSessionRevoked, mqevents.UserSessionRevokedEvent{
+			Reason:    "single_session_revoked",
+			Timestamp: time.Now().UTC(),
+		}); err != nil {
+			log.L.Sugar().Warnw("auth: publish single logout event failed", "error", err)
+		}
+	}
+
 	return nil
 }
 
@@ -113,6 +124,16 @@ func RevokeAllSessionsAndEmit(ctx context.Context, app *infra.Deps, userID strin
 		return err
 	}
 
-	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.UserLoggedOutAllSessions, mqevent.UserLoggedOutPayload{})
+	if app != nil && app.MQ != nil {
+		evtCtx := mq.WithServiceName(ctx, "auth")
+		if err := mq.PublishWithMeta(evtCtx, app.MQ, mqevents.SubjectUserLoggedOut, mqevents.UserLoggedOutEvent{
+			UserID:    userID,
+			Reason:    "all_sessions_revoked",
+			Timestamp: time.Now().UTC(),
+		}); err != nil {
+			log.L.Sugar().Warnw("auth: publish logout event failed", "userid", userID, "error", err)
+		}
+	}
+
 	return nil
 }

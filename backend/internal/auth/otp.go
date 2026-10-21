@@ -20,10 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"scav/config/mqevent"
 	"scav/infra"
 	"scav/infra/logger"
-	"scav/infra/mq"
 	"scav/utils"
 )
 
@@ -123,7 +121,6 @@ func ProcessOTPRequest(ctx context.Context, app *infra.Deps, rawEmail string) er
 		return errors.New("Failed to send OTP")
 	}
 
-	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.OTPRequested, mqevent.OTPRequestedPayload{})
 	return nil
 }
 
@@ -148,7 +145,6 @@ func ProcessOTPVerification(ctx context.Context, app *infra.Deps, rawEmail, inpu
 	}
 
 	_ = DeleteOTPCache(ctx, app, email)
-	_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.OTPVerified, mqevent.OTPVerifiedPayload{})
 
 	return nil
 }

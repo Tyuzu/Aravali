@@ -65,3 +65,5 @@ docs/
 
 # *.ttf
 *.md
+
+_internal/

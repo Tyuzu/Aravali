@@ -8,9 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"scav/config/mqevent"
 	"scav/infra"
-	"scav/infra/mq"
 	"scav/middleware"
 	"scav/utils"
 
@@ -46,13 +44,6 @@ func RefreshToken(app *infra.Deps) http.HandlerFunc {
 		if result.NewRefresh != "" {
 			setRefreshCookie(w, r, result.NewRefresh)
 		}
-
-		_ = mq.PublishWithMeta(ctx, app.MQ, mqevent.TokenRefreshed, mqevent.TokenRefreshedPayload{
-			UserID:     result.UserID,
-			UserAgent:  r.UserAgent(),
-			IPAddress:  r.RemoteAddr,
-			OccurredAt: time.Now().UTC(),
-		})
 
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Token refreshed successfully",
