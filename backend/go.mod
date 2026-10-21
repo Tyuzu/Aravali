@@ -14,7 +14,6 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/rs/cors v1.11.1
 	go.uber.org/zap v1.28.0
-	golang.org/x/crypto v0.57.0
 	golang.org/x/time v0.16.0
 )
 
