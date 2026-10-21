@@ -1,4 +1,4 @@
-import "../../../css/layout/footer.css";
+// import "../../../css/layout/footer.css";
 import { getLanguage, setLanguage, t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { webSiteName } from "../../config/env.js";

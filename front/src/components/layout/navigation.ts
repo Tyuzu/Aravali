@@ -1,4 +1,4 @@
-import "../../../css/layout/navi.css";
+// import "../../../css/layout/navi.css";
 import { t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { getCurrentAllowedFeatures } from "../../config/domainFeatures.js";

@@ -1,4 +1,4 @@
-import "../../../css/subpages/sidebar.css";
+// import "../../../css/subpages/sidebar.css";
 import Modal from "../ui/Modal.js";
 import { createElement } from "../createElement.js";
 import { navigate } from "../../routes/navigate.js";

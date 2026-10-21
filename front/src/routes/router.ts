@@ -1,6 +1,6 @@
 import { createElement } from "../components/createElement.js";
 import { getState } from "../state/state.js";
-import { routes } from "./newRoutes.js";
+import { routes, type Route } from "./newRoutes.js";
 import { track } from "../services/activity/metrics.js";
 
 /* =========================================================
@@ -30,15 +30,6 @@ export type RenderFunction = (
   auth: boolean,
   ...args: any[]
 ) => Promise<void> | void;
-
-export interface Route {
-  path: string;
-  component: () => Promise<Record<string, any>>;
-  functionName?: string;
-  middleware?: MiddlewareFn[];
-  beforeEnter?: HookFn;
-  afterEnter?: HookFn;
-}
 
 export interface RouteModuleData {
   render: (
@@ -407,9 +398,9 @@ export async function render(
       contentContainer.replaceChildren();
       await cached.render(isLoggedIn, routeParams, contentContainer, context);
     } else {
-      const module = await matchedRoute.component();
+      const routeModule = (await matchedRoute.component()) as Record<string, unknown>;
       const exportName = matchedRoute.functionName || "default";
-      const renderFn: RenderFunction = module[exportName] || module.default;
+      const renderFn = (routeModule[exportName] ?? routeModule.default) as RenderFunction | undefined;
       if (typeof renderFn !== "function") {
         throw new Error(`Export '${exportName}' not found in component module.`);
       }

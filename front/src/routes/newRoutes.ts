@@ -1,4 +1,5 @@
 import { getCurrentAllowedFeatures } from "../config/domainFeatures.js";
+import type { AppRoute, RouteMeta } from "./modules/routeTypes.js";
 
 import {
   metaGuard,
@@ -17,15 +18,16 @@ import {
    FEATURE ROUTES
 ========================================================= */
 
-import { adminRoutes } from "./modules/admin.js";
-import { busRoutes } from "./modules/bus.js";
-import { farmsRoutes } from "./modules/farms.js";
-import { cropRoutes } from "./modules/crops.js";
-import { eventsRoutes } from "./modules/events.js";
-import { baitoRoutes } from "./modules/baito.js";
-import { socialRoutes } from "./modules/social.js";
-import { chatsRoutes } from "./modules/chats.js";
-import { placesRoutes } from "./modules/places.js";
+// import { adminRoutes } from "./modules/admin.js";
+// import { busRoutes } from "./modules/bus.js";
+// import { farmsRoutes } from "./modules/farms.js";
+// import { cropRoutes } from "./modules/crops.js";
+// import { eventsRoutes } from "./modules/events.js";
+// import { baitoRoutes } from "./modules/baito.js";
+// import { socialRoutes } from "./modules/social.js";
+// import { chatsRoutes } from "./modules/chats.js";
+// import { placesRoutes } from "./modules/places.js";
+import { userRoutes } from "./modules/user.js";
 
 /* =========================================================
    TYPES & INTERFACES
@@ -33,24 +35,12 @@ import { placesRoutes } from "./modules/places.js";
 
 export type MiddlewareFn = (context: any) => Promise<boolean | string | void> | boolean | string | void;
 
-export interface RouteMeta {
-  title?: string;
-  requiresAuth?: boolean;
-  guestOnly?: boolean;
-  roles?: string[];
-  roleMatchMode?: "ANY" | "ALL";
-  permissions?: string[];
-  featureFlag?: string;
-  [key: string]: any;
-}
+export type HookFn = (context: any) => Promise<boolean | string | void> | boolean | string | void;
 
-export interface Route {
-  path: string;
-  component: () => Promise<any>;
-  functionName?: string;
+export interface Route extends AppRoute {
   meta?: RouteMeta;
   middleware?: MiddlewareFn[];
-  beforeEnter?: (context: any) => Promise<boolean | string | void> | boolean | string | void;
+  beforeEnter?: HookFn;
   afterEnter?: (context: any) => Promise<void> | void;
 }
 
@@ -78,35 +68,6 @@ const coreRoutes: Route[] = [
   },
 
   {
-    path: "/login",
-    component: () => import("../pages/auth/auth.js"),
-    functionName: "Auth",
-    meta: {
-      guestOnly: true,
-      title: "Login"
-    }
-  },
-
-  {
-    path: "/profile",
-    component: () => import("../pages/profile/userProfile.js"),
-    functionName: "MyProfile",
-    meta: {
-      requiresAuth: true,
-      title: "My Profile"
-    }
-  },
-
-  {
-    path: "/user/:id",
-    component: () => import("../pages/profile/userProfile.js"),
-    functionName: "UserProfile",
-    meta: {
-      title: "User Profile"
-    }
-  },
-
-  {
     path: "/settings",
     component: () => import("../pages/profile/settings.js"),
     functionName: "Settings",
@@ -116,96 +77,6 @@ const coreRoutes: Route[] = [
     }
   },
 
-  {
-    path: "/map",
-    component: () => import("../pages/gtamap/mapgta.js"),
-    functionName: "MapGTA",
-    meta: {
-      title: "Map"
-    }
-  },
-
-  {
-    path: "/cart",
-    component: () => import("../pages/cart/cart.js"),
-    functionName: "Cart",
-    meta: {
-      requiresAuth: true,
-      title: "Shopping Cart"
-    }
-  },
-
-  {
-    path: "/my-orders",
-    component: () => import("../pages/cart/myorders.js"),
-    functionName: "MyOrders",
-    meta: {
-      requiresAuth: true,
-      title: "My Orders"
-    }
-  },
-
-  {
-    path: "/deliveries",
-    component: () => import("../pages/delivery/deliveries.js"),
-    functionName: "Deliveries",
-    meta: {
-      requiresAuth: true,
-      title: "Deliveries"
-    }
-  },
-
-  {
-    path: "/delivery/create",
-    component: () => import("../pages/delivery/createDelivery.js"),
-    functionName: "Createdelivery",
-    meta: {
-      requiresAuth: true,
-      title: "Create Delivery"
-    }
-  },
-
-  {
-    path: "/delivery/track/:id",
-    component: () => import("../pages/delivery/trackDelivery.js"),
-    functionName: "TrackDelivery",
-    meta: {
-      requiresAuth: true,
-      title: "Track Delivery"
-    }
-  },
-
-  {
-    path: "/delivery/:id",
-    component: () => import("../pages/delivery/displayDelivery.js"),
-    functionName: "Delivery",
-    meta: {
-      requiresAuth: true,
-      title: "Delivery"
-    }
-  },
-
-  {
-    path: "/dash/driver",
-    component: () => import("../pages/delivery/driverDash.js"),
-    functionName: "DriverDash",
-    meta: {
-      requiresAuth: true,
-      roles: ["driver", "admin"],
-      roleMatchMode: "ANY",
-      title: "Driver Dashboard"
-    }
-  },
-
-  {
-    path: "/wallet",
-    component: () => import("../pages/wallet/wallet.js"),
-    functionName: "Wallet",
-    meta: {
-      requiresAuth: true,
-      title: "Wallet"
-    }
-  }
 ];
 
 /* =========================================================
@@ -351,14 +222,15 @@ const errorRoutes: Route[] = [
 ========================================================= */
 
 const featureModules: Record<string, Route[]> = {
-  bus: busRoutes,
-  admin: adminRoutes,
-  farms: [...farmsRoutes, ...cropRoutes],
-  events: eventsRoutes,
-  baito: baitoRoutes,
-  social: socialRoutes,
-  chats: chatsRoutes,
-  places: placesRoutes
+  // bus: busRoutes,
+  // admin: adminRoutes,
+  // farms: [...farmsRoutes, ...cropRoutes],
+  // events: eventsRoutes,
+  // baito: baitoRoutes,
+  // social: socialRoutes,
+  // chats: chatsRoutes,
+  // places: placesRoutes,
+  user: userRoutes
 };
 
 /* =========================================================
@@ -408,21 +280,21 @@ function buildRoutes(): Route[] {
     }
   });
 
-  if (
-    allowedFeatures.includes("ALL") ||
-    allowedFeatures.includes("admin")
-  ) {
-    aggregatedRoutes.push({
-      path: "/admin/*path",
-      component: () => import("../pages/admin/dashboard.js"),
-      functionName: "AdminDashboard",
-      meta: {
-        requiresAuth: true,
-        roles: ["admin"],
-        title: "Admin Portal"
-      }
-    });
-  }
+  // if (
+  //   allowedFeatures.includes("ALL") ||
+  //   allowedFeatures.includes("admin")
+  // ) {
+  //   aggregatedRoutes.push({
+  //     path: "/admin/*path",
+  //     component: () => import("../pages/admin/dashboard.js"),
+  //     functionName: "AdminDashboard",
+  //     meta: {
+  //       requiresAuth: true,
+  //       roles: ["admin"],
+  //       title: "Admin Portal"
+  //     }
+  //   });
+  // }
 
   /*
    * Attach middleware stack.

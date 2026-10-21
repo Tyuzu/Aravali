@@ -1,7 +1,7 @@
 import "../../../css/ui/Notify.css";
 import { createElement } from "../../components/createElement.js"; // Adjust path as needed
 import { getState, setState } from "../../state/state.js";
-import { playSoundAlert } from "../../services/notifications/soundAlerts.js";
+// import { playSoundAlert } from "../../services/notifications/soundAlerts.js";
 import { addSystemLog } from "../../utils/idxDB.js"; // Import IndexedDB persistence helper
 
 // ---- Types & Interfaces ----
@@ -112,7 +112,7 @@ const Notify = (
     const safeUnreadTotal = Number.isFinite(unreadTotal) ? unreadTotal : 0;
     setState("unreadNotifications", safeUnreadTotal + 1);
   }
-  playSoundAlert({ type: "notification" });
+  // playSoundAlert({ type: "notification" });
 
   // Persistent System Log Storage (Async save to IndexedDB)
   if (currentUserId) {

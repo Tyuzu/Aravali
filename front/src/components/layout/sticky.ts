@@ -1,9 +1,9 @@
-import "../../../css/layout/sticky.css";
+// import "../../../css/layout/sticky.css";
 import { createElement } from "../createElement.js";
 import { notifSVG, cartSVG, chatCircleSVG, menuSVG, aSVG } from "../svgs/featherSVGs";
 import { navigate } from "../../routes/navigate.js";
 import { getState, subscribe } from "../../state/state.js";
-import { openNotificationsModal } from "../../services/notifications/notifModal.js";
+// import { openNotificationsModal } from "../../services/notifications/notifModal.js";
 import { goHome, toggleSidebar } from "./sidebar.js";
 import { createIconButton } from "../../utils/svgIconButton.js";
 
@@ -112,18 +112,18 @@ function updateNav(container: HTMLElement, extraOptions: StickyExtraOptions = {}
             })
         );
 
-        // Notifications Button
-        const notifBtn: HTMLElement = createIconButton({
-            classSuffix: "notif",
-            svgMarkup: notifSVG,
-            onClick: openNotificationsModal,
-            label: "Notifications"
-        });
+        // // Notifications Button
+        // const notifBtn: HTMLElement = createIconButton({
+        //     classSuffix: "notif",
+        //     svgMarkup: notifSVG,
+        //     onClick: openNotificationsModal,
+        //     label: "Notifications"
+        // });
 
-        if (unreadNotifications > 0) {
-            notifBtn.appendChild(createBadge(unreadNotifications));
-        }
-        fragment.appendChild(notifBtn);
+        // if (unreadNotifications > 0) {
+        //     notifBtn.appendChild(createBadge(unreadNotifications));
+        // }
+        // fragment.appendChild(notifBtn);
     }
 
     container.replaceChildren(fragment);

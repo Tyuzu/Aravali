@@ -1,4 +1,3 @@
-import "../../../css/inistyles/authpage.css";
 import {
   login,
   signup
