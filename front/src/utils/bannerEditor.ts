@@ -76,8 +76,8 @@ async function loadCropperEditor(): Promise<typeof import("./cropper/index.js")>
 
     cropperLoader = (async () => {
         await Promise.all([
-            import("../../css/inistyles/cropper.css"),
-            import("../../css/inistyles/imagecropper.css")
+            // import("../../css/inistyles/cropper.css"),
+            // import("../../css/inistyles/imagecropper.css")
         ]);
 
         return import("./cropper/index.js");

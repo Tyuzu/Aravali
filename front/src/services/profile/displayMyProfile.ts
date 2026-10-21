@@ -4,7 +4,6 @@ import { deleteProfileRequest } from "./api.js";
 import { logout } from "../auth/authService.js";
 import { fetchProfile } from "./fetchProfile.js";
 import { renderProfile } from "./views/displayProfileView.js";
-import { displayUserProfileData } from "../userdata/displayProfileData.js";
 import { attachProfileEventListeners } from "./events/profileEvents.js";
 import Notify from "../../components/ui/Notify.js";
 
@@ -32,7 +31,7 @@ async function displayProfile(
     const profile = await fetchProfile();
 
     if (profile) {
-      const profileElement = renderProfile(profile, isLoggedIn, displayUserProfileData);
+      const profileElement = renderProfile(profile, isLoggedIn);
       content.appendChild(profileElement);
       attachProfileEventListeners(content);
     } else {

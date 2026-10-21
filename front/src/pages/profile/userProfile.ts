@@ -1,6 +1,4 @@
 
-import "../../../css/inistyles/profilexx.css";
-import "../../../css/inistyles/udata.css";
 import { displayProfile } from "../../services/profile/displayMyProfile.js";
 import { displayUserProfile } from "../../services/profile/otherUserProfileService.js";
 import { getState } from "../../state/state.js";

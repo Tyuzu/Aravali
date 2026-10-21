@@ -67,16 +67,6 @@ const coreRoutes: Route[] = [
     }
   },
 
-  {
-    path: "/settings",
-    component: () => import("../pages/profile/settings.js"),
-    functionName: "Settings",
-    meta: {
-      requiresAuth: true,
-      title: "Account Settings"
-    }
-  },
-
 ];
 
 /* =========================================================

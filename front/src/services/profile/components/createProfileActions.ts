@@ -1,21 +1,21 @@
 import { getState } from "../../../state/state.js";
 import Button, { ButtonOptions } from "../../../components/base/Button.js";
-import { toggleAction } from "../../beats/toggleFollows.js";
-import { meChat } from "../../mechat/plugnplay.js";
-import { reportEntity } from "../../reporting/reporting.js";
+// import { toggleAction } from "../../beats/toggleFollows.js";
+// import { meChat } from "../../mechat/plugnplay.js";
+// import { reportEntity } from "../../reporting/reporting.js";
 import { logout } from "../../auth/authService.js";
 
 import type { UserProfile } from "../profileGenHelpers.js";
 
 export function FollowUser(followBtn: HTMLButtonElement, userId: string | number): void {
-    toggleAction({
-        entityId: userId,
-        entityType: "user",
-        button: followBtn,
-        apiPath: "/subscribes/",
-        labels: { on: "Unfollow", off: "Follow" },
-        actionName: "followed"
-    });
+    // toggleAction({
+    //     entityId: userId,
+    //     entityType: "user",
+    //     button: followBtn,
+    //     apiPath: "/subscribes/",
+    //     labels: { on: "Unfollow", off: "Follow" },
+    //     actionName: "followed"
+    // });
 }
 
 export function createProfileActions(profile: UserProfile, isLoggedIn: boolean): HTMLDivElement {
@@ -61,7 +61,7 @@ export function createProfileActions(profile: UserProfile, isLoggedIn: boolean):
             title: "Send Message",
             id: "send-msg",
             events: {
-                click: () => meChat(profile.userid as string | number, "user", currentUser)
+                // click: () => meChat(profile.userid as string | number, "user", currentUser)
             },
             classes: "buttonx"
         };
@@ -72,7 +72,7 @@ export function createProfileActions(profile: UserProfile, isLoggedIn: boolean):
             title: "Report",
             id: "report-btn",
             events: {
-                click: () => reportEntity(String(profile.userid), "user")
+                // click: () => reportEntity(String(profile.userid), "user")
             },
             classes: "report-btn"
         };

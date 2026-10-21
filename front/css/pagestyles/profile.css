@@ -1,0 +1,147 @@
+
+.profilepage {
+    display: flex;
+    justify-content: center;
+}
+
+.profile-container {
+    width: 100%;
+    max-width: var(--max-width-md);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-elev-1);
+    overflow: hidden;
+}
+
+.channel {
+    width: 100%;
+}
+
+.user-banner {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    background-color: var(--color-bg-tertiary);
+}
+
+.edit-banner-pic {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    background-color: var(--color-overlay);
+    color: var(--color-primary-fg);
+    border: none;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+}
+
+.profile_area {
+    position: relative;
+    padding: 0 var(--space-lg);
+    margin-top: -40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-circle);
+    border: 3px solid var(--color-surface);
+    overflow: hidden;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-elev-1);
+}
+
+.imgful {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.edit-avatar-btn {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-fg);
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.profile-details {
+    padding: var(--space-md) var(--space-lg);
+}
+
+.profile-actions {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: flex-end;
+    margin-bottom: var(--space-sm);
+}
+
+.logout-btn {
+    background-color: transparent;
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+}
+
+.logout-btn:hover {
+    background-color: var(--color-danger);
+    color: var(--color-primary-fg);
+}
+
+.edit-btn {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-fg);
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+}
+
+.edit-btn:hover {
+    background-color: var(--color-card-hover);
+}
+
+.username {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    font-weight: var(--font-weight-regular);
+}
+
+.profile-info {
+    margin-top: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+}
+
+.statistics {
+    display: flex;
+    justify-content: space-around;
+    padding: var(--space-md) var(--space-lg);
+    border-top: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+    font-size: var(--font-size-sm);
+}
+
+.statistics p {
+    gap: var(--space-xs);
+}
+
+.followcon {
+    padding: var(--space-md) var(--space-lg);
+}

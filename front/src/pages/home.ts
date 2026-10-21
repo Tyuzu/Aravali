@@ -1,12 +1,15 @@
 
-// import "../../css/home.css";
-// import "../../css/farmstyles/crops.css";
-import "../../css/farmstyles/crops.css";
-
-// import { YoHome } from "../services/home/yohome.js";
-import { displayCrops } from "../services/crops/crop/crops.js";
+// import "../../../css/inistyles/profilexx.css";
+import { displayProfile } from "../services/profile/displayMyProfile.js";
+import { getState } from "../state/state.js";
 
 export function Home(isLoggedIn: boolean, container: HTMLElement): void {
-  displayCrops(container);
-  // YoHome(isLoggedIn, container);
+  container.innerHTML = "";
+  const content = document.createElement("div");
+  content.className = "profilepage";
+  container.appendChild(content);
+
+  // Prefer centralized state snapshot to determine auth, fall back to route param
+  const logged = Boolean(getState("isLoggedIn") || isLoggedIn);
+  displayProfile(Boolean(logged), content);
 }

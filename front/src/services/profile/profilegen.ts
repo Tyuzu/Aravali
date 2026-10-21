@@ -6,7 +6,6 @@ import { getState } from "../../state/state";
 import { createProfileDetails, createStatistics, UserProfile, appendChildren } from "./profileGenHelpers";
 import { createBanner } from "./components/bannerView";
 import { createAvatar } from "./components/avatarView";
-import { othusrdata } from "../userdata/otheruserdata";
 import { createElement } from "../../components/createElement";
 
 export type LoadUserDataCallback = (
@@ -183,12 +182,12 @@ function profilGen(
     });
 
     appendChildren(section, loadUserDataButton, udata);
-  } else {
-    const kc = createElement("div");
-    if (profile.userid) {
-      othusrdata(kc, String(profile.userid));
-    }
-    appendChildren(section, kc);
+  // } else {
+  //   const kc = createElement("div");
+  //   if (profile.userid) {
+  //     othusrdata(kc, String(profile.userid));
+  //   }
+  //   appendChildren(section, kc);
   }
 
   profileContainer.appendChild(section);
