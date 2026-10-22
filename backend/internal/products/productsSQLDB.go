@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	farmOrdersTable = config.Tables.FarmOrdersTable
-	productsTable   = config.Tables.ProductTable
-	cropsTable      = config.Tables.CropsTable
-	usersTable      = config.Tables.UserTable
-	farmsTable      = config.Tables.FarmsTable
+	_farmOrdersTable = config.Tables.FarmOrdersTable
+	_productsTable   = config.Tables.ProductTable
+	_cropsTable      = config.Tables.CropsTable
+	_usersTable      = config.Tables.UserTable
+	_farmsTable      = config.Tables.FarmsTable
 )
 
-func makeUpdateSet(update map[string]any) (string, []any) {
+func _makeUpdateSet(update map[string]any) (string, []any) {
 	parts := make([]string, 0, len(update))
 	args := make([]any, 0, len(update))
 	for key, value := range update {
@@ -34,7 +34,7 @@ func makeUpdateSet(update map[string]any) (string, []any) {
 }
 
 // Products
-func GetProductByID(ctx context.Context, app *infra.Deps, id string, out *farms.Product) error {
+func _GetProductByID(ctx context.Context, app *infra.Deps, id string, out *farms.Product) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -44,7 +44,7 @@ func GetProductByID(ctx context.Context, app *infra.Deps, id string, out *farms.
 	return nil
 }
 
-func FindProductsWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, out *[]farms.Product) error {
+func _FindProductsWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, out *[]farms.Product) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -55,7 +55,7 @@ func FindProductsWithOptions(ctx context.Context, app *infra.Deps, query string,
 	return err
 }
 
-func buildProductSearchQuery(itemType, category, search string) (string, []any) {
+func _buildProductSearchQuery(itemType, category, search string) (string, []any) {
 	query := "1 = 1"
 	args := []any{}
 
@@ -75,7 +75,7 @@ func buildProductSearchQuery(itemType, category, search string) (string, []any) 
 	return query, args
 }
 
-func buildProductListOptions(skip, limit int, sort string) map[string]any {
+func _buildProductListOptions(skip, limit int, sort string) map[string]any {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -88,16 +88,16 @@ func buildProductListOptions(skip, limit int, sort string) map[string]any {
 	return map[string]any{"skip": skip, "limit": limit, "sort": sort}
 }
 
-func getProductsPage(ctx context.Context, app *infra.Deps, itemType, category, search string, skip, limit int, sort string) ([]farms.Product, int64, error) {
-	query, args := buildProductSearchQuery(itemType, category, search)
-	opts := buildProductListOptions(skip, limit, sort)
+func _getProductsPage(ctx context.Context, app *infra.Deps, itemType, category, search string, skip, limit int, sort string) ([]farms.Product, int64, error) {
+	query, args := _buildProductSearchQuery(itemType, category, search)
+	opts := _buildProductListOptions(skip, limit, sort)
 	_ = opts
 	var items []farms.Product
-	if err := FindProductsWithOptions(ctx, app, query, args, opts, &items); err != nil {
+	if err := _FindProductsWithOptions(ctx, app, query, args, opts, &items); err != nil {
 		return nil, 0, err
 	}
 
-	total, err := CountProducts(ctx, app, query, args)
+	total, err := _CountProducts(ctx, app, query, args)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -105,7 +105,7 @@ func getProductsPage(ctx context.Context, app *infra.Deps, itemType, category, s
 	return items, total, nil
 }
 
-func CountProducts(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
+func _CountProducts(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
@@ -117,7 +117,7 @@ func CountProducts(ctx context.Context, app *infra.Deps, query string, args []an
 	return total, err
 }
 
-func InsertProduct(ctx context.Context, app *infra.Deps, item farms.Product) error {
+func _InsertProduct(ctx context.Context, app *infra.Deps, item farms.Product) error {
 	if app == nil || app.SQLDB == nil {
 		return nil
 	}
@@ -125,14 +125,14 @@ func InsertProduct(ctx context.Context, app *infra.Deps, item farms.Product) err
 	return err
 }
 
-func UpdateProductByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
+func _UpdateProductByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
 	if id == "" {
 		return 0, nil
 	}
-	setClause, setArgs := makeUpdateSet(update)
+	setClause, setArgs := _makeUpdateSet(update)
 	if setClause == "" {
 		return 0, nil
 	}
@@ -143,7 +143,7 @@ func UpdateProductByID(ctx context.Context, app *infra.Deps, id string, update m
 	return result.RowsAffected(), nil
 }
 
-func DeleteProductByID(ctx context.Context, app *infra.Deps, id string) (int64, error) {
+func _DeleteProductByID(ctx context.Context, app *infra.Deps, id string) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
@@ -158,7 +158,7 @@ func DeleteProductByID(ctx context.Context, app *infra.Deps, id string) (int64, 
 }
 
 // Orders
-func GetFarmOrderByID(ctx context.Context, app *infra.Deps, id string, out *cart.FarmOrder) error {
+func _GetFarmOrderByID(ctx context.Context, app *infra.Deps, id string, out *cart.FarmOrder) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -168,7 +168,7 @@ func GetFarmOrderByID(ctx context.Context, app *infra.Deps, id string, out *cart
 	return nil
 }
 
-func FindFarmOrders(ctx context.Context, app *infra.Deps, query string, args []any, out *[]cart.FarmOrder) error {
+func _FindFarmOrders(ctx context.Context, app *infra.Deps, query string, args []any, out *[]cart.FarmOrder) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -179,14 +179,14 @@ func FindFarmOrders(ctx context.Context, app *infra.Deps, query string, args []a
 	return err
 }
 
-func UpdateFarmOrderByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
+func _UpdateFarmOrderByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
 	if id == "" {
 		return 0, nil
 	}
-	setClause, setArgs := makeUpdateSet(update)
+	setClause, setArgs := _makeUpdateSet(update)
 	if setClause == "" {
 		return 0, nil
 	}
@@ -198,7 +198,7 @@ func UpdateFarmOrderByID(ctx context.Context, app *infra.Deps, id string, update
 }
 
 // Farms, users, crops
-func FindFarmsByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out *[]farms.Farm) error {
+func _FindFarmsByFilter(ctx context.Context, app *infra.Deps, query string, args []any, out *[]farms.Farm) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -209,7 +209,7 @@ func FindFarmsByFilter(ctx context.Context, app *infra.Deps, query string, args 
 	return err
 }
 
-func GetFarmByID(ctx context.Context, app *infra.Deps, id string, out *farms.Farm) error {
+func _GetFarmByID(ctx context.Context, app *infra.Deps, id string, out *farms.Farm) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -219,7 +219,7 @@ func GetFarmByID(ctx context.Context, app *infra.Deps, id string, out *farms.Far
 	return nil
 }
 
-func GetUserByID(ctx context.Context, app *infra.Deps, id string, out *auth.User) error {
+func _GetUserByID(ctx context.Context, app *infra.Deps, id string, out *auth.User) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -229,7 +229,7 @@ func GetUserByID(ctx context.Context, app *infra.Deps, id string, out *auth.User
 	return nil
 }
 
-func GetCropByID(ctx context.Context, app *infra.Deps, id string, out *farms.Crop) error {
+func _GetCropByID(ctx context.Context, app *infra.Deps, id string, out *farms.Crop) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -239,7 +239,7 @@ func GetCropByID(ctx context.Context, app *infra.Deps, id string, out *farms.Cro
 	return nil
 }
 
-func FindTransactions(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+func _FindTransactions(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
 	if app == nil || app.SQLDB == nil || out == nil {
 		return nil
 	}
@@ -251,11 +251,11 @@ func FindTransactions(ctx context.Context, app *infra.Deps, query string, args [
 }
 
 // Crop atomic update
-func FindOneAndUpdateCrop(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any, out any) error {
+func _FindOneAndUpdateCrop(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any, out any) error {
 	if app == nil || app.SQLDB == nil {
 		return nil
 	}
-	setClause, setArgs := makeUpdateSet(update)
+	setClause, setArgs := _makeUpdateSet(update)
 	if setClause == "" {
 		return nil
 	}
@@ -263,11 +263,11 @@ func FindOneAndUpdateCrop(ctx context.Context, app *infra.Deps, query string, ar
 	return err
 }
 
-func UpdateCropByFilter(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (int64, error) {
+func _UpdateCropByFilter(ctx context.Context, app *infra.Deps, query string, args []any, update map[string]any) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
-	setClause, setArgs := makeUpdateSet(update)
+	setClause, setArgs := _makeUpdateSet(update)
 	if setClause == "" {
 		return 0, nil
 	}

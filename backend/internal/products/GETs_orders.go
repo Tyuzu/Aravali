@@ -43,7 +43,7 @@ func GetMyFarmOrders(app *infra.Deps) http.HandlerFunc {
 		}
 
 		var orders []cart.FarmOrder
-		if err := FindFarmOrders(
+		if err := QQQFindFarmOrders(
 			ctx,
 			app,
 			"userid = $1",
@@ -166,7 +166,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 
 		// 1. Fetch farms owned by this user
 		var myfarms []farms.Farm
-		if err := FindFarmsByFilter(
+		if err := QQQFindFarmsByFilter(
 			ctx,
 			app,
 			"createdby = $1",
@@ -218,7 +218,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 
 		// 2. Fetch orders for those farms
 		var orders []cart.FarmOrder
-		if err := FindFarmOrders(ctx, app, query, args, &orders); err != nil {
+		if err := QQQFindFarmOrders(ctx, app, query, args, &orders); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to fetch orders",
@@ -240,7 +240,7 @@ func GetIncomingFarmOrders(app *infra.Deps) http.HandlerFunc {
 		txnByOrder := map[string]pay.Transaction{}
 		if len(orderIDs) > 0 {
 			var txns []pay.Transaction
-			_ = FindTransactions(ctx, app, "entity_type = $1 AND entity_id = ANY($2)", []any{"order", orderIDs}, &txns)
+			_ = QQQFindTransactions(ctx, app, "entity_type = $1 AND entity_id = ANY($2)", []any{"order", orderIDs}, &txns)
 
 			for _, t := range txns {
 				if t.EntityID != "" {
@@ -309,7 +309,7 @@ func fetchFarmByID(ctx context.Context, id string, app *infra.Deps) farms.Farm {
 		return farm
 	}
 
-	err := GetFarmByID(
+	err := QQQGetFarmByID(
 		ctx,
 		app,
 		id,
@@ -329,7 +329,7 @@ func fetchUserByID(ctx context.Context, id string, app *infra.Deps) auth.User {
 		return user
 	}
 
-	err := GetUserByID(
+	err := QQQGetUserByID(
 		ctx,
 		app,
 		id,
@@ -382,7 +382,7 @@ func fetchCropByID(ctx context.Context, id string, app *infra.Deps) farms.Crop {
 		return crop
 	}
 
-	err := GetCropByID(
+	err := QQQGetCropByID(
 		ctx,
 		app,
 		id,

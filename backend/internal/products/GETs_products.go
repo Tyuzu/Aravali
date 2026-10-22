@@ -25,7 +25,7 @@ func GetItems(app *infra.Deps) http.HandlerFunc {
 		search := r.URL.Query().Get("search")
 		skip, limit := utils.ParsePagination(r, 10, 100)
 
-		items, total, err := getProductsPage(ctx, app, itemType, category, search, skip, limit, r.URL.Query().Get("sort"))
+		items, total, err := QQQgetProductsPage(ctx, app, itemType, category, search, skip, limit, r.URL.Query().Get("sort"))
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch items")
 			return

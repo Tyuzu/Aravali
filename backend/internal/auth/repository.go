@@ -28,11 +28,11 @@ func NewRepository(deps *infra.Deps) Repository {
 }
 
 func (r *redisDBRepository) GetUserByUsername(ctx context.Context, username string) (User, error) {
-	return FindUserByUsername(ctx, r.deps, username)
+	return QQQFindUserByUsername(ctx, r.deps, username)
 }
 
 func (r *redisDBRepository) PersistUserSession(ctx context.Context, userID, hashedRefreshToken, uaHash, ipPrefix string) error {
-	_, err := UpdateUserSession(ctx, r.deps, userID, hashedRefreshToken, uaHash, ipPrefix)
+	_, err := QQQUpdateUserSession(ctx, r.deps, userID, hashedRefreshToken, uaHash, ipPrefix)
 	return err
 }
 

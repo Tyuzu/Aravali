@@ -58,7 +58,7 @@ func ProcessSingleLogout(ctx context.Context, app *infra.Deps, rawRefreshToken s
 
 // RevokeSessionAndEmit deletes a single session via token hash and publishes the broker event
 func RevokeSessionAndEmit(ctx context.Context, app *infra.Deps, hashedToken string) error {
-	if _, err := LogoutUserByRefreshToken(ctx, app, hashedToken); err != nil {
+	if _, err := QQQLogoutUserByRefreshToken(ctx, app, hashedToken); err != nil {
 		return err
 	}
 
@@ -109,7 +109,7 @@ func ProcessGlobalLogout(ctx context.Context, app *infra.Deps, userID string) er
 
 // RevokeAllSessionsAndEmit clears the user's sessions globally from storage and fires a system-wide event
 func RevokeAllSessionsAndEmit(ctx context.Context, app *infra.Deps, userID string) error {
-	if _, err := LogoutAllUserSessions(ctx, app, userID); err != nil {
+	if _, err := QQQLogoutAllUserSessions(ctx, app, userID); err != nil {
 		return err
 	}
 

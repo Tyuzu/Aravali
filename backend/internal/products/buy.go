@@ -92,7 +92,7 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 
 		// Atomic decrement to prevent concurrent overselling.
 		var updatedCrop map[string]any
-		err := FindOneAndUpdateCrop(
+		err := QQQFindOneAndUpdateCrop(
 			ctx,
 			app,
 			"farmid = $1 AND cropid = $2 AND quantity > $3 AND outofstock IS NOT TRUE",
@@ -114,7 +114,7 @@ func BuyCrop(app *infra.Deps) http.HandlerFunc {
 		}
 
 		if quantity, ok := toInt(updatedCrop["quantity"]); ok && quantity == 0 {
-			_, _ = UpdateCropByFilter(
+			_, _ = QQQUpdateCropByFilter(
 				ctx,
 				app,
 				"farmid = $1 AND cropid = $2",
@@ -155,7 +155,7 @@ func updateOrderStatus(
 	}
 
 	var order cart.FarmOrder
-	if err := GetFarmOrderByID(ctx, app, orderID, &order); err != nil {
+	if err := QQQGetFarmOrderByID(ctx, app, orderID, &order); err != nil {
 		utils.RespondWithJSON(
 			w,
 			http.StatusNotFound,
@@ -165,7 +165,7 @@ func updateOrderStatus(
 	}
 
 	var farm farms.Farm
-	if err := GetFarmByID(ctx, app, order.FarmID, &farm); err != nil {
+	if err := QQQGetFarmByID(ctx, app, order.FarmID, &farm); err != nil {
 		utils.RespondWithJSON(
 			w,
 			http.StatusNotFound,
@@ -196,7 +196,7 @@ func updateOrderStatus(
 		return
 	}
 
-	_, err := UpdateFarmOrderByID(
+	_, err := QQQUpdateFarmOrderByID(
 		ctx,
 		app,
 		orderID,
@@ -318,7 +318,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 	}
 
 	var ownedFarms []farms.Farm
-	if err := FindFarmsByFilter(ctx, app, "createdby = $1", []any{userID}, &ownedFarms); err != nil {
+	if err := QQQFindFarmsByFilter(ctx, app, "createdby = $1", []any{userID}, &ownedFarms); err != nil {
 		utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 			"success": false,
 			"message": "Failed to fetch farms",
@@ -336,7 +336,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 
 	for _, orderID := range req.OrderIDs {
 		var order cart.FarmOrder
-		if err := GetFarmOrderByID(ctx, app, orderID, &order); err != nil {
+		if err := QQQGetFarmOrderByID(ctx, app, orderID, &order); err != nil {
 			response.Failed++
 			errorsList = append(errorsList, fmt.Sprintf("Order %s not found", orderID))
 			continue
@@ -362,7 +362,7 @@ func bulkUpdateOrders(w http.ResponseWriter, r *http.Request, newStatus string, 
 			continue
 		}
 
-		if _, err := UpdateFarmOrderByID(
+		if _, err := QQQUpdateFarmOrderByID(
 			ctx,
 			app,
 			orderID,
@@ -424,7 +424,7 @@ func DownloadReceipt(app *infra.Deps) http.HandlerFunc {
 		orderID := utils.GetParam(r, "id")
 
 		var order cart.FarmOrder
-		if err := GetFarmOrderByID(ctx, app, orderID, &order); err != nil {
+		if err := QQQGetFarmOrderByID(ctx, app, orderID, &order); err != nil {
 			utils.RespondWithJSON(
 				w,
 				http.StatusNotFound,

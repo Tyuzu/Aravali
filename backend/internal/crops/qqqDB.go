@@ -2,8 +2,15 @@ package crops
 
 import (
 	"context"
+	"scav/config"
 	"scav/infra"
 	"scav/internal/farms"
+)
+
+var (
+	cropsTable      = config.Tables.CropsTable
+	cropsAboutTable = config.Tables.CropsAboutTable
+	catalogueTable  = config.Tables.CatalogueTable
 )
 
 func QQQcreateCropAbout(ctx context.Context, app *infra.Deps, crop *CropAbout) error {

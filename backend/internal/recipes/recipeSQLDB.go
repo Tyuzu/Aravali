@@ -15,10 +15,10 @@ import (
 )
 
 // central table name
-var recipeTable = config.Tables.RecipeTable
+var _recipeTable = config.Tables.RecipeTable
 
 // DB wrappers for recipe operations
-func GetRecipeByID(ctx context.Context, app *infra.Deps, id string, out *Recipe) error {
+func _GetRecipeByID(ctx context.Context, app *infra.Deps, id string, out *Recipe) error {
 	if app == nil || app.SQLDB == nil {
 		return nil
 	}
@@ -46,7 +46,7 @@ func GetRecipeByID(ctx context.Context, app *infra.Deps, id string, out *Recipe)
 	return nil
 }
 
-func InsertRecipe(ctx context.Context, app *infra.Deps, rec Recipe) error {
+func _InsertRecipe(ctx context.Context, app *infra.Deps, rec Recipe) error {
 	if app == nil || app.SQLDB == nil {
 		return nil
 	}
@@ -106,7 +106,7 @@ func InsertRecipe(ctx context.Context, app *infra.Deps, rec Recipe) error {
 	return err
 }
 
-func UpdateRecipeByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
+func _UpdateRecipeByID(ctx context.Context, app *infra.Deps, id string, update map[string]any) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
@@ -129,7 +129,7 @@ func UpdateRecipeByID(ctx context.Context, app *infra.Deps, id string, update ma
 	return result.RowsAffected(), nil
 }
 
-func FindRecipesWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, out *[]Recipe) error {
+func _FindRecipesWithOptions(ctx context.Context, app *infra.Deps, query string, args []any, opts map[string]any, out *[]Recipe) error {
 	if app == nil || app.SQLDB == nil {
 		return nil
 	}
@@ -183,7 +183,7 @@ func FindRecipesWithOptions(ctx context.Context, app *infra.Deps, query string, 
 	return rows.Err()
 }
 
-func buildRecipeSearchQuery(search, ingredient, tags string) (string, []any) {
+func _buildRecipeSearchQuery(search, ingredient, tags string) (string, []any) {
 	query := "1 = 1"
 	args := []any{}
 	if search != "" {
@@ -201,7 +201,7 @@ func buildRecipeSearchQuery(search, ingredient, tags string) (string, []any) {
 	return query, args
 }
 
-func buildRecipeListOptions(skip, limit int, sort string) map[string]any {
+func _buildRecipeListOptions(skip, limit int, sort string) map[string]any {
 	if limit <= 0 {
 		limit = 25
 	}
@@ -214,16 +214,16 @@ func buildRecipeListOptions(skip, limit int, sort string) map[string]any {
 	return map[string]any{"offset": skip, "limit": limit, "sort": sort}
 }
 
-func getRecipesPage(ctx context.Context, app *infra.Deps, search, ingredient, tags string, skip, limit int, sort string) ([]Recipe, int64, error) {
-	query, args := buildRecipeSearchQuery(search, ingredient, tags)
-	opts := buildRecipeListOptions(skip, limit, sort)
+func _getRecipesPage(ctx context.Context, app *infra.Deps, search, ingredient, tags string, skip, limit int, sort string) ([]Recipe, int64, error) {
+	query, args := _buildRecipeSearchQuery(search, ingredient, tags)
+	opts := _buildRecipeListOptions(skip, limit, sort)
 
 	var recipes []Recipe
-	if err := FindRecipesWithOptions(ctx, app, query, args, opts, &recipes); err != nil {
+	if err := _FindRecipesWithOptions(ctx, app, query, args, opts, &recipes); err != nil {
 		return nil, 0, err
 	}
 
-	total, err := CountRecipes(ctx, app, query, args)
+	total, err := _CountRecipes(ctx, app, query, args)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -231,7 +231,7 @@ func getRecipesPage(ctx context.Context, app *infra.Deps, search, ingredient, ta
 	return recipes, total, nil
 }
 
-func CountRecipes(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
+func _CountRecipes(ctx context.Context, app *infra.Deps, query string, args []any) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, nil
 	}
@@ -242,7 +242,7 @@ func CountRecipes(ctx context.Context, app *infra.Deps, query string, args []any
 	return total, nil
 }
 
-func AggregateRecipes(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
+func _AggregateRecipes(ctx context.Context, app *infra.Deps, query string, args []any, out any) error {
 	if app == nil || app.SQLDB == nil {
 		return nil
 	}

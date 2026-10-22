@@ -289,5 +289,5 @@ func DeleteOTPCache(ctx context.Context, app *infra.Deps, email string) error {
 }
 
 func UpdateUserVerificationStatus(ctx context.Context, app *infra.Deps, email string) (any, error) {
-	return VerifyUserEmail(ctx, app, email)
+	return QQQVerifyUserEmail(ctx, app, email)
 }

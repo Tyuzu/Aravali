@@ -164,7 +164,7 @@ func CreateRecipe(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		err := InsertRecipe(ctx, app, recipe)
+		err := QQQInsertRecipe(ctx, app, recipe)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -262,7 +262,7 @@ func UpdateRecipe(app *infra.Deps) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		_, err := UpdateRecipeByID(
+		_, err := QQQUpdateRecipeByID(
 			ctx,
 			app,
 			id,

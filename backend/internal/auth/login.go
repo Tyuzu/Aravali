@@ -112,7 +112,7 @@ func AuthenticateAndCreateSession(ctx context.Context, app *infra.Deps, creds Lo
 	if !matched && len(user.Password) > 0 && isBcrypt(user.Password) {
 		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password)) == nil {
 			matched = true
-			if _, err := MigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
+			if _, err := QQQMigrateUserPasswordHash(ctx, app, user.UserID, user.Password); err != nil {
 				log.Printf("auth: failed to migrate password hash for userid=%s: %v", user.UserID, err)
 			}
 		}
@@ -183,9 +183,9 @@ func ClearRateLimitCounter(ctx context.Context, app *infra.Deps, failKey string)
 }
 
 func GetUserByUsername(ctx context.Context, app *infra.Deps, username string) (User, error) {
-	return FindUserByUsername(ctx, app, username)
+	return QQQFindUserByUsername(ctx, app, username)
 }
 
 func PersistUserSession(ctx context.Context, app *infra.Deps, userID, hashedRefreshToken, uaHash, ipPrefix string) (any, error) {
-	return UpdateUserSession(ctx, app, userID, hashedRefreshToken, uaHash, ipPrefix)
+	return QQQUpdateUserSession(ctx, app, userID, hashedRefreshToken, uaHash, ipPrefix)
 }

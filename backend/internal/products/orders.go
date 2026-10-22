@@ -24,7 +24,7 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 		defer cancel()
 
 		var orders []cart.FarmOrder
-		if err := FindFarmOrders(ctx, app, "1 = 1", nil, &orders); err != nil {
+		if err := QQQFindFarmOrders(ctx, app, "1 = 1", nil, &orders); err != nil {
 			log.Println("GetIncomingOrders error:", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
@@ -65,13 +65,13 @@ func GetIncomingOrders(app *infra.Deps) http.HandlerFunc {
 
 func getUserByID(ctx context.Context, id string, app *infra.Deps) auth.User {
 	var user auth.User
-	_ = GetUserByID(ctx, app, id, &user)
+	_ = QQQGetUserByID(ctx, app, id, &user)
 	return user
 }
 
 func getCropByID(ctx context.Context, id string, app *infra.Deps) farms.Crop {
 	var crop farms.Crop
-	_ = GetCropByID(ctx, app, id, &crop)
+	_ = QQQGetCropByID(ctx, app, id, &crop)
 	return crop
 }
 

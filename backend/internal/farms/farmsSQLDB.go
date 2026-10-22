@@ -19,19 +19,19 @@ import (
 )
 
 var (
-	cropsTable      = config.Tables.CropsTable
-	farmsTable      = config.Tables.FarmsTable
-	farmOrdersTable = config.Tables.FarmOrdersTable
+	_cropsTable      = config.Tables.CropsTable
+	_farmsTable      = config.Tables.FarmsTable
+	_farmOrdersTable = config.Tables.FarmOrdersTable
 )
 
-func ensureFarmDB(app *infra.Deps) error {
+func _ensureFarmDB(app *infra.Deps) error {
 	if app == nil || app.SQLDB == nil {
 		return errors.New("database unavailable")
 	}
 	return nil
 }
 
-func parseFarmMetadata(raw []byte, dst *Farm) {
+func _parseFarmMetadata(raw []byte, dst *Farm) {
 	if dst == nil || len(raw) == 0 || string(raw) == "null" {
 		return
 	}
@@ -77,7 +77,7 @@ func parseFarmMetadata(raw []byte, dst *Farm) {
 	}
 }
 
-func parseCropMetadata(raw []byte, dst *Crop) {
+func _parseCropMetadata(raw []byte, dst *Crop) {
 	if dst == nil || len(raw) == 0 || string(raw) == "null" {
 		return
 	}
@@ -132,7 +132,7 @@ func parseCropMetadata(raw []byte, dst *Crop) {
 	}
 }
 
-func makeUpdateSet(update map[string]any) (string, []any) {
+func _makeUpdateSet(update map[string]any) (string, []any) {
 	parts := make([]string, 0, len(update))
 	args := make([]any, 0, len(update))
 	for key, value := range update {
@@ -142,11 +142,11 @@ func makeUpdateSet(update map[string]any) (string, []any) {
 	return strings.Join(parts, ", "), args
 }
 
-func insertFarm(ctx context.Context, app *infra.Deps, farm Farm) error {
+func _insertFarm(ctx context.Context, app *infra.Deps, farm Farm) error {
 	if strings.TrimSpace(farm.FarmID) == "" {
 		return errors.New("farm id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return err
 	}
 
@@ -177,12 +177,12 @@ func insertFarm(ctx context.Context, app *infra.Deps, farm Farm) error {
 	return err
 }
 
-func getFarmByID(ctx context.Context, app *infra.Deps, farmID string) (Farm, error) {
+func _getFarmByID(ctx context.Context, app *infra.Deps, farmID string) (Farm, error) {
 	farmID = strings.TrimSpace(farmID)
 	if farmID == "" {
 		return Farm{}, errors.New("farm id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return Farm{}, err
 	}
 
@@ -206,7 +206,7 @@ func getFarmByID(ctx context.Context, app *infra.Deps, farmID string) (Farm, err
 	farm.UpdatedAt = updatedAt
 
 	// 1. Unmarshal metadata first
-	parseFarmMetadata(metadata, &farm)
+	_parseFarmMetadata(metadata, &farm)
 
 	// 2. Ensure database-authoritative fields take precedence over metadata if required
 	if farm.CreatedBy != "" {
@@ -216,12 +216,12 @@ func getFarmByID(ctx context.Context, app *infra.Deps, farmID string) (Farm, err
 	return farm, nil
 }
 
-func getFarmByCreatedBy(ctx context.Context, app *infra.Deps, userID string) (Farm, error) {
+func _getFarmByCreatedBy(ctx context.Context, app *infra.Deps, userID string) (Farm, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return Farm{}, errors.New("user id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return Farm{}, err
 	}
 
@@ -241,20 +241,20 @@ func getFarmByCreatedBy(ctx context.Context, app *infra.Deps, userID string) (Fa
 	farm.CreatedAt = createdAt
 	farm.UpdatedAt = updatedAt
 	farm.Owner = farm.CreatedBy
-	parseFarmMetadata(metadata, &farm)
+	_parseFarmMetadata(metadata, &farm)
 	return farm, nil
 }
 
-func getCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Crop, error) {
-	return GetCropsByFarmID(ctx, app, farmID)
+func _getCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Crop, error) {
+	return _GetCropsByFarmID(ctx, app, farmID)
 }
 
-func GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Crop, error) {
+func _GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Crop, error) {
 	farmID = strings.TrimSpace(farmID)
 	if farmID == "" {
 		return nil, errors.New("farm id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, err
 	}
 
@@ -283,7 +283,7 @@ func GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Cr
 		dbFarmID := crop.FarmID
 
 		// Unmarshal metadata JSON
-		parseCropMetadata(metadata, &crop)
+		_parseCropMetadata(metadata, &crop)
 
 		// Protect relational columns from being overwritten by blank or stale metadata JSON keys
 		crop.CropId = dbCropID
@@ -303,12 +303,12 @@ func GetCropsByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]Cr
 	return items, nil
 }
 
-func getFarmOrdersByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]cart.FarmOrder, error) {
+func _getFarmOrdersByFarmID(ctx context.Context, app *infra.Deps, farmID string) ([]cart.FarmOrder, error) {
 	farmID = strings.TrimSpace(farmID)
 	if farmID == "" {
 		return nil, errors.New("farm id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, err
 	}
 
@@ -339,12 +339,12 @@ func getFarmOrdersByFarmID(ctx context.Context, app *infra.Deps, farmID string) 
 	return orders, nil
 }
 
-func getCropsByCropID(ctx context.Context, app *infra.Deps, cropID string) ([]Crop, error) {
+func _getCropsByCropID(ctx context.Context, app *infra.Deps, cropID string) ([]Crop, error) {
 	cropID = strings.TrimSpace(cropID)
 	if cropID == "" {
 		return nil, errors.New("crop id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, err
 	}
 
@@ -368,17 +368,17 @@ func getCropsByCropID(ctx context.Context, app *infra.Deps, cropID string) ([]Cr
 		}
 		crop.CreatedAt = createdAt
 		crop.UpdatedAt = updatedAt
-		parseCropMetadata(metadata, &crop)
+		_parseCropMetadata(metadata, &crop)
 		items = append(items, crop)
 	}
 	return items, nil
 }
 
-func getFarmsByIDs(ctx context.Context, app *infra.Deps, farmIDs []string) ([]Farm, error) {
+func _getFarmsByIDs(ctx context.Context, app *infra.Deps, farmIDs []string) ([]Farm, error) {
 	if len(farmIDs) == 0 {
 		return []Farm{}, nil
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, err
 	}
 
@@ -413,18 +413,18 @@ func getFarmsByIDs(ctx context.Context, app *infra.Deps, farmIDs []string) ([]Fa
 		farm.CreatedAt = createdAt
 		farm.UpdatedAt = updatedAt
 		farm.Owner = farm.CreatedBy
-		parseFarmMetadata(metadata, &farm)
+		_parseFarmMetadata(metadata, &farm)
 		farms = append(farms, farm)
 	}
 	return farms, nil
 }
 
-func getCropsByNameFilter(ctx context.Context, app *infra.Deps, cropName string) ([]Crop, error) {
+func _getCropsByNameFilter(ctx context.Context, app *infra.Deps, cropName string) ([]Crop, error) {
 	cropName = strings.TrimSpace(cropName)
 	if cropName == "" {
 		return []Crop{}, nil
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, err
 	}
 
@@ -448,14 +448,14 @@ func getCropsByNameFilter(ctx context.Context, app *infra.Deps, cropName string)
 		}
 		crop.CreatedAt = createdAt
 		crop.UpdatedAt = updatedAt
-		parseCropMetadata(metadata, &crop)
+		_parseCropMetadata(metadata, &crop)
 		items = append(items, crop)
 	}
 	return items, nil
 }
 
-func getPaginatedFarms(ctx context.Context, app *infra.Deps, search string, offset, limit int) ([]Farm, int64, error) {
-	if err := ensureFarmDB(app); err != nil {
+func _getPaginatedFarms(ctx context.Context, app *infra.Deps, search string, offset, limit int) ([]Farm, int64, error) {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, 0, err
 	}
 	if limit <= 0 {
@@ -504,18 +504,18 @@ func getPaginatedFarms(ctx context.Context, app *infra.Deps, search string, offs
 		farm.CreatedAt = createdAt
 		farm.UpdatedAt = updatedAt
 		farm.Owner = farm.CreatedBy
-		parseFarmMetadata(metadata, &farm)
+		_parseFarmMetadata(metadata, &farm)
 		items = append(items, farm)
 	}
 	return items, total, nil
 }
 
-func getMyFarmsPage(ctx context.Context, app *infra.Deps, userID string, offset, limit int) ([]Farm, int64, error) {
+func _getMyFarmsPage(ctx context.Context, app *infra.Deps, userID string, offset, limit int) ([]Farm, int64, error) {
 	userID = strings.TrimSpace(userID)
 	if userID == "" {
 		return nil, 0, errors.New("user id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return nil, 0, err
 	}
 	if limit <= 0 {
@@ -554,26 +554,26 @@ func getMyFarmsPage(ctx context.Context, app *infra.Deps, userID string, offset,
 		farm.CreatedAt = createdAt
 		farm.UpdatedAt = updatedAt
 		farm.Owner = farm.CreatedBy
-		parseFarmMetadata(metadata, &farm)
+		_parseFarmMetadata(metadata, &farm)
 		items = append(items, farm)
 	}
 	return items, total, nil
 }
 
-func updateOwnedFarm(ctx context.Context, app *infra.Deps, farmID, userID string, update map[string]any) (int64, error) {
+func _updateOwnedFarm(ctx context.Context, app *infra.Deps, farmID, userID string, update map[string]any) (int64, error) {
 	farmID = strings.TrimSpace(farmID)
 	userID = strings.TrimSpace(userID)
 	if farmID == "" || userID == "" {
 		return 0, errors.New("farm id and user id are required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return 0, err
 	}
 	if len(update) == 0 {
 		return 0, nil
 	}
 
-	setClause, setArgs := makeUpdateSet(update)
+	setClause, setArgs := _makeUpdateSet(update)
 	if setClause == "" {
 		return 0, nil
 	}
@@ -588,12 +588,12 @@ func updateOwnedFarm(ctx context.Context, app *infra.Deps, farmID, userID string
 	return result.RowsAffected(), nil
 }
 
-func deleteFarmByID(ctx context.Context, app *infra.Deps, farmID string) (int64, error) {
+func _deleteFarmByID(ctx context.Context, app *infra.Deps, farmID string) (int64, error) {
 	farmID = strings.TrimSpace(farmID)
 	if farmID == "" {
 		return 0, errors.New("farm id is required")
 	}
-	if err := ensureFarmDB(app); err != nil {
+	if err := _ensureFarmDB(app); err != nil {
 		return 0, err
 	}
 	result, err := app.SQLDB.Exec(ctx, `DELETE FROM `+farmsTable+` WHERE farmid = $1`, farmID)

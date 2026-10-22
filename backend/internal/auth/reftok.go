@@ -67,19 +67,19 @@ func RefreshTokenFromCookie(ctx context.Context, rawToken string, r *http.Reques
 	now := time.Now()
 	hashed := hashRefreshToken(rawToken)
 
-	user, err := FindValidRefreshSession(ctx, app, hashed)
+	user, err := QQQFindValidRefreshSession(ctx, app, hashed)
 	if err != nil {
 		return &RefreshResult{ClearCookie: true}, fmt.Errorf("invalid refresh token")
 	}
 
 	// Graceful evaluation for token reuse vs concurrent requests
 	if user.RefreshPrev == hashed {
-		_, _ = InvalidateUserSession(ctx, app, user.UserID)
+		_, _ = QQQInvalidateUserSession(ctx, app, user.UserID)
 		return &RefreshResult{ClearCookie: true}, fmt.Errorf("refresh token reuse detected")
 	}
 
 	if user.RefreshUA != uaHash(r) {
-		_, _ = InvalidateUserSession(ctx, app, user.UserID)
+		_, _ = QQQInvalidateUserSession(ctx, app, user.UserID)
 		return &RefreshResult{ClearCookie: true}, fmt.Errorf("session invalidated")
 	}
 
@@ -103,7 +103,7 @@ func RefreshTokenFromCookie(ctx context.Context, rawToken string, r *http.Reques
 		return nil, err
 	}
 
-	_, err = RotateRefreshTokenForUser(
+	_, err = QQQRotateRefreshTokenForUser(
 		ctx,
 		app,
 		user.UserID,

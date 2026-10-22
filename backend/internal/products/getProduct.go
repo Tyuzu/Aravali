@@ -13,7 +13,7 @@ import (
 func getProductEntity(ctx context.Context, id string, app *infra.Deps) farms.Product {
 	var product farms.Product
 
-	_ = GetProductByID(ctx, app, id, &product)
+	_ = QQQGetProductByID(ctx, app, id, &product)
 
 	// If not found or error, zero-value product is returned (same behavior as before)
 	return product

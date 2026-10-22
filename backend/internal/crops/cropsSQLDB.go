@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	cropsTable      = config.Tables.CropsTable
-	cropsAboutTable = config.Tables.CropsAboutTable
-	catalogueTable  = config.Tables.CatalogueTable
+	_cropsTable      = config.Tables.CropsTable
+	_cropsAboutTable = config.Tables.CropsAboutTable
+	_catalogueTable  = config.Tables.CatalogueTable
 )
 
 func _cropMetadataMap(crop farms.Crop) map[string]any {

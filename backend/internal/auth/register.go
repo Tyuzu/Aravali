@@ -79,7 +79,7 @@ func ProcessRegistration(ctx context.Context, app *infra.Deps, input SignUpReque
 		return User{}, ErrPasswordHashing
 	}
 
-	if err := CreateUser(ctx, app, user); err != nil {
+	if err := QQQCreateUser(ctx, app, user); err != nil {
 		return User{}, err
 	}
 

@@ -46,13 +46,13 @@ func EditProfile(app *infra.Deps) http.HandlerFunc {
 		}
 
 		// 5. Apply updates in DB
-		if _, err := ApplyProfileUpdatesDeps(ctx, app, claims.UserID, updates); err != nil {
+		if _, err := QQQApplyProfileUpdatesDeps(ctx, app, claims.UserID, updates); err != nil {
 			http.Error(w, "Failed to update profile", http.StatusInternalServerError)
 			return
 		}
 
 		// 6. Respond with updated profile
-		RespondWithUserProfileDeps(w, claims.UserID, app)
+		QQQRespondWithUserProfileDeps(w, claims.UserID, app)
 	}
 }
 
@@ -75,7 +75,7 @@ func DeleteProfile(app *infra.Deps) http.HandlerFunc {
 		_ = UpdateCachedUsername(ctx, app.Cache, claims.UserID)
 
 		// Delete user in DB
-		if _, err := DeleteUserByIDDeps(ctx, app, claims.UserID); err != nil {
+		if _, err := QQQDeleteUserByIDDeps(ctx, app, claims.UserID); err != nil {
 			http.Error(w, "Failed to delete profile", http.StatusInternalServerError)
 			return
 		}

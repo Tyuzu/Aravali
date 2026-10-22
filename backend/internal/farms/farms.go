@@ -123,7 +123,7 @@ func CreateFarm(app *infra.Deps) http.HandlerFunc {
 			UpdatedAt:    time.Now(),
 		}
 
-		if err := insertFarm(ctx, app, farm); err != nil {
+		if err := QQQinsertFarm(ctx, app, farm); err != nil {
 			log.Printf("Farm creation failed for user %s: %v", requestingUserID, err)
 
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
@@ -194,7 +194,7 @@ func EditFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		farm, err := getFarmByID(ctx, app, farmID)
+		farm, err := QQQgetFarmByID(ctx, app, farmID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
@@ -298,7 +298,7 @@ func EditFarm(app *infra.Deps) http.HandlerFunc {
 
 		update["updatedAt"] = time.Now()
 
-		if _, err := updateOwnedFarm(
+		if _, err := QQQupdateOwnedFarm(
 			ctx,
 			app,
 			farmID,
@@ -347,7 +347,7 @@ func DeleteFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if _, err := deleteFarmByID(ctx, app, farmID); err != nil {
+		if _, err := QQQdeleteFarmByID(ctx, app, farmID); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 			})

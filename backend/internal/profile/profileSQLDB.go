@@ -15,26 +15,26 @@ import (
 	"scav/utils"
 )
 
-var usersTable = config.Tables.UserTable
+var _usersTable = config.Tables.UserTable
 
 // Wrapper helpers that accept infra.Deps to simplify call sites.
-func FindUserByFilter(ctx context.Context, app *infra.Deps, query string, args []any) (*auth.User, error) {
-	return SQLfindUser(ctx, app, query, args)
+func _FindUserByFilter(ctx context.Context, app *infra.Deps, query string, args []any) (*auth.User, error) {
+	return _SQLfindUser(ctx, app, query, args)
 }
 
-func ApplyProfileUpdatesDeps(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) (int64, error) {
-	return SQLApplyProfileUpdates(ctx, app, userID, updates)
+func _ApplyProfileUpdatesDeps(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) (int64, error) {
+	return _SQLApplyProfileUpdates(ctx, app, userID, updates)
 }
 
-func DeleteUserByIDDeps(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
-	return SQLDeleteUserByID(ctx, app, userID)
+func _DeleteUserByIDDeps(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
+	return _SQLDeleteUserByID(ctx, app, userID)
 }
 
-func RespondWithUserProfileDeps(w http.ResponseWriter, userid string, app *infra.Deps) {
-	SQLRespondWithUserProfile(w, userid, app)
+func _RespondWithUserProfileDeps(w http.ResponseWriter, userid string, app *infra.Deps) {
+	_SQLRespondWithUserProfile(w, userid, app)
 }
 
-func SQLfindUser(ctx context.Context, app *infra.Deps, query string, args []any) (*auth.User, error) {
+func _SQLfindUser(ctx context.Context, app *infra.Deps, query string, args []any) (*auth.User, error) {
 	if app == nil || app.SQLDB == nil {
 		return &auth.User{}, nil
 	}
@@ -97,13 +97,13 @@ func SQLfindUser(ctx context.Context, app *infra.Deps, query string, args []any)
 	return &user, nil
 }
 
-func SQLRespondWithUserProfile(w http.ResponseWriter, userid string, app *infra.Deps) {
+func _SQLRespondWithUserProfile(w http.ResponseWriter, userid string, app *infra.Deps) {
 	if w == nil {
 		return
 	}
 	profile := map[string]any{"userid": userid}
 	if app != nil && app.SQLDB != nil && userid != "" {
-		user, err := SQLfindUser(context.Background(), app, "userid = $1", []any{userid})
+		user, err := _SQLfindUser(context.Background(), app, "userid = $1", []any{userid})
 		if err == nil && user != nil {
 			profile = map[string]any{"userid": user.UserID, "username": user.Username, "email": user.Email, "displayname": user.Name}
 		}
@@ -112,8 +112,8 @@ func SQLRespondWithUserProfile(w http.ResponseWriter, userid string, app *infra.
 }
 
 // SQLRespondWithUserProfile writes user profile as JSON to the response
-func RespondWithUserProfile(w http.ResponseWriter, userid string, app *infra.Deps) {
-	SQLRespondWithUserProfile(w, userid, app)
+func _RespondWithUserProfile(w http.ResponseWriter, userid string, app *infra.Deps) {
+	_SQLRespondWithUserProfile(w, userid, app)
 }
 
 /*
@@ -122,7 +122,7 @@ func RespondWithUserProfile(w http.ResponseWriter, userid string, app *infra.Dep
 
 -------------------------------------------------------
 */
-func SQLApplyProfileUpdates(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) (int64, error) {
+func _SQLApplyProfileUpdates(ctx context.Context, app *infra.Deps, userID string, updates map[string]any) (int64, error) {
 	if app == nil || app.SQLDB == nil || userID == "" || len(updates) == 0 {
 		return 0, nil
 	}
@@ -141,7 +141,7 @@ func SQLApplyProfileUpdates(ctx context.Context, app *infra.Deps, userID string,
 	return result.RowsAffected(), nil
 }
 
-func SQLDeleteUserByID(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
+func _SQLDeleteUserByID(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
 	if app == nil || app.SQLDB == nil || userID == "" {
 		return 0, nil
 	}
@@ -152,19 +152,19 @@ func SQLDeleteUserByID(ctx context.Context, app *infra.Deps, userID string) (int
 	return result.RowsAffected(), nil
 }
 
-func ApplyProfileUpdates(
+func _ApplyProfileUpdates(
 	ctx context.Context,
 	app *infra.Deps,
 	userID string,
 	updates map[string]any,
 ) (int64, error) {
-	return SQLApplyProfileUpdates(ctx, app, userID, updates)
+	return _SQLApplyProfileUpdates(ctx, app, userID, updates)
 }
 
-func DeleteUserByID(
+func _DeleteUserByID(
 	ctx context.Context,
 	app *infra.Deps,
 	userID string,
 ) (int64, error) {
-	return SQLDeleteUserByID(ctx, app, userID)
+	return _SQLDeleteUserByID(ctx, app, userID)
 }

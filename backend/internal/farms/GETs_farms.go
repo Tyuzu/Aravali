@@ -30,7 +30,7 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		crops, err := getCropsByCropID(ctx, app, cropID)
+		crops, err := QQQgetCropsByCropID(ctx, app, cropID)
 		if err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop not found")
 			return
@@ -44,7 +44,7 @@ func GetCropFarms(app *infra.Deps) http.HandlerFunc {
 			farmIDs = append(farmIDs, c.FarmID)
 		}
 
-		farms, err := getFarmsByIDs(ctx, app, farmIDs)
+		farms, err := QQQgetFarmsByIDs(ctx, app, farmIDs)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
 			return
@@ -108,7 +108,7 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 		sortOrder := r.URL.Query().Get("sortOrder")
 		breedFilter := strings.ToLower(r.URL.Query().Get("breed"))
 
-		crops, err := getCropsByNameFilter(ctx, app, cropName)
+		crops, err := QQQgetCropsByNameFilter(ctx, app, cropName)
 		if err != nil || len(crops) == 0 {
 			utils.RespondWithError(w, http.StatusNotFound, "Crop type not found")
 			return
@@ -121,7 +121,7 @@ func GetCropTypeFarms(app *infra.Deps) http.HandlerFunc {
 			farmIDs = append(farmIDs, c.FarmID)
 		}
 
-		farms, err := getFarmsByIDs(ctx, app, farmIDs)
+		farms, err := QQQgetFarmsByIDs(ctx, app, farmIDs)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch farms")
 			return
@@ -215,7 +215,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		id := utils.GetParam(r, "id")
 
-		farm, err := getFarmByID(ctx, app, id)
+		farm, err := QQQgetFarmByID(ctx, app, id)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
@@ -224,7 +224,7 @@ func GetFarm(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		crops, _ := getCropsByFarmID(ctx, app, id)
+		crops, _ := QQQgetCropsByFarmID(ctx, app, id)
 
 		farm.Crops = crops
 
@@ -249,7 +249,7 @@ func GetFarmCrops(app *infra.Deps) http.HandlerFunc {
 		}
 		app.Log.Debug(fmt.Sprintf("fetching crops for farm ID: %s", farmID))
 		log.Println("-----------------", "Fetching crops for farm ID:", farmID)
-		crops, err := GetCropsByFarmID(ctx, app, farmID)
+		crops, err := QQQGetCropsByFarmID(ctx, app, farmID)
 		if err != nil {
 			utils.RespondWithJSON(w, http.StatusNotFound, utils.M{
 				"success": false,
@@ -258,7 +258,7 @@ func GetFarmCrops(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		farm, err := getFarmByID(ctx, app, farmID)
+		farm, err := QQQgetFarmByID(ctx, app, farmID)
 		if err != nil {
 			farm = Farm{FarmID: farmID}
 		}
@@ -284,7 +284,7 @@ func GetPaginatedFarms(app *infra.Deps) http.HandlerFunc {
 		skip, limit := utils.ParsePagination(r, 10, 100)
 		search := r.URL.Query().Get("search")
 
-		farms, total, err := getPaginatedFarms(ctx, app, search, skip, limit)
+		farms, total, err := QQQgetPaginatedFarms(ctx, app, search, skip, limit)
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Error fetching farms")
 			return
@@ -334,4 +334,10 @@ func paginate[T any](items []T, skip, limit int) ([]T, int) {
 	}
 	page := skip/limit + 1
 	return items[skip:end], page
+}
+
+func QQQgetFarmByID(ctx context.Context, app *infra.Deps, farmID string) (Farm, error) {
+
+	var farm Farm
+	return farm, nil
 }

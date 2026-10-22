@@ -19,7 +19,7 @@ func GetRecipe(app *infra.Deps) http.HandlerFunc {
 		id := utils.GetParam(r, "id")
 
 		var recipe Recipe
-		if err := GetRecipeByID(ctx, app, id, &recipe); err != nil {
+		if err := QQQGetRecipeByID(ctx, app, id, &recipe); err != nil {
 			http.Error(w, "Recipe not found", http.StatusNotFound)
 			return
 		}
@@ -42,7 +42,7 @@ func GetRecipes(app *infra.Deps) http.HandlerFunc {
 		tags := r.URL.Query().Get("tags")
 		skip, limit := utils.ParsePagination(r, 10, 100)
 
-		recipes, totalCount, err := getRecipesPage(ctx, app, search, ingredient, tags, skip, limit, r.URL.Query().Get("sort"))
+		recipes, totalCount, err := QQQgetRecipesPage(ctx, app, search, ingredient, tags, skip, limit, r.URL.Query().Get("sort"))
 		if err != nil {
 			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to fetch recipes")
 			return
@@ -74,7 +74,7 @@ func GetRecipeTags(app *infra.Deps) http.HandlerFunc {
 
 		query := "SELECT DISTINCT unnest(tags) AS tags FROM " + recipeTable + " WHERE tags IS NOT NULL"
 		var result []recipeTagAgg
-		if err := AggregateRecipes(ctx, app, query, nil, &result); err != nil {
+		if err := QQQAggregateRecipes(ctx, app, query, nil, &result); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

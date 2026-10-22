@@ -19,7 +19,7 @@ func GetMyFarms(app *infra.Deps) http.HandlerFunc {
 
 		skip, limit := utils.ParsePagination(r, 10, 100)
 
-		farms, total, err := getMyFarmsPage(ctx, app, userID, skip, limit)
+		farms, total, err := QQQgetMyFarmsPage(ctx, app, userID, skip, limit)
 		if err != nil {
 			utils.RespondWithError(
 				w,

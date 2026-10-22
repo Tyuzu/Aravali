@@ -17,16 +17,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var UsersTable = config.Tables.UserTable
+var _UsersTable = config.Tables.UserTable
 
-func ensureAuthDB(app *infra.Deps) error {
+func _ensureAuthDB(app *infra.Deps) error {
 	if app == nil || app.SQLDB == nil {
 		return errors.New("database not initialized")
 	}
 	return nil
 }
 
-func scanUserRow(row pgx.Row, dst *User) error {
+func _scanUserRow(row pgx.Row, dst *User) error {
 	if dst == nil {
 		return errors.New("nil user result")
 	}
@@ -140,7 +140,7 @@ func scanUserRow(row pgx.Row, dst *User) error {
 	return nil
 }
 
-func toTime(v sql.NullTime) time.Time {
+func _toTime(v sql.NullTime) time.Time {
 	if !v.Valid {
 		return time.Time{}
 	}
@@ -151,7 +151,7 @@ func toTime(v sql.NullTime) time.Time {
    3. REPOSITORIES (DATA ACCESS LAYER)
 ============================================================ */
 
-func CreateUser(ctx context.Context, app *infra.Deps, user User) error {
+func _CreateUser(ctx context.Context, app *infra.Deps, user User) error {
 	if err := ensureAuthDB(app); err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func CreateUser(ctx context.Context, app *infra.Deps, user User) error {
 	return err
 }
 
-func FindUserByUsername(ctx context.Context, app *infra.Deps, username string) (User, error) {
+func _FindUserByUsername(ctx context.Context, app *infra.Deps, username string) (User, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return User{}, err
 	}
@@ -225,7 +225,7 @@ func FindUserByUsername(ctx context.Context, app *infra.Deps, username string) (
 	return user, nil
 }
 
-func UpdateUserSession(ctx context.Context, app *infra.Deps, userID, refreshTokenHash, ua, ip string) (int64, error) {
+func _UpdateUserSession(ctx context.Context, app *infra.Deps, userID, refreshTokenHash, ua, ip string) (int64, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return 0, err
 	}
@@ -243,7 +243,7 @@ func UpdateUserSession(ctx context.Context, app *infra.Deps, userID, refreshToke
 	return tag.RowsAffected(), nil
 }
 
-func LogoutUserByRefreshToken(ctx context.Context, app *infra.Deps, hashedToken string) (int64, error) {
+func _LogoutUserByRefreshToken(ctx context.Context, app *infra.Deps, hashedToken string) (int64, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return 0, err
 	}
@@ -262,7 +262,7 @@ func LogoutUserByRefreshToken(ctx context.Context, app *infra.Deps, hashedToken 
 	return tag.RowsAffected(), nil
 }
 
-func LogoutAllUserSessions(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
+func _LogoutAllUserSessions(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return 0, err
 	}
@@ -281,7 +281,7 @@ func LogoutAllUserSessions(ctx context.Context, app *infra.Deps, userID string) 
 	return tag.RowsAffected(), nil
 }
 
-func FindValidRefreshSession(ctx context.Context, app *infra.Deps, hashedToken string) (User, error) {
+func _FindValidRefreshSession(ctx context.Context, app *infra.Deps, hashedToken string) (User, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return User{}, err
 	}
@@ -306,11 +306,11 @@ func FindValidRefreshSession(ctx context.Context, app *infra.Deps, hashedToken s
 }
 
 // InvalidateUserSession clears all refresh token fields for a user.
-func InvalidateUserSession(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
-	return LogoutAllUserSessions(ctx, app, userID)
+func _InvalidateUserSession(ctx context.Context, app *infra.Deps, userID string) (int64, error) {
+	return _LogoutAllUserSessions(ctx, app, userID)
 }
 
-func RotateRefreshTokenForUser(ctx context.Context, app *infra.Deps, userID, newRefreshHash, prevRefreshHash, ua string) (int64, error) {
+func _RotateRefreshTokenForUser(ctx context.Context, app *infra.Deps, userID, newRefreshHash, prevRefreshHash, ua string) (int64, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return 0, err
 	}
@@ -328,7 +328,7 @@ func RotateRefreshTokenForUser(ctx context.Context, app *infra.Deps, userID, new
 	return tag.RowsAffected(), nil
 }
 
-func VerifyUserEmail(ctx context.Context, app *infra.Deps, email string) (int64, error) {
+func _VerifyUserEmail(ctx context.Context, app *infra.Deps, email string) (int64, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return 0, err
 	}
@@ -340,7 +340,7 @@ func VerifyUserEmail(ctx context.Context, app *infra.Deps, email string) (int64,
 	return tag.RowsAffected(), nil
 }
 
-func MigrateUserPasswordHash(ctx context.Context, app *infra.Deps, userID, passwordHash string) (int64, error) {
+func _MigrateUserPasswordHash(ctx context.Context, app *infra.Deps, userID, passwordHash string) (int64, error) {
 	if err := ensureAuthDB(app); err != nil {
 		return 0, err
 	}

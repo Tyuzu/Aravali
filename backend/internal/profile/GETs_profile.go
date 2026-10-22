@@ -22,7 +22,7 @@ func GetProfile(app *infra.Deps) http.HandlerFunc {
 		ctx := r.Context()
 		requestingUserID := utils.GetUserIDFromRequest(r)
 
-		user, err := FindUserByFilter(ctx, app, "userid = $1", []any{requestingUserID})
+		user, err := _FindUserByFilter(ctx, app, "userid = $1", []any{requestingUserID})
 		if err != nil || user == nil {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
@@ -65,7 +65,7 @@ func GetUserProfile(app *infra.Deps) http.HandlerFunc {
 
 		username := utils.GetParam(r, "username")
 
-		user, err := FindUserByFilter(ctx, app, "username = $1", []any{username})
+		user, err := _FindUserByFilter(ctx, app, "username = $1", []any{username})
 		if err != nil || user == nil {
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
