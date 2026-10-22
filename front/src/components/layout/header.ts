@@ -41,7 +41,8 @@ function buildNav(): HTMLDivElement {
   if (isLoggedIn) {
     const createLinks: DropdownMenuItem[] = [
       { href: "/create-farm", text: "Farm" },
-      { href: "/create-recipe", text: "Recipe" }
+      { href: "/create-recipe", text: "Recipe" },
+      { href: "/create-product", text: "Product" }
     ];
     nav.append(createDropdownMenu("create-menu", "Create", createLinks));
   }

@@ -1,7 +1,7 @@
 import { fetchUserProfile } from "./fetchProfile";
 import profilGen from "./profilegen.js";
 import { attachProfileEventListeners } from "./events/profileEvents";
-import { displayUserProfileData } from "../userdata/displayProfileData";
+import { displayUserProfileData } from "./displayProfileData";
 import { createElement } from "../../components/createElement";
 import { showLoadingMessage, removeLoadingMessage } from "./profilegen.js";
 import Notify from "../../components/ui/Notify";

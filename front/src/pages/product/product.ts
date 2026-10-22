@@ -1,6 +1,6 @@
 
 import "../../../css/pagestyles/productpage.css";
-import "../../../css/subpages/product.css";
+import "../../../css/pagestyles/product.css";
 import { displayProduct } from "../../services/products/productPage.js";
 
 export async function Product(

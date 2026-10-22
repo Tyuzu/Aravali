@@ -14,7 +14,7 @@ export const cropRoutes: AppRoute[] = [
   },
 
   {
-    path: "/bazarbhav",
+    path: "/bazaar",
     component: () =>
       import(
         "../../pages/crop/bazaar.js"
