@@ -1,6 +1,6 @@
 
 import "../../../css/pagestyles/farms.css";
-import { displayFarms } from "../../services/farm/FarmsHome.js";
+import { displayFarms } from "../../services/farm/displayFarms.js";
 
 export async function Farms(
   isLoggedIn: boolean,

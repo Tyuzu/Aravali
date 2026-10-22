@@ -1,5 +1,5 @@
 import "../../../css/pagestyles/cropwiki.css";
-import { displayAboutCrop } from "../../services/crops/cropAboutPage.js";
+import { displayAboutCrop } from "../../services/crops/displayAboutCrop.js";
 
 export async function AboutCrop(
   isLoggedIn: boolean,

@@ -1,5 +1,5 @@
-import "../../../css/form.css";
-import "../../../css/form.css";
+import "../../../css/form/form.css";
+
 import { createElement } from "../createElement.js";
 import {
   FormGroupConfig,

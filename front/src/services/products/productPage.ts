@@ -1,39 +1,44 @@
-export function displayProduct(container: HTMLElement, isLoggedIn: boolean, productid: string | number, productType: string): void {
+// displayProduct.ts
+import { createElement } from "../../components/createElement.js";
+
+export function displayProduct(
+  container: HTMLElement,
+  isLoggedIn: boolean,
+  productid: string | number,
+  productType: string
+): void {
   container.replaceChildren();
 
-  const section = document.createElement("section");
-  section.className = "content-page";
+  const wrapper = createElement("div", { class: "item-detail-container" });
 
-  const badge = document.createElement("span");
-  badge.className = "page-badge";
-  badge.textContent = isLoggedIn ? "Member access" : "Public preview";
+  // Header Section
+  const header = createElement("div", { class: "detail-header" });
+  const title = createElement("h1", {}, [`${productType.toUpperCase()} #${productid}`]);
+  const subtitle = createElement("p", { class: "text-muted" }, [`Detailed view for ${productType} item ID: ${productid}`]);
+  header.append(title, subtitle);
 
-  const type = (productType || "product").toString().replace(/[-_]+/g, " ");
-  const title = document.createElement("h2");
-  title.textContent = `${type.charAt(0).toUpperCase()}${type.slice(1)} ${productid ? `#${productid}` : ""}`.trim();
+  // Content Specifications
+  const specs = createElement("div", { class: "detail-specs" });
+  specs.append(
+    createElement("p", {}, ["Here you can find all specific attributes, descriptions, pricing, options, and interactive widgets associated with this listing."])
+  );
 
-  const lead = document.createElement("p");
-  lead.textContent = "This page is the product detail view, ready to show pricing information, specifications, and marketplace actions.";
-
-  const cards = document.createElement("div");
-  cards.className = "info-grid";
-
-  [
-    ["Category", type],
-    ["Status", "In stock"],
-    ["Price", "₹1,499"],
-    ["Availability", "2-3 days"]
-  ].forEach(([label, value]) => {
-    const card = document.createElement("article");
-    card.className = "info-card";
-    const small = document.createElement("small");
-    small.textContent = label;
-    const strong = document.createElement("strong");
-    strong.textContent = String(value);
-    card.append(small, strong);
-    cards.appendChild(card);
+  // Action Buttons
+  const actions = createElement("div", { class: "detail-actions" });
+  const backBtn = createElement("button", { type: "button", class: "btn-secondary" }, ["← Back to List"]);
+  backBtn.addEventListener("click", () => {
+    import("./displayItems.js").then(({ displayItems }) => {
+      displayItems(productType, container, isLoggedIn);
+    });
   });
+  actions.appendChild(backBtn);
 
-  section.append(badge, title, lead, cards);
-  container.appendChild(section);
+  if (isLoggedIn) {
+    const actionBtn = createElement("button", { type: "button", class: "btn-submit" }, ["Contact / Order Listing"]);
+    actionBtn.addEventListener("click", () => alert(`Action processed for ${productType} #${productid}!`));
+    actions.appendChild(actionBtn);
+  }
+
+  wrapper.append(header, specs, actions);
+  container.appendChild(wrapper);
 }

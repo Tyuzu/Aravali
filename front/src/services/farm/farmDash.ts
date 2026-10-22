@@ -1,39 +1,51 @@
+// displayFarmDash.ts
 export function displayFarmDash(contentContainer: HTMLElement, isLoggedIn: boolean): void {
   contentContainer.replaceChildren();
 
-  const section = document.createElement("section");
-  section.className = "content-page";
+  if (!isLoggedIn) {
+    const note = document.createElement("div");
+    note.className = "empty-state";
+    note.textContent = "Please sign in to access your farm dashboard.";
+    contentContainer.appendChild(note);
+    return;
+  }
 
-  const title = document.createElement("h2");
-  title.textContent = "Farm dashboard";
+  const wrapper = document.createElement("div");
+  wrapper.className = "farm-dash-container";
 
-  const banner = document.createElement("p");
-  banner.textContent = isLoggedIn
-    ? "Welcome back. Your farm performance overview is ready."
-    : "Sign in to access the full farm dashboard.";
+  const header = document.createElement("div");
+  header.className = "dash-header";
+  header.innerHTML = `
+    <h1>My Farm Dashboard</h1>
+    <p class="text-muted">Manage your farm profile, inventory, and visitor schedules.</p>
+  `;
 
-  const stats = document.createElement("div");
-  stats.className = "info-grid";
+  // Farm Summary Metrics
+  const metrics = document.createElement("div");
+  metrics.className = "form-row-three";
+  metrics.innerHTML = `
+    <div class="recipe-card">
+      <h4>Active Listings</h4>
+      <p class="text-muted">12 Products & Tools</p>
+    </div>
+    <div class="recipe-card">
+      <h4>Farm Acreage</h4>
+      <p class="text-muted">50 Acres (Certified Organic)</p>
+    </div>
+    <div class="recipe-card">
+      <h4>Profile Status</h4>
+      <p style="color: var(--color-success); font-weight: var(--font-weight-medium);">Active & Verified</p>
+    </div>
+  `;
 
-  [
-    ["Active farms", "12"],
-    ["Total revenue", "₹4.8L"],
-    ["Orders today", "29"],
-    ["Crop health", "Good"]
-  ].forEach(([label, value]) => {
-    const card = document.createElement("article");
-    card.className = "info-card";
+  const actions = document.createElement("div");
+  actions.className = "detail-actions";
+  const editBtn = document.createElement("button");
+  editBtn.className = "btn-submit";
+  editBtn.textContent = "Edit Farm Profile";
+  editBtn.onclick = () => alert("Opening farm profile editor...");
+  actions.appendChild(editBtn);
 
-    const small = document.createElement("small");
-    small.textContent = label;
-
-    const strong = document.createElement("strong");
-    strong.textContent = String(value);
-
-    card.append(small, strong);
-    stats.appendChild(card);
-  });
-
-  section.append(title, banner, stats);
-  contentContainer.appendChild(section);
+  wrapper.append(header, metrics, actions);
+  contentContainer.appendChild(wrapper);
 }

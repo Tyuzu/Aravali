@@ -1,43 +1,63 @@
+// displayBazarBhav.ts
+import { createElement } from "../../../components/createElement.js";
+
 export function displayBazarBhav(contentContainer: HTMLElement): void {
   contentContainer.replaceChildren();
 
-  const section = document.createElement("section");
-  section.className = "content-page";
+  const wrapper = createElement("div", { class: "bazar-bhav-container" });
 
-  const heading = document.createElement("h2");
-  heading.textContent = "Bazaar Bhav";
-  section.appendChild(heading);
+  const header = createElement("div", { class: "catalog-header" });
+  header.appendChild(createElement("h2", {}, ["APMC Bazar Bhav (Market Rates)"]));
+  header.appendChild(createElement("p", { class: "text-muted" }, ["Daily wholesale commodity prices from major agricultural markets."]));
+  wrapper.appendChild(header);
 
-  const table = document.createElement("table");
-  table.className = "data-table";
-
-  const body = document.createElement("tbody");
-  [
-    ["Rice", "₹2,440 / quintal", "Stable"],
-    ["Wheat", "₹2,150 / quintal", "Rising"],
-    ["Cotton", "₹6,500 / quintal", "Steady"],
-    ["Maize", "₹2,200 / quintal", "Mixed"]
-  ].forEach(([item, price, trend]) => {
-    const row = document.createElement("tr");
-    const name = document.createElement("td");
-    name.textContent = String(item);
-    const priceCell = document.createElement("td");
-    priceCell.textContent = String(price);
-    const trendCell = document.createElement("td");
-    trendCell.textContent = String(trend);
-    row.append(name, priceCell, trendCell);
-    body.appendChild(row);
-  });
-
-  const head = document.createElement("thead");
-  const headRow = document.createElement("tr");
-  ["Crop", "Price", "Trend"].forEach((label) => {
-    const th = document.createElement("th");
-    th.textContent = label;
-    headRow.appendChild(th);
-  });
-  head.appendChild(headRow);
-  table.append(head, body);
-  section.appendChild(table);
-  contentContainer.appendChild(section);
+  // Market Rates Table
+  const tableWrapper = createElement("div", { class: "table-responsive" });
+  const table = createElement("table", { class: "bazar-table" });
+  
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Commodity</th>
+        <th>Market / APMC</th>
+        <th>Min Price (₹/Quintal)</th>
+        <th>Max Price (₹/Quintal)</th>
+        <th>Modal Price (₹/Quintal)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Wheat (Lokwan)</strong></td>
+        <td>Delhi APMC</td>
+        <td>₹2,450</td>
+        <td>₹2,680</td>
+        <td>₹2,560</td>
+      </tr>
+      <tr>
+        <td><strong>Soybean</strong></td>
+        <td>Indore APMC</td>
+        <td>₹4,300</td>
+        <td>₹4,750</td>
+        <td>₹4,500</td>
+      </tr>
+      <tr>
+        <td><strong>Basmati Rice</strong></td>
+        <td>Karnal APMC</td>
+        <td>₹3,500</td>
+        <td>₹4,100</td>
+        <td>₹3,800</td>
+      </tr>
+      <tr>
+        <td><strong>Cotton</strong></td>
+        <td>Nagpur APMC</td>
+        <td>₹6,800</td>
+        <td>₹7,200</td>
+        <td>₹7,000</td>
+      </tr>
+    </tbody>
+  `;
+  
+  tableWrapper.appendChild(table);
+  wrapper.appendChild(tableWrapper);
+  contentContainer.appendChild(wrapper);
 }

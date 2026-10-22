@@ -5,3 +5,5 @@
 @import "./pagestyles/footer.css";
 
 @import "./pagestyles/profile.css";
+@import "./form/form.css";
+@import "./pagestyles/listOrGrid.css";

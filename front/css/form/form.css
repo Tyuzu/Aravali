@@ -1,0 +1,256 @@
+/* --- Form Styles using Fluent Design System Tokens --- */
+
+.product-form,
+.recipe-form,
+.farm-profile-form {
+  font-family: var(--font-body);
+  color: var(--color-fg);
+  background-color: var(--color-surface);
+  max-width: var(--max-width-md);
+  margin: 0 auto;
+  padding: var(--space-xl);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elev-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Form Grouping & Layout */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  position: relative;
+}
+
+.form-group label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-fg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xxs);
+}
+
+.form-required {
+  color: var(--color-error);
+}
+
+/* Form Controls (Inputs, Selects, Textareas) */
+.form-group input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.form-group select,
+.form-group textarea {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-fg);
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--color-fg);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 1px var(--color-input-focus);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Error States */
+.form-input-error {
+  border-color: var(--color-error) !important;
+}
+
+.form-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  margin-top: var(--space-xxs);
+}
+
+/* Multi-select and Select Styles */
+.form-group select[multiple] {
+  padding: var(--space-xs);
+}
+
+.form-group select[multiple] option {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-xs);
+}
+
+/* Row utilities for multiple columns */
+.form-row-three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .form-row-three {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dynamic Sections (Ingredients, Steps, Availability) */
+.recipe-dynamic-section,
+.conditional-tool-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+}
+
+.recipe-dynamic-section h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+.ingredient-row,
+.step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.ingredient-row .form-group,
+.step-row .form-group {
+  flex: 1;
+}
+
+/* Buttons */
+.btn-submit,
+.btn-secondary {
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-lg);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.btn-submit {
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-fg);
+  box-shadow: var(--shadow-elev-1);
+}
+
+.btn-submit:hover {
+  background-color: var(--color-btn-hover-bg);
+}
+
+.btn-secondary {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-border);
+}
+
+.btn-remove {
+  background-color: transparent;
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  margin-top: 24px; /* Align with inputs */
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-remove:hover {
+  background-color: var(--color-error);
+  color: #ffffff;
+}
+
+/* Availability Picker Grid Styles */
+.availability-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.availability-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+}
+
+.availability-day {
+  min-width: 100px;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+.availability-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.availability-row input[type="time"] {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  background-color: var(--color-input-bg);
+  color: var(--color-fg);
+}
+
+.availability-row input[type="time"]:disabled {
+  background-color: var(--color-btn-disabled-bg);
+  color: var(--color-btn-disabled-fg);
+  border-color: var(--color-border-light);
+  cursor: not-allowed;
+}
+
+/* Authentication Warning & Empty States */
+.auth-warning,
+.empty-state {
+  padding: var(--space-lg);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-muted);
+  font-size: var(--font-size-base);
+}

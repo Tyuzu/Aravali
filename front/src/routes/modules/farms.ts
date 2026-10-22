@@ -102,6 +102,19 @@ export const farmsRoutes: AppRoute[] = [
     }
   },
 
+  {
+    path: "/create-product",
+    component: () =>
+      import(
+        "../../pages/product/createNewProduct.js"
+      ),
+    functionName: "CreateProduct",
+    meta: {
+      requiresAuth: true,
+      title: "Create Product"
+    }
+  },
+
   /* =======================================================
      DYNAMIC ROUTES
   ======================================================= */
