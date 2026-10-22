@@ -27,7 +27,7 @@ func TestCropMetadataIncludesCoreFields(t *testing.T) {
 		ExpiryDate:  &expiry,
 	}
 
-	meta := cropMetadataMap(crop)
+	meta := QQQcropMetadataMap(crop)
 
 	if meta["name"] != "spinach" {
 		t.Fatalf("expected name to be preserved, got %v", meta["name"])

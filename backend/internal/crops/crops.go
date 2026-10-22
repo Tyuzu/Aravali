@@ -53,7 +53,7 @@ func AddCrop(app *infra.Deps) http.HandlerFunc {
 		crop.FarmID = farmID
 		crop.CreatedBy = userID
 
-		if err := insertCrop(ctx, app, crop); err != nil {
+		if err := QQQinsertCrop(ctx, app, crop); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Failed to create crop",
@@ -152,7 +152,7 @@ func EditCrop(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		if err := updateCrop(ctx, app, cropID, update); err != nil {
+		if err := QQQupdateCrop(ctx, app, cropID, update); err != nil {
 			utils.RespondWithJSON(w, http.StatusInternalServerError, utils.M{
 				"success": false,
 				"message": "Update failed",

@@ -21,7 +21,7 @@ var (
 	catalogueTable  = config.Tables.CatalogueTable
 )
 
-func cropMetadataMap(crop farms.Crop) map[string]any {
+func _cropMetadataMap(crop farms.Crop) map[string]any {
 	meta := map[string]any{
 		"name":         crop.Name,
 		"farmid":       crop.FarmID,
@@ -52,7 +52,7 @@ func cropMetadataMap(crop farms.Crop) map[string]any {
 	return meta
 }
 
-func decodeCropMetadata(raw []byte, dst *farms.Crop) {
+func _decodeCropMetadata(raw []byte, dst *farms.Crop) {
 	if dst == nil || len(raw) == 0 || string(raw) == "null" {
 		return
 	}
@@ -122,7 +122,7 @@ func decodeCropMetadata(raw []byte, dst *farms.Crop) {
 	}
 }
 
-func insertCrop(ctx context.Context, app *infra.Deps, crop farms.Crop) error {
+func _insertCrop(ctx context.Context, app *infra.Deps, crop farms.Crop) error {
 	if app == nil || app.SQLDB == nil {
 		return errors.New("database unavailable")
 	}
@@ -133,7 +133,7 @@ func insertCrop(ctx context.Context, app *infra.Deps, crop farms.Crop) error {
 		return errors.New("farm id is required")
 	}
 
-	meta, err := json.Marshal(cropMetadataMap(crop))
+	meta, err := json.Marshal(_cropMetadataMap(crop))
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func insertCrop(ctx context.Context, app *infra.Deps, crop farms.Crop) error {
 	return err
 }
 
-func updateCrop(ctx context.Context, app *infra.Deps, cropID string, update map[string]any) error {
+func _updateCrop(ctx context.Context, app *infra.Deps, cropID string, update map[string]any) error {
 	if app == nil || app.SQLDB == nil {
 		return errors.New("database unavailable")
 	}
@@ -182,7 +182,7 @@ func updateCrop(ctx context.Context, app *infra.Deps, cropID string, update map[
 	return err
 }
 
-func findFilteredCrops(ctx context.Context, app *infra.Deps, query string, args []any) ([]farms.Crop, error) {
+func _findFilteredCrops(ctx context.Context, app *infra.Deps, query string, args []any) ([]farms.Crop, error) {
 	if app == nil || app.SQLDB == nil {
 		return nil, errors.New("database unavailable")
 	}
@@ -210,13 +210,13 @@ func findFilteredCrops(ctx context.Context, app *infra.Deps, query string, args 
 		}
 		crop.CreatedAt = createdAt
 		crop.UpdatedAt = updatedAt
-		decodeCropMetadata(metadata, &crop)
+		_decodeCropMetadata(metadata, &crop)
 		items = append(items, crop)
 	}
 	return items, rows.Err()
 }
 
-func findCatalogueItems(ctx context.Context, app *infra.Deps, query string, args []any) ([]farms.CropCatalogueItem, error) {
+func _findCatalogueItems(ctx context.Context, app *infra.Deps, query string, args []any) ([]farms.CropCatalogueItem, error) {
 	if app == nil || app.SQLDB == nil {
 		return nil, errors.New("database unavailable")
 	}
@@ -279,7 +279,7 @@ func findCatalogueItems(ctx context.Context, app *infra.Deps, query string, args
 	return items, rows.Err()
 }
 
-func buildCropFilterQuery(filter map[string]any) (string, []any) {
+func _buildCropFilterQuery(filter map[string]any) (string, []any) {
 	if len(filter) == 0 {
 		return "1 = 1", nil
 	}
@@ -316,11 +316,11 @@ func buildCropFilterQuery(filter map[string]any) (string, []any) {
 	return strings.Join(clauses, " AND "), args
 }
 
-func getAllCrops(ctx context.Context, app *infra.Deps) ([]farms.Crop, error) {
-	return findFilteredCrops(ctx, app, "1 = 1", nil)
+func _getAllCrops(ctx context.Context, app *infra.Deps) ([]farms.Crop, error) {
+	return _findFilteredCrops(ctx, app, "1 = 1", nil)
 }
 
-func createCropAbout(ctx context.Context, app *infra.Deps, crop *CropAbout) error {
+func _createCropAbout(ctx context.Context, app *infra.Deps, crop *CropAbout) error {
 	if app == nil || app.SQLDB == nil {
 		return errors.New("database unavailable")
 	}
@@ -362,7 +362,7 @@ func createCropAbout(ctx context.Context, app *infra.Deps, crop *CropAbout) erro
 	return err
 }
 
-func getCropAboutByID(ctx context.Context, app *infra.Deps, cropID string) (*CropAbout, error) {
+func _getCropAboutByID(ctx context.Context, app *infra.Deps, cropID string) (*CropAbout, error) {
 	if app == nil || app.SQLDB == nil {
 		return nil, errors.New("database unavailable")
 	}
@@ -463,7 +463,7 @@ func getCropAboutByID(ctx context.Context, app *infra.Deps, cropID string) (*Cro
 	return &about, nil
 }
 
-func getAllCropAbouts(ctx context.Context, app *infra.Deps) ([]CropAbout, error) {
+func _getAllCropAbouts(ctx context.Context, app *infra.Deps) ([]CropAbout, error) {
 	if app == nil || app.SQLDB == nil {
 		return nil, errors.New("database unavailable")
 	}
@@ -520,7 +520,7 @@ func getAllCropAbouts(ctx context.Context, app *infra.Deps) ([]CropAbout, error)
 	return items, rows.Err()
 }
 
-func updateCropAbout(ctx context.Context, app *infra.Deps, cropID string, crop *CropAbout) (int64, error) {
+func _updateCropAbout(ctx context.Context, app *infra.Deps, cropID string, crop *CropAbout) (int64, error) {
 	if app == nil || app.SQLDB == nil {
 		return 0, errors.New("database unavailable")
 	}
@@ -567,7 +567,7 @@ func updateCropAbout(ctx context.Context, app *infra.Deps, cropID string, crop *
 	return result.RowsAffected(), nil
 }
 
-func deleteCropAbout(ctx context.Context, app *infra.Deps, cropID string) error {
+func _deleteCropAbout(ctx context.Context, app *infra.Deps, cropID string) error {
 	if app == nil || app.SQLDB == nil {
 		return errors.New("database unavailable")
 	}

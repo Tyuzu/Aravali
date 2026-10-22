@@ -12,7 +12,7 @@ func CreateCropAbout(
 	app *infra.Deps,
 	crop *CropAbout,
 ) error {
-	return createCropAbout(ctx, app, crop)
+	return QQQcreateCropAbout(ctx, app, crop)
 }
 
 func GetCropAbout(
@@ -20,14 +20,14 @@ func GetCropAbout(
 	app *infra.Deps,
 	cropID string,
 ) (*CropAbout, error) {
-	return getCropAboutByID(ctx, app, cropID)
+	return QQQgetCropAboutByID(ctx, app, cropID)
 }
 
 func GetAllCropAbouts(
 	ctx context.Context,
 	app *infra.Deps,
 ) ([]CropAbout, error) {
-	return getAllCropAbouts(ctx, app)
+	return QQQgetAllCropAbouts(ctx, app)
 }
 
 func UpdateCropAbout(
@@ -36,7 +36,7 @@ func UpdateCropAbout(
 	cropID string,
 	crop *CropAbout,
 ) (any, error) {
-	return updateCropAbout(ctx, app, cropID, crop)
+	return QQQupdateCropAbout(ctx, app, cropID, crop)
 }
 
 func DeleteCropAbout(
@@ -44,5 +44,5 @@ func DeleteCropAbout(
 	app *infra.Deps,
 	cropID string,
 ) error {
-	return deleteCropAbout(ctx, app, cropID)
+	return QQQdeleteCropAbout(ctx, app, cropID)
 }
