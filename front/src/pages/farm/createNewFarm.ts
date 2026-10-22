@@ -1,4 +1,4 @@
-import { createFarm } from "../../services/crops/farm/createFarm.js";
+import { createFarm } from "../../services/farm/createFarm.js";
 
 export async function CreateFarm(
   isLoggedIn: boolean,

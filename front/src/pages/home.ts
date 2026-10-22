@@ -1,5 +1,5 @@
 
-// import "../../../css/inistyles/profilexx.css";
+import "../../css/pagestyles/profilexx.css";
 import { displayProfile } from "../services/profile/displayMyProfile.js";
 import { getState } from "../state/state.js";
 

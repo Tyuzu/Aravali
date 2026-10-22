@@ -1,6 +1,5 @@
-import "../../../css/farmstyles/cropwiki.css";
-// import { displayAboutCrop } from "../../services/crops/crop/about/cropAboutPage.js";
-import { displayAboutCrop } from "../../services/crops/crop/cropAboutPage.js";
+import "../../../css/pagestyles/cropwiki.css";
+import { displayAboutCrop } from "../../services/crops/cropAboutPage.js";
 
 export async function AboutCrop(
   isLoggedIn: boolean,
@@ -14,5 +13,5 @@ export async function AboutCrop(
       ? (cropID as any).id ?? (cropID as any).cropid ?? ""
       : "";
 
-  displayAboutCrop(contentContainer, resolvedId, isLoggedIn);
+  displayAboutCrop(contentContainer, isLoggedIn, resolvedId);
 }

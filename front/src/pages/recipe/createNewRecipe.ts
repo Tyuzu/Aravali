@@ -5,5 +5,5 @@ export async function CreateRecipe(
   contentContainer: HTMLElement
 ): Promise<void> {
   contentContainer.innerHTML = "";
-  createRecipe(contentContainer);
+  createRecipe(contentContainer, isLoggedIn);
 }

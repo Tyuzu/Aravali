@@ -1,7 +1,7 @@
 
-import "../../../css/farmstyles/croppage.css";
-import "../../../css/farmstyles/croppageform.css";
-import { displayCrop } from "../../services/crops/crop/cropPage.js";
+import "../../../css/pagestyles/croppage.css";
+import "../../../css/pagestyles/croppageform.css";
+import { displayCrop } from "../../services/crops/cropPage.js";
 
 export async function Crop(
   isLoggedIn: boolean,
@@ -17,5 +17,5 @@ export async function Crop(
       ? (cropID as any).id ?? (cropID as any).cropid ?? ""
       : "";
 
-  displayCrop(contentContainer, resolvedId, isLoggedIn);
+  displayCrop(contentContainer, isLoggedIn, resolvedId);
 }

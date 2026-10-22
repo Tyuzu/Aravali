@@ -1,6 +1,6 @@
 
-import "../../../css/farmstyles/crops.css";
-import { displayCrops } from "../../services/crops/crop/crops.js";
+import "../../../css/pagestyles/crops.css";
+import { displayCrops } from "../../services/crops/crops.js";
 
 export async function Crops(
   isLoggedIn: boolean,

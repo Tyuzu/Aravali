@@ -1,0 +1,13 @@
+.profilepage {
+  display: block;
+  width: 100%;
+}
+
+.profile-extra-data {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #dfe7f0;
+}

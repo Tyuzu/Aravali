@@ -1,0 +1,3 @@
+/* Additional dashboard order styling */
+
+.order-list { display: grid; gap: 12px; }

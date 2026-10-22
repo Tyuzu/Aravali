@@ -1,4 +1,4 @@
-import "../../../css/farmstyles/protools.css";
+import "../../../css/pagestyles/protools.css";
 import { displayItems } from "../../services/products/displayItems.js";
 
 export async function Products(

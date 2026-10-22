@@ -1,5 +1,5 @@
 
-import "../../../css/farmstyles/recipepage.css";
+import "../../../css/pagestyles/recipepage.css";
 import { displayRecipe } from "../../services/recipes/recipePage.js";
 
 export async function Recipe(

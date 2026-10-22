@@ -1,5 +1,5 @@
 
-import "../../../css/farmstyles/productpage.css";
+import "../../../css/pagestyles/productpage.css";
 import "../../../css/subpages/product.css";
 import { displayProduct } from "../../services/products/productPage.js";
 
@@ -32,5 +32,5 @@ export async function Product(
   }
 
   contentContainer.innerHTML = "";
-  await displayProduct(Boolean(isLoggedIn), productType, productId, contentContainer);
+  await displayProduct(contentContainer, Boolean(isLoggedIn), productId, productType);
 }

@@ -1,14 +1,11 @@
+import "../../../css/pagestyles/farmdash.css";
+import "../../../css/pagestyles/orders.css";
+import { displayFarmDash } from "../../services/farm/farmDash.js";
 
-export async function Dashboard(
+export async function Dash(
   isLoggedIn: boolean,
   contentContainer: HTMLElement
 ): Promise<void> {
   contentContainer.innerHTML = "";
-  const content = document.createElement("div");
-  content.className = "profilepage";
-  contentContainer.appendChild(content);
-
-  // Prefer centralized state snapshot to determine auth, fall back to route param
-  const logged = Boolean(getState("isLoggedIn") || isLoggedIn);
-  await displayDashboard(Boolean(logged), content);
+  await displayFarmDash(contentContainer, isLoggedIn);
 }
