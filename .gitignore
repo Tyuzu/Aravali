@@ -38,5 +38,6 @@ go.work.sum
 
 static/uploads
 tmp
+backend/
 
 __pycache__/

@@ -7,8 +7,8 @@ export default defineConfig(({ mode, command }) => {
   const isProd = mode === 'production';
   const isDevServer = command === 'serve';
 
-  // Target Go backend running locally
-  const BACKEND_TARGET = env.VITE_BACKEND_URL || 'http://localhost:4000';
+  // Target local backend for frontend development; falls back to the legacy Go API when configured.
+  const BACKEND_TARGET = env.VITE_BACKEND_URL || env.VITE_MAIN_URL || 'http://localhost:4000';
 
   return {
     root: '.',
