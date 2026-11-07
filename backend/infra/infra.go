@@ -21,14 +21,11 @@ import (
 )
 
 type Deps struct {
-	// SQLDB    sqldb.PostgresDatabase
-	DB       db.Database
-	Cache    cache.Cache
-	MQ       mq.MQ
-	NatsConn *nats.Conn
-	Config   config.Config
-	// underlying clients for graceful shutdown
-	// PGPool      *pgxpool.Pool
+	DB          db.Database
+	Cache       cache.Cache
+	MQ          mq.MQ
+	NatsConn    *nats.Conn
+	Config      config.Config
 	MongoClient *mongo.Client
 	RedisClient *redis.Client
 }
@@ -79,44 +76,17 @@ func New(cfg *config.Config) (*Deps, error) {
 	// 	nc = conn
 	// }
 
-	// /* -------- Postgres -------- */
-
-	// postgresURL := cfg.DatabaseURL
-	// if postgresURL == "" {
-	// 	postgresURL = env("POSTGRES_URL", env("DATABASE_URL", ""))
-	// }
-
-	// // Construct connection string from discrete env vars if no full URL is provided
-	// if postgresURL == "" {
-	// 	user := env("POSTGRES_USER", "apeman")
-	// 	pass := env("POSTGRES_PASSWORD", "ningning")
-	// 	host := env("POSTGRES_HOST", "localhost")
-	// 	port := env("POSTGRES_PORT", "5432")
-	// 	dbname := env("POSTGRES_DB", "eventdb")
-
-	// 	postgresURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", user, pass, host, port, dbname)
-	// }
-
-	// pool, err := NewPostgres(postgresURL)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// sqldbLayer := sqldb.NewPostgresDatabase(pool, 100)
-
 	// ---------------
 
 	// logger.L.Sugar().Infow("infra initialized", "nats_enabled", natsURL != "")
 	logger.L.Sugar().Infow("infra initialized")
 
 	return &Deps{
-		// SQLDB:       *sqldbLayer,
 		DB:    dbLayer,
 		Cache: cacheLayer,
 		// MQ:    mqLayer,
 		// NatsConn: nc,
-		Config: *cfg,
-		// PGPool:      pool,
+		Config:      *cfg,
 		MongoClient: client,
 		RedisClient: rclient,
 	}, nil
@@ -142,10 +112,6 @@ func (d *Deps) Close(ctx context.Context) error {
 			d.NatsConn.Close()
 		}
 	}
-
-	// if d.PGPool != nil {
-	// 	d.PGPool.Close()
-	// }
 
 	if d.RedisClient != nil {
 		if err := d.RedisClient.Close(); err != nil {
@@ -235,22 +201,3 @@ func NewJetStream(url string) (*nats.Conn, nats.JetStreamContext, error) {
 
 	return nc, js, nil
 }
-
-// /* -------------------- Postgres -------------------- */
-
-// func NewPostgres(uri string) (*pgxpool.Pool, error) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-
-// 	pool, err := pgxpool.New(ctx, uri)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	if err := pool.Ping(ctx); err != nil {
-// 		pool.Close()
-// 		return nil, err
-// 	}
-
-// 	return pool, nil
-// }

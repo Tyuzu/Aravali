@@ -13,6 +13,7 @@
 
   /* Sizing & Typography */
   padding: var(--space-sm) var(--space-md);
+  margin-right: 0.6rem;
   font-family: var(--font-body);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
