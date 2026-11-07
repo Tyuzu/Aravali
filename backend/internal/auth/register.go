@@ -45,10 +45,39 @@ func Register(app *infra.Deps) http.HandlerFunc {
 				return
 			}
 
-			// Log unexpected registration errors with context for debugging
-			log.L.Sugar().Errorw("register_error", "remote", r.RemoteAddr, "method", r.Method, "uri", r.RequestURI, "error", err, "username", input.Username, "email", input.Email)
+			// Log unexpected registration errors with context for debugging. This is
+			// especially important for Postgres connectivity issues (missing DB,
+			// bad credentials, or failed migrations).
+			log.L.Sugar().Errorw(
+				"register_error",
+				"remote", r.RemoteAddr,
+				"method", r.Method,
+				"uri", r.RequestURI,
+				"error", err,
+				"username", input.Username,
+				"email", input.Email,
+				"db_url", app.Config.DatabaseURL,
+				"db_user", app.Config.PostgresUser,
+				"db_host", app.Config.PostgresHost,
+				"db_port", app.Config.PostgresPort,
+				"db_name", app.Config.PostgresDB,
+				"env", app.Config.Env,
+			)
 
-			utils.RespondWithError(w, http.StatusInternalServerError, "Registration failed")
+			status := http.StatusInternalServerError
+			message := "Registration failed"
+			if err != nil && (strings.Contains(err.Error(), "database not initialized") ||
+				strings.Contains(err.Error(), "connection refused") ||
+				strings.Contains(err.Error(), "password authentication failed") ||
+				strings.Contains(err.Error(), "does not exist") ||
+				strings.Contains(err.Error(), "could not connect") ||
+				strings.Contains(err.Error(), "dial tcp") ||
+				strings.Contains(err.Error(), "pq: ")) {
+				status = http.StatusServiceUnavailable
+				message = "Registration failed: database unavailable"
+			}
+
+			utils.RespondWithError(w, status, message)
 			return
 		}
 
