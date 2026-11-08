@@ -1,19 +1,12 @@
 import { apiFetch } from "../../api/api.js";
+import type { RoleApplication } from "./types.js";
 
 export interface RoleRequestPayload {
   role: string;
   reason: string;
 }
 
-export interface RoleApplication {
-  id: string;
-  userid: string;
-  role: string;
-  reason: string;
-  status: "pending" | "approved" | "rejected";
-  created_at?: string;
-  updated_at?: string;
-}
+export type { RoleApplication };
 
 export async function submitRoleRequest(payload: RoleRequestPayload): Promise<{ message: string; id: string; status: string }> {
   return await apiFetch("/admin/role/request", "POST", payload);

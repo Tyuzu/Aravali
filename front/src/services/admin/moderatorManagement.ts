@@ -1,13 +1,7 @@
 import { apiFetch } from "../../api/api.js";
+import type { ModeratorApplication } from "./types.js";
 
-export interface ModeratorApplication {
-  id: string;
-  userid: string;
-  reason: string;
-  status: "pending" | "approved" | "rejected";
-  created_at?: string;
-  updated_at?: string;
-}
+export type { ModeratorApplication };
 
 export async function listModeratorApplications(status?: string): Promise<ModeratorApplication[]> {
   const qs = status ? `?status=${encodeURIComponent(status)}` : "";

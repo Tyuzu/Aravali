@@ -6,73 +6,24 @@ import { addToCart, isValidCartQuantity } from "../../cart/addToCart.js";
 import { getState } from "../../../state/state.js";
 import { EntityType } from "../../../utils/imagePaths.js";
 import Bannerx from "../../../components/base/Bannerx.js";
+import type { AvailabilitySchedule, Crop, Farm, PriceHistory } from "../types.js";
 
 const MAX_CART_QUANTITY = 99;
 
-export interface PriceHistory {
-  date: string;
-  price: number;
-}
-
-export interface AvailabilityDay {
-  enabled?: boolean;
-  from?: string;
-  to?: string;
-}
-
-export type AvailabilitySchedule = Record<string, AvailabilityDay>;
-
-export interface Crop {
-  cropid: string;
-  name: string;
-  category?: string;
-  price?: number;
-  discount?: number;
-  unit?: string;
-  quantity?: number;
-  harvestDate?: string;
-  HarvestDate?: string;
-  PlantedDate?: string;
-  LastSoldAt?: string;
-  expiryDate?: string;
-  banner?: string;
-  notes?: string;
-  catalogueid?: string;
-  updatedAt?: string;
-  createdAt?: string;
-  createdby?: string;
-  farmid?: string;
-  history?: PriceHistory[];
-  [key: string]: unknown;
-}
-
-export interface Farm {
-  farmid: string;
-  name: string;
-  location?: string;
-  description?: string;
-  owner?: string;
-  contact?: string;
-  practice?: string;
-  social?: string;
-  contactInfo?: Record<string, unknown>;
-  updatedAt?: string;
-  createdAt?: string;
-  createdBy?: string;
-  availability?: AvailabilitySchedule;
-  crops?: Crop[];
-  [key: string]: unknown;
-}
-
+export type { AvailabilitySchedule, Crop, Farm, PriceHistory };
 export type SortCriterion = "name" | "price" | "quantity" | "age" | string;
 
 // ─────────── Date utility ───────────
-function getAgeInDays(dateStr?: string): number {
-  if (!dateStr) return 0;
-  const d = new Date(dateStr);
+function getAgeInDays(dateValue?: string | number | Date): number {
+  if (dateValue === undefined || dateValue === null || dateValue === "") {
+    return 0;
+  }
+
+  const d = dateValue instanceof Date ? dateValue : new Date(dateValue);
   if (isNaN(d.getTime())) {
     return 0;
   }
+
   return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
