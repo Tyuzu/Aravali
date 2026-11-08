@@ -20,6 +20,14 @@ export interface RefundRequest {
   orderType?: OrderType;
   reviewNotes?: string;
   reviewedBy?: string;
+
+  // Legacy API aliases kept for compatibility with backend payloads.
+  created_at?: string;
+  order_id?: string;
+  userid?: string;
+  order_type?: OrderType | string;
+  review_notes?: string;
+  reviewed_by?: string;
 }
 
 export interface OrderItem {

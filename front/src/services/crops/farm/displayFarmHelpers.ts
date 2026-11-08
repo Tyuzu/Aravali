@@ -23,8 +23,8 @@ export interface AvailabilityDay {
 export type AvailabilitySchedule = Record<string, AvailabilityDay>;
 
 export interface Crop {
-  cropid?: string | number;
-  name?: string;
+  cropid: string;
+  name: string;
   category?: string;
   price?: number;
   discount?: number;
@@ -32,22 +32,33 @@ export interface Crop {
   quantity?: number;
   harvestDate?: string;
   HarvestDate?: string;
+  PlantedDate?: string;
+  LastSoldAt?: string;
   expiryDate?: string;
   banner?: string;
+  notes?: string;
+  catalogueid?: string;
+  updatedAt?: string;
+  createdAt?: string;
+  createdby?: string;
+  farmid?: string;
   history?: PriceHistory[];
   [key: string]: unknown;
 }
 
 export interface Farm {
-  farmid?: string | number;
-  name?: string;
+  farmid: string;
+  name: string;
   location?: string;
   description?: string;
   owner?: string;
   contact?: string;
   practice?: string;
   social?: string;
+  contactInfo?: Record<string, unknown>;
   updatedAt?: string;
+  createdAt?: string;
+  createdBy?: string;
   availability?: AvailabilitySchedule;
   crops?: Crop[];
   [key: string]: unknown;
@@ -83,13 +94,14 @@ export function renderAvailabilityWidget(availability?: AvailabilitySchedule): H
     const dayData = availability[day];
     if (dayData?.enabled) {
       const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+      const hoursText = dayData.from && dayData.to ? `${dayData.from} - ${dayData.to}` : "Open";
       listItems.push(
         createElement(
           "li",
           { class: "availability-item" },
           [
             createElement("span", { class: "day-name" }, [`${dayName}: `]),
-            createElement("span", { class: "day-hours" }, [`${dayData.from || ""} - ${dayData.to || ""}`])
+            createElement("span", { class: "day-hours" }, [hoursText])
           ]
         ) as HTMLElement
       );
@@ -112,7 +124,7 @@ export function renderAvailabilityWidget(availability?: AvailabilitySchedule): H
 
 // ─────────── Farm details ───────────
 export function renderFarmDetails(
-  farm: Farm = {},
+  farm: Farm = {} as Farm,
   isCreator: boolean = false,
   onEditFarm: ((farm: Farm) => void) | null = null
 ): HTMLElement {
@@ -122,7 +134,7 @@ export function renderFarmDetails(
 
   const actions: HTMLElement[] = [];
 
-  if (isCreator) {
+  if (isCreator && farm.farmid) {
     actions.push(
       Button({
         title: "✏️ Edit",
@@ -254,7 +266,7 @@ export function createSortDropdown(onChange: (val: string) => void = () => {}): 
 
 // ─────────── Crop list ───────────
 export async function renderCrops(
-  farm: Farm = {},
+  farm: Farm = {} as Farm,
   cropsContainer: HTMLElement | null,
   farmId: string | number,
   mainCon: HTMLElement,

@@ -26,6 +26,7 @@
     "skipLibCheck": true
   },
   "include": [
+    "src/**/*.d.ts",
     "src/**/*",
     "scripts/**/*",
     "service-worker.ts"

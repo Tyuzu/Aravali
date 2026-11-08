@@ -42,7 +42,8 @@ function renderRefundCard(
 
   const currentStatus = String(refund.status || "pending").toLowerCase();
   const statusClass = `status-${currentStatus}`;
-  const createdDate = new Date(refund.created_at || refund.createdAt || Date.now());
+  const createdAtValue = refund.createdAt ?? refund.created_at ?? Date.now();
+  const createdDate = new Date(createdAtValue);
 
   const formattedDate = Number.isNaN(createdDate.getTime())
     ? "N/A"
@@ -64,8 +65,8 @@ function renderRefundCard(
   const childrenNodes: HTMLElement[] = [
     createElement("div", { class: "refund-header" }, [
       createElement("div", { class: "header-left" }, [
-        createElement("h3", {}, [`Refund: ${refund.order_id || "N/A"}`]),
-        createElement("p", { class: "refund-user" }, [`User ID: ${refund.userid || "N/A"}`]),
+        createElement("h3", {}, [`Refund: ${refund.orderId ?? refund.order_id ?? "N/A"}`]),
+        createElement("p", { class: "refund-user" }, [`User ID: ${refund.userId ?? refund.userid ?? "N/A"}`]),
       ]),
       createElement("div", { class: "header-right" }, [
         createElement("span", { class: `status-badge ${statusClass}` }, [
@@ -79,11 +80,12 @@ function renderRefundCard(
     bodyContainer,
   ];
 
-  if (refund.order_type) {
+  const orderTypeValue = refund.orderType ?? refund.order_type;
+  if (orderTypeValue) {
     bodyContainer.appendChild(
       createElement("p", {}, [
         createElement("strong", {}, ["Order Type: "]),
-        refund.order_type === "farm" ? "Farm Order" : "Regular Order",
+        orderTypeValue === "farm" ? "Farm Order" : "Regular Order",
       ])
     );
   }
@@ -123,20 +125,22 @@ function renderRefundCard(
     );
   }
 
+  const reviewNotesValue = refund.reviewNotes ?? refund.review_notes;
   if (
     (currentStatus === "approved" || currentStatus === "rejected" || currentStatus === "completed") &&
-    refund.review_notes
+    reviewNotesValue
   ) {
     const reviewBlock = createElement("div", { class: "review-section" }, [
       createElement("p", {}, [
         createElement("strong", {}, ["Admin Notes: "]),
-        refund.review_notes,
+        reviewNotesValue,
       ]),
     ]);
 
-    if (refund.reviewed_by) {
+    const reviewedByValue = refund.reviewedBy ?? refund.reviewed_by;
+    if (reviewedByValue) {
       reviewBlock.appendChild(
-        createElement("p", { class: "reviewer" }, [`Reviewed by: ${refund.reviewed_by}`])
+        createElement("p", { class: "reviewer" }, [`Reviewed by: ${reviewedByValue}`])
       );
     }
     bodyContainer.appendChild(reviewBlock);
