@@ -16,7 +16,7 @@ const ProductCard = ({ image, title, details, actions, onClick }: ProductCardPro
   if (details) children.push(details);
   if (actions) children.push(actions);
 
-  const card = createElement("div", { class: "menu-card product-card" }, children) as HTMLElement;
+  const card = createElement("div", { class: "product-card" }, children) as HTMLElement;
 
   if (onClick) {
     card.addEventListener("click", (e: Event) => onClick(e));

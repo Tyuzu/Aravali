@@ -2,6 +2,7 @@ import { getState } from "../../state/state.js";
 import { createElement } from "../../components/createElement.js";
 import { getPlaceById } from "./api.js";
 import { renderPlaceDetails } from "./renderPlaceDetails.js";
+import type { Place as SharedPlace, PlaceCoordinates as SharedPlaceCoordinates } from "./placeDetails.js";
 import { displayMedia } from "../media/ui/mediaGallery.js";
 import { displayReviews } from "../reviews/displayReviews.js";
 import { persistTabs, TabItem } from "../../utils/persistTabs.js";
@@ -23,28 +24,11 @@ import {
 import { displayPlaceJobs } from "../jobs/jobs.js";
 import Notify from "../../components/ui/Notify.js";
 import { displayBooking } from "../booking/booking.js";
+import Bannerx from "../../components/base/Bannerx.js";
+import { EntityType } from "../../utils/imagePaths.js";
 
-export interface PlaceCoordinates {
-  lat?: number;
-  lng?: number;
-}
-
-export interface Place {
-  placeid?: string | number;
-  createdBy?: string | number;
-  name?: string;
-  banner?: string;
-  description?: string;
-  address?: string;
-  category?: string;
-  short_desc?: string;
-  capacity?: number;
-  tags?: string[];
-  coordinates?: PlaceCoordinates;
-  created_at?: string | Date | null;
-  updated_at?: string | Date | null;
-  [key: string]: unknown;
-}
+export type PlaceCoordinates = SharedPlaceCoordinates;
+export type Place = SharedPlace;
 
 type CategoryTabHandler = (
   container: HTMLElement,
@@ -52,6 +36,18 @@ type CategoryTabHandler = (
   isCreator: boolean,
   isLoggedIn: boolean
 ) => void;
+
+/** Banner section */
+function createPlaceBannerSection(placeData: Place, isCreator: boolean): HTMLElement {
+  return Bannerx({
+    isCreator,
+    bannerkey: placeData.banner,
+    banneraltkey: `Banner for ${placeData.name || "Place"}`,
+    bannerentitytype: EntityType.PLACE,
+    stateentitykey: "place",
+    bannerentityid: String(placeData.placeid ?? placeData.id ?? "")
+  }) as HTMLElement;
+}
 
 /**
  * Main entry point to fetch and render a place page
@@ -72,22 +68,36 @@ export default async function displayPlace(
       throw new Error("Invalid place data received.");
     }
 
-    const user = getState("user") as { userid?: string } | undefined;
-    const isCreator = isLoggedIn && Boolean(user?.userid) && user?.userid === placeData.createdBy;
+    const currentUser = getState("user") as { userid?: string | number } | undefined;
+    const isCreator = Boolean(
+      isLoggedIn &&
+      currentUser &&
+      currentUser.userid !== undefined &&
+      currentUser.userid !== null &&
+      String(currentUser.userid) === String(placeData.createdBy ?? "")
+    );
+
     contentContainer.replaceChildren();
 
-    // 1. Render Header
+    // 1. Render Banner
+    if (placeData.banner) {
+      contentContainer.appendChild(createElement("div", { class: "place-banner-wrapper" }, [
+        createPlaceBannerSection(placeData, isCreator)
+      ]));
+    }
+
+    // 2. Render Header
     const headerSection = createPlaceHeader(placeId, placeData, isCreator);
     contentContainer.appendChild(headerSection);
 
-    // 2. Render Details & Map area
+    // 3. Render Details & Map area
     const editSection = createElement("div", { class: "detail-section vflex" });
     renderPlaceDetailsSection(editSection, placeData, isCreator, isLoggedIn, contentContainer);
 
-    // 3. Render Booking Interaction
+    // 4. Render Booking Interaction
     renderBookingSection(editSection, placeId, placeData, isCreator);
 
-    // 4. Assemble Tabs & Initialize
+    // 5. Assemble Tabs & Initialize
     const tabs = buildPlaceTabs(placeId, placeData, isCreator, isLoggedIn);
     persistTabs(contentContainer, tabs, `place-tabs:${placeId}`);
 
@@ -131,15 +141,26 @@ function createPlaceHeader(placeId: string, placeData: Place, isCreator: boolean
     title: "Share",
     class: "action-icon-btn",
     events: {
-      click: () => {
-        navigator.clipboard.writeText(location.href);
-        Notify("Link copied to clipboard", { type: "success", duration: 3000, dismissible: true });
+      click: async () => {
+        try {
+          const shareUrl = window.location.href;
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
+          } else {
+            window.prompt("Copy this link:", shareUrl);
+          }
+          Notify("Link copied to clipboard", { type: "success", duration: 3000, dismissible: true });
+        } catch {
+          Notify("Unable to copy link automatically. Please copy it manually.", { type: "error", duration: 3000, dismissible: true });
+        }
       }
     }
   }, ["🔗"]);
 
-  const { lat, lng } = placeData.coordinates || {};
-  if (lat && lng) {
+  const coords = (placeData.coordinates ?? (placeData.location as PlaceCoordinates | Record<string, unknown> | null) ?? {}) as PlaceCoordinates & Record<string, unknown>;
+  const lat = typeof coords.lat === "number" ? coords.lat : Number(coords.lat);
+  const lng = typeof coords.lng === "number" ? coords.lng : Number(coords.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
     const mapBtn = createElement("a", {
       href: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
       target: "_blank",
@@ -155,11 +176,27 @@ function createPlaceHeader(placeId: string, placeData: Place, isCreator: boolean
   titleRow.appendChild(actions);
   headerSection.appendChild(titleRow);
 
+  // Subtitle / Quick Info Row (City, Category, Phone)
+  const metaRow = createElement("div", { class: "place-meta-row" });
+  if (placeData.category) {
+    metaRow.appendChild(createElement("span", { class: "badge-category" }, [placeData.category]));
+  }
+  if (placeData.city || placeData.country) {
+    const locationStr = [placeData.city, placeData.country].filter(Boolean).join(", ");
+    metaRow.appendChild(createElement("span", {}, [`📍 ${locationStr}`]));
+  }
+  if (placeData.phone) {
+    metaRow.appendChild(createElement("a", { href: `tel:${placeData.phone}`, class: "phone-link" }, [`📞 ${placeData.phone}`]));
+  }
+  if (metaRow.childNodes.length > 0) {
+    headerSection.appendChild(metaRow);
+  }
+
   return headerSection;
 }
 
 /**
- * Handles the inline editable metadata display and the maps toggler
+ * Handles the inline editable metadata display
  */
 function renderPlaceDetailsSection(
   editSection: HTMLElement,
@@ -200,16 +237,15 @@ function renderBookingSection(
     },
     events: {
       click: () => {
-        displayBooking(
-          {
-            entityType: "place",
-            entityId: placeId,
-            entityCategory: placeData.category,
-            userId: user?.userid || "guest",
-            isAdmin: isCreator
-          },
-          bookingContainer
-        );
+        const payload = {
+          entityType: "place",
+          entityId: placeId,
+          entityCategory: placeData.category,
+          userId: user?.userid || "guest",
+          isAdmin: Boolean(isCreator)
+        };
+
+        displayBooking(payload, bookingContainer);
       }
     }
   }, ["View Bookings"]);

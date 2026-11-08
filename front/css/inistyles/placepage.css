@@ -1,321 +1,303 @@
 /* ==========================================================================
-   FLUENT DESIGN SYSTEM TOKENS & VARIABLES
-   ========================================================================== */
-:root {
-  --fluent-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-
-  /* Color Palette - Light Theme */
-  --fluent-bg-canvas: #f3f3f3;
-  --fluent-bg-card: #ffffff;
-  --fluent-bg-secondary: #fafafa;
-  --fluent-bg-tertiary: #f0f0f0;
-  --fluent-fg-primary: #242424;
-  --fluent-fg-secondary: #616161;
-  --fluent-border-subtle: #e0e0e0;
-  --fluent-border-strong: #d1d1d1;
-
-  /* Fluent Accent & Interactive Colors */
-  --fluent-accent: #0078d4;
-  --fluent-accent-hover: #106ebe;
-  --fluent-accent-active: #005a9e;
-  --fluent-accent-light: #eff6fc;
-
-  /* Status Colors */
-  --fluent-success-fg: #107c41;
-  --fluent-success-bg: #dff6dd;
-  --fluent-danger-fg: #c42b1c;
-  --fluent-danger-bg: #fde7e9;
-
-  /* Fluent Elevation & Depth */
-  --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.04), 0 0 2px rgba(0, 0, 0, 0.06);
-  --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-
-  /* Geometry & Micro-Transitions */
-  --fluent-radius-sm: 4px;
-  --fluent-radius-md: 8px;
-  --fluent-radius-lg: 12px;
-  --fluent-radius-pill: 9999px;
-  --fluent-transition: 0.15s cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-/* Fluent Dark Theme Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fluent-bg-canvas: #202020;
-    --fluent-bg-card: #2c2c2c;
-    --fluent-bg-secondary: #272727;
-    --fluent-bg-tertiary: #333333;
-    --fluent-fg-primary: #ffffff;
-    --fluent-fg-secondary: #adadad;
-    --fluent-border-subtle: #383838;
-    --fluent-border-strong: #444444;
-
-    --fluent-accent: #479ef5;
-    --fluent-accent-hover: #62abf7;
-    --fluent-accent-active: #2b88d8;
-    --fluent-accent-light: rgba(71, 158, 245, 0.15);
-
-    --fluent-success-fg: #6ccb5f;
-    --fluent-success-bg: rgba(108, 203, 95, 0.18);
-    --fluent-danger-fg: #f1707b;
-    --fluent-danger-bg: rgba(241, 112, 123, 0.18);
-
-    --fluent-shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --fluent-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* ==========================================================================
-   PAGE CONTAINER & HEADER
-   ========================================================================== */
+   Place Page Styling (Fluent Design System)
+   ================================================================---------- */
 
 .placepage {
-  max-width: 1050px;
-  margin: 1.5rem auto;
-  padding: 0 1rem;
-  font-family: var(--fluent-font-family);
-  color: var(--fluent-fg-primary);
-  box-sizing: border-box;
+  background-color: var(--color-space);
+  color: var(--color-fg);
+  font-family: var(--font-base);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  /* padding: var(--space-lg); */
+  max-width: var(--max-width-lg);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 100vh;
 }
 
+/* ─────────── Header Section ─────────── */
 .place-header {
-  margin-bottom: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-elev-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .place-header-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
 
 .place-header-row h1 {
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
   margin: 0;
-  letter-spacing: -0.02em;
+  color: var(--color-fg);
 }
 
-/* Owner Badge */
 .owner-badge {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--fluent-success-fg);
-  background-color: var(--fluent-success-bg);
-  padding: 3px 10px;
-  border-radius: var(--fluent-radius-pill);
-  display: inline-flex;
-  align-items: center;
+  background-color: rgba(16, 124, 65, 0.1);
+  color: var(--color-success);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Action Icon Buttons */
 .place-header-actions {
-  margin-left: auto;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-xs);
+  margin-left: auto;
 }
 
 .action-icon-btn {
-  display: inline-flex;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-fg);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-circle);
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  background-color: var(--fluent-bg-card);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-pill);
-  font-size: 14px;
-  color: var(--fluent-fg-primary);
   cursor: pointer;
-  transition: all var(--fluent-transition);
-  box-shadow: var(--fluent-shadow-card);
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-base);
 }
 
 .action-icon-btn:hover {
-  background-color: var(--fluent-bg-tertiary);
-  border-color: var(--fluent-border-strong);
-  transform: translateY(-1px);
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
-/* ==========================================================================
-   MAIN SECTION & BANNER
-   ========================================================================== */
+/* Meta Row */
+.place-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+}
 
+.badge-category {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+}
+
+.phone-link {
+  color: var(--color-link);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.phone-link:hover {
+  text-decoration: underline;
+}
+
+/* ─────────── Detail & Banner Section ─────────── */
 .detail-section.vflex {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  background-color: var(--fluent-bg-card);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-lg);
-  box-shadow: var(--fluent-shadow-card);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-md);
 }
 
 .place-banner {
   position: relative;
   width: 100%;
-  height: 280px;
-  border-radius: var(--fluent-radius-md);
+  height: 320px;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background-color: var(--fluent-bg-tertiary);
+  box-shadow: var(--shadow-elev-2);
+  background-color: var(--color-bg-secondary);
 }
 
 .place-banner img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
-/* Details Section Details */
+.edit-banner-pic {
+  position: absolute;
+  bottom: var(--space-md);
+  right: var(--space-md);
+  background: var(--color-overlay);
+  color: #fff;
+  border: none;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background var(--transition-fast);
+}
+
+.edit-banner-pic:hover {
+  background: var(--color-accent);
+}
+
+/* Placedetails Container */
+.placedetails {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-elev-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
 .placedetails h1 {
-  display: none; /* Hidden to avoid duplication with header title */
+  font-size: var(--font-size-xl);
+  margin-top: 0;
+  margin-bottom: var(--space-xs);
 }
 
 .placedetails p {
-  font-size: 0.9rem;
-  margin: 0 0 0.5rem 0;
-  color: var(--fluent-fg-primary);
-  line-height: 1.4;
+  margin: var(--space-xxs) 0;
+  color: var(--color-muted);
 }
 
 .placedetails p strong {
-  color: var(--fluent-fg-secondary);
-  font-weight: 600;
+  color: var(--color-fg);
 }
 
-/* Creator Controls & Utility Flex */
+/* Creator Controls */
 .creator-controls-group {
-  margin-top: 1rem;
+  margin-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .hvflex {
   display: flex;
+  gap: var(--space-sm);
   flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
-/* ==========================================================================
-   BUTTON CONTROLS
-   ========================================================================== */
-
-.buttonx,
-button.primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  height: 36px;
-  padding: 0 1rem;
-  border-radius: var(--fluent-radius-sm);
+/* Buttons */
+.buttonx {
+  background: var(--color-btn-bg);
+  color: var(--color-btn-fg);
+  border: none;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  user-select: none;
-  border: 1px solid transparent;
-  transition: all var(--fluent-transition);
-  box-sizing: border-box;
+  transition: background var(--transition-fast);
+  text-align: center;
 }
 
-.buttonx.secondary,
-.buttonx:not(.primary):not(.delete-btn) {
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-primary);
-  border-color: var(--fluent-border-subtle);
+.buttonx:hover {
+  background: var(--color-btn-hover-bg);
 }
 
-.buttonx.secondary:hover,
-.buttonx:not(.primary):not(.delete-btn):hover {
-  background-color: var(--fluent-bg-tertiary);
-  border-color: var(--fluent-border-strong);
+.buttonx.secondary {
+  background: var(--color-bg-secondary);
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
 }
 
-.buttonx.primary,
-button.primary {
-  background-color: var(--fluent-accent);
-  color: #ffffff;
-}
-
-.buttonx.primary:hover,
-button.primary:hover {
-  background-color: var(--fluent-accent-hover);
+.buttonx.secondary:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .buttonx.delete-btn {
-  background-color: var(--fluent-danger-bg);
-  color: var(--fluent-danger-fg);
+  background: rgba(209, 52, 56, 0.1);
+  color: var(--color-error);
+  border: 1px solid rgba(209, 52, 56, 0.2);
 }
 
 .buttonx.delete-btn:hover {
-  background-color: var(--fluent-danger-fg);
-  color: #ffffff;
+  background: var(--color-error);
+  color: #fff;
 }
 
-.buttonx:active,
-button.primary:active {
-  transform: scale(0.98);
+/* ─────────── Tabs System ─────────── */
+/* .tabs-container {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elev-1);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
 }
 
+.tab-buttons {
+  display: flex;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
 
+.tab-button {
+  padding: var(--space-md) var(--space-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tab-button:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.tab-button.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.tab-contents {
+  padding: var(--space-lg);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+} */
+
+/* Place Info Tab Content */
 .place-info {
-  margin-top: 1rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.75rem 1.25rem;
-  background-color: var(--fluent-bg-secondary);
-  border: 1px solid var(--fluent-border-subtle);
-  border-radius: var(--fluent-radius-md);
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .place-info p {
   margin: 0;
-  font-size: 0.875rem;
-  color: var(--fluent-fg-primary);
+  color: var(--color-muted);
 }
 
-.place-info p strong {
-  color: var(--fluent-fg-secondary);
-  font-weight: 600;
-}
-
-.menulist p,
-.tab-content > p {
-  color: var(--fluent-fg-secondary);
-  font-size: 0.9rem;
-  margin: 0.75rem 0 0 0;
-}
-
-/* ==========================================================================
-   RESPONSIVE DESIGN
-   ========================================================================== */
-
-@media (max-width: 768px) {
-  .placepage {
-    padding: 0;
-  }
-
-  .detail-section.vflex,
-  .tabs-container {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-  }
-
-  .place-banner {
-    height: 200px;
-  }
-
-  .hvflex {
-    flex-direction: column;
-  }
-
-  .buttonx {
-    width: 100%;
-  }
-
-  .place-info {
-    grid-template-columns: 1fr;
-  }
+.place-info span {
+  color: var(--color-fg);
 }
