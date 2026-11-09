@@ -30,7 +30,7 @@ export function createProfileActions(profile: UserProfile, isLoggedIn: boolean):
             title: "Logout",
             id: "logout-btn",
             events: { click: async () => await logout() },
-            classes: "dropdown-item logout-btn"
+            classes: "logout-btn"
         };
         const logoutButton = Button(logoutOptions);
         profileActions.appendChild(logoutButton);

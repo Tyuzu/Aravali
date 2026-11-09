@@ -84,8 +84,12 @@ func InsertArtistEvent(ctx context.Context, db db.Database, artistevent *ArtistE
 	return db.Insert(ctx, ArtistEventsCollection, artistevent)
 }
 
+func FindArtistEventByID(ctx context.Context, db db.Database, artisteventID string, result *ArtistEvent) error {
+	return db.FindOne(ctx, ArtistEventsCollection, map[string]any{"eventid": artisteventID}, result)
+}
+
 func UpdateArtistEventByID(ctx context.Context, db db.Database, artisteventID string, update map[string]any) (any, error) {
-	return db.Update(ctx, ArtistEventsCollection, map[string]any{"eventid": artisteventID}, update)
+	return db.Update(ctx, ArtistEventsCollection, map[string]any{"eventid": artisteventID}, map[string]any{"$set": update})
 }
 
 // DeleteArtistEventByID deletes an artist event entry by its ID.

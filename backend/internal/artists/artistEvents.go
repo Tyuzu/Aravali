@@ -14,6 +14,24 @@ import (
 func CreateArtistEvent(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		artistID := utils.GetParam(r, "id")
+		currentUserID := utils.GetUserIDFromRequest(r)
+
+		if currentUserID == "" {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Authentication required")
+			return
+		}
+
+		var artist Artist
+		if err := FindArtistByID(ctx, app.DB, artistID, &artist); err != nil {
+			utils.RespondWithError(w, http.StatusNotFound, "Artist not found")
+			return
+		}
+
+		if artist.CreatorID != currentUserID {
+			utils.RespondWithError(w, http.StatusForbidden, "Only the artist creator can create events")
+			return
+		}
 
 		var artistevent ArtistEvent
 		if err := json.NewDecoder(r.Body).Decode(&artistevent); err != nil {
@@ -21,8 +39,8 @@ func CreateArtistEvent(app *infra.Deps) http.HandlerFunc {
 			return
 		}
 
-		artistevent.ArtistID = utils.GetParam(r, "id")
-		artistevent.CreatorID = utils.GetUserIDFromRequest(r)
+		artistevent.ArtistID = artistID
+		artistevent.CreatorID = currentUserID
 		artistevent.EventID = utils.GenerateRandomString(14)
 
 		err := InsertArtistEvent(ctx, app.DB, &artistevent)
@@ -54,6 +72,24 @@ func UpdateArtistEvent(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		artisteventID := utils.GetParam(r, "id")
+		currentUserID := utils.GetUserIDFromRequest(r)
+
+		if currentUserID == "" {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Authentication required")
+			return
+		}
+
+		var existing ArtistEvent
+		if err := FindArtistEventByID(ctx, app.DB, artisteventID, &existing); err != nil {
+			utils.RespondWithError(w, http.StatusNotFound, "ArtistEvent not found")
+			return
+		}
+
+		var artist Artist
+		if err := FindArtistByID(ctx, app.DB, existing.ArtistID, &artist); err != nil || artist.CreatorID != currentUserID {
+			utils.RespondWithError(w, http.StatusForbidden, "Only the artist creator can update this event")
+			return
+		}
 
 		var updateData map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
@@ -81,6 +117,24 @@ func DeleteArtistEvent(app *infra.Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		artisteventID := utils.GetParam(r, "id")
+		currentUserID := utils.GetUserIDFromRequest(r)
+
+		if currentUserID == "" {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Authentication required")
+			return
+		}
+
+		var existing ArtistEvent
+		if err := FindArtistEventByID(ctx, app.DB, artisteventID, &existing); err != nil {
+			utils.RespondWithError(w, http.StatusNotFound, "ArtistEvent not found")
+			return
+		}
+
+		var artist Artist
+		if err := FindArtistByID(ctx, app.DB, existing.ArtistID, &artist); err != nil || artist.CreatorID != currentUserID {
+			utils.RespondWithError(w, http.StatusForbidden, "Only the artist creator can delete this event")
+			return
+		}
 
 		err := DeleteArtistEventByID(ctx, app.DB, artisteventID)
 		if err != nil {

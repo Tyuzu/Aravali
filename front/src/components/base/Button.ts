@@ -19,6 +19,30 @@ const Button = (...args: any[]): HTMLButtonElement => {
   // Support two call styles: Button(options) and legacy Button(title, id, options?, classes?)
   let opts: ButtonOptions = {};
 
+  const eventKeys = new Set([
+    "click", "dblclick", "submit", "input", "change", "keydown", "keyup", "keypress",
+    "focus", "blur", "mouseover", "mouseout", "mouseenter", "mouseleave",
+    "touchstart", "touchend", "dragstart", "drop", "contextmenu", "scroll"
+  ]);
+
+  const normalizeEventHandlers = (source: Record<string, unknown>): Record<string, EventListenerOrEventListenerObject> => {
+    const events: Record<string, EventListenerOrEventListenerObject> = {};
+
+    if (source.events && typeof source.events === "object") {
+      Object.assign(events, source.events as Record<string, EventListenerOrEventListenerObject>);
+    }
+
+    for (const eventName of eventKeys) {
+      const handler = source[eventName];
+      if (typeof handler === "function") {
+        events[eventName] = handler as EventListenerOrEventListenerObject;
+        delete source[eventName];
+      }
+    }
+
+    return events;
+  };
+
   if (args.length === 1 && typeof args[0] === "object") {
     opts = args[0] as ButtonOptions;
   } else {
@@ -29,7 +53,6 @@ const Button = (...args: any[]): HTMLButtonElement => {
       // the old third arg was often an options object
       const third = args[2] as Record<string, unknown>;
 
-      // Use bracket notation here 👇
       if (third['events']) {
         opts.events = third['events'] as Record<string, (e: Event) => void>;
       }
@@ -39,6 +62,7 @@ const Button = (...args: any[]): HTMLButtonElement => {
     if (typeof args[3] === "string") opts.classes = args[3];
   }
 
+  const normalizedEvents = normalizeEventHandlers(opts as Record<string, unknown>);
   const {
     title = "Click Me",
     id = "",
@@ -46,7 +70,7 @@ const Button = (...args: any[]): HTMLButtonElement => {
     classes = "",
     styles = {},
     ...rest
-  } = opts;
+  } = { ...opts, events: normalizedEvents };
 
   if (typeof title !== "string" || title.trim() === "") {
     throw new Error("A valid 'title' is required for the Button component.");

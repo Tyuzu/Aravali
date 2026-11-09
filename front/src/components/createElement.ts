@@ -90,6 +90,11 @@ export function createElement(
       continue;
     }
 
+    if (typeof value === "function" && /^(click|dblclick|submit|input|change|keydown|keyup|keypress|focus|blur|mouseover|mouseout|mouseenter|mouseleave|touchstart|touchend|dragstart|drop|contextmenu|scroll)$/i.test(key)) {
+      element.addEventListener(key.toLowerCase(), value as EventListener);
+      continue;
+    }
+
     // 2. Inline Style Dictionary Assignment
     if ((key === "style" || key === "styles") && typeof value === "object") {
       Object.assign(element.style, value);
