@@ -41,19 +41,43 @@ export async function openNotificationsModal(): Promise<void> {
   }) as HTMLInputElement;
 
   const filterGroup = createElement("div", { class: "notification-filter-group" });
-  const filterButtons: Record<string, HTMLElement> = {
-    all: createElement("button", { class: "notification-filter-btn is-active", type: "button" }, ["All"]),
-    unread: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Unread"]),
+  const activityFilterButtons: Record<string, HTMLButtonElement> = {
+    all: createElement("button", { class: "notification-filter-btn is-active", type: "button" }, ["All"]) as HTMLButtonElement,
+    unread: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Unread"]) as HTMLButtonElement,
   };
 
-  Object.entries(filterButtons).forEach(([key, button]) => {
-    button.addEventListener("click", () => {
-      UI_STATE.activityFilter = key;
-      applyActivityFilterState();
-      renderActivityTab();
+  function renderActivityFilters(): void {
+    filterGroup.replaceChildren();
+    Object.entries(activityFilterButtons).forEach(([key, button]) => {
+      button.classList.toggle("is-active", UI_STATE.activityFilter === key);
+      button.onclick = () => {
+        UI_STATE.activityFilter = key;
+        renderActivityFilters();
+        renderActivityTab();
+      };
+      filterGroup.appendChild(button);
     });
-    filterGroup.appendChild(button);
-  });
+  }
+
+  function renderSystemFilters(): void {
+    const systemFilterButtons: Record<string, HTMLButtonElement> = {
+      all: createElement("button", { class: "notification-filter-btn is-active", type: "button" }, ["All"]) as HTMLButtonElement,
+      unread: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Unread"]) as HTMLButtonElement,
+      error: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Errors"]) as HTMLButtonElement,
+      success: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Success"]) as HTMLButtonElement,
+    };
+
+    filterGroup.replaceChildren();
+    Object.entries(systemFilterButtons).forEach(([key, button]) => {
+      button.classList.toggle("is-active", UI_STATE.systemFilter === key);
+      button.onclick = () => {
+        UI_STATE.systemFilter = key;
+        renderSystemFilters();
+        renderSystemTab();
+      };
+      filterGroup.appendChild(button);
+    });
+  }
 
   toolbar.appendChild(searchInput);
   toolbar.appendChild(filterGroup);
@@ -91,36 +115,13 @@ export async function openNotificationsModal(): Promise<void> {
   });
 
   function applyActivityFilterState(): void {
-    const isAll = UI_STATE.activityFilter === "all";
-    filterButtons.all.classList.toggle("is-active", isAll);
-    filterButtons.unread.classList.toggle("is-active", !isAll);
     searchInput.placeholder = "Search activity...";
+    renderActivityFilters();
   }
 
   function applySystemFilterState(): void {
-    const systemFilters: Record<string, HTMLElement> = {
-      all: createElement("button", { class: "notification-filter-btn is-active", type: "button" }, ["All"]),
-      unread: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Unread"]),
-      error: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Errors"]),
-      success: createElement("button", { class: "notification-filter-btn", type: "button" }, ["Success"]),
-    };
-
-    filterGroup.innerHTML = "";
-    Object.entries(systemFilters).forEach(([key, button]) => {
-      button.addEventListener("click", () => {
-        UI_STATE.systemFilter = key;
-        applySystemFilterState();
-        renderSystemTab();
-      });
-      filterGroup.appendChild(button);
-    });
-
-    const active = UI_STATE.systemFilter;
-    systemFilters.all.classList.toggle("is-active", active === "all");
-    systemFilters.unread.classList.toggle("is-active", active === "unread");
-    systemFilters.error.classList.toggle("is-active", active === "error");
-    systemFilters.success.classList.toggle("is-active", active === "success");
     searchInput.placeholder = "Search system logs...";
+    renderSystemFilters();
   }
 
   function updateTabStyles(): void {

@@ -105,7 +105,7 @@ const Notify = (
   }, timeout);
 
   // Global app state & Side Effects
-  setState("unreadNotifications", ((getState("unreadNotifications") as number) || 0) + 1);
+  // Toasts are transient UI feedback; they should not inflate the app's real unread notification count.
   playSoundAlert({ type: "notification" });
 
   // Persistent System Log Storage (Async save to IndexedDB)
