@@ -1,3 +1,4 @@
+import "../../../css/inistyles/analytics.css";
 import { createElement } from "../../components/createElement.js";
 import { getAnalytics } from "./api.js";
 import Notify from "../../components/ui/Notify.js";
@@ -51,17 +52,34 @@ function beautifyKey(key: string): string {
 
 /* ────────────────────── Render Sub-components ────────────────────── */
 
+function formatMetricValue(value: number | string): string {
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) return String(value);
+    return value.toFixed(1);
+  }
+
+  return String(value ?? "0");
+}
+
+function getTrendLabels(): string[] {
+  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  return labels;
+}
+
 function renderAnalytics(data: AnalyticsData): HTMLElement {
   const metrics = data.metrics && typeof data.metrics === "object" ? data.metrics : {};
   const trend = Array.isArray(data.trend) ? data.trend : [];
   const engagement = data.engagement && typeof data.engagement === "object" ? data.engagement : {};
   const insights = data.insights && typeof data.insights === "object" ? data.insights : {};
   const topLocations = Array.isArray(data.topLocations) ? data.topLocations : [];
-
   const lastUpdated = data.lastUpdated ? Datex(data.lastUpdated) : "";
 
-  // 1. Header Section
+  const metricEntries = Object.entries(metrics).slice(0, 8);
+  const numericTrend = trend.map((v) => Math.max(0, Number(v) || 0));
+  const maxTrendVal = Math.max(...numericTrend, 1);
+
   const headerChildren: (HTMLElement | null)[] = [
+    createElement("span", { class: "analytics-kicker" }, [data.type ? data.type.toUpperCase() : "ENTITY"]),
     createElement("h2", {}, [`Analytics for ${data.name || "Unknown"}`]),
     createElement("p", {}, [`Entity Type: ${data.type || "N/A"}`]),
     lastUpdated ? createElement("small", {}, ["Last Updated: ", String(lastUpdated)]) : null
@@ -73,88 +91,80 @@ function renderAnalytics(data: AnalyticsData): HTMLElement {
     headerChildren.filter((child): child is HTMLElement => child !== null)
   );
 
-  // 2. Metrics Summary (Beautified labels)
   const summaryCards = createElement(
     "div",
     { class: "analytics-summary-cards" },
-    Object.keys(metrics).map((key) =>
+    metricEntries.map(([key, value]) =>
       createElement("div", { class: "analytics-card" }, [
-        createElement("h4", {}, [beautifyKey(key)]),
-        createElement("p", {}, [String(metrics[key] ?? 0)])
+        createElement("span", { class: "analytics-card-label" }, [beautifyKey(key)]),
+        createElement("strong", { class: "analytics-card-value" }, [formatMetricValue(value)])
       ])
     )
   );
 
-  // 3. Trend Section (Auto-scaled using percentage heights)
-  const numericTrend = trend.map((v) => Math.max(0, Number(v) || 0));
-  const maxTrendVal = Math.max(...numericTrend, 1); // fallback to 1 to prevent division by 0
-
-  const trendSection = createElement("div", { class: "analytics-trend" }, [
-    createElement("h3", {}, ["7-Day Trend"]),
-    createElement(
-      "div",
-      {
-        class: "trend-bars",
-        style: {
-          display: "flex",
-          alignItems: "flex-end",
-          height: "120px",
-          gap: "8px",
-          borderBottom: "1px solid #ddd",
-          paddingBottom: "4px"
-        }
-      },
-      numericTrend.map((val) => {
-        const heightPct = (val / maxTrendVal) * 100;
-        return createElement("div", {
-          class: "trend-bar",
-          style: {
-            height: `${heightPct}%`,
-            flex: "1",
-            minHeight: "2px"
-          },
+  const trendBars = createElement(
+    "div",
+    { class: "analytics-trend-bars" },
+    numericTrend.map((val, index) => {
+      const heightPct = (val / maxTrendVal) * 100;
+      return createElement("div", { class: "analytics-trend-column" }, [
+        createElement("span", { class: "analytics-trend-value" }, [formatMetricValue(val)]),
+        createElement("span", {
+          class: "analytics-trend-bar",
+          style: { height: `${Math.max(12, heightPct)}%` },
           title: `Value: ${val}`
-        });
-      })
-    )
+        }),
+        createElement("small", { class: "analytics-trend-label" }, [getTrendLabels()[index] || `D${index + 1}`])
+      ]);
+    })
+  );
+
+  const trendSection = createElement("div", { class: "analytics-panel analytics-trend-panel" }, [
+    createElement("h3", {}, ["7-Day Trend"]),
+    trendBars
   ]);
 
-  // 4. Engagement Details
   const engagementSection = Object.keys(engagement).length
-    ? createElement("div", { class: "analytics-engagement" }, [
-        createElement("h3", {}, ["Engagement Metrics"]),
+    ? createElement("div", { class: "analytics-panel analytics-stats-panel" }, [
+        createElement("h3", {}, ["Engagement"]),
         createElement(
-          "ul",
-          {},
+          "div",
+          { class: "analytics-stat-grid" },
           Object.entries(engagement).map(([k, v]) =>
-            createElement("li", {}, [`${beautifyKey(k)}: ${v}`])
+            createElement("div", { class: "analytics-stat" }, [
+              createElement("span", { class: "analytics-stat-label" }, [beautifyKey(k)]),
+              createElement("strong", { class: "analytics-stat-value" }, [String(v)])
+            ])
           )
         )
       ])
     : null;
 
-  // 5. Insights
   const insightsSection = Object.keys(insights).length
-    ? createElement("div", { class: "analytics-insights" }, [
+    ? createElement("div", { class: "analytics-panel analytics-insights-panel" }, [
         createElement("h3", {}, ["Insights"]),
         createElement(
-          "ul",
-          {},
+          "div",
+          { class: "analytics-insight-list" },
           Object.entries(insights).map(([k, v]) =>
-            createElement("li", {}, [`${beautifyKey(k)}: ${v}`])
+            createElement("div", { class: "analytics-insight-item" }, [
+              createElement("span", { class: "analytics-insight-kicker" }, [beautifyKey(k)]),
+              createElement("p", {}, [String(v)])
+            ])
           )
         )
       ])
     : null;
 
-  // 6. Top Locations
   const topLocationsSection = topLocations.length
-    ? createElement("div", { class: "analytics-top-locations" }, [
+    ? createElement("div", { class: "analytics-panel analytics-locations-panel" }, [
         createElement("h3", {}, ["Top Locations"]),
         createElement(
-          "ul",
-          {},
-          topLocations.map((loc) => createElement("li", {}, [String(loc)]))
+          "div",
+          { class: "analytics-location-list" },
+          topLocations.map((loc, index) =>
+            createElement("div", { class: "analytics-location-chip" }, [`${index + 1}. ${String(loc)}`])
+          )
         )
       ])
     : null;

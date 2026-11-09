@@ -404,4 +404,8 @@ if (typeof window !== "undefined") {
   window.addEventListener("auth:unauthorized", () => {
     silentLogout();
   });
+
+  window.addEventListener("auth:remote-logout", () => {
+    silentLogout();
+  });
 }

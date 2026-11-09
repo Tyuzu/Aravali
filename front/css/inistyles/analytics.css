@@ -1,0 +1,215 @@
+.analytics-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: linear-gradient(180deg, rgba(18, 27, 42, 0.02), rgba(18, 27, 42, 0.06));
+  border-radius: 20px;
+  color: #172033;
+}
+
+.analytics-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.25rem 1.4rem;
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  border-radius: 18px;
+  color: #f8fbff;
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.2);
+}
+
+.analytics-kicker {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.82;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.38rem 0.7rem;
+  border-radius: 999px;
+}
+
+.analytics-header h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.4vw, 2.3rem);
+  line-height: 1.1;
+}
+
+.analytics-header p,
+.analytics-header small {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.analytics-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.analytics-card,
+.analytics-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+.analytics-card {
+  padding: 1rem 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.analytics-card-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.analytics-card-value {
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.analytics-panel {
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.analytics-panel h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.analytics-trend-bars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(38px, 1fr));
+  align-items: end;
+  gap: 0.7rem;
+  min-height: 180px;
+  padding-top: 0.5rem;
+}
+
+.analytics-trend-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.analytics-trend-value {
+  font-size: 0.62rem;
+  color: #475569;
+  font-weight: 700;
+}
+
+.analytics-trend-bar {
+  width: 100%;
+  min-height: 20px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+  box-shadow: inset 0 -6px 10px rgba(37, 99, 235, 0.15);
+}
+
+.analytics-trend-label {
+  font-size: 0.62rem;
+  color: #64748b;
+}
+
+.analytics-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.8rem;
+}
+
+.analytics-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.8rem 0.9rem;
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.07), rgba(37, 99, 235, 0.02));
+  border: 1px solid rgba(96, 165, 250, 0.14);
+  border-radius: 12px;
+}
+
+.analytics-stat-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.analytics-stat-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.analytics-insight-list,
+.analytics-location-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.analytics-insight-item {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: rgba(15, 118, 110, 0.04);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+}
+
+.analytics-insight-kicker {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.analytics-insight-item p {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.analytics-location-list {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.analytics-location-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f8fafc, #dbeafe);
+  color: #1d4ed8;
+  font-weight: 700;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+}
+
+@media (max-width: 640px) {
+  .analytics-page {
+    padding: 0.75rem;
+  }
+
+  .analytics-header {
+    padding: 1rem;
+  }
+
+  .analytics-trend-bars {
+    gap: 0.45rem;
+  }
+}

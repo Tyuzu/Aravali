@@ -12,27 +12,32 @@ export interface AnalyticsOptions {
  * View Analytics for a specific place
  */
 export async function analyticsPlace(
-  anacon: HTMLElement, 
-  isLoggedIn: boolean, 
+  anacon: HTMLElement,
+  isLoggedIn: boolean,
   placeId: string
 ): Promise<void> {
   if (!isLoggedIn) {
-    Notify("Please log in to view your event analytics.", { 
-      type: "warning", 
-      duration: 3000, 
-      dismissible: true 
+    Notify("Please log in to view your place analytics.", {
+      type: "warning",
+      duration: 3000,
+      dismissible: true
     });
     return;
   }
 
-  const userConfirmed = confirm("Do you want to view event analytics?");
-  if (!userConfirmed) return;
+  if (!placeId) {
+    Notify("Place not found for analytics.", {
+      type: "error",
+      duration: 3000,
+      dismissible: true
+    });
+    return;
+  }
 
-  // Render page for a specific place
-  renderAnalyticsPage({ 
-    container: anacon, 
-    isLoggedIn: true, 
-    entityType: "places", 
-    entityId: placeId 
+  renderAnalyticsPage({
+    container: anacon,
+    isLoggedIn,
+    entityType: "places",
+    entityId: placeId
   });
 }

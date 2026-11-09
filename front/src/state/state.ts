@@ -375,15 +375,26 @@ function normalizeAuth(authValue: Partial<AuthState> = {}, previousAuth: Partial
     const user = Object.prototype.hasOwnProperty.call(source, "user") ? source.user || null : previous.user || null;
     const roles = normalizeRoles(Object.prototype.hasOwnProperty.call(source, "roles") ? source.roles : previous.roles);
     const permissions = normalizePermissions(Object.prototype.hasOwnProperty.call(source, "permissions") ? source.permissions : previous.permissions);
+    const hasUserIdentity = Boolean(user && typeof user === "object" && (user.id || user.userid));
+    const explicitAuthState = Object.prototype.hasOwnProperty.call(source, "isAuthenticated") ? Boolean(source.isAuthenticated) : undefined;
+    const isAuthenticated = explicitAuthState !== undefined
+        ? explicitAuthState
+        : Boolean(accessToken || hasUserIdentity);
 
     return {
-        isAuthenticated: Object.prototype.hasOwnProperty.call(source, "isAuthenticated") ? Boolean(accessToken || source.isAuthenticated) : Boolean(accessToken),
+        isAuthenticated,
         loading: Object.prototype.hasOwnProperty.call(source, "loading") ? Boolean(source.loading) : Boolean(previous.loading),
         accessToken,
         user,
         roles,
         permissions
     };
+}
+
+function syncDerivedAuthState(nextAuth: Partial<AuthState> = rawState.auth): void {
+    const user = nextAuth?.user;
+    const hasUserIdentity = Boolean(user && typeof user === "object" && (user.id || user.userid));
+    rawState.isLoggedIn = Boolean(nextAuth?.isAuthenticated || nextAuth?.accessToken || hasUserIdentity);
 }
 
 /* =========================================================
@@ -422,7 +433,7 @@ const rawState: AppState = {
     unreadMessages: initialUnreadMessages,
     unreadNotifications: initialUnreadNotifications,
     favFarms: Array.isArray(initialFavFarms) ? initialFavFarms : [],
-    isLoggedIn: Boolean(initialToken || initialUser?.id || initialUser?.userid)
+    isLoggedIn: Boolean(initialAuth.isAuthenticated || initialUser?.id || initialUser?.userid)
 };
 
 /* =========================================================
@@ -441,7 +452,7 @@ function getAuthAlias(key: string): any {
         case "isLoggedIn": {
             const user = rawState.auth?.user;
             const hasUserValidId = Boolean(user && typeof user === "object" && (user.id || user.userid));
-            return Boolean(rawState.auth?.isAuthenticated || rawState.auth?.accessToken || hasUserValidId);
+            return Boolean(rawState.isLoggedIn || rawState.auth?.isAuthenticated || rawState.auth?.accessToken || hasUserValidId);
         }
         case "username": {
             const user = rawState.auth?.user;
@@ -495,16 +506,19 @@ function setAuthAlias(key: string, value: any): void {
             rawState.auth = normalizeAuth({
                 ...currentAuth,
                 accessToken: token,
-                isAuthenticated: Boolean(token)
+                isAuthenticated: Boolean(token || (currentAuth.user && typeof currentAuth.user === "object" && (currentAuth.user.id || currentAuth.user.userid)))
             }, currentAuth);
+            syncDerivedAuthState(rawState.auth);
             triggerAuthNotifications();
             break;
         }
         case "user": {
             rawState.auth = normalizeAuth({
                 ...currentAuth,
-                user: value || null
+                user: value || null,
+                isAuthenticated: Boolean(value || currentAuth.accessToken)
             }, currentAuth);
+            syncDerivedAuthState(rawState.auth);
             triggerAuthNotifications();
             break;
         }
@@ -523,6 +537,7 @@ function setAuthAlias(key: string, value: any): void {
                     isAuthenticated: true
                 }, currentAuth);
             }
+            syncDerivedAuthState(rawState.auth);
             triggerAuthNotifications();
             break;
         }
@@ -749,6 +764,7 @@ function setAuthState(value: Partial<AuthState>, persist = false): void {
     const previous = rawState.auth;
     const next = normalizeAuth(value, previous);
     rawState.auth = next;
+    syncDerivedAuthState(next);
     triggerAuthNotifications();
     if (persist) {
         persistStateKey("token", next.accessToken);
@@ -975,6 +991,8 @@ function clearState(persist = true): void {
         unreadMessages: 0,
         unreadNotifications: 0
     }, persist);
+
+    rawState.isLoggedIn = false;
 
     if (persist) {
         removeStorage("token");

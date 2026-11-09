@@ -2,6 +2,7 @@
 
 import { createElement } from "../../components/createElement.js";
 import { createFormGroup } from "../../components/form/createFormGroupEnhanced.js";
+import Modal from "../../components/ui/Modal.js";
 import Notify from "../../components/ui/Notify.js";
 import { fetchUserMeta } from "../../utils/usersMeta.js";
 import { genId, bookingStorage, bookingApi } from "./bookingApi.js";
@@ -548,49 +549,32 @@ function renderUserUi(
 // ---------- Modal ----------
 
 function openBookingModal(
-    api: BookingApiInstance, 
-    storage: any, 
-    entityType: string, 
-    entityId: string, 
-    entityCategory?: string, 
-    userId: string = "guest", 
-    isAdmin: boolean = false, 
+    api: BookingApiInstance,
+    storage: any,
+    entityType: string,
+    entityId: string,
+    entityCategory?: string,
+    userId: string = "guest",
+    isAdmin: boolean = false,
     refreshBookings?: RefreshFunction
 ): void {
-    if (document.getElementById("booking-modal")) {
-        return;
-    }
-
-    const header = createElement("header", { class: "booking-modal-header" }, [
-        createElement("h2", {}, [isAdmin ? `Manage Slots & Tiers for ${entityCategory || 'Entity'}` : `Book Slot for ${entityCategory || 'Entity'}`])
-    ]);
-    const body = createElement("div", { class: "booking-modal-body" }, []);
-
-    let modalOverlay: HTMLElement;
-    const closeBtn = createElement("button", {
-        type: "button",
-        class: "btn btn-secondary",
-        events: {
-            click: () => {
-                if (modalOverlay && modalOverlay.parentNode) {
-                    modalOverlay.parentNode.removeChild(modalOverlay);
-                }
-            }
-        }
-    }, ["Close"]);
-
-    const footer = createElement("footer", { class: "booking-modal-footer" }, [closeBtn]);
-
-    const modal = createElement("dialog", { class: "booking-modal", open: true }, [header, body, footer]);
-    modalOverlay = createElement("div", { id: "booking-modal", class: "booking-overlay" }, [modal]);
+    const content = createElement("div", { class: "booking-modal-body" }, []);
 
     if (isAdmin) {
-        renderAdminUi(api, storage, body, refreshBookings ?? (() => {}), entityType, entityId);
+        renderAdminUi(api, storage, content, refreshBookings ?? (() => {}), entityType, entityId);
     } else {
-        renderUserUi(api, storage, body, userId, refreshBookings ?? (() => {}), entityType, entityId);
+        renderUserUi(api, storage, content, userId, refreshBookings ?? (() => {}), entityType, entityId);
     }
 
-    document.body.appendChild(modalOverlay);
+    Modal({
+        title: isAdmin ? `Manage Slots & Tiers for ${entityCategory || "Entity"}` : `Book Slot for ${entityCategory || "Entity"}`,
+        content,
+        size: "large",
+        closeOnOverlayClick: true,
+        showHeader: true,
+        showCloseButton: true,
+        autofocus: false
+    });
 }
 
 // ---------- Main Entry ----------
