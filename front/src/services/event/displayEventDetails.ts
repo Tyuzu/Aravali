@@ -10,7 +10,7 @@ import { hireVendors } from "../jobs/vendors/vendors.js";
 import Bannerx from "../../components/base/Bannerx.js";
 import Datex from "../../components/base/Datex.js";
 
-// --- Type Definitions / Interfaces ---
+// ---- Type Definitions / Interfaces ----
 
 export interface EventDetailData {
     eventid: string | number;
@@ -109,7 +109,7 @@ const createCustomFields = (fields?: Record<string, string | number>): HTMLEleme
     return container;
 };
 
-// Save/unsave
+// Save/unsave functionality
 const getSavedEvents = (): (string | number)[] => {
     try {
         return JSON.parse(localStorage.getItem("saved_events") || "[]");
@@ -129,21 +129,17 @@ const toggleSaveEvent = (id: string | number): void => {
 };
 
 const createSaveButton = (eventid: string | number): HTMLElement => {
-    const fillStar = createIconButton({
-        svgMarkup: starFilledSVG,
-        classSuffix: ""
-    });
-    const emptyStar = createIconButton({
-        svgMarkup: starEmptySVG,
-        classSuffix: ""
-    });
-
+    const fillStar = createIconButton({ svgMarkup: starFilledSVG, classSuffix: "" });
+    const emptyStar = createIconButton({ svgMarkup: starEmptySVG, classSuffix: "" });
     const isInitiallySaved = getSavedEvents().includes(eventid);
 
     const icon = createElement(
         "span",
         {
             title: "Save Event",
+            role: "button",
+            tabindex: "0",
+            class: "logoicon",
             events: {
                 click: () => {
                     toggleSaveEvent(eventid);
@@ -158,12 +154,11 @@ const createSaveButton = (eventid: string | number): HTMLElement => {
     return icon;
 };
 
-// Share
+// Share functionality
 const createShareButton = (eventid: string | number): HTMLButtonElement => {
-    // Updated to use ButtonOptions object structure
     const btn = Button({
         title: "Share",
-        classes: "share-btn",
+        classes: "share-btn buttonx",
         events: {
             click: () => {
                 navigator.clipboard.writeText(location.origin + `/event/${eventid}`);
@@ -181,6 +176,7 @@ const createStatusBadge = (eventDate: string | Date): HTMLElement => {
     const time = new Date(eventDate).getTime();
     const isPast = time < now;
     return createElement("span", {
+        class: "event-badge",
         style: `font-size:0.75rem;padding:2px 6px;border-radius:4px;background:${isPast ? "#999" : "darkgreen"};color:white;margin-left:8px;`
     }, [isPast ? "Past" : "Upcoming"]) as HTMLElement;
 };
@@ -197,7 +193,7 @@ const createCountdown = (eventDate: string | Date): HTMLElement | null => {
 };
 
 // Place link
-const createPlaceLink = (placename: string, placeid: string | number): HTMLElement => createElement('p', {}, [
+const createPlaceLink = (placename: string, placeid: string | number): HTMLElement => createElement('p', { class: 'event-place-link' }, [
     createElement('a', { href: `/place/${placeid}` }, [createElement('strong', {}, [`Place: ${placename}`])])
 ]) as HTMLElement;
 
@@ -217,11 +213,11 @@ function createEventBannerSection(eventdata: EventDetailData, isCreator: boolean
 function createInfoSection(eventData: EventDetailData, isCreator: boolean, isLoggedIn: boolean): HTMLElement {
     const eventInfo = createElement("div", { class: "event-info" }) as HTMLElement;
     const topRow = createElement("div", { class: "event-header-row" }) as HTMLElement;
+    
     const detailBlock = createDetailItems(fieldConfig, eventData);
     const statusBadge = createStatusBadge(eventData.date);
-    const countdown = createCountdown(eventData.date);
     const saveBtn = createSaveButton(eventData.eventid);
-    createShareButton(eventData.eventid);
+    const countdown = createCountdown(eventData.date);
 
     topRow.append(detailBlock, statusBadge, saveBtn);
 
@@ -238,9 +234,18 @@ function createInfoSection(eventData: EventDetailData, isCreator: boolean, isLog
     if (isLoggedIn) {
         actions.push({ text: 'Hire Vendors', onClick: () => hireVendors(evanacon, isCreator, isLoggedIn, String(eventData.eventid)), classes: ['analytics-btn', "buttonx"] });
     } else {
-        actions.push({ text: 'Report Event', onClick: () => reportEntity(String(eventData.eventid), 'event') });
+        actions.push({ text: 'Report Event', onClick: () => reportEntity(String(eventData.eventid), 'event'), classes: ['report-btn', 'buttonx'] });
     }
 
+    const actionButtonsContainer = createElement("div", { class: "event-actions" }, 
+        actions.map(a => Button({
+            title: a.text,
+            classes: a.classes?.join(" "),
+            events: { click: a.onClick }
+        }))
+    );
+
+    // Append metadata blocks cleanly
     eventInfo.append(
         topRow,
         ...(countdown ? [countdown] : []),
@@ -248,11 +253,7 @@ function createInfoSection(eventData: EventDetailData, isCreator: boolean, isLog
         ...(eventData.social_links ? [createSocialLinks(eventData.social_links) as HTMLElement] : []),
         ...(eventData.custom_fields ? [createCustomFields(eventData.custom_fields) as HTMLElement] : []),
         ...(eventData.placename && eventData.placeid ? [createPlaceLink(eventData.placename, eventData.placeid)] : []),
-        createElement("div", { class: "event-actions" }, actions.map(a => Button({
-            title: a.text,
-            classes: a.classes?.join(" "),
-            events: { click: a.onClick }
-        }))),
+        actionButtonsContainer,
         createEditPlaceholder()
     );
 

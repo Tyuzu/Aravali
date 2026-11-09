@@ -40,6 +40,27 @@ export interface ApiFetchTicketResponse {
   [key: string]: unknown;
 }
 
+function normalizeTicket(ticket: Partial<Ticket> | null | undefined): Ticket | null {
+  if (!ticket || typeof ticket !== "object") {
+    return null;
+  }
+
+  const normalized: Ticket = {
+    ticketid: ticket.ticketid ?? "",
+    name: ticket.name ?? "Ticket",
+    price: Number(ticket.price ?? 0),
+    quantity: Number(ticket.quantity ?? ticket.available ?? 0),
+    currency: ticket.currency ?? "INR",
+    color: ticket.color ?? "#f3f3f3",
+    seatstart: Number(ticket.seatstart ?? 0),
+    seatend: Number(ticket.seatend ?? 0),
+    ...ticket,
+  };
+
+  normalized.quantity = Number(normalized.quantity ?? normalized.available ?? 0);
+  return normalized;
+}
+
 /* ────────── Helpers ────────── */
 function formatCurrency(minorValue: number, currencyCode = "INR"): string {
   const code = currencyCode.toUpperCase();
@@ -280,8 +301,11 @@ export async function displayTickets(
   };
 
   try {
-    const resp = await apiFetch<ApiFetchTicketResponse>(`/ticket/event/${eventId}`);
-    tickets = resp?.data ?? [];
+    const resp = await apiFetch<ApiFetchTicketResponse | Ticket[]>(`/ticket/event/${eventId}`);
+    const rawTickets = Array.isArray(resp) ? resp : Array.isArray(resp?.data) ? resp.data : [];
+    tickets = rawTickets
+      .map((ticket) => normalizeTicket(ticket as Partial<Ticket> | undefined))
+      .filter((ticket): ticket is Ticket => Boolean(ticket));
   } catch (err) {
     console.error("Failed to load tickets:", err);
     ticketContainer.replaceChildren(

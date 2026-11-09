@@ -64,7 +64,7 @@ async function addMenu(
             uploadedImage = await uploadFile({
                 id: uid(),
                 file: imageFile,
-                entityType: "place",
+                entityType: "menu",
                 entityId: String(placeId)
             });
 
@@ -268,7 +268,7 @@ async function editMenuForm(menuId: string | number, placeId: string | number): 
                     const uploadedImage = await uploadFile({
                         id: uid(),
                         file: imageFile,
-                        entityType: "place",
+                        entityType: "menu",
                         entityId: String(placeId)
                     });
 

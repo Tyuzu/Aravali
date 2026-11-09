@@ -244,6 +244,30 @@ const routeCache = new Map<any, any>();
 const routeState = new Map<any, any>();
 const scrollPositions = new Map<any, { top: number; left: number }>();
 
+export function getRouteCache(): Map<any, any> {
+    return routeCache;
+}
+
+export function getRouteStateMap(): Map<any, any> {
+    return routeState;
+}
+
+export function readRouteState(locationKey: string): any {
+    return routeState.get(locationKey) ?? null;
+}
+
+export function writeRouteState(locationKey: string, value: any): void {
+    routeState.set(locationKey, value);
+}
+
+export function deleteRouteState(locationKey: string): void {
+    routeState.delete(locationKey);
+}
+
+export function clearRouteState(): void {
+    routeState.clear();
+}
+
 export function saveScroll(container: HTMLElement | null, location: any): void {
     if (!container) return;
     scrollPositions.set(location, {

@@ -72,8 +72,12 @@ function buildMediaFragment(
                 class: `${prefix}-item`,
                 "data-id": String(media.mediaid)
             }) as HTMLElement;
-            const thumbSrc = resolveImagePath(EntityType.MEDIA, PictureType.THUMB, `${media.url}.jpg`);
-            const mediaEl = buildMediaElement(media, thumbSrc, i, prefix);
+            const mediaLocation = String(media.url || media.mediaid || "");
+            const baseName = mediaLocation.includes(".")
+                ? mediaLocation.substring(0, mediaLocation.lastIndexOf("."))
+                : mediaLocation;
+            const thumbSrc = resolveImagePath(String(entityType), PictureType.THUMB, `${baseName}.jpg`);
+            const mediaEl = buildMediaElement(media, thumbSrc, i, prefix, String(entityType));
             figure.append(mediaEl);
             
             if (media.caption && media.caption.trim() !== "") {
@@ -98,7 +102,7 @@ function buildMediaFragment(
 /* ------------------------------------------------------
    MEDIA ELEMENT BUILDER
 ------------------------------------------------------ */
-function buildMediaElement(media: MediaItem, thumbSrc: string, index: number, prefix: string): HTMLElement {
+function buildMediaElement(media: MediaItem, thumbSrc: string, index: number, prefix: string, entityType: string): HTMLElement {
     if (media.type === "image") {
         const img = Imagex({
             "data-src": thumbSrc,
@@ -110,7 +114,7 @@ function buildMediaElement(media: MediaItem, thumbSrc: string, index: number, pr
         return img;
     }
     if (media.type === "video") {
-        const videoSrc = resolveImagePath(EntityType.MEDIA, PictureType.VIDEO, `${media.url}${media.extn || ".mp4"}`);
+        const videoSrc = resolveImagePath(String(entityType), PictureType.VIDEO, `${media.url}${media.extn || ".mp4"}`);
         const img = Imagex({
             src: thumbSrc,
             classes: `${prefix}-img`,

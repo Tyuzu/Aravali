@@ -5,7 +5,7 @@ import { createElement } from "../../components/createElement.js";
 import { fetchEventById, fetchEventMerch } from "./api.js";
 import Notify from "../../components/ui/Notify.js";
 
-import { displayEventDetails } from "./displayEventDetails.js";
+import { displayEventDetails, EventDetailData } from "./displayEventDetails.js";
 import { displayEventVenue, displayEventFAQ, displayEventReviews, displayLostAndFound, displayContactDetails } from "./eventTabs.js";
 import { editEvent } from "./creadit.js";
 import { displayTickets } from "../tickets/displayTickets.js";
@@ -17,9 +17,9 @@ import { displayEventNews } from "./eventMoreTabs.js";
 
 // --- Type Definitions / Interfaces ---
 
-export interface EventData {
-    id?: string | number;
-    eventid?: string | number;
+export interface EventData extends Omit<EventDetailData, "id" | "eventid"> {
+    id: string | number;
+    eventid: string | number;
     creatorid?: string | number;
     date: string | Date;
     seating?: unknown;
@@ -37,7 +37,7 @@ export interface TabItem {
 
 // --- Helper Functions ---
 
-async function displayEventMerch(
+async function displayEventMerchTab(
     container: HTMLElement, 
     eventID: string | number, 
     isCreator: boolean, 
@@ -60,27 +60,10 @@ async function displayEventMerch(
         );
     } catch (err) {
         console.error("Error loading merch:", err);
-        const msg = createElement("p", {}, ["Error loading merch."]);
+        const msg = createElement("p", { class: "error-message" }, ["Error loading merchandise."]);
         container.replaceChildren(msg);
     }
 }
-
-const confirmAndExecute = async (
-    message: string, 
-    action: () => Promise<void>, 
-    successMessage: string, 
-    errorMessage: string
-): Promise<void> => {
-    if (confirm(message)) {
-        try {
-            await action();
-            Notify(successMessage, { type: "success", duration: 3000, dismissible: true });
-        } catch (error: unknown) {
-            const errMessage = error instanceof Error ? error.message : String(error);
-            Notify(`${errorMessage}: ${errMessage}`, { type: "error", duration: 3000, dismissible: true });
-        }
-    }
-};
 
 const getEventStatus = (eventDate: string | Date): "ongoing" | "active" => 
     new Date(eventDate) <= new Date() ? "ongoing" : "active";
@@ -88,44 +71,43 @@ const getEventStatus = (eventDate: string | Date): "ongoing" | "active" =>
 const createVenue = async (
     container: HTMLElement, 
     eventId: string | number, 
-    seating: any, 
+    seating: unknown, 
     isLoggedIn: boolean
 ): Promise<void> => {
     const venueContainer = createElement('div', { id: 'event-venue', class: 'venue-container' }) as HTMLElement;
-    await displayEventVenue(venueContainer, isLoggedIn, eventId, seating);
+    const seatingValue = typeof seating === "string"
+        ? seating
+        : seating != null
+            ? JSON.stringify(seating)
+            : "";
+
+    await displayEventVenue(venueContainer, isLoggedIn, eventId, seatingValue);
     container.appendChild(venueContainer);
 };
 
 // --- Core Functions ---
 
-// Fetch Event Data
+// Fetch Event Data with Validation
 async function fetchEventData(eventId: string | number): Promise<EventData> {
     const eventData = await fetchEventById(eventId);
 
-    // Check if there was an API error
-    if (eventData?.success === false) {
-        throw new Error(`Failed to load event: ${eventData.error}`);
-    }
-
-    // Check if response is invalid
     if (!eventData) {
         throw new Error("No event data received from server.");
     }
 
-    // Ensure eventid is available for downstream callers
-    if (!eventData.eventid && eventData.id) {
-        try {
-            // coerce to string/number as originally expected
-            (eventData as any).eventid = eventData.id;
-        } catch (e) {
-            // ignore
-        }
+    if (eventData.success === false) {
+        throw new Error(`Failed to load event: ${eventData.error ?? "Unknown error"}`);
     }
 
-    return eventData;
+    // Ensure eventid is normalized
+    if (!eventData.eventid && eventData.id) {
+        eventData.eventid = eventData.id;
+    }
+
+    return eventData as EventData;
 }
 
-// Setup Event Tabs
+// Setup Event Tabs based on Event Status
 const setupTabs = (
     eventData: EventData, 
     eventId: string | number, 
@@ -139,7 +121,7 @@ const setupTabs = (
         tabs.push(
             { title: "Tickets", id: "tickets-tab", render: (c) => displayTickets(c, eventId, isCreator, isLoggedIn) },
             { title: "FAQ", id: "faq-tab", render: (c) => displayEventFAQ(c, isCreator, eventId) },
-            { title: "Merchandise", id: "merch-tab", render: (c) => displayEventMerch(c, eventId, isCreator, isLoggedIn) },
+            { title: "Merchandise", id: "merch-tab", render: (c) => displayEventMerchTab(c, eventId, isCreator, isLoggedIn) },
             { title: "News", id: "news-tab", render: (c) => displayEventNews(c, eventId, isLoggedIn) },
         );
     } else {
@@ -167,20 +149,27 @@ async function displayEvent(
         const userState = getState("user");
         const isCreator = userState?.userid === eventData.creatorid && isLoggedIn;
 
-        await displayEventDetails(container, eventData as any, isCreator, isLoggedIn);
+        await displayEventDetails(container, eventData, isCreator, isLoggedIn);
 
         if (eventData?.seating) {
-            container.appendChild(showSeatingBanner(eventData as any, isCreator));
+            const seatingData = typeof eventData.seating === "string"
+                ? eventData.seating
+                : eventData.seating != null
+                    ? JSON.stringify(eventData.seating)
+                    : undefined;
+
+            if (seatingData) {
+                container.appendChild(showSeatingBanner({ ...eventData, seating: seatingData }, isCreator));
+            }
         }
 
         const tabs = setupTabs(eventData, eventId, isCreator, isLoggedIn);
 
-        // Replace persistTabs with createTabs
         const tabUI = createTabs(
             tabs,
-            `event-tabs:${eventId}`, // routeKey for saving tab state
-            null,                    // initialTabId (optional)
-            (_newTabId) => { /* optional callback */ }
+            `event-tabs:${eventId}`,
+            null,
+            (_newTabId) => {}
         );
         container.appendChild(tabUI);
 
@@ -192,7 +181,7 @@ async function displayEvent(
         container.replaceChildren();
         const errorMessage = error instanceof Error ? error.message : String(error);
         container.appendChild(
-            createElement("h1", {}, [`Error loading event details: ${errorMessage}`])
+            createElement("h1", { class: "error-title" }, [`Error loading event details: ${errorMessage}`])
         );
         Notify("Failed to load event details. Please try again later.", { type: "error", duration: 3000, dismissible: true });
     }
@@ -203,4 +192,4 @@ export {
     editEvent,
     fetchEventData,
     displayEvent,
-};
+};  

@@ -5,7 +5,6 @@ import { createElement } from "../../components/createElement.js";
 import { displayReviews } from "../reviews/displayReviews.js";
 import { displayEventFAQs } from "./eventFAQHelper.js";
 import { createLostAndFoundItem, fetchFaqsForEvent, fetchLostAndFoundForEvent } from "./api.js";
-// import { displaySeatingMap } from "./seatingMap.js";
 import { EntityType, PictureType, resolveImagePath } from "../../utils/imagePaths.js";
 
 // --- Type Definitions / Interfaces ---
@@ -33,6 +32,8 @@ export interface LivestreamResponse {
     angles: LivestreamAngle[];
 }
 
+// --- Tab Renderers ---
+
 async function displayEventReviews(
     reviewsContainer: HTMLElement,
     eventId: string | number,
@@ -44,14 +45,12 @@ async function displayEventReviews(
 
 async function displayEventVenue(
     venueList: HTMLElement,
-    isLoggedIn: boolean,
-    eventID: string | number,
+    _isLoggedIn: boolean,
+    _eventID: string | number,
     seatingplan: string
 ): Promise<void> {
-    // displaySeatingMap(venueList, place, eventid, isLoggedIn);
-    // loadMap(venueList, isLoggedIn, { type: "event", id: eventID });
     const imgx = resolveImagePath(EntityType.EVENT, PictureType.SEATING, seatingplan);
-    venueList.appendChild(Imagex({ src: imgx }));
+    venueList.appendChild(Imagex({ src: imgx, alt: "Event seating plan layout" }));
 }
 
 async function displayEventFAQ(
@@ -65,7 +64,7 @@ async function displayEventFAQ(
         faqs = Array.isArray(response) ? response : [];
     } catch (err) {
         console.error("Failed to load FAQs:", err);
-        const msg = createElement("p", {}, ["Error loading faqs."]);
+        const msg = createElement("p", { class: "error-message" }, ["Error loading FAQs."]);
         faqContainer.replaceChildren(msg);
         return;
     }
@@ -77,96 +76,90 @@ async function displayLostAndFound(
     isCreator: boolean,
     eventId: string | number
 ): Promise<void> {
-    lnfContainer.appendChild(createElement("h2", {}, ["Lost And Found"]));
-    lnfContainer.appendChild(createElement("p", {}, ["Did anyone lose or find something?"]));
+    lnfContainer.replaceChildren();
+    
+    const header = createElement("div", { class: "lnf-header" }, [
+        createElement("h2", {}, ["Lost And Found"]),
+        createElement("p", {}, ["Did anyone lose or find something? Report it below."])
+    ]);
+    lnfContainer.appendChild(header);
 
     // Container for buttons + form
-    const actionsContainer = createElement("div", { id: "lostFoundActions" }, []) as HTMLElement;
+    const actionsContainer = createElement("div", { id: "lostFoundActions", class: "lnf-actions-container" }, []) as HTMLElement;
     lnfContainer.appendChild(actionsContainer);
 
-    // Form section (initially empty, shows when a button is clicked)
-    const formSection = createElement("div", { id: "lostFoundForm" }, []) as HTMLElement;
+    // Form section
+    const formSection = createElement("div", { id: "lostFoundForm", class: "lnf-form-section" }, []) as HTMLElement;
 
     // Helper: show form
     function showForm(type: "lost" | "found"): void {
-        formSection.innerHTML = "";
+        formSection.replaceChildren();
         formSection.appendChild(createElement("h3", {}, [`Report ${type === "lost" ? "Lost" : "Found"} Item`]));
 
-        const nameInput = createElement("input", { type: "text", placeholder: "Item name" }) as HTMLInputElement;
-        const descInput = createElement("textarea", { placeholder: "Description" }) as HTMLTextAreaElement;
+        const nameInput = createElement("input", { type: "text", placeholder: "Item name", class: "input-field" }) as HTMLInputElement;
+        const descInput = createElement("textarea", { placeholder: "Description", class: "textarea-field" }) as HTMLTextAreaElement;
 
-        // Updated to use ButtonOptions object structure
         const submitBtn = Button({
-            title: "Submit",
+            title: "Submit Report",
             classes: "buttonx primary",
             events: {
                 click: async () => {
                     const name = nameInput.value.trim();
                     const description = descInput.value.trim();
                     if (!name) {
-                        alert("Name is required");
+                        alert("Item name is required.");
                         return;
                     }
 
                     const newItem = { type, name, description };
                     try {
                         await createLostAndFoundItem(eventId, newItem);
-                        lnfContainer.innerHTML = "";
                         await displayLostAndFound(lnfContainer, isCreator, eventId);
                     } catch (_err) {
-                        alert("Failed to add item.");
+                        alert("Failed to add item. Please try again.");
                     }
                 }
             }
         });
 
-        formSection.appendChild(nameInput);
-        formSection.appendChild(descInput);
-        formSection.appendChild(submitBtn);
+        formSection.append(nameInput, descInput, submitBtn);
     }
 
-    // Two buttons (available to everyone) updated to use ButtonOptions object structure
+    // Action buttons
     const btnLost = Button({
         title: "I lost something",
         id: "btnLost",
         classes: "buttonx primary",
-        events: {
-            click: () => showForm("lost")
-        }
+        events: { click: () => showForm("lost") }
     });
 
     const btnFound = Button({
         title: "I found something",
         id: "btnFound",
         classes: "buttonx primary",
-        events: {
-            click: () => showForm("found")
-        }
+        events: { click: () => showForm("found") }
     });
 
-    actionsContainer.appendChild(btnLost);
-    actionsContainer.appendChild(btnFound);
-    actionsContainer.appendChild(formSection);
+    actionsContainer.append(btnLost, btnFound, formSection);
 
-    // Fetch items (after rendering buttons + form placeholder)
+    // Fetch and render existing items
     let items: LostAndFoundItem[] = [];
     try {
         items = await fetchLostAndFoundForEvent(eventId);
     } catch (_err) {
-        lnfContainer.appendChild(createElement("p", {}, ["Failed to load items."]));
+        lnfContainer.appendChild(createElement("p", { class: "error-message" }, ["Failed to load reported items."]));
         return;
     }
 
-    // Items list
-    const itemsList = createElement("div", { id: "lostFoundItems" }, []) as HTMLElement;
+    const itemsList = createElement("div", { id: "lostFoundItems", class: "lnf-items-list" }, []) as HTMLElement;
     if (items.length === 0) {
-        itemsList.appendChild(createElement("p", {}, ["No items reported yet."]));
+        itemsList.appendChild(createElement("p", { class: "muted-text" }, ["No items reported yet."]));
     } else {
         items.forEach(item => {
-            const itemEl = createElement("div", { "data-id": String(item.id) }, [
-                createElement("p", {}, [`[${item.type.toUpperCase()}] ${item.name}`]),
+            const itemEl = createElement("div", { class: "lnf-item-card", "data-id": String(item.id) }, [
+                createElement("h4", {}, [`[${item.type.toUpperCase()}] ${item.name}`]),
                 createElement("p", {}, [`Description: ${item.description}`]),
-                createElement("p", {}, [`Reported by: ${item.reportedBy}`])
+                createElement("small", {}, [`Reported by: ${item.reportedBy || "Anonymous"}`])
             ]);
             itemsList.appendChild(itemEl);
         });
@@ -179,8 +172,10 @@ async function displayContactDetails(
     _isCreator: boolean,
     _contacts: unknown
 ): Promise<void> {
-    container.appendChild(createElement('h2', {}, ["ContactDetails"]));
-    container.appendChild(createElement('p', {}, ["Does anybody need anything?"]));
+    container.replaceChildren(
+        createElement('h2', {}, ["Contact Details"]),
+        createElement('p', {}, ["Reach out to event organizers or support teams for assistance."])
+    );
 }
 
 async function displayLivestream(
@@ -196,19 +191,20 @@ async function displayEventLiveStream(
     eventId: string | number,
     isLoggedIn: boolean
 ): Promise<void> {
+    divcontainer.replaceChildren();
+
     if (!isLoggedIn) {
-        divcontainer.innerHTML = "<p>Please log in to watch.</p>";
+        divcontainer.appendChild(createElement("p", { class: "auth-warning" }, ["Please log in to watch the livestream."]));
         return;
     }
 
     divcontainer.appendChild(createElement('h2', {}, ["Livestream"]));
 
     try {
-        // Fetch available angles
         const response = await fetch(`${API_URL}/livestream/${eventId}`);
 
         if (response.status === 404) {
-            divcontainer.appendChild(createElement("p", {}, ["No livestream available."]));
+            divcontainer.appendChild(createElement("p", {}, ["No livestream available for this event."]));
             return;
         }
 
@@ -216,7 +212,7 @@ async function displayEventLiveStream(
         const angles = data.angles;
 
         if (!angles || !angles.length) {
-            divcontainer.innerHTML = "<p>No livestream available.</p>";
+            divcontainer.appendChild(createElement("p", {}, ["No livestream angles available."]));
             return;
         }
 
@@ -224,11 +220,12 @@ async function displayEventLiveStream(
         const video = document.createElement("video");
         video.controls = true;
         video.autoplay = true;
-        video.style.width = "100%";
+        video.className = "livestream-video-player";
         divcontainer.appendChild(video);
 
-        // Create angle selection
+        // Create angle selection dropdown
         const angleSelector = document.createElement("select");
+        angleSelector.className = "livestream-angle-selector";
         angles.forEach((angle) => {
             const option = document.createElement("option");
             option.value = angle.url;
@@ -243,12 +240,12 @@ async function displayEventLiveStream(
 
         divcontainer.appendChild(angleSelector);
 
-        // Start with the first angle
+        // Initialize with first angle
         video.src = angles[0].url;
         video.play();
     } catch (err) {
         console.error("Failed to load livestream:", err);
-        divcontainer.appendChild(createElement("p", {}, ["Error loading livestream."]));
+        divcontainer.appendChild(createElement("p", { class: "error-message" }, ["Error loading livestream feed."]));
     }
 }
 

@@ -1,7 +1,7 @@
 import "../../css/ui/createTabs.css";
 import { createElement, ElementAttributes } from "../components/createElement.js";
 import { makeDraggableScroll } from "../components/dragnav.js";
-import { getState, setState } from "../state/state.js";
+import { readRouteState, writeRouteState } from "../state/state.js";
 
 /* =========================================================
    TYPES & INTERFACES
@@ -31,22 +31,12 @@ export type OnTabChangeCallback = (tabId: string) => void;
 ========================================================= */
 
 function getRouteState(locationKey: string): RouteTabState | null {
-  const state = (getState() as GlobalState) || {};
-  const routeStates = state.routeState || state.scrollPositions || {};
-  return routeStates[locationKey] || null;
+  const saved = readRouteState(locationKey);
+  return saved && typeof saved === "object" ? (saved as RouteTabState) : null;
 }
 
 function setRouteState(locationKey: string, value: RouteTabState): void {
-  const currentState = (getState() as GlobalState) || {};
-  const routeStates = currentState.routeState || currentState.scrollPositions || {};
-
-  setState({
-    ...currentState,
-    routeState: {
-      ...routeStates,
-      [locationKey]: value,
-    },
-  });
+  writeRouteState(locationKey, value);
 }
 
 /* =========================================================
@@ -63,13 +53,20 @@ export function persistTabs(
 ): void {
   if (!container) return;
   try {
-    const activeTabId = storageKey ? localStorage.getItem(storageKey) : null;
+    const resolvedKey = storageKey || "default-tabs";
+    const activeTabId = localStorage.getItem(resolvedKey);
 
-    const tabsElement = createTabs(tabs, null, activeTabId, (newTabId) => {
-      if (storageKey) {
-        localStorage.setItem(storageKey, newTabId);
+    const tabsElement = createTabs(
+      tabs,
+      resolvedKey,
+      activeTabId,
+      (newTabId) => {
+        localStorage.setItem(resolvedKey, newTabId);
+        const tabState = getRouteState(resolvedKey) || {};
+        tabState.activeTab = newTabId;
+        setRouteState(resolvedKey, tabState);
       }
-    });
+    );
 
     container.appendChild(tabsElement);
   } catch (err) {

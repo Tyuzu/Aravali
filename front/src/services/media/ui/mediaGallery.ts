@@ -94,18 +94,21 @@ function buildMediaFragment(
         "data-id": String(media.mediaid)
       });
 
-      // Construct resource filename (prefer mediaid, fallback to url/UUID)
-      const resourceName = String(media.mediaid || media.url);
-      const ext = media.extn ? media.extn : ".jpg";
+      const resourceName = String(media.url || media.mediaid || "");
+      const baseResourceName = resourceName.includes(".")
+        ? resourceName.substring(0, resourceName.lastIndexOf("."))
+        : resourceName;
+      const thumbFileName = `${baseResourceName}.jpg`;
+      const photoFileName = `${baseResourceName}.png`;
 
       const thumbSrc = resolveImagePath(
-        EntityType.MEDIA,
+        String(entityType),
         PictureType.THUMB,
-        `${resourceName}.jpg`
+        thumbFileName
       );
 
       const captionText = media.caption ?? "";
-      const mediaEl = buildMediaElement(media, thumbSrc, resourceName, ext, i, prefix, mediaType);
+      const mediaEl = buildMediaElement(media, thumbSrc, baseResourceName, ".png", i, prefix, mediaType, String(entityType));
       const caption = createElement("figcaption", { class: `${prefix}-caption` }, [captionText]);
 
       const translation = buildTranslationSection(captionText);
@@ -145,13 +148,14 @@ function buildMediaElement(
   ext: string,
   index: number,
   prefix: string,
-  type: MediaType
+  type: MediaType,
+  entityType: string
 ): HTMLElement {
   if (type === "image") {
     const fullImgSrc = resolveImagePath(
-      EntityType.MEDIA,
+      String(entityType),
       PictureType.PHOTO,
-      `${resourceName}${ext}`
+      `${resourceName}.png`
     );
 
     const img = Imagex({
@@ -167,7 +171,7 @@ function buildMediaElement(
 
   if (type === "video") {
     const videoSrc = resolveImagePath(
-      EntityType.MEDIA,
+      String(entityType),
       PictureType.VIDEO,
       `${resourceName}${ext.startsWith(".") ? ext : ".mp4"}`
     );
@@ -247,8 +251,7 @@ export async function displayMedia(
 
   const addBtn = createAddMediaButton(
     isLoggedIn,
-    // String(entityType),
-    "media",
+    String(entityType),
     entityId,
     list,
     showMediaUploadForm

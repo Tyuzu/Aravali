@@ -1,5 +1,5 @@
 import "../../../css/ui/TicketCard.css";
-import { createElement } from "../../components/createElement.js"; // Adjust path as needed
+import { createElement } from "../../components/createElement.js";
 import { applyButtonColors } from "../../utils/lumicolor.js";
 import Button from "../base/Button.js";
 
@@ -19,7 +19,7 @@ export interface TicketCardProps {
 }
 
 /**
- * Creates a custom TicketCard component node.
+ * Creates an enhanced, accessible TicketCard component node.
  */
 const TicketCard = ({
   isl,
@@ -33,13 +33,13 @@ const TicketCard = ({
   attributes = {},
   onClick,
 }: TicketCardProps): HTMLDivElement => {
-  // Folded corner
+  // Folded corner accent
   const corner = createElement("div", {
     class: "corner",
     style: { borderTop: `40px solid ${color}` },
   });
 
-  // Left color stripe with perforation
+  // Left color stripe with perforation effect
   const perforation = createElement("div", { class: "perforation" });
   const stripeContainer = createElement(
     "div",
@@ -52,18 +52,21 @@ const TicketCard = ({
 
   // Main content elements
   const nameElement = createElement("h2", {
+    class: "ticket-title",
     style: { color },
   }, [name]);
 
   const contentChildren: (HTMLElement | string)[] = [nameElement];
 
   if (seatstart && seatend) {
-    const seats = createElement("p", {}, [`Seats: ${seatstart} - ${seatend}`]);
+    const seats = createElement("p", { class: "ticket-seats" }, [
+      `Seats: ${seatstart} – ${seatend}`
+    ]);
     contentChildren.push(seats);
   }
 
-  const priceElement = createElement("span", {}, [`Price: ${price}`]);
-  const availableElement = createElement("span", {}, [`Available: ${quantity}`]);
+  const priceElement = createElement("span", { class: "ticket-price" }, [`Price: ${price}`]);
+  const availableElement = createElement("span", { class: "ticket-available" }, [`Available: ${quantity}`]);
 
   const info = createElement("div", { class: "tickinfo" }, [
     priceElement,
@@ -72,19 +75,23 @@ const TicketCard = ({
 
   contentChildren.push(info);
 
-  // Buy button
+  // Action button (Buy / Sold Out)
   if (!creator && isl) {
-    const button = Button({ title: "Buy Ticket", id: "", styles: "buttonx primary" }) as HTMLButtonElement;
+    const button = Button({ 
+      title: quantity > 0 ? "Buy Ticket" : "Sold Out", 
+      id: "", 
+      styles: "buttonx primary" 
+    }) as HTMLButtonElement;
+
     if (quantity > 0) {
-      button.textContent = "Buy Ticket";
       if (onClick) {
         button.addEventListener("click", () => onClick(name, quantity));
       }
       applyButtonColors(button, color);
     } else {
-      button.textContent = "Sold Out";
-      Object.assign(button.style, { backgroundColor: "#ddd", color: "#000" });
       button.disabled = true;
+      button.classList.add("sold-out");
+      Object.assign(button.style, { backgroundColor: "var(--color-bg-tertiary, #f0f0f0)", color: "var(--color-muted, #616161)" });
     }
     contentChildren.push(button);
   }
@@ -96,6 +103,8 @@ const TicketCard = ({
     "div",
     {
       class: "ticket-card",
+      role: "region",
+      "aria-label": `Ticket for ${name}`,
       ...attributes,
     },
     [corner, stripeContainer, content]

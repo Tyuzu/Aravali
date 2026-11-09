@@ -17,7 +17,21 @@ import (
 
 type FilePayload struct {
 	Filename  string `json:"filename"`
-	Extension string `json:"extension"` // Fixed: Matches frontend response schema "extension"
+	Extn      string `json:"extn"`
+	Extension string `json:"extension"`
+}
+
+func (f FilePayload) NormalizedExtn() string {
+	extn := strings.TrimSpace(f.Extn)
+	if extn == "" {
+		extn = strings.TrimSpace(f.Extension)
+	}
+	if extn == "" {
+		if lastDot := strings.LastIndex(f.Filename, "."); lastDot != -1 {
+			extn = f.Filename[lastDot:]
+		}
+	}
+	return strings.ToLower(extn)
 }
 
 func AddMedia(app *infra.Deps) http.HandlerFunc {
@@ -69,15 +83,7 @@ func AddMedia(app *infra.Deps) http.HandlerFunc {
 				continue
 			}
 
-			// Use provided extension or extract from filename
-			extn := file.Extension
-			if extn == "" {
-				// Try to extract from filename if the payload extension is somehow missing
-				if lastDot := strings.LastIndex(file.Filename, "."); lastDot != -1 {
-					extn = file.Filename[lastDot:]
-				}
-			}
-			extn = strings.ToLower(extn)
+			extn := file.NormalizedExtn()
 
 			var mediaType, mimeType string
 			switch extn {
