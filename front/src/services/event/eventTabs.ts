@@ -62,7 +62,7 @@ async function displayEventFAQ(
     let faqs: FAQItem[] = [];
     try {
         const response = await fetchFaqsForEvent(eventId);
-        faqs = response?.data ?? [];
+        faqs = Array.isArray(response) ? response : [];
     } catch (err) {
         console.error("Failed to load FAQs:", err);
         const msg = createElement("p", {}, ["Error loading faqs."]);

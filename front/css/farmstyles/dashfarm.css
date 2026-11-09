@@ -1,0 +1,154 @@
+/* Fluent Farm Dashboard CSS */
+
+.farmdashpage {
+    font-family: var(--font-base);
+    background-color: var(--color-bg-secondary);
+    color: var(--color-fg);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    padding: var(--space-xl);
+    max-width: var(--max-width);
+    margin: 0 auto;
+}
+
+/* Tabs Container & Navigation */
+.tabs-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.tab-buttons {
+    display: flex;
+    gap: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-xs);
+}
+
+.tab-button {
+    background-color: transparent;
+    color: var(--color-muted);
+    border: none;
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.tab-button:hover {
+    background-color: var(--color-card-hover);
+    color: var(--color-fg);
+}
+
+.tab-button.active {
+    color: var(--color-primary);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-elev-1);
+    border-top: 3px solid var(--color-primary);
+}
+
+/* Tab Contents & Panels */
+.tab-contents {
+    position: relative;
+}
+
+.tab-content {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+/* Stats Summary Grid */
+.stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-md);
+}
+
+.stat-card {
+    background-color: var(--color-card-bg);
+    padding: var(--space-md);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-elev-1);
+    border: 1px solid var(--color-border);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-muted);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-elev-2);
+}
+
+/* Dashboard Sections */
+.dashboard-section {
+    background-color: var(--color-surface);
+    padding: var(--space-lg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-elev-1);
+    border: 1px solid var(--color-border);
+}
+
+.dashboard-section h3 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    margin-top: 0;
+    margin-bottom: var(--space-md);
+    color: var(--color-fg);
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: var(--space-xs);
+}
+
+.dashboard-section h4 {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-sm);
+    color: var(--color-fg);
+}
+
+.dashboard-section p {
+    margin: 0 0 var(--space-xs) 0;
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+}
+
+.dashboard-section ul {
+    margin: 0;
+    padding-left: var(--space-lg);
+    color: var(--color-fg);
+}
+
+.dashboard-section li {
+    margin-bottom: var(--space-xs);
+    font-size: var(--font-size-sm);
+}
+
+/* Farm Availability List */
+.farm-availability {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.farm-availability li {
+    background-color: var(--color-bg-secondary);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border-light);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+}

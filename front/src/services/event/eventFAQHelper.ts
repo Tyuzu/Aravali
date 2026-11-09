@@ -115,10 +115,11 @@ function showFaqForm(
 
         try {
             const response = await createFaqForEvent(eventId, title, content);
+            const created = response && (response.faqid || response.id || response.content || response._id);
 
-            if (response?.success) {
+            if (created) {
                 renderFaqItem(title, content, faqContainer);
-                close(); // Properly close the modal
+                close();
             } else {
                 alert("Failed to add FAQ. Please try again.");
             }

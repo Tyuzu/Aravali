@@ -20,12 +20,33 @@ export async function fetchEventMerch(eventId: string | number): Promise<any> {
   return await apiFetch(`/merch/event/${eventId}`);
 }
 
-export async function fetchFaqsForEvent(eventId: string | number): Promise<any> {
-  return await apiFetch(`/faqs/event/${eventId}`);
+export async function fetchFaqsForEvent(eventId: string | number): Promise<any[]> {
+  const response = await apiFetch<any[] | { data?: any[] }>(`/faqs/event/${eventId}`);
+  const items = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
+
+  return items.map((faq: any) => {
+    const raw = typeof faq?.content === "string" ? faq.content.trim() : "";
+    const lines = raw ? raw.split(/\r?\n/).map((line: string) => line.trim()).filter(Boolean) : [];
+
+    if (lines.length > 1) {
+      return {
+        ...faq,
+        title: faq?.title || faq?.question || lines[0],
+        content: lines.slice(1).join("\n") || lines[0]
+      };
+    }
+
+    return {
+      ...faq,
+      title: faq?.title || faq?.question || "FAQ",
+      content: raw || faq?.answer || ""
+    };
+  });
 }
 
 export async function createFaqForEvent(eventId: string | number, title: string, content: string): Promise<any> {
-  return await apiFetch(`/events/event/${eventId}/faqs`, "POST", { title, content });
+  const faqContent = title && content ? `${title}\n${content}` : (title || content || "");
+  return await apiFetch(`/faqs/event/${eventId}`, "POST", { content: faqContent });
 }
 
 export async function fetchLostAndFoundForEvent(eventId: string | number): Promise<any> {
