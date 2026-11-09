@@ -1,8 +1,19 @@
 import { createElement } from "../../../components/createElement.js";
+import Modal from "../../../components/ui/Modal.js";
 
 /* =========================================================
    TYPES & INTERFACES
-========================================================= */
+   ========================================================= */
+
+export interface MandiDetail {
+    market: string;
+    district: string;
+    state: string;
+    min: number;
+    modal: number;
+    max: number;
+    updated: string;
+}
 
 export interface PriceItem {
     crop: string;
@@ -15,6 +26,7 @@ export interface PriceItem {
     max: number;
     trend: number;
     updated: string;
+    mandis: MandiDetail[];
 }
 
 interface AppState {
@@ -25,15 +37,96 @@ interface AppState {
 }
 
 /* =========================================================
-   MOCK DATA & STATE MANAGEMENT
+   MOCK DATA WITH COMPREHENSIVE REGIONAL COVERAGE
    ========================================================= */
 
 const PRICE_DATA: PriceItem[] = [
-    { crop: "Wheat", category: "Grains", market: "Pune APMC", district: "Pune", state: "Maharashtra", min: 2350, modal: 2450, max: 2550, trend: 2.4, updated: "10 mins ago" },
-    { crop: "Onion", category: "Vegetables", market: "Lasalgaon", district: "Nashik", state: "Maharashtra", min: 1650, modal: 1800, max: 2000, trend: -5.1, updated: "6 mins ago" },
-    { crop: "Tomato", category: "Vegetables", market: "Delhi Mandi", district: "Delhi", state: "Delhi", min: 900, modal: 1200, max: 1500, trend: 1.6, updated: "12 mins ago" },
-    { crop: "Cotton", category: "Oilseeds", market: "Akola", district: "Akola", state: "Maharashtra", min: 7000, modal: 7200, max: 7400, trend: 0, updated: "20 mins ago" },
-    { crop: "Soybean", category: "Legumes", market: "Indore", district: "Indore", state: "Madhya Pradesh", min: 4800, modal: 4950, max: 5100, trend: 3.2, updated: "8 mins ago" }
+    { 
+        crop: "Wheat", 
+        category: "Grains", 
+        market: "Pune APMC", 
+        district: "Pune", 
+        state: "Maharashtra", 
+        min: 2350, 
+        modal: 2450, 
+        max: 2550, 
+        trend: 2.4, 
+        updated: "10 mins ago",
+        mandis: [
+            { market: "Pune APMC", district: "Pune", state: "Maharashtra", min: 2350, modal: 2450, max: 2550, updated: "10 mins ago" },
+            { market: "Nashik Grain Market", district: "Nashik", state: "Maharashtra", min: 2300, modal: 2400, max: 2500, updated: "25 mins ago" },
+            { market: "Indore Grain Mandi", district: "Indore", state: "Madhya Pradesh", min: 2280, modal: 2380, max: 2480, updated: "15 mins ago" },
+            { market: "Azadpur Mandi", district: "Delhi", state: "Delhi", min: 2400, modal: 2500, max: 2620, updated: "5 mins ago" }
+        ]
+    },
+    { 
+        crop: "Onion", 
+        category: "Vegetables", 
+        market: "Lasalgaon", 
+        district: "Nashik", 
+        state: "Maharashtra", 
+        min: 1650, 
+        modal: 1800, 
+        max: 2000, 
+        trend: -5.1, 
+        updated: "6 mins ago",
+        mandis: [
+            { market: "Lasalgaon APMC", district: "Nashik", state: "Maharashtra", min: 1650, modal: 1800, max: 2000, updated: "6 mins ago" },
+            { market: "Pimpalgaon Mandi", district: "Nashik", state: "Maharashtra", min: 1600, modal: 1750, max: 1950, updated: "18 mins ago" },
+            { market: "Kolkata Wholesale", district: "Kolkata", state: "West Bengal", min: 1900, modal: 2100, max: 2300, updated: "30 mins ago" },
+            { market: "Bangalore City Market", district: "Bangalore", state: "Karnataka", min: 1850, modal: 2000, max: 2200, updated: "12 mins ago" }
+        ]
+    },
+    { 
+        crop: "Tomato", 
+        category: "Vegetables", 
+        market: "Delhi Mandi", 
+        district: "Delhi", 
+        state: "Delhi", 
+        min: 900, 
+        modal: 1200, 
+        max: 1500, 
+        trend: 1.6, 
+        updated: "12 mins ago",
+        mandis: [
+            { market: "Azadpur Mandi", district: "Delhi", state: "Delhi", min: 900, modal: 1200, max: 1500, updated: "12 mins ago" },
+            { market: "Kolar Vegetable Market", district: "Kolar", state: "Karnataka", min: 800, modal: 1050, max: 1300, updated: "22 mins ago" },
+            { market: "Vashi APMC", district: "Navi Mumbai", state: "Maharashtra", min: 950, modal: 1250, max: 1550, updated: "8 mins ago" }
+        ]
+    },
+    { 
+        crop: "Cotton", 
+        category: "Oilseeds", 
+        market: "Akola", 
+        district: "Akola", 
+        state: "Maharashtra", 
+        min: 7000, 
+        modal: 7200, 
+        max: 7400, 
+        trend: 0, 
+        updated: "20 mins ago",
+        mandis: [
+            { market: "Akola APMC", district: "Akola", state: "Maharashtra", min: 7000, modal: 7200, max: 7400, updated: "20 mins ago" },
+            { market: "Rajkot Ginned Market", district: "Rajkot", state: "Gujarat", min: 7100, modal: 7300, max: 7500, updated: "40 mins ago" }
+        ]
+    },
+    { 
+        crop: "Soybean", 
+        category: "Legumes", 
+        market: "Indore", 
+        district: "Indore", 
+        state: "Madhya Pradesh", 
+        min: 4800, 
+        modal: 4950, 
+        max: 5100, 
+        trend: 3.2, 
+        updated: "8 mins ago",
+        mandis: [
+            { market: "Indore Mandi", district: "Indore", state: "Madhya Pradesh", min: 4800, modal: 4950, max: 5100, updated: "8 mins ago" },
+            { market: "Ujjain Grain Market", district: "Ujjain", state: "Madhya Pradesh", min: 4750, modal: 4900, max: 5050, updated: "15 mins ago" },
+            { market: "Kota Mandi", district: "Kota", state: "Rajasthan", min: 4850, modal: 5000, max: 5150, updated: "25 mins ago" }
+        ]
+    }
 ];
 
 const state: AppState = {
@@ -51,17 +144,27 @@ const categories: string[] = ["All", ...Array.from(new Set(PRICE_DATA.map(x => x
 const trendingCrops: string[] = ["Onion", "Wheat", "Tomato"];
 
 /* =========================================================
-   FILTER & SORT LOGIC
+   ADVANCED FILTER & REGIONAL SEARCH LOGIC
    ========================================================= */
 
 function getProcessedData(): PriceItem[] {
     const query = state.search.trim().toLowerCase();
+    
     const result = PRICE_DATA.filter(item => {
-        const matchesSearch = !query || 
-                              item.crop.toLowerCase().includes(query) || 
-                              item.market.toLowerCase().includes(query) ||
-                              item.district.toLowerCase().includes(query);
+        // Matches main crop name, or category
+        const matchesMain = item.crop.toLowerCase().includes(query) || 
+                            item.category.toLowerCase().includes(query);
+        
+        // Matches across any nested mandi state, district, or market name
+        const matchesMandiRegion = item.mandis.some(m => 
+            m.state.toLowerCase().includes(query) ||
+            m.district.toLowerCase().includes(query) ||
+            m.market.toLowerCase().includes(query)
+        );
+
+        const matchesSearch = !query || matchesMain || matchesMandiRegion;
         const matchesCategory = state.category === "All" || item.category === state.category;
+        
         return matchesSearch && matchesCategory;
     });
 
@@ -77,6 +180,47 @@ function getProcessedData(): PriceItem[] {
 }
 
 /* =========================================================
+   MODAL COMPONENT BUILDER
+   ========================================================= */
+
+function openMandiModal(item: PriceItem): void {
+    const modalSubtitle = createElement("p", { class: "mp-modal-subtitle" }, [
+        `Category: ${item.category} • Showing live wholesale rates by state & district`
+    ]);
+
+    const tableHeader = createElement("div", { class: "mp-modal-tr mp-modal-th" }, [
+        createElement("span", {}, ["Market / Mandi"]),
+        createElement("span", {}, ["District, State"]),
+        createElement("span", {}, ["Min (₹)"]),
+        createElement("span", {}, ["Modal Rate (₹)"]),
+        createElement("span", {}, ["Max (₹)"]),
+        createElement("span", {}, ["Updated"])
+    ]);
+
+    const tableRows = item.mandis.map(m => createElement("div", { class: "mp-modal-tr" }, [
+        createElement("strong", {}, [m.market]),
+        createElement("span", {}, [`${m.district}, ${m.state}`]),
+        createElement("span", {}, [`₹${m.min.toLocaleString("en-IN")}`]),
+        createElement("span", { class: "mp-modal-highlight-rate" }, [`₹${m.modal.toLocaleString("en-IN")}`]),
+        createElement("span", {}, [`₹${m.max.toLocaleString("en-IN")}`]),
+        createElement("span", { class: "mp-time" }, [m.updated])
+    ]));
+
+    const tableContainer = createElement("div", { class: "mp-modal-table" }, [tableHeader, ...tableRows]);
+    const modalContentBox = createElement("div", { class: "mp-modal-content" }, [modalSubtitle, tableContainer]);
+
+    Modal({
+        title: `${item.crop} Prices Across Indian Mandis`,
+        content: modalContentBox,
+        size: "large",
+        closeOnOverlayClick: true,
+        showHeader: true,
+        showCloseButton: true,
+        autofocus: false
+    });
+}
+
+/* =========================================================
    UI COMPONENT BUILDERS
    ========================================================= */
 
@@ -85,7 +229,7 @@ function createHeaderComponent(): HTMLElement {
     
     searchInputRef = createElement("input", {
         type: "text",
-        placeholder: "Search crops, wholesale markets or districts...",
+        placeholder: "Search crops, states (e.g. Maharashtra), districts or markets...",
         class: "mp-search-input",
         value: state.search,
         events: {
@@ -106,9 +250,7 @@ function createHeaderComponent(): HTMLElement {
             events: {
                 click: () => {
                     state.search = crop;
-                    if (searchInputRef) {
-                        searchInputRef.value = crop;
-                    }
+                    if (searchInputRef) searchInputRef.value = crop;
                     renderGrid();
                 }
             }
@@ -180,7 +322,7 @@ function createPriceCard(item: PriceItem): HTMLElement {
     const cardHeader = createElement("div", { class: "mp-card-meta" }, [badge, time]);
 
     const cropName = createElement("h3", { class: "mp-crop-name" }, [item.crop]);
-    const location = createElement("p", { class: "mp-location-text" }, [`📍 ${item.market}, ${item.district}`]);
+    const location = createElement("p", { class: "mp-location-text" }, [`📍 ${item.market}, ${item.district} (${item.state})`]);
     const infoSec = createElement("div", { class: "mp-info-section" }, [cropName, location]);
 
     const label = createElement("span", { class: "mp-label" }, ["Avg Market Rate"]);
@@ -188,7 +330,6 @@ function createPriceCard(item: PriceItem): HTMLElement {
     const trendPill = createElement("span", { class: `mp-trend-pill ${trendClass}` }, [`${trendIcon} ${trendPrefix}${item.trend}%`]);
     const primaryPriceWrapper = createElement("div", { class: "mp-modal-wrapper" }, [label, modalPrice, trendPill]);
 
-    // Range progress calculations
     const totalRange = item.max - item.min;
     const directOffset = item.modal - item.min;
     const trackingPercentage = totalRange > 0 ? Math.min(Math.max((directOffset / totalRange) * 100, 0), 100) : 50;
@@ -211,7 +352,15 @@ function createPriceCard(item: PriceItem): HTMLElement {
 
     const priceMatrix = createElement("div", { class: "mp-price-matrix" }, [primaryPriceWrapper, contextRangeGaugeComponent]);
 
-    return createElement("div", { class: `mp-price-card ${state.view}-layout` }, [cardHeader, infoSec, priceMatrix]);
+    const card = createElement("div", { 
+        class: `mp-price-card ${state.view}-layout`,
+        title: "Click to view prices across all Mandis",
+        events: {
+            click: () => openMandiModal(item)
+        }
+    }, [cardHeader, infoSec, priceMatrix]);
+
+    return card;
 }
 
 function createEmptyState(): HTMLElement {
@@ -223,16 +372,14 @@ function createEmptyState(): HTMLElement {
                 state.search = "";
                 state.category = "All";
                 state.sortBy = "default";
-                if (searchInputRef) {
-                    searchInputRef.value = "";
-                }
+                if (searchInputRef) searchInputRef.value = "";
                 const firstFilterBtn = document.querySelector(".mp-filter-btn");
                 document.querySelectorAll(".mp-filter-btn").forEach(b => b.classList.remove("active"));
                 if (firstFilterBtn) firstFilterBtn.classList.add("active");
                 renderGrid();
             }
         }
-    }, ["No market data matched your search or filters. Click here to reset."]);
+    }, ["No crops or states matched your search query. Click here to reset filters."]);
 }
 
 function renderGrid(): void {

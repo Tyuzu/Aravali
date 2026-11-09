@@ -236,6 +236,12 @@ export function renderCTAFarm(container: HTMLElement): void {
       classes: "buttonx"
     }),
     Button({
+      title: "Bazaar Bhav",
+      id: "bazarbhav-frm-btn",
+      events: { click: () => navigate("/bazarbhav") },
+      classes: "buttonx"
+    }),
+    Button({
       title: "Create Farm",
       id: "crt-frm-btn",
       events: { click: () => navigate("/create-farm") },
