@@ -87,7 +87,13 @@ function buildNav(): HTMLDivElement {
 }
 
 function enableNavAutoUpdate(initialNavRef: HTMLDivElement): void {
-  let navRef: HTMLDivElement = initialNavRef;
+  const navEl = initialNavRef as HTMLDivElement & { __headerNavBound?: boolean };
+  if (navEl.__headerNavBound) {
+    return;
+  }
+  navEl.__headerNavBound = true;
+
+  let navRef: HTMLDivElement = navEl;
 
   function updateNav(): void {
     if (!navRef || !navRef.parentNode) return;
@@ -100,13 +106,14 @@ function enableNavAutoUpdate(initialNavRef: HTMLDivElement): void {
   subscribe("user", updateNav);
 }
 
-function createHeader(): void {
+function renderHeaderContents(): void {
   const header = document.getElementById("pageheader");
-  if (!header || header.hasChildNodes()) {
+  if (!header) {
     return;
   }
 
   header.className = "main-header";
+  header.replaceChildren();
 
   const logo = createElement("div", { class: "logo" }, [
     createElement("a", { href: "/home", class: "logo-link" }, [webSiteName])
@@ -127,8 +134,37 @@ function createHeader(): void {
 
   const nav = buildNav();
   header.append(logo, sky, nav);
-
   enableNavAutoUpdate(nav);
+}
+
+function bindHeaderAuthRefresh(): void {
+  const header = document.getElementById("pageheader") as HTMLElement & { __headerAuthBound?: boolean } | null;
+  if (!header || header.__headerAuthBound) {
+    return;
+  }
+
+  header.__headerAuthBound = true;
+
+  const refreshHeader = () => {
+    renderHeaderContents();
+  };
+
+  subscribe("isLoggedIn", refreshHeader);
+  subscribe("user", refreshHeader);
+  subscribe("token", refreshHeader);
+
+  window.addEventListener("auth:logout", refreshHeader);
+  window.addEventListener("auth:unauthorized", refreshHeader);
+}
+
+function createHeader(): void {
+  const header = document.getElementById("pageheader");
+  if (!header) {
+    return;
+  }
+
+  bindHeaderAuthRefresh();
+  renderHeaderContents();
   loadTheme();
 }
 

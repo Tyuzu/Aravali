@@ -170,17 +170,27 @@ export function resolveImagePath(
   const validPictureType = pictureType as PictureType;
   const validEntityType = entityType as EntityType;
 
+  if (cleanFilename.startsWith(`${baseUrl}/uploads/`) || cleanFilename.startsWith("/uploads/")) {
+    return cleanFilename.startsWith("/") ? `${baseUrl}${cleanFilename}` : `${baseUrl}/${cleanFilename}`;
+  }
+
   const folder = PictureSubfolders[validPictureType] || "misc";
   let finalName = cleanFilename;
 
-  // Append missing file extension based on type
+  // Match backend media processing: thumbs are generated as .jpg and most
+  // uploaded photos are normalized to .png when no extension exists.
   const hasExt = /\.[a-zA-Z0-9]+$/.test(finalName);
   if (!hasExt) {
     switch (validPictureType) {
       case PictureType.THUMB:
-      case PictureType.POSTER:
-      case PictureType.PHOTO:
         finalName += ".jpg";
+        break;
+      case PictureType.PHOTO:
+      case PictureType.POSTER:
+      case PictureType.BANNER:
+      case PictureType.MEMBER:
+      case PictureType.SEATING:
+        finalName += ".png";
         break;
       default:
         if (isImageType(validPictureType)) {
@@ -189,7 +199,6 @@ export function resolveImagePath(
         break;
     }
   }
-  finalName = `${baseUrl}/uploads/${validEntityType}/${folder}/${finalName}`
-  console.log(finalName);
-  return finalName;
+
+  return `${baseUrl}/uploads/${validEntityType}/${folder}/${finalName}`;
 }

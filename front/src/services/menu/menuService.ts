@@ -205,7 +205,8 @@ async function editMenuForm(menuId: string | number, placeId: string | number): 
             { label: "Menu Name", type: "text", id: "menu-name", name: "name", value: menu.name, required: true },
             { label: "Price", type: "number", id: "menu-price", name: "price", value: menu.price, required: true, additionalProps: { min: 0, step: "0.01" } },
             { label: "Discount (%)", type: "number", id: "menu-discount", name: "discount", value: menu.discount || 0, additionalProps: { min: 0, max: 100, step: "0.01" } },
-            { label: "Stock Available", type: "number", id: "menu-stock", name: "stock", value: menu.stock, required: true, additionalProps: { min: 0 } }
+            { label: "Stock Available", type: "number", id: "menu-stock", name: "stock", value: menu.stock, required: true, additionalProps: { min: 0 } },
+            { label: "Menu Image", type: "file", id: "menu-image", name: "image", accept: "image/*" }
         ];
 
         fields.forEach((f) => form.appendChild(createFormGroup(f)));
@@ -245,8 +246,15 @@ async function editMenuForm(menuId: string | number, placeId: string | number): 
             const priceInput = form.querySelector<HTMLInputElement>("#menu-price");
             const discountInput = form.querySelector<HTMLInputElement>("#menu-discount");
             const stockInput = form.querySelector<HTMLInputElement>("#menu-stock");
+            const imageInput = form.querySelector<HTMLInputElement>("#menu-image");
+            const imageFile = imageInput?.files?.[0];
 
-            const updatedMenu = {
+            if (imageFile && !imageFile.type.startsWith("image/")) {
+                Notify("Please upload a valid image file.", { type: "error" });
+                return;
+            }
+
+            const updatedMenu: Record<string, unknown> = {
                 name: nameInput?.value || "",
                 price: parseFloat(priceInput?.value || "0"),
                 discount: parseFloat(discountInput?.value || "0"),
@@ -254,6 +262,25 @@ async function editMenuForm(menuId: string | number, placeId: string | number): 
             };
 
             try {
+                if (imageFile) {
+                    Notify("Uploading image...", { type: "info", duration: 2000 });
+
+                    const uploadedImage = await uploadFile({
+                        id: uid(),
+                        file: imageFile,
+                        entityType: "place",
+                        entityId: String(placeId)
+                    });
+
+                    if (!uploadedImage?.filename && !uploadedImage?.key) {
+                        throw new Error("Image upload failed.");
+                    }
+
+                    updatedMenu.menu_pic = uploadedImage.filename || uploadedImage.key || "";
+                } else {
+                    updatedMenu.menu_pic = menu.menu_pic || "";
+                }
+
                 const res = await updateMenuItem(placeId, menuId, updatedMenu);
 
                 if (res.success) {
