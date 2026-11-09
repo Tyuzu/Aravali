@@ -40,7 +40,8 @@ export function Bannerx({
         id: previewId,
         src: bannerSrc,
         alt: altText,
-        loading: "lazy",
+        loading: "eager",
+        fetchPriority: "high",
         classes: `${stateentitykey}-banner`
     });
 

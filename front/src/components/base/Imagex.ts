@@ -6,6 +6,7 @@ export interface ImagexAttributes extends Omit<Partial<HTMLImageElement>, "event
   classes?: string;
   class?: string;
   loading?: "lazy" | "eager";
+  fetchPriority?: "high" | "low" | "auto";
   decoding?: "async" | "sync" | "auto";
   events?: Record<string, (event: Event) => void> & {
     error?: (event: Event) => void;
@@ -27,6 +28,7 @@ const Imagex = (attributes: ImagexAttributes = {}, _children?: any[]): HTMLEleme
     classes,
     class: className,
     loading = "lazy",
+    fetchPriority,
     events = {},
     ...rest
   } = attributes;
@@ -37,8 +39,11 @@ const Imagex = (attributes: ImagexAttributes = {}, _children?: any[]): HTMLEleme
     rest['class'] = mergedClass;
   }
 
-  // 2. Set loading and decoding attributes using bracket notation
+  // 2. Set loading, fetch priority, and decoding attributes using bracket notation
   rest['loading'] = loading;
+  if (fetchPriority) {
+    rest['fetchPriority'] = fetchPriority;
+  }
   if (decodeAsync) {
     rest['decoding'] = "async";
   }

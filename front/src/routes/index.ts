@@ -1,6 +1,6 @@
 import { createheader } from "../components/layout/header.js";
 import { createNav, highlightActiveNav } from "../components/layout/navigation.js";
-import { Footer } from "../components/layout/footer.js";
+// import { Footer } from "../components/layout/footer.js";
 import { render } from "./router.js";
 import { getState, setState, restoreScroll, subscribe } from "../state/state.js";
 import { track } from "../services/activity/metrics.js";
@@ -119,11 +119,11 @@ function renderStaticLayout(): void {
         if (n) nav.replaceChildren(n);
         layoutState.navRendered = true;
     }
-    if (!layoutState.footerRendered) {
-        const f = Footer();
-        if (f) footer.replaceChildren(f);
-        layoutState.footerRendered = true;
-    }
+    // if (!layoutState.footerRendered) {
+    //     const f = Footer();
+    //     if (f) footer.replaceChildren(f);
+    //     layoutState.footerRendered = true;
+    // }
 }
 
 function refreshStaticLayout(): void {
@@ -136,10 +136,10 @@ function refreshStaticLayout(): void {
         const updatedNav = createNav();
         if (updatedNav) nav.replaceChildren(updatedNav);
     }
-    if (footer) {
-        const updatedFooter = Footer();
-        if (updatedFooter) footer.replaceChildren(updatedFooter);
-    }
+    // if (footer) {
+    //     const updatedFooter = Footer();
+    //     if (updatedFooter) footer.replaceChildren(updatedFooter);
+    // }
 }
 
 /* =========================================================
@@ -205,6 +205,35 @@ export async function renderPage(): Promise<void> {
     await loadContent(getCurrentAppLocation());
 }
 
+function normalizeStoredRedirect(value: string | null): string | null {
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return null;
+    }
+
+    let candidate = trimmed.startsWith("#/") ? trimmed.slice(1) : trimmed;
+    candidate = candidate.split("#")[0];
+
+    if (!candidate.startsWith("/")) {
+        return null;
+    }
+
+    if (candidate.length > 1 && candidate.endsWith("/")) {
+        candidate = candidate.slice(0, -1);
+    }
+
+    const ignoredPaths = ["/", "/login", "/logout", "/404", "/error/403", "/error/404"];
+    if (ignoredPaths.includes(candidate)) {
+        return null;
+    }
+
+    return candidate;
+}
+
 /* =========================================================
    AUTH REACTIVITY & CROSS-TAB SYNC
 ========================================================= */
@@ -216,13 +245,10 @@ subscribe("token", (token: unknown) => {
     const current = parseAppLocation(getCurrentAppLocation());
     if (current.path !== "/login") return;
 
-    const redirect = sessionStorage.getItem("redirectAfterLogin");
+    const redirect = normalizeStoredRedirect(sessionStorage.getItem("redirectAfterLogin"));
     sessionStorage.removeItem("redirectAfterLogin");
 
-    const target =
-        redirect && redirect.startsWith("/") && redirect !== "/login" && redirect !== "/logout"
-            ? redirect
-            : "/";
+    const target = redirect || "/";
 
     queueMicrotask(() => {
         navigate(target, { replace: true }).catch((error) => {

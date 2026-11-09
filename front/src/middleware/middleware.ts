@@ -103,13 +103,40 @@ function getFullTarget(context: RouteContext): string {
   return `${path}${search}`;
 }
 
+function normalizeLoginRedirectTarget(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  let candidate = trimmed.startsWith("#/") ? trimmed.slice(1) : trimmed;
+  candidate = candidate.split("#")[0];
+
+  if (!candidate.startsWith("/")) {
+    return null;
+  }
+
+  if (candidate.length > 1 && candidate.endsWith("/")) {
+    candidate = candidate.slice(0, -1);
+  }
+
+  const ignoredPaths = ["/", "/login", "/logout", "/404", "/error/403", "/error/404"];
+  if (ignoredPaths.includes(candidate)) {
+    return null;
+  }
+
+  return candidate;
+}
+
 function storeLoginRedirect(context: RouteContext): void {
   if (typeof window === "undefined") return;
-  
-  const target = getFullTarget(context);
-  const ignoredPaths = ["/", "/login", "/logout", "/404", "/error/403"];
-  
-  if (target && !ignoredPaths.includes(context.path)) {
+
+  const target = normalizeLoginRedirectTarget(getFullTarget(context));
+  if (target) {
     sessionStorage.setItem("redirectAfterLogin", target);
   }
 }

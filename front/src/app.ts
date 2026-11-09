@@ -218,7 +218,9 @@ async function startApplication(): Promise<void> {
     }
 
     const lang = detectLanguage();
-    await setLanguage(lang);
+    void setLanguage(lang).catch((error: unknown) => {
+      trackError(error as Error, { type: "language_init_failure" });
+    });
 
     hydrateAuthState(true);
     profileEnvironment();

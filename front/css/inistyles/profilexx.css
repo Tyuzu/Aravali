@@ -46,7 +46,7 @@
 .user-banner {
   position: relative;
   width: 100%;
-  aspect-ratio: 7/3;
+  aspect-ratio: 11/3;
   background-color: var(--color-bg-tertiary);
 }
 

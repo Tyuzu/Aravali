@@ -19,6 +19,9 @@ const handleNavigation = (event: MouseEvent, href: string): void => {
 };
 
 const Footer = (): HTMLElement => {
+  // Ensure savedLang is synchronously available for the initial render pass
+  const savedLang = localStorage.getItem("lang") || "en";
+
   const pages: NavPage[] = [
     { href: "/about", label: t("footer.aboutUs", {}, "About Us") },
     { href: "/contact", label: t("footer.contactUs", {}, "Contact Us") },
@@ -59,6 +62,7 @@ const Footer = (): HTMLElement => {
           const target = e.target as HTMLSelectElement | null;
           const lang = target?.value;
           if (lang) {
+            localStorage.setItem("lang", lang);
             await setLanguage(lang);
           }
         }) as EventListener
@@ -74,13 +78,12 @@ const Footer = (): HTMLElement => {
     ]
   ) as HTMLSelectElement;
 
-  const savedLang = localStorage.getItem("lang") || "en";
   langSelect.value = savedLang;
 
   const footerBottom = createElement("div", { class: "footer-bottom" }, [
     langSelect,
     createElement("p", {}, [
-      t("footer.copyright", { year: new Date().getFullYear(), site: webSiteName }, "© {year} {site}. All rights reserved.")
+      t("footer.copyright", { year: new Date().getFullYear(), site: webSiteName }, `© ${new Date().getFullYear()} ${webSiteName}. All rights reserved.`)
     ])
   ]);
 
