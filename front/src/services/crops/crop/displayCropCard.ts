@@ -1,14 +1,14 @@
-import Imagex from "../../../components/base/Imagex";
-import { createElement } from "../../../components/createElement";
-import { resolveImagePath, EntityType, PictureType } from "../../../utils/imagePaths";
-import Button from "../../../components/base/Button";
-import { navigate } from "../../../routes/navigate";
+import Imagex from "../../../components/base/Imagex.js";
+import { createElement } from "../../../components/createElement.js";
+import Button from "../../../components/base/Button.js";
+import { navigate } from "../../../routes/navigate.js";
+import { resolveImagePath, EntityType, PictureType } from "../../../utils/imagePaths.js";
 
 export interface CropCardData {
     name: string;
-    price: number;
-    unit: string;
-    quantity: number;
+    price?: number;
+    unit?: string;
+    quantity?: number;
     banner?: string;
     discount?: number;
     farmName?: string;
@@ -16,13 +16,17 @@ export interface CropCardData {
     farmid?: string | number;
 }
 
+function normalizeDiscount(discount: number): number {
+    return discount > 100 ? discount / 100 : discount;
+}
+
 /**
- * Creates a standalone crop product card component.
+ * Shared crop card used across crop and farm views.
+ * Keep this as the single source of truth to avoid duplicate card implementations.
  */
 export function displayCropCard(crop: CropCardData): HTMLElement {
     const card = createElement("div", { class: "crop-card" }) as HTMLElement;
 
-    // 1. Image Header
     if (crop.banner) {
         const imageSrc = resolveImagePath(EntityType.CROP, PictureType.BANNER, crop.banner);
         const cropImg = Imagex({
@@ -35,16 +39,14 @@ export function displayCropCard(crop: CropCardData): HTMLElement {
         card.appendChild(cropImg);
     }
 
-    // 2. Pricing Calculations
     const discountPercent = Number(crop.discount || 0);
-    const normalizedDiscount = discountPercent > 100 ? discountPercent / 100 : discountPercent;
+    const normalizedDiscount = normalizeDiscount(discountPercent);
     const hasDiscount = normalizedDiscount > 0;
     const basePrice = Number(crop.price || 0);
     const discountedPrice = hasDiscount
         ? Number((basePrice * (1 - normalizedDiscount / 100)).toFixed(2))
         : basePrice;
 
-    // 3. Card Elements
     const elements: (HTMLElement | null)[] = [
         createElement("h4", { class: "crop-card-title" }, [crop.name || "Unnamed Crop"]),
         createElement("p", { class: "crop-card-price" }, [
@@ -73,9 +75,7 @@ export function displayCropCard(crop: CropCardData): HTMLElement {
             : null
     ];
 
-    // Filter out null nodes and append to card container
     card.append(...(elements.filter((el): el is HTMLElement => Boolean(el))));
-
     return card;
 }
 

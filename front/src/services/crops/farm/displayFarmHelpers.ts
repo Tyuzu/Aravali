@@ -6,6 +6,7 @@ import { addToCart, isValidCartQuantity } from "../../cart/addToCart.js";
 import { getState } from "../../../state/state.js";
 import { EntityType } from "../../../utils/imagePaths.js";
 import Bannerx from "../../../components/base/Bannerx.js";
+import { renderFarmCropCard } from "../crop/farmCropCard.js";
 import type { AvailabilitySchedule, Crop, Farm, PriceHistory } from "../types.js";
 
 const MAX_CART_QUANTITY = 99;
@@ -300,77 +301,16 @@ function createCropCard(
     maximumFractionDigits: 2
   });
 
-  const priceElements: HTMLElement[] = [];
-
-  if (discountVal > 0) {
-    priceElements.push(
-      createElement(
-        "span",
-        {
-          class: "original-price-slashed",
-          style: "text-decoration: line-through; color: #888; margin-right: 8px;"
-        },
-        [formatter.format(originalVal)]
-      ) as HTMLElement,
-      createElement(
-        "strong",
-        { class: "discounted-price" },
-        [`${formatter.format(finalVal)} per ${crop?.unit || "unit"} `]
-      ) as HTMLElement,
-      createElement(
-        "span",
-        {
-          class: "discount-badge",
-          style:
-            "background-color: #e1f7ec; color: #15803d; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px;"
-        },
-        [` ${discountVal}% OFF`]
-      ) as HTMLElement
-    );
-  } else {
-    priceElements.push(
-      createElement("strong", {}, [`${formatter.format(originalVal)} per ${crop?.unit || "unit"}`]) as HTMLElement
-    );
-  }
-
-  const controls = isCreator
-    ? createCreatorControls(crop, farmId, editcon)
-    : createUserControls(crop, farmName, farmId, isLoggedIn);
-
-  const cardChildren = [
-    createCropBannerSection(crop, isCreator),
-    createElement(
-      "div",
-      { class: "crop-header" },
-      [
-        createElement(
-          "h4",
-          { style: "display: inline-block; margin-right: 8px;" },
-          [crop?.name || "Crop"]
-        ),
-        crop?.category
-          ? createElement(
-              "span",
-              {
-                class: "badge-category",
-                style:
-                  "background: var(--color-fg); color: var(--color-bg); font-size: 11px; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;"
-              },
-              [crop.category]
-            )
-          : null
-      ].filter((child): child is HTMLElement => child !== null)
-    ),
-    createElement("p", { class: "price-display-wrapper" }, priceElements),
-    createElement("p", {}, [`📦 Stock: ${crop?.quantity ?? 0} ${crop?.unit || ""}`]),
-    createElement("p", {}, [`🕓 Harvested: ${harvestAge}`]),
-    createElement("p", {}, [(crop?.quantity ?? 0) > 0 ? "✅ Available" : "❌ Out of Stock"]),
-    expiryNotice,
-    crop?.history && crop.history.length > 1 ? createPriceHistoryToggle(crop.history) : null,
-    ...controls
-  ].flat().filter((child): child is HTMLElement => child !== null);
-
-  return createElement("div", { class: "crop-card" }, cardChildren) as HTMLElement;
+  return renderFarmCropCard(
+    crop,
+    farmName,
+    farmId,
+    editcon,
+    isLoggedIn,
+    isCreator,
+    createUserControls,
+    createCreatorControls
+  );
 }
 
 // ─────────── Price history ───────────
