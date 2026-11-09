@@ -1,4 +1,4 @@
-
+import "../../../css/farmstyles/bazarBhav.css";
 import { displayBazarBhav } from "../../services/crops/bazarbhav/bazaarBhav.js";
 
 export async function BazaarBhav(

@@ -1,0 +1,318 @@
+/* ==========================================================================
+   Fluent Live Mandi Market Prices (Bazar Bhav) Stylesheet
+   ========================================================================== */
+
+.mp-dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md, 16px);
+    margin-bottom: var(--space-lg, 24px);
+    background-color: var(--color-surface, #ffffff);
+    padding: var(--space-lg, 24px);
+    border: 1px solid var(--color-border, #e0e0e0);
+    border-radius: var(--radius-md, 8px);
+    box-shadow: var(--shadow-elev-1, 0 2px 4px rgba(0, 0, 0, 0.04));
+}
+
+.mp-title {
+    font-size: var(--font-size-xl, 1.5rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-fg, #242424);
+    margin: 0;
+}
+
+/* Search Wrapper & Pills */
+.mp-search-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 8px);
+}
+
+.mp-search-input {
+    width: 100%;
+    padding: 10px var(--space-md, 16px);
+    font-size: var(--font-size-sm, 0.875rem);
+    font-family: var(--font-base);
+    color: var(--color-fg, #242424);
+    background-color: var(--color-input-bg, #ffffff);
+    border: 1px solid var(--color-input-border, #8a8a8a);
+    border-radius: var(--radius-sm, 4px);
+    transition: border-color var(--transition-fast);
+    box-sizing: border-box;
+}
+
+.mp-search-input:focus {
+    outline: none;
+    border-color: var(--color-input-focus, #0078d4);
+    box-shadow: 0 0 0 1px var(--color-input-focus, #0078d4);
+}
+
+.mp-suggest-box {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs, 4px);
+}
+
+.mp-suggest-label {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--color-muted, #616161);
+    font-weight: var(--font-weight-medium, 600);
+    margin-right: var(--space-xxs, 2px);
+}
+
+.mp-suggest-pill {
+    background-color: var(--color-bg-tertiary, #f0f0f0);
+    color: var(--color-fg, #242424);
+    border: 1px solid var(--color-border-light, #f0f0f0);
+    padding: 2px 8px;
+    font-size: var(--font-size-xs, 0.75rem);
+    border-radius: var(--radius-full, 9999px);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.mp-suggest-pill:hover {
+    background-color: var(--color-card-hover, #f5f5f5);
+    border-color: var(--color-border, #e0e0e0);
+}
+
+/* Control Bar & Filters */
+.mp-control-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md, 16px);
+    margin-top: var(--space-xs, 4px);
+}
+
+.mp-tabs-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs, 4px);
+}
+
+.mp-filter-btn {
+    background-color: var(--color-bg-secondary, #fafafa);
+    color: var(--color-muted, #616161);
+    border: 1px solid var(--color-border, #e0e0e0);
+    padding: 6px 12px;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: var(--font-weight-medium, 600);
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.mp-filter-btn:hover {
+    background-color: var(--color-card-hover, #f5f5f5);
+    color: var(--color-fg, #242424);
+}
+
+.mp-filter-btn.active {
+    background-color: var(--color-primary, #0078d4);
+    color: var(--color-primary-fg, #ffffff);
+    border-color: var(--color-primary, #0078d4);
+}
+
+.mp-sort-select {
+    padding: 6px 12px;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-family: var(--font-base);
+    background-color: var(--color-surface, #ffffff);
+    color: var(--color-fg, #242424);
+    border: 1px solid var(--color-border, #e0e0e0);
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+}
+
+.mp-view-toggle {
+    background-color: transparent;
+    color: var(--color-link, #0078d4);
+    border: 1px dashed var(--color-link, #0078d4);
+    padding: 6px 12px;
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: var(--font-weight-medium, 600);
+    border-radius: var(--radius-sm, 4px);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.mp-view-toggle:hover {
+    background-color: var(--color-bg-secondary, #fafafa);
+}
+
+/* Grid & List Layouts */
+.mp-grid-container {
+    display: grid;
+    gap: var(--space-md, 16px);
+}
+
+.mp-grid-container.layout-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.mp-grid-container.layout-list {
+    grid-template-columns: 1fr;
+}
+
+/* Price Card Component */
+.mp-price-card {
+    background-color: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e0e0e0);
+    border-radius: var(--radius-md, 8px);
+    padding: var(--space-md, 16px);
+    box-shadow: var(--shadow-elev-1, 0 2px 4px rgba(0, 0, 0, 0.04));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md, 16px);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.mp-price-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elev-2, 0 4px 8px rgba(0, 0, 0, 0.08));
+}
+
+.mp-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mp-badge {
+    font-size: 11px;
+    font-weight: var(--font-weight-medium, 600);
+    text-transform: uppercase;
+    background-color: var(--color-bg-tertiary, #f0f0f0);
+    color: var(--color-primary, #0078d4);
+    padding: 2px 8px;
+    border-radius: var(--radius-full, 9999px);
+}
+
+.mp-time {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--color-muted, #616161);
+}
+
+.mp-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs, 2px);
+}
+
+.mp-crop-name {
+    font-size: var(--font-size-lg, 1.25rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-fg, #242424);
+    margin: 0;
+}
+
+.mp-location-text {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: var(--color-muted, #616161);
+    margin: 0;
+}
+
+.mp-price-matrix {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 8px);
+    background-color: var(--color-space, #f5f5f5);
+    padding: var(--space-sm, 8px) var(--space-md, 16px);
+    border-radius: var(--radius-sm, 4px);
+}
+
+.mp-modal-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mp-label {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--color-muted, #616161);
+}
+
+.mp-modal-price {
+    font-size: var(--font-size-lg, 1.25rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-fg, #242424);
+}
+
+.mp-trend-pill {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: var(--font-weight-medium, 600);
+    padding: 2px 6px;
+    border-radius: var(--radius-xs, 2px);
+}
+
+.mp-trend-pill.positive {
+    background-color: rgba(16, 124, 65, 0.1);
+    color: var(--color-success, #107c41);
+}
+
+.mp-trend-pill.negative {
+    background-color: rgba(209, 52, 56, 0.1);
+    color: var(--color-error, #d13438);
+}
+
+.mp-trend-pill.neutral {
+    background-color: var(--color-bg-tertiary, #f0f0f0);
+    color: var(--color-muted, #616161);
+}
+
+/* Range Gauge Slider Component */
+.mp-range-slider-component {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxs, 2px);
+}
+
+.mp-range-track-line {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    background-color: var(--color-border, #e0e0e0);
+    border-radius: var(--radius-full, 9999px);
+    margin: 6px 0;
+}
+
+.mp-range-fill-head {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background-color: var(--color-primary, #0078d4);
+    border: 2px solid var(--color-surface, #ffffff);
+    border-radius: var(--radius-circle, 50%);
+    box-shadow: var(--shadow-elev-1);
+}
+
+.mp-range-labels-wrapper {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--color-muted, #616161);
+}
+
+/* Empty State */
+.mp-empty-state-reset {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--space-xl, 32px);
+    background-color: var(--color-surface, #ffffff);
+    border: 1px dashed var(--color-border, #e0e0e0);
+    border-radius: var(--radius-md, 8px);
+    color: var(--color-muted, #616161);
+    font-size: var(--font-size-sm, 0.875rem);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.mp-empty-state-reset:hover {
+    background-color: var(--color-bg-secondary, #fafafa);
+    color: var(--color-fg, #242424);
+}
