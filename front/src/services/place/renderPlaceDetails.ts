@@ -146,19 +146,31 @@ function createCreatorControls(place: Place, isLoggedIn: boolean): HTMLElement {
     }
   });
 
+  let analyticsOpen = false;
   const analyticsBtn = Button({
     title: "View Analytics",
     id: "analytics-place-btn",
     classes: "buttonx secondary",
     events: {
       click: () => {
-        // Ensure container is cleared before rendering analytics to prevent duplicates
+        analyticsOpen = !analyticsOpen;
+
+        if (!analyticsOpen) {
+          analyticsContainer.replaceChildren();
+          analyticsContainer.hidden = true;
+          analyticsBtn.textContent = "View Analytics";
+          return;
+        }
+
+        analyticsContainer.hidden = false;
         analyticsContainer.replaceChildren();
         analyticsPlace(analyticsContainer, isLoggedIn, place.placeid);
+        analyticsBtn.textContent = "Hide Analytics";
       }
     }
   });
 
+  analyticsContainer.hidden = true;
   actionsWrapper.append(editBtn, deleteBtn, analyticsBtn);
 
   // Group wrappers into a logical layout fragment
