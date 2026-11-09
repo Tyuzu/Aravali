@@ -1,7 +1,7 @@
 import "../../../css/layout/footer.css";
 import { setLanguage, t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
-import { webSiteName } from "../../config/env.js";
+import { webSiteName } from "../../config/envConfig.js";
 import { createElement } from "../createElement.js";
 
 interface NavPage {

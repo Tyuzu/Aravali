@@ -1,5 +1,5 @@
 import { createElement } from "../../components/createElement.js";
-import { buildWebSocketUrl } from "../../config/env.js";
+import { buildWebSocketUrl } from "../../config/envConfig.js";
 import { CHAT_WS, getState, setState } from "../../state/state.js";
 import { renderMessage } from "./renderMessage.js";
 import { setupFileUpload } from "./fileUpload.js";

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func main() {
+func mmmain() {
 	internalDir := "./internal"
 
 	// Check if the internal directory exists

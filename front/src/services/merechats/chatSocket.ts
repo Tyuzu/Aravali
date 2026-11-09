@@ -5,7 +5,7 @@ import {
 } from "../../state/state.js";
 import {
   buildWebSocketUrl
-} from "../../config/env.js";
+} from "../../config/envConfig.js";
 import {
   renderMessage
 } from "./components/index.js";

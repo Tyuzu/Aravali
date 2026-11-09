@@ -1,4 +1,4 @@
-import { apiConfig } from "../config/env.js";
+import { apiConfig } from "../config/envConfig.js";
 
 /* =========================================================
     TYPES & INTERFACES

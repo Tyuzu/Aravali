@@ -1,6 +1,6 @@
 import "../../../css/layout/header.css";
 import { getState, subscribe } from "../../state/state.js";
-import { webSiteName } from "../../config/env.js";
+import { webSiteName } from "../../config/envConfig.js";
 import { navigate } from "../../routes/navigate.js";
 import { logout } from "../../services/auth/authService.js";
 import { settingsSVG, moonSVG, profileSVG, shopBagSVG, logoutSVG, cardSVG } from "../svgs/featherSVGs";

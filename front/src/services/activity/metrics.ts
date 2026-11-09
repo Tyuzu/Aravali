@@ -1,6 +1,6 @@
 // src/utils/activityLogger.ts
 import { generateUUID } from "../../utils/genUUID.js";
-import { sendActivityBatch } from "./api.js";
+import { sendActivityBatch } from "./activityAPI.js";
 
 // --- Types & Interfaces ---
 export type EventType =
