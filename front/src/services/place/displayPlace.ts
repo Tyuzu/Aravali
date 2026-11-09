@@ -79,12 +79,12 @@ export default async function displayPlace(
 
     contentContainer.replaceChildren();
 
-    // 1. Render Banner
-    if (placeData.banner) {
-      contentContainer.appendChild(createElement("div", { class: "place-banner-wrapper" }, [
-        createPlaceBannerSection(placeData, isCreator)
-      ]));
-    }
+    // // 1. Render Banner
+    // if (placeData.banner) {
+    //   contentContainer.appendChild(createElement("div", { class: "place-banner-wrapper" }, [
+    //     createPlaceBannerSection(placeData, isCreator)
+    //   ]));
+    // }
 
     // 2. Render Header
     const headerSection = createPlaceHeader(placeId, placeData, isCreator);

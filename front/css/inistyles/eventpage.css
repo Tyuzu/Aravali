@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Fluent Event Page CSS
+   Fluent Event Page CSS (Refined)
    ========================================================================== */
 
 .eventpage {
@@ -14,6 +14,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-lg, 24px);
+    box-sizing: border-box;
 }
 
 /* Event Wrapper & Card */
@@ -30,7 +31,7 @@
     flex-direction: column;
 }
 
-@media (min-width: 768px) {
+@media (max-width: 768px) {
     .eventx-card.hvflex {
         flex-direction: row;
     }
@@ -40,7 +41,7 @@
 .event-banner {
     position: relative;
     width: 100%;
-    aspect-ratio: 8 / 3;
+    aspect-ratio: 16 / 9;
     max-height: 320px;
     object-fit: cover;
     background-color: var(--color-bg-tertiary, #f0f0f0);
@@ -48,28 +49,9 @@
 
 @media (max-width: 768px) {
     .event-banner {
-        width: 380px;
+        width: 42%;
         max-height: none;
     }
-}
-
-.edit-banner-pic {
-    position: absolute;
-    bottom: var(--space-md, 16px);
-    left: var(--space-md, 16px);
-    background-color: var(--color-overlay, rgba(0, 0, 0, 0.4));
-    color: #ffffff;
-    border: none;
-    padding: var(--space-xs, 4px) var(--space-sm, 8px);
-    font-size: var(--font-size-xs, 0.75rem);
-    border-radius: var(--radius-sm, 4px);
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: background-color var(--transition-fast, 100ms ease);
-}
-
-.edit-banner-pic:hover {
-    background-color: var(--color-overlay, rgba(0, 0, 0, 0.6));
 }
 
 /* Event Info Section */
@@ -152,6 +134,30 @@
     margin: 0;
 }
 
+/* Event Tags & Links */
+.event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs, 4px);
+}
+
+.event-tag {
+    font-size: var(--font-size-xs, 0.75rem);
+    background-color: var(--color-bg-tertiary, #f0f0f0);
+    color: var(--color-muted, #616161);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm, 4px);
+}
+
+.event-place-link a {
+    color: var(--color-primary, #0078d4);
+    text-decoration: none;
+}
+
+.event-place-link a:hover {
+    text-decoration: underline;
+}
+
 /* Event Action Buttons */
 .event-actions {
     display: flex;
@@ -190,88 +196,4 @@
 .buttonx.primary {
     background-color: var(--color-primary, #0078d4);
     color: var(--color-primary-fg, #ffffff);
-}
-
-/* Tabs Container & Navigation */
-.tabs-container {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-lg, 24px);
-    background-color: var(--color-surface, #ffffff);
-    border: 1px solid var(--color-border, #e0e0e0);
-    border-radius: var(--radius-md, 8px);
-    padding: var(--space-lg, 24px);
-    box-shadow: var(--shadow-elev-1, 0 2px 4px rgba(0, 0, 0, 0.04));
-}
-
-.tab-buttons {
-    display: flex;
-    gap: var(--space-xs, 4px);
-    border-bottom: 1px solid var(--color-border, #e0e0e0);
-    padding-bottom: var(--space-xs, 4px);
-    overflow-x: auto;
-}
-
-.tab-button {
-    background-color: transparent;
-    color: var(--color-muted, #616161);
-    border: none;
-    padding: var(--space-sm, 8px) var(--space-lg, 24px);
-    font-size: var(--font-size-base, 1rem);
-    font-weight: var(--font-weight-medium, 600);
-    border-radius: var(--radius-sm, 4px) var(--radius-sm, 4px) 0 0;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background-color var(--transition-fast, 100ms ease), color var(--transition-fast, 100ms ease);
-}
-
-.tab-button:hover {
-    background-color: var(--color-card-hover, #f5f5f5);
-    color: var(--color-fg, #242424);
-}
-
-.tab-button.active {
-    color: var(--color-primary, #0078d4);
-    background-color: var(--color-surface, #ffffff);
-    box-shadow: var(--shadow-elev-1, 0 2px 4px rgba(0, 0, 0, 0.04));
-    border-top: 3px solid var(--color-primary, #0078d4);
-}
-
-/* Tab Content Panels */
-.tab-contents {
-    position: relative;
-}
-
-.tab-content {
-    display: none;
-    flex-direction: column;
-    gap: var(--space-md, 16px);
-}
-
-.tab-content.active {
-    display: flex;
-}
-
-.tab-content h2 {
-    font-size: var(--font-size-xl, 1.5rem);
-    font-weight: var(--font-weight-medium, 600);
-    color: var(--color-fg, #242424);
-    margin: 0 0 var(--space-sm, 8px) 0;
-}
-
-/* Helper Flex Utility Classes */
-.hvflex {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md, 16px);
-}
-
-.hvflex.gap20 {
-    gap: var(--space-lg, 24px);
-}
-
-.hflex-sb {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }

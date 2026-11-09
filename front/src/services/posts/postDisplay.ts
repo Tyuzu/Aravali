@@ -334,12 +334,18 @@ function renderBody(post: Post): HTMLElement {
 function renderImageGroup(images: ImageBlock[]): HTMLElement {
   const group = createElement("div", { class: "image-group" });
 
-  const mediaItems = images.map((img) =>
-    resolveImagePath(EntityType.BLOGPOST, PictureType.PHOTO, img.url)
-  );
+  const mediaItems = images.map((img) => {
+    const baseName = String(img.url || "").includes(".")
+      ? String(img.url).substring(0, String(img.url).lastIndexOf("."))
+      : String(img.url || "");
+    return resolveImagePath(EntityType.BLOGPOST, PictureType.PHOTO, `${baseName}.png`);
+  });
 
   images.forEach((img, index) => {
-    const thumbSrc = resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, img.url);
+    const baseName = String(img.url || "").includes(".")
+      ? String(img.url).substring(0, String(img.url).lastIndexOf("."))
+      : String(img.url || "");
+    const thumbSrc = resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, `${baseName}.jpg`);
 
     const imgEl = Imagex({
       src: thumbSrc,

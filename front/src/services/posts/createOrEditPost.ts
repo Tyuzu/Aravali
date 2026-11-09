@@ -131,9 +131,12 @@ const BlockPlugins: { [K in BlockType]: BlockPlugin<Extract<Block, { type: K }>>
       }) as HTMLImageElement;
 
       if (block.url) {
+        const baseName = String(block.url).includes(".")
+          ? String(block.url).substring(0, String(block.url).lastIndexOf("."))
+          : String(block.url);
         preview.setAttribute(
           "src",
-          resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, String(block.url))
+          resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, `${baseName}.jpg`)
         );
       }
 
@@ -190,9 +193,12 @@ const BlockPlugins: { [K in BlockType]: BlockPlugin<Extract<Block, { type: K }>>
           if (/^https?:\/\//i.test(finalUrlOrKey)) {
             preview.setAttribute("src", finalUrlOrKey);
           } else {
+            const baseName = String(finalUrlOrKey).includes(".")
+              ? String(finalUrlOrKey).substring(0, String(finalUrlOrKey).lastIndexOf("."))
+              : String(finalUrlOrKey);
             preview.setAttribute(
               "src",
-              resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, finalUrlOrKey)
+              resolveImagePath(EntityType.BLOGPOST, PictureType.THUMB, `${baseName}.jpg`)
             );
           }
         } catch (err: unknown) {

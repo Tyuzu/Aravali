@@ -1,3 +1,4 @@
+import "../../../css/ui/createTabs.css";
 import { createElement } from "../../components/createElement.js";
 import { Button } from "../../components/base/Button.js";
 import { editEvent } from "./creadit.js";
@@ -10,7 +11,9 @@ import { hireVendors } from "../jobs/vendors/vendors.js";
 import Bannerx from "../../components/base/Bannerx.js";
 import Datex from "../../components/base/Datex.js";
 
-// ---- Type Definitions / Interfaces ----
+/* =========================================================
+   TYPES & INTERFACES
+========================================================= */
 
 export interface EventDetailData {
     eventid: string | number;
@@ -66,42 +69,36 @@ const createDetailItems = (config: FieldConfigItem[], data: EventDetailData): HT
     const details = createElement("div", { class: "eventpage-details" }) as HTMLElement;
     config.forEach(({ key, label, tag, classes, formatter }) => {
         let value: unknown = data[key];
-        if (!value) {
+        if (value === undefined || value === null || value === "") {
             return;
         }
         if (formatter) {
             value = formatter(value);
         }
         const child = label ? `${label}: ${String(value)}` : String(value);
-        details.appendChild(createElement(tag as string, { class: classes.join(" ") }, [child]));
+        details.appendChild(createElement(tag, { class: classes.join(" ") }, [child]));
     });
     return details;
 };
 
 const createTags = (tags?: string[]): HTMLElement | null => {
-    if (!tags?.length) {
-        return null;
-    }
+    if (!tags?.length) return null;
     const container = createElement("div", { class: "event-tags" }) as HTMLElement;
     tags.forEach(tag => container.appendChild(createElement("span", { class: 'event-tag' }, [`#${tag}`])));
     return container;
 };
 
 const createSocialLinks = (links?: Record<string, string>): HTMLElement | null => {
-    if (!links) {
-        return null;
-    }
+    if (!links || Object.keys(links).length === 0) return null;
     const container = createElement("div", { class: "event-social-links" }) as HTMLElement;
     Object.entries(links).forEach(([platform, url]) => {
-        container.appendChild(createElement("a", { href: url, class: "social-link" }, [platform]));
+        container.appendChild(createElement("a", { href: url, class: "social-link", target: "_blank", rel: "noopener" }, [platform]));
     });
     return container;
 };
 
 const createCustomFields = (fields?: Record<string, string | number>): HTMLElement | null => {
-    if (!fields) {
-        return null;
-    }
+    if (!fields || Object.keys(fields).length === 0) return null;
     const container = createElement("div", { class: "event-custom-fields" }) as HTMLElement;
     Object.entries(fields).forEach(([field, value]) => {
         container.appendChild(createElement('p', { class: 'custom-field' }, [`${field}: ${value}`]));
@@ -154,55 +151,31 @@ const createSaveButton = (eventid: string | number): HTMLElement => {
     return icon;
 };
 
-// Share functionality
-const createShareButton = (eventid: string | number): HTMLButtonElement => {
-    const btn = Button({
-        title: "Share",
-        classes: "share-btn buttonx",
-        events: {
-            click: () => {
-                navigator.clipboard.writeText(location.origin + `/event/${eventid}`);
-                btn.replaceChildren("Link Copied");
-                setTimeout(() => btn.replaceChildren("Share"), 1500);
-            }
-        }
-    }) as HTMLButtonElement;
-    return btn;
-};
-
-// Status badge
-const createStatusBadge = (eventDate: string | Date): HTMLElement => {
-    const now = Date.now();
-    const time = new Date(eventDate).getTime();
-    const isPast = time < now;
-    return createElement("span", {
-        class: "event-badge",
-        style: `font-size:0.75rem;padding:2px 6px;border-radius:4px;background:${isPast ? "#999" : "darkgreen"};color:white;margin-left:8px;`
-    }, [isPast ? "Past" : "Upcoming"]) as HTMLElement;
-};
-
-// Countdown
+// Countdown Helper
 const createCountdown = (eventDate: string | Date): HTMLElement | null => {
     const msLeft = new Date(eventDate).getTime() - Date.now();
     if (msLeft <= 0) {
         return null;
     }
     const days = Math.floor(msLeft / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(msLeft / (1000 * 60 * 60)) % 24;
-    return createElement("p", { class: "event-countdown" }, [`Starts in ${days > 0 ? days + " day(s)" : hours + " hour(s)"}`]);
+    const hours = Math.floor((msLeft / (1000 * 60 * 60)) % 24);
+    
+    const text = days > 0 ? `Starts in ${days} day(s)` : `Starts in ${hours} hour(s)`;
+    return createElement("p", { class: "event-countdown" }, [text]);
 };
 
 // Place link
-const createPlaceLink = (placename: string, placeid: string | number): HTMLElement => createElement('p', { class: 'event-place-link' }, [
-    createElement('a', { href: `/place/${placeid}` }, [createElement('strong', {}, [`Place: ${placename}`])])
-]) as HTMLElement;
+const createPlaceLink = (placename: string, placeid: string | number): HTMLElement => 
+    createElement('p', { class: 'event-place-link' }, [
+        createElement('a', { href: `/place/${placeid}` }, [createElement('strong', {}, [`📍 Place: ${placename}`])])
+    ]) as HTMLElement;
 
 /** Banner section */
 function createEventBannerSection(eventdata: EventDetailData, isCreator: boolean): HTMLElement {
     return Bannerx({
         isCreator: isCreator,
         bannerkey: eventdata.banner,
-        banneraltkey: `Banner for ${eventdata.name || "Event"}`,
+        banneraltkey: `Banner for ${eventdata.name || eventdata.title || "Event"}`,
         bannerentitytype: EntityType.EVENT,
         stateentitykey: "event",
         bannerentityid: eventdata.eventid
@@ -215,11 +188,10 @@ function createInfoSection(eventData: EventDetailData, isCreator: boolean, isLog
     const topRow = createElement("div", { class: "event-header-row" }) as HTMLElement;
     
     const detailBlock = createDetailItems(fieldConfig, eventData);
-    const statusBadge = createStatusBadge(eventData.date);
     const saveBtn = createSaveButton(eventData.eventid);
     const countdown = createCountdown(eventData.date);
 
-    topRow.append(detailBlock, statusBadge, saveBtn);
+    topRow.append(detailBlock, saveBtn);
 
     const actions: ActionItem[] = [];
     const evanacon = createElement("div", {}, []) as HTMLElement;
@@ -285,9 +257,6 @@ export async function displayEventDetails(
 
 // Delete Event
 async function deleteEvent(isLoggedIn: boolean, eventId: string | number): Promise<void> {
-    if (!isLoggedIn) {
-        return;
-    }
+    if (!isLoggedIn) return;
     void eventId;
-    return;
 }
