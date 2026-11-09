@@ -23,6 +23,40 @@ export interface EventItem {
     [key: string]: unknown;
 }
 
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+    let currentView: ViewMode = "grid";
+
+    const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+    const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+    const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+    const updateButtons = () => {
+        gridBtn.classList.toggle("active", currentView === "grid");
+        listBtn.classList.toggle("active", currentView === "list");
+    };
+
+    gridBtn.addEventListener("click", () => {
+        if (currentView !== "grid") {
+            currentView = "grid";
+            updateButtons();
+            onChange(currentView);
+        }
+    });
+
+    listBtn.addEventListener("click", () => {
+        if (currentView !== "list") {
+            currentView = "list";
+            updateButtons();
+            onChange(currentView);
+        }
+    });
+
+    toggleWrapper.append(gridBtn, listBtn);
+    return toggleWrapper;
+}
+
 export async function displayEvents(isLoggedIn: boolean, container: HTMLElement): Promise<void> {
     container.replaceChildren();
 
@@ -110,7 +144,15 @@ export async function displayEvents(isLoggedIn: boolean, container: HTMLElement)
     container.append(layout);
 
     const mainElement = layout.querySelector(".layout-main") as HTMLElement | null;
-    const list = createElement("div", { class: "events-list" });
+    const list = createElement("div", { class: "events-list grid" });
+    const viewToggle = buildListViewToggle((mode) => {
+        list.classList.remove("grid", "list");
+        list.classList.add(mode);
+    });
+
+    if (mainElement) {
+        mainElement.append(viewToggle);
+    }
 
     // ---------- FETCH EVENTS ----------
     let events: EventItem[] = [];
@@ -145,6 +187,7 @@ export async function displayEvents(isLoggedIn: boolean, container: HTMLElement)
         mainElement.append(list);
     }
 }
+
 
 // ---------- CARD BUILDER ----------
 function createEventCard(ev: EventItem): HTMLElement {

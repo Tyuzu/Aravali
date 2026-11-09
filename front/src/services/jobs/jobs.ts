@@ -115,6 +115,40 @@ function buildHireForm(): HTMLFormElement {
 }
 
 // --- Hire Job Modal ---
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+  let currentView: ViewMode = "grid";
+
+  const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+  const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+  const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+  const updateButtons = () => {
+    gridBtn.classList.toggle("active", currentView === "grid");
+    listBtn.classList.toggle("active", currentView === "list");
+  };
+
+  gridBtn.addEventListener("click", () => {
+    if (currentView !== "grid") {
+      currentView = "grid";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  listBtn.addEventListener("click", () => {
+    if (currentView !== "list") {
+      currentView = "list";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  toggleWrapper.append(gridBtn, listBtn);
+  return toggleWrapper;
+}
+
 export function jobsHire(container: HTMLElement, entityType: string, entityId: string | number): void {
   const form = buildHireForm();
 
@@ -191,8 +225,12 @@ export async function displayPlaceJobs(
 
   const title = createElement("h2", {}, ["Jobs"]);
   const jobsContainer = createElement("div", { class: "places-wrapper grid" });
+  const viewToggle = buildListViewToggle((mode) => {
+    jobsContainer.classList.remove("grid", "list");
+    jobsContainer.classList.add(mode);
+  });
 
-  const elements: HTMLElement[] = [title];
+  const elements: HTMLElement[] = [title, viewToggle];
 
   if (isCreator) {
     const hireBtn = Button({

@@ -26,6 +26,40 @@ interface JobsApiResponse {
     [key: string]: any;
 }
 
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+    let currentView: ViewMode = "grid";
+
+    const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+    const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+    const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+    const updateButtons = () => {
+        gridBtn.classList.toggle("active", currentView === "grid");
+        listBtn.classList.toggle("active", currentView === "list");
+    };
+
+    gridBtn.addEventListener("click", () => {
+        if (currentView !== "grid") {
+            currentView = "grid";
+            updateButtons();
+            onChange(currentView);
+        }
+    });
+
+    listBtn.addEventListener("click", () => {
+        if (currentView !== "list") {
+            currentView = "list";
+            updateButtons();
+            onChange(currentView);
+        }
+    });
+
+    toggleWrapper.append(gridBtn, listBtn);
+    return toggleWrapper;
+}
+
 export async function displayBaitos(container: HTMLElement, isLoggedIn: boolean): Promise<void> {
     container.replaceChildren();
 
@@ -88,11 +122,16 @@ export async function displayBaitos(container: HTMLElement, isLoggedIn: boolean)
     // ---------- MAIN CONTENT ----------
     const searchInput = createElement("input", { type: "text", placeholder: "Search jobs...", class: "sort-box" }) as HTMLInputElement;
     const filterContainer = createElement("div", { class: "baitos-filters" }, [searchInput]);
-    const list = createElement("div", { class: "baitos-list" }) as HTMLElement;
+    const list = createElement("div", { class: "baitos-list grid" }) as HTMLElement;
+    const viewToggle = buildListViewToggle((mode) => {
+        list.classList.remove("grid", "list");
+        list.classList.add(mode);
+    });
 
     const mainContent = [
         createElement("h1", {}, ["Baitos"]),
         filterContainer,
+        viewToggle,
         adspace("inbody", PAGE_NAME, {
             layout: "horizontal",
             width: 728,

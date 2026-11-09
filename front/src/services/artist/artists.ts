@@ -29,6 +29,40 @@ interface ArtistsApiResponse {
     [key: string]: any;
 }
 
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+    let currentView: ViewMode = "grid";
+
+    const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+    const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+    const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+    const updateButtons = () => {
+        gridBtn.classList.toggle("active", currentView === "grid");
+        listBtn.classList.toggle("active", currentView === "list");
+    };
+
+    gridBtn.addEventListener("click", () => {
+        if (currentView !== "grid") {
+            currentView = "grid";
+            updateButtons();
+            onChange(currentView);
+        }
+    });
+
+    listBtn.addEventListener("click", () => {
+        if (currentView !== "list") {
+            currentView = "list";
+            updateButtons();
+            onChange(currentView);
+        }
+    });
+
+    toggleWrapper.append(gridBtn, listBtn);
+    return toggleWrapper;
+}
+
 export async function displayArtists(container: HTMLElement, isLoggedIn: boolean): Promise<void> {
     container.replaceChildren();
 
@@ -59,11 +93,16 @@ export async function displayArtists(container: HTMLElement, isLoggedIn: boolean
     ]) as HTMLSelectElement;
 
     const filterContainer = createElement("div", { class: "top-controls" }, [searchInput, categorySelect]);
-    const list = createElement("div", { class: "artists-list" }) as HTMLElement;
+    const list = createElement("div", { class: "artists-list grid" }) as HTMLElement;
+    const listToggle = buildListViewToggle((mode) => {
+        list.classList.remove("grid", "list");
+        list.classList.add(mode);
+    });
 
     const mainContent = [
         createElement("h1", {}, ["Artists"]),
         filterContainer,
+        listToggle,
         adspace("inbody", PAGE_NAME, {
             layout: "horizontal",
             width: 728,

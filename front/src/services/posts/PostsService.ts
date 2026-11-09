@@ -11,6 +11,7 @@ import { createAsideContent } from "../../components/layout/asideLayout.js";
 
 /* ---------------------- TYPES ---------------------- */
 export type PostsFetchResult = Post[] | PostsApiResponse;
+export type ViewMode = "grid" | "list";
 
 export interface AsideSection {
   title?: string;
@@ -99,7 +100,29 @@ export async function displayPosts(
 
   // ---------- DATA FETCHING & LIST INJECTION ----------
   const mainElement = layout.querySelector<HTMLElement>(".layout-main");
-  const list = createElement("div", { class: "posts-list" });
+  let currentView: ViewMode = "grid";
+  const list = createElement("div", { class: "posts-list grid" });
+
+  const viewToggle = createElement("div", { class: "view-toggle" }, [
+    createElement("button", { class: "active" }, ["🔳 Grid"]),
+    createElement("button", {}, ["📋 List"])
+  ]) as HTMLElement;
+
+  const toggleBtns = [...viewToggle.querySelectorAll("button")] as HTMLButtonElement[];
+  toggleBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const nextView: ViewMode = btn.textContent?.includes("List") ? "list" : "grid";
+      if (currentView === nextView) return;
+      currentView = nextView;
+      list.classList.remove("grid", "list");
+      list.classList.add(currentView);
+      toggleBtns.forEach((el) => el.classList.toggle("active", el.textContent?.includes(currentView === "grid" ? "Grid" : "List")));
+    });
+  });
+
+  if (mainElement) {
+    mainElement.append(viewToggle, list);
+  }
 
   try {
     const resp = (await fetchPosts(1, 100)) as PostsFetchResult | undefined;
@@ -134,9 +157,6 @@ export async function displayPosts(
     list.append(createElement("p", {}, ["Error loading posts."]));
   }
 
-  if (mainElement) {
-    mainElement.append(list);
-  }
 }
 
 // ---------- CARD BUILDER ----------

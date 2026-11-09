@@ -237,6 +237,40 @@ function buildTranslationSection(captionText: string): [HTMLElement, HTMLElement
 /* ------------------------------------------------------
    DISPLAY MEDIA GALLERY
 ------------------------------------------------------ */
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+  let currentView: ViewMode = "grid";
+
+  const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+  const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+  const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+  const updateButtons = () => {
+    gridBtn.classList.toggle("active", currentView === "grid");
+    listBtn.classList.toggle("active", currentView === "list");
+  };
+
+  gridBtn.addEventListener("click", () => {
+    if (currentView !== "grid") {
+      currentView = "grid";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  listBtn.addEventListener("click", () => {
+    if (currentView !== "list") {
+      currentView = "list";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  toggleWrapper.append(gridBtn, listBtn);
+  return toggleWrapper;
+}
+
 export async function displayMedia(
   content: HTMLElement,
   entityType: EntityType | string,
@@ -247,7 +281,13 @@ export async function displayMedia(
 
   const title = createElement("h2", {}, ["Media Gallery"]);
   const loader = createElement("p", { class: "loading" }, ["Loading media..."]);
-  const list = createElement("div", { class: "media-list" });
+  const list = createElement("div", { class: "media-list grid" });
+  const viewToggle = buildListViewToggle((mode) => {
+    list.classList.remove("grid", "list");
+    list.classList.add(mode);
+  });
+
+  content.append(title, viewToggle, loader, list);
 
   const addBtn = createAddMediaButton(
     isLoggedIn,

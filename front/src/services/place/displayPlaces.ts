@@ -14,6 +14,40 @@ interface PlacesResponse {
   places?: Place[];
 }
 
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+  let currentView: ViewMode = "grid";
+
+  const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+  const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+  const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+  const updateButtons = () => {
+    gridBtn.classList.toggle("active", currentView === "grid");
+    listBtn.classList.toggle("active", currentView === "list");
+  };
+
+  gridBtn.addEventListener("click", () => {
+    if (currentView !== "grid") {
+      currentView = "grid";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  listBtn.addEventListener("click", () => {
+    if (currentView !== "list") {
+      currentView = "list";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  toggleWrapper.append(gridBtn, listBtn);
+  return toggleWrapper;
+}
+
 export async function displayPlaces(
   isLoggedIn: boolean, 
   container: HTMLElement
@@ -100,7 +134,18 @@ export async function displayPlaces(
   container.append(layout);
 
   const mainElement = layout.querySelector(".layout-main") as HTMLElement;
-  const list = createElement("div", { class: "places-list" });
+
+  let currentView: ViewMode = "grid";
+  const list = createElement("div", { class: "places-list grid" });
+  const viewToggle = buildListViewToggle((mode) => {
+    currentView = mode;
+    list.classList.remove("grid", "list");
+    list.classList.add(currentView);
+  });
+
+  if (mainElement) {
+    mainElement.append(viewToggle, list);
+  }
 
   // ---------- FETCH PLACES ----------
   let places: Place[] = [];
@@ -135,9 +180,6 @@ export async function displayPlaces(
     });
   }
 
-  if (mainElement) {
-    mainElement.append(list);
-  }
 }
 
 // ---------- CARD BUILDER ----------

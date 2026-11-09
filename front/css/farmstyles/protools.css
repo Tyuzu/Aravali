@@ -167,12 +167,62 @@
    PRODUCT & TOOL GRID CARDS
    ========================================================================== */
 
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.view-toggle button {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-card-bg);
+  color: var(--color-fg);
+  cursor: pointer;
+}
+
+.view-toggle button.active {
+  background: var(--color-primary);
+  color: var(--color-primary-fg);
+  border-color: var(--color-primary);
+}
+
 .items-grid,
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
+}
+
+.items-grid.list,
+.product-grid.list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.items-grid.list .menu-card,
+.items-grid.list .product-card,
+.product-grid.list .menu-card,
+.product-grid.list .product-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.items-grid.list .image-section,
+.product-grid.list .image-section {
+  width: 220px;
+  min-width: 220px;
+  height: auto;
+}
+
+.items-grid.list .image-section img,
+.product-grid.list .image-section img {
+  height: 100%;
+  min-height: 180px;
 }
 
 .menu-card,

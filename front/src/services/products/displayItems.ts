@@ -28,6 +28,40 @@ export function sortItems(items: FarmItem[], sort: string): FarmItem[] {
   }
 }
 
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+  let currentView: ViewMode = "grid";
+
+  const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+  const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+  const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+  const updateButtons = () => {
+    gridBtn.classList.toggle("active", currentView === "grid");
+    listBtn.classList.toggle("active", currentView === "list");
+  };
+
+  gridBtn.addEventListener("click", () => {
+    if (currentView !== "grid") {
+      currentView = "grid";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  listBtn.addEventListener("click", () => {
+    if (currentView !== "list") {
+      currentView = "list";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  toggleWrapper.append(gridBtn, listBtn);
+  return toggleWrapper;
+}
+
 export async function displayItems(
   type: ItemType,
   content: HTMLElement,
@@ -77,9 +111,21 @@ export async function displayItems(
       : null,
   ];
 
-  container.appendChild(
-    createElement("div", { class: "items-topbar" }, topBarChildren.filter(Boolean) as HTMLElement[])
+  const controlsRow = createElement(
+    "div",
+    { class: "items-topbar" },
+    topBarChildren.filter(Boolean) as HTMLElement[]
   );
+
+  const gridListToggle = buildListViewToggle((mode) => {
+    const listEl = container.querySelector(".items-grid") as HTMLElement | null;
+    if (!listEl) return;
+    listEl.classList.remove("grid", "list");
+    listEl.classList.add(mode);
+  });
+
+  container.appendChild(controlsRow);
+  container.appendChild(gridListToggle);
 
   // Trigger category chips rendering & items data fetching in parallel
   const chipsPromise = renderCategoryChips(
@@ -102,7 +148,7 @@ export async function displayItems(
       container.appendChild(createElement("p", { class: "no-results" }, [`No ${type}s found.`]));
     } else {
       const sortedItems = sortItems(rawItems, sort);
-      const grid = createElement("div", { class: `${type}-grid items-grid` });
+      const grid = createElement("div", { class: `${type}-grid items-grid grid` });
 
       sortedItems.forEach((item) => {
         grid.appendChild(renderItemCard(item, type, isLoggedIn, container, refresh));

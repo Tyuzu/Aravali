@@ -11,6 +11,40 @@ import { createMainLayout } from "../../components/layout/mainLayout.js";
 import { createAsideContent } from "../../components/layout/asideLayout.js";
 import { Recipe } from "./types/recipe.js";
 
+type ViewMode = "grid" | "list";
+
+function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
+  let currentView: ViewMode = "grid";
+
+  const toggleWrapper = createElement("div", { class: "view-toggle" }, []) as HTMLElement;
+  const gridBtn = createElement("button", { class: "active" }, ["🔳 Grid"]) as HTMLButtonElement;
+  const listBtn = createElement("button", {}, ["📋 List"]) as HTMLButtonElement;
+
+  const updateButtons = () => {
+    gridBtn.classList.toggle("active", currentView === "grid");
+    listBtn.classList.toggle("active", currentView === "list");
+  };
+
+  gridBtn.addEventListener("click", () => {
+    if (currentView !== "grid") {
+      currentView = "grid";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  listBtn.addEventListener("click", () => {
+    if (currentView !== "list") {
+      currentView = "list";
+      updateButtons();
+      onChange(currentView);
+    }
+  });
+
+  toggleWrapper.append(gridBtn, listBtn);
+  return toggleWrapper;
+}
+
 export async function displayRecipes(container: HTMLElement, isLoggedIn: boolean): Promise<void> {
   container.replaceChildren();
 
@@ -85,7 +119,17 @@ export async function displayRecipes(container: HTMLElement, isLoggedIn: boolean
   container.append(layout);
 
   const mainElement = layout.querySelector(".layout-main") as HTMLElement;
-  const list = createElement("div", { class: "recipe-list" });
+  let currentView: ViewMode = "grid";
+  const list = createElement("div", { class: "recipe-list grid" });
+  const viewToggle = buildListViewToggle((mode) => {
+    currentView = mode;
+    list.classList.remove("grid", "list");
+    list.classList.add(currentView);
+  });
+
+  if (mainElement) {
+    mainElement.append(viewToggle, list);
+  }
 
   // ---------- FETCH RECIPES ----------
   let recipes: Recipe[] = [];
@@ -115,7 +159,6 @@ export async function displayRecipes(container: HTMLElement, isLoggedIn: boolean
     });
   }
 
-  mainElement.append(list);
 }
 
 // ---------- CARD BUILDER ----------
