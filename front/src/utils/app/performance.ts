@@ -47,7 +47,16 @@ export function setupPerformanceMonitoring(): void {
   }
 }
 
+function shouldIgnorePerformanceEntry(entry: PerformanceEntry): boolean {
+  const name = String(entry.name || "").toLowerCase();
+  return /placehold\.co|doubleclick|googlesyndication|ads|adserver|googletagmanager/i.test(name);
+}
+
 export function processPerformanceEntry(entry: PerformanceEntry): void {
+  if (shouldIgnorePerformanceEntry(entry)) {
+    return;
+  }
+
   switch (entry.entryType) {
     case "longtask":
       if (entry.duration > 200) {

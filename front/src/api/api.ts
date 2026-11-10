@@ -105,7 +105,9 @@ async function apixFetch<T = any>(
     return (data ?? { success: true }) as T;
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {
-      console.warn(`[API] Request aborted: ${endpoint}`);
+      // Route changes and component teardown intentionally abort in-flight requests.
+      // These are not real failures and should not spam the console.
+      throw error;
     }
     throw error;
   }

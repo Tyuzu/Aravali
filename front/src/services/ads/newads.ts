@@ -62,6 +62,17 @@ let adCounter = 0;
 
 const adConfigs = new WeakMap<HTMLElement, AdConfig>();
 const adRefreshTimers = new WeakMap<HTMLElement, ReturnType<typeof setInterval>>();
+const LOCAL_AD_FALLBACK_IMAGE = "/images/local-restaurant-placeholder.svg";
+
+function getSafeAdImage(imageUrl: string | undefined): string {
+  if (!imageUrl) {
+    return LOCAL_AD_FALLBACK_IMAGE;
+  }
+
+  return /placehold\.co|doubleclick|googlesyndication|ads|adserver|googletagmanager/i.test(imageUrl)
+    ? LOCAL_AD_FALLBACK_IMAGE
+    : imageUrl;
+}
 
 /**
  * Resolves current page context from options or window.location.
@@ -119,7 +130,7 @@ async function defaultAdNetworkFetcher(slotEl: HTMLElement): Promise<void> {
   const adData: AdData = {
     id: rawData.id || rawData.ID || "",
     link: rawData.link || rawData.Link || "",
-    image: rawData.image || rawData.Image || "",
+    image: getSafeAdImage(rawData.image || rawData.Image || ""),
     title: rawData.title || rawData.Title || "",
     description: rawData.description || rawData.Description || "",
     badge: rawData.badge || rawData.Badge || t("common.sponsored", {}, "Sponsored"),
@@ -134,14 +145,22 @@ async function defaultAdNetworkFetcher(slotEl: HTMLElement): Promise<void> {
   slotEl.setAttribute("data-ad-id", adData.id);
   slotEl.setAttribute("data-impression-tracked", "false");
 
+  const adImage = createElement("img", {
+    src: adData.image,
+    alt: adData.title || "Advertisement",
+    class: "ad-card-img",
+    loading: "lazy"
+  }) as HTMLImageElement;
+
+  adImage.addEventListener("error", () => {
+    if (adImage.src !== window.location.origin + LOCAL_AD_FALLBACK_IMAGE) {
+      adImage.src = LOCAL_AD_FALLBACK_IMAGE;
+    }
+  });
+
   const children: HTMLElement[] = [
     createElement("div", { class: "ad-card-media" }, [
-      createElement("img", {
-        src: adData.image,
-        alt: adData.title || "Advertisement",
-        class: "ad-card-img",
-        loading: "lazy"
-      }),
+      adImage,
       createElement("span", { class: "ad-badge" }, [adData.badge])
     ]),
     createElement("div", { class: "ad-card-content" }, [

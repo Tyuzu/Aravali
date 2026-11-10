@@ -1,6 +1,16 @@
 import { apiConfig } from "../config/envConfig.js";
 import type { AppState, AuthState, StateListener, User } from "./types";
 import {
+    AUTH_ALIAS_KEYS,
+    getAuthAlias,
+    normalizeAuth,
+    normalizePermissions,
+    normalizeRoles,
+    syncDerivedAuthState,
+    updateAuthUserProperty
+} from "./auth";
+import { createListenerRegistry } from "./listeners";
+import {
     clearRouteState,
     deleteRouteState,
     getRouteCache,
@@ -59,128 +69,31 @@ const PERSISTED_KEYS = new Set<string>([
 
 const SESSION_KEYS = new Set<string>(["token"]);
 
-const AUTH_ALIAS_KEYS = new Set<string>([
-    "token", "user", "roles", "permissions", "username", "userid", "isLoggedIn"
-]);
-
 const ROUTE_CACHE_KEY = "routeCache";
 const ROUTE_STATE_KEY = "routeState";
 
-const listeners = new Map<string, Set<StateListener>>();
-const deepListeners = new Map<string, Set<StateListener>>();
-const notifyQueue = new Set<string>();
-let notifyPending = false;
+const stateListenerRegistry = createListenerRegistry<AppState>(
+    () => state,
+    (key, currentState) => {
+        if (AUTH_ALIAS_KEYS.has(key)) {
+            return getAuthAlias(currentState, key);
+        }
+        if (key === ROUTE_CACHE_KEY) {
+            return routeCache;
+        }
+        if (key === ROUTE_STATE_KEY) {
+            return routeState;
+        }
+        return currentState[key];
+    }
+);
+const scheduleNotify = stateListenerRegistry.scheduleNotify;
 
 function getValueByPath(path: string, source: any = state): any {
     if (!path) {
         return source;
     }
     return path.split(".").reduce((current, part) => current?.[part], source);
-}
-
-function scheduleNotify(key: string): void {
-    if (!key) {
-        return;
-    }
-    notifyQueue.add(key);
-    if (notifyPending) {
-        return;
-    }
-    notifyPending = true;
-    queueMicrotask(() => {
-        try {
-            const queuedKeys = new Set(notifyQueue);
-
-            for (const queueKey of queuedKeys) {
-                const value = queueKey.includes(".") ? getValueByPath(queueKey) : getStateValue(queueKey);
-                const fns = listeners.get(queueKey);
-                if (!fns) {
-                    continue;
-                }
-                for (const fn of [...fns]) {
-                    try {
-                        fn(value, state);
-                    } catch (error) {
-                        console.error("[STATE] State listener failed:", error);
-                    }
-                }
-            }
-
-            const deepCalls = new Map<string, Set<StateListener>>();
-            for (const [path, fns] of deepListeners) {
-                let affected = false;
-                for (const queueKey of queuedKeys) {
-                    if (queueKey === path || queueKey.startsWith(`${path}.`) || path.startsWith(`${queueKey}.`)) {
-                        affected = true;
-                        break;
-                    }
-                }
-                if (!affected) {
-                    continue;
-                }
-                deepCalls.set(path, new Set(fns));
-            }
-
-            for (const [path, fns] of deepCalls) {
-                const value = getValueByPath(path);
-                for (const fn of fns) {
-                    try {
-                        fn(value, state);
-                    } catch (error) {
-                        console.error("[STATE] Deep state listener failed:", error);
-                    }
-                }
-            }
-        } finally {
-            notifyQueue.clear();
-            notifyPending = false;
-        }
-    });
-}
-
-function normalizeRoles(roles: any): string[] {
-    if (!Array.isArray(roles)) {
-        return roles == null ? [] : [roles];
-    }
-    return [...new Set(roles.filter(
-        (role) => role !== null && role !== undefined && String(role).length > 0))];
-}
-
-function normalizePermissions(permissions: any): string[] {
-    if (!Array.isArray(permissions)) {
-        return permissions == null ? [] : [permissions];
-    }
-    return [...new Set(permissions.filter(
-        (permission) => permission !== null && permission !== undefined && String(permission).length > 0))];
-}
-
-function normalizeAuth(authValue: Partial<AuthState> = {}, previousAuth: Partial<AuthState> = {}): AuthState {
-    const source = authValue && typeof authValue === "object" ? authValue : {};
-    const previous = previousAuth && typeof previousAuth === "object" ? previousAuth : {};
-    const accessToken = Object.prototype.hasOwnProperty.call(source, "accessToken") ? source.accessToken || null : previous.accessToken || null;
-    const user = Object.prototype.hasOwnProperty.call(source, "user") ? source.user || null : previous.user || null;
-    const roles = normalizeRoles(Object.prototype.hasOwnProperty.call(source, "roles") ? source.roles : previous.roles);
-    const permissions = normalizePermissions(Object.prototype.hasOwnProperty.call(source, "permissions") ? source.permissions : previous.permissions);
-    const hasUserIdentity = Boolean(user && typeof user === "object" && (user.id || user.userid));
-    const explicitAuthState = Object.prototype.hasOwnProperty.call(source, "isAuthenticated") ? Boolean(source.isAuthenticated) : undefined;
-    const isAuthenticated = explicitAuthState !== undefined
-        ? explicitAuthState
-        : Boolean(accessToken || hasUserIdentity);
-
-    return {
-        isAuthenticated,
-        loading: Object.prototype.hasOwnProperty.call(source, "loading") ? Boolean(source.loading) : Boolean(previous.loading),
-        accessToken,
-        user,
-        roles,
-        permissions
-    };
-}
-
-function syncDerivedAuthState(nextAuth: Partial<AuthState> = rawState.auth): void {
-    const user = nextAuth?.user;
-    const hasUserIdentity = Boolean(user && typeof user === "object" && (user.id || user.userid));
-    rawState.isLoggedIn = Boolean(nextAuth?.isAuthenticated || nextAuth?.accessToken || hasUserIdentity);
 }
 
 const initialToken = readSessionStorage("token");
@@ -219,54 +132,6 @@ const rawState: AppState = {
     isLoggedIn: Boolean(initialAuth.isAuthenticated || initialUser?.id || initialUser?.userid)
 };
 
-function getAuthAlias(key: string): any {
-    switch (key) {
-        case "token":
-            return (rawState.auth?.accessToken || null);
-        case "user":
-            return (rawState.auth?.user || null);
-        case "roles":
-            return Array.isArray(rawState.auth?.roles) ? rawState.auth.roles : [];
-        case "permissions":
-            return Array.isArray(rawState.auth?.permissions) ? rawState.auth.permissions : [];
-        case "isLoggedIn": {
-            const user = rawState.auth?.user;
-            const hasUserValidId = Boolean(user && typeof user === "object" && (user.id || user.userid));
-            return Boolean(rawState.isLoggedIn || rawState.auth?.isAuthenticated || rawState.auth?.accessToken || hasUserValidId);
-        }
-        case "username": {
-            const user = rawState.auth?.user;
-            if (user && typeof user === "object") {
-                return (user?.username ?? user?.name ?? "");
-            }
-            return typeof user === "string" ? user : "";
-        }
-        case "userid": {
-            const user = rawState.auth?.user;
-            if (user && typeof user === "object") {
-                return (user?.id ?? user?.userid ?? null);
-            }
-            return null;
-        }
-        default:
-            return undefined;
-    }
-}
-
-function updateAuthUserProperty(property: string, value: any): void {
-    const currentUser = rawState.auth?.user;
-    if (currentUser && typeof currentUser === "object" && !Array.isArray(currentUser)) {
-        rawState.auth.user = {
-            ...currentUser,
-            [property]: value
-        };
-    } else {
-        rawState.auth.user = {
-            [property]: value
-        };
-    }
-}
-
 function triggerAuthNotifications(): void {
     scheduleNotify("token");
     scheduleNotify("user");
@@ -288,7 +153,7 @@ function setAuthAlias(key: string, value: any): void {
                 accessToken: token,
                 isAuthenticated: Boolean(token || (currentAuth.user && typeof currentAuth.user === "object" && (currentAuth.user.id || currentAuth.user.userid)))
             }, currentAuth);
-            syncDerivedAuthState(rawState.auth);
+            syncDerivedAuthState(rawState, rawState.auth);
             triggerAuthNotifications();
             break;
         }
@@ -298,7 +163,7 @@ function setAuthAlias(key: string, value: any): void {
                 user: value || null,
                 isAuthenticated: Boolean(value || currentAuth.accessToken)
             }, currentAuth);
-            syncDerivedAuthState(rawState.auth);
+            syncDerivedAuthState(rawState, rawState.auth);
             triggerAuthNotifications();
             break;
         }
@@ -317,7 +182,7 @@ function setAuthAlias(key: string, value: any): void {
                     isAuthenticated: true
                 }, currentAuth);
             }
-            syncDerivedAuthState(rawState.auth);
+            syncDerivedAuthState(rawState, rawState.auth);
             triggerAuthNotifications();
             break;
         }
@@ -341,7 +206,7 @@ function setAuthAlias(key: string, value: any): void {
             break;
         }
         case "username": {
-            updateAuthUserProperty("username", value ?? "");
+            updateAuthUserProperty(rawState, "username", value ?? "");
             scheduleNotify("username");
             scheduleNotify("user");
             scheduleNotify("auth.user");
@@ -350,7 +215,7 @@ function setAuthAlias(key: string, value: any): void {
             break;
         }
         case "userid": {
-            updateAuthUserProperty("userid", value ?? null);
+            updateAuthUserProperty(rawState, "userid", value ?? null);
             scheduleNotify("userid");
             scheduleNotify("user");
             scheduleNotify("auth.user");
@@ -399,7 +264,7 @@ function createReactiveObject<T extends object>(obj: T, path: string[] = []): T 
             const key = String(prop);
 
             if (path.length === 0 && AUTH_ALIAS_KEYS.has(key)) {
-                return getAuthAlias(key);
+                return getAuthAlias(rawState, key);
             }
 
             const value = Reflect.get(target, prop, receiver);
@@ -496,7 +361,7 @@ const state = getCachedProxy(rawState, []) as AppState;
 
 function getStateValue(key: string): any {
     if (AUTH_ALIAS_KEYS.has(key)) {
-        return getAuthAlias(key);
+        return getAuthAlias(rawState, key);
     }
     if (key === ROUTE_CACHE_KEY) {
         return routeCache;
@@ -533,7 +398,7 @@ function setAuthState(value: Partial<AuthState>, persist = false): void {
     const previous = rawState.auth;
     const next = normalizeAuth(value, previous);
     rawState.auth = next;
-    syncDerivedAuthState(next);
+    syncDerivedAuthState(rawState, next);
     triggerAuthNotifications();
     if (persist) {
         persistStateKey("token", next.accessToken);
@@ -586,7 +451,7 @@ function setState(keyOrObject: string | Record<string, any>, persistOrValue: boo
                     break;
                 case "username":
                     if (authUpdates.user === undefined) {
-                        authUpdates.user = getAuthAlias("user");
+                        authUpdates.user = getAuthAlias(rawState, "user");
                     }
                     if (authUpdates.user && typeof authUpdates.user === "object" && !Array.isArray(authUpdates.user)) {
                         authUpdates.user = {
@@ -601,7 +466,7 @@ function setState(keyOrObject: string | Record<string, any>, persistOrValue: boo
                     break;
                 case "userid":
                     if (authUpdates.user === undefined) {
-                        authUpdates.user = getAuthAlias("user");
+                        authUpdates.user = getAuthAlias(rawState, "user");
                     }
                     if (authUpdates.user && typeof authUpdates.user === "object" && !Array.isArray(authUpdates.user)) {
                         authUpdates.user = {
@@ -647,13 +512,13 @@ function setState(keyOrObject: string | Record<string, any>, persistOrValue: boo
 
 function buildPublicSnapshot(): Partial<AppState> & Record<string, any> {
     return {
-        token: getAuthAlias("token"),
-        user: getAuthAlias("user"),
-        username: getAuthAlias("username"),
+        token: getAuthAlias(rawState, "token"),
+        user: getAuthAlias(rawState, "user"),
+        username: getAuthAlias(rawState, "username"),
         userProfile: state.userProfile,
         socket: state.socket,
-        roles: getAuthAlias("roles"),
-        permissions: getAuthAlias("permissions"),
+        roles: getAuthAlias(rawState, "roles"),
+        permissions: getAuthAlias(rawState, "permissions"),
         auth: state.auth,
         environment: state.environment,
         lang: state.lang,
@@ -663,10 +528,10 @@ function buildPublicSnapshot(): Partial<AppState> & Record<string, any> {
         routeState,
         currentChatId: state.currentChatId,
         isLoading: state.isLoading,
-        userid: getAuthAlias("userid"),
+        userid: getAuthAlias(rawState, "userid"),
         unreadMessages: state.unreadMessages,
         unreadNotifications: state.unreadNotifications,
-        isLoggedIn: getAuthAlias("isLoggedIn")
+        isLoggedIn: getAuthAlias(rawState, "isLoggedIn")
     };
 }
 
@@ -685,61 +550,27 @@ function getState(key?: string | null): any {
 }
 
 function subscribe(key: string, fn: StateListener): () => void {
-    if (typeof fn !== "function") {
-        throw new TypeError("State subscriber must be a function.");
-    }
     const rootKey = String(key).split(".")[0];
     if (!allowedKeys.has(rootKey)) {
         throw new Error(`Cannot subscribe to invalid key:${key}`);
     }
-    if (String(key).includes(".")) {
-        return subscribeDeep(String(key), fn);
-    }
-    if (!listeners.has(key)) {
-        listeners.set(key, new Set());
-    }
-    listeners.get(key)!.add(fn);
-    return () => unsubscribe(key, fn);
+    return stateListenerRegistry.subscribe(key, fn);
 }
 
 function unsubscribe(key: string, fn: StateListener): void {
-    const set = listeners.get(key);
-    if (!set) {
-        return;
-    }
-    set.delete(fn);
-    if (set.size === 0) {
-        listeners.delete(key);
-    }
+    stateListenerRegistry.unsubscribe(key, fn);
 }
 
 function subscribeDeep(path: string, fn: StateListener): () => void {
-    if (typeof fn !== "function") {
-        throw new TypeError("State subscriber must be a function.");
-    }
-    if (!deepListeners.has(path)) {
-        deepListeners.set(path, new Set());
-    }
-    deepListeners.get(path)!.add(fn);
-    return () => unsubscribeDeep(path, fn);
+    return stateListenerRegistry.subscribeDeep(path, fn);
 }
 
 function unsubscribeDeep(path: string, fn: StateListener): void {
-    const set = deepListeners.get(path);
-    if (!set) {
-        return;
-    }
-    set.delete(fn);
-    if (set.size === 0) {
-        deepListeners.delete(path);
-    }
+    stateListenerRegistry.unsubscribeDeep(path, fn);
 }
 
 function clearAllListeners(): void {
-    listeners.clear();
-    deepListeners.clear();
-    notifyQueue.clear();
-    notifyPending = false;
+    stateListenerRegistry.clearAllListeners();
 }
 
 function clearState(persist = true): void {
