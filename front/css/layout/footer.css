@@ -1,111 +1,65 @@
-/* ==========================================================================
-   Page Footer Components (CLS Optimized)
-   ========================================================================== */
-
 .pagefooter {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    /* Use a stable min-height matching your actual rendered footer height */
-    min-height: 14rem; 
-    background-color: var(--color-bg-secondary);
-    border-top: 1px solid var(--color-border-light);
-    color: var(--color-muted);
-    font-family: var(--font-body);
-    font-size: var(--font-size-sm);
-    line-height: var(--line-height-base);
-    padding: var(--space-lg) 0 var(--space-md);
-    margin-top: auto;
-    margin-bottom: 2.4rem;
-    box-sizing: border-box;
-    /* Contain layout to prevent reflows from leaking outside the footer */
-    contain: layout style;
+  width: 100%;
+  min-height: 10rem;
+  display: block;
 }
 
 .footer-container {
-    width: 100%;
-    max-width: var(--max-width);
-    margin: 0 auto;
-    padding: 0 var(--container-padding);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--space-lg);
-    box-sizing: border-box;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 10rem;
+  width: 100%;
+  padding: 1.25rem 1rem 1rem;
 }
 
-/* Footer Navigation Links */
 .footer-nav {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: var(--space-sm) var(--space-md);
-    box-sizing: border-box;
-    width: 100%;
-    /* Reserve a stable block space for 2 rows of nav links to prevent height collapse */
-    min-height: 4.5rem; 
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  min-height: 3.5rem;
 }
 
 .footer-link {
-    color: var(--color-muted);
-    text-decoration: none;
-    transition: color var(--transition);
-    line-height: var(--line-height-base);
-    white-space: nowrap; /* Prevents individual words inside links from breaking unexpectedly */
+  color: var(--color-fg, #64748b);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
 }
 
 .footer-link:hover,
 .footer-link:focus-visible {
-    color: var(--color-link-hover);
-    text-decoration: underline;
+  opacity: 0.8;
 }
 
-/* Footer Bottom Bar */
 .footer-bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    padding-top: var(--space-md);
-    border-top: 1px solid var(--color-border-light);
-    text-align: center;
-    box-sizing: border-box;
-    width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  min-height: 2.5rem;
 }
 
-@media (width >= 768px) {
-    .footer-bottom {
-        flex-direction: row;
-        text-align: left;
-    }
+.lang-select {
+  min-width: 10rem;
+  max-width: 100%;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border-color, rgb(148 163 184 / 0.4));
+  border-radius: 0.5rem;
+  background: var(--surface, #fff);
+  color: var(--text-color, #0f172a);
 }
 
 .footer-bottom p {
-    margin: 0;
-    font-size: var(--font-size-xs);
-    line-height: var(--line-height-base);
-    color: var(--color-light);
-}
-
-/* Language Selector Dropdown */
-.lang-select {
-    background-color: var(--color-input-bg);
-    border: 1px solid var(--color-input-border);
-    border-radius: var(--radius-sm);
-    color: var(--color-fg);
-    padding: var(--space-xs) var(--space-sm);
-    font-size: var(--font-size-xs);
-    line-height: var(--line-height-base);
-    cursor: pointer;
-    transition: border-color var(--transition);
-    box-sizing: border-box;
-    min-width: 8rem; /* Prevents dropdown width jumping when switching languages */
-}
-
-.lang-select:focus {
-    outline: none;
-    border-color: var(--color-input-focus);
+  margin: 0;
+  color: var(--muted-text-color, #475569);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
 }

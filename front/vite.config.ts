@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import mkcert from 'vite-plugin-mkcert';
+import compression from 'vite-plugin-compression2';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig(({ mode, command }) => {
@@ -16,6 +17,12 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       // Only run HTTPS cert generation during dev server tasks
       isDevServer && mkcert(),
+      isProd && compression({
+        algorithm: 'gzip',
+        threshold: 1024,
+        deleteOriginalAssets: false,
+        include: [/\.(js|css|html|svg|json|txt)$/],
+      }),
       isProd && visualizer({ open: false, filename: 'stats.html' }),
     ].filter(Boolean),
 

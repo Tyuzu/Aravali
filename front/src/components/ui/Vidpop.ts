@@ -6,7 +6,7 @@ import { xSVG } from "../svgs/featherSVGs";
 import {
   generateVideoPlayer,
   QualityOption,
-} from "./vidpopHelpers/index.js";
+} from "./vidpopHelpers/vidpopIndexx.js";
 import { SubtitleSource as SubtitleOption } from "./vidpopHelpers/subtitles.js";
 
 

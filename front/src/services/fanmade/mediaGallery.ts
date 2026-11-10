@@ -31,7 +31,7 @@ import {
 import Imagex from "../../components/base/Imagex.js";
 import {
     generateVideoPlayer
-} from "../../components/ui/vidpopHelpers/index.js";
+} from "../../components/ui/vidpopHelpers/vidpopIndexx.js";
 import LightBox from "../../components/ui/Lightbox.js";
 import Sightbox from "../../components/ui/Sightbox_zoom.js";
 import Modal from "../../components/ui/Modal.js";

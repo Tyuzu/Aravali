@@ -1,6 +1,6 @@
 import { createElement } from "../createElement.js";
 import "../../../css/ui/VidPlay.css";
-import { generateVideoPlayer, QualityOption } from "./vidpopHelpers/index.js";
+import { generateVideoPlayer, QualityOption } from "./vidpopHelpers/vidpopIndexx.js";
 import { SubtitleSource as SubtitleOption } from "./vidpopHelpers/subtitles.js";
 import { CleanableElement } from "./Vidpop.js";
 

@@ -1,6 +1,6 @@
 import { createheader } from "../components/layout/header.js";
 import { createNav, highlightActiveNav } from "../components/layout/navigation.js";
-// import { Footer } from "../components/layout/footer.js";
+import { Footer } from "../components/layout/footer.js";
 import { render } from "./router.js";
 import { getState, setState, restoreScroll, subscribe } from "../state/state.js";
 import { track } from "../services/activity/metrics.js";
@@ -17,6 +17,21 @@ import {
 export { getCurrentAppLocation, parseAppLocation, navigate } from "./navigate.js";
 
 /* =========================================================
+   TYPES & INTERFACES
+========================================================= */
+interface LayoutElements {
+    header: HTMLElement | null;
+    nav: HTMLElement | null;
+    main: HTMLElement | null;
+    footer: HTMLElement | null;
+}
+
+interface RouteRedirectResult {
+    redirect?: string;
+    [key: string]: unknown;
+}
+
+/* =========================================================
    ROUTE STATE HELPER
 ========================================================= */
 function getRouteStateHelper(location: string): unknown {
@@ -26,7 +41,7 @@ function getRouteStateHelper(location: string): unknown {
 }
 
 /* =========================================================
-   LAYOUT STATE & ELEMENTS
+   LAYOUT STATE & ELEMENTS CACHE
 ========================================================= */
 const layoutState = {
     isHydrated: false,
@@ -34,13 +49,6 @@ const layoutState = {
     navRendered: false,
     footerRendered: false
 };
-
-interface LayoutElements {
-    header: HTMLElement | null;
-    nav: HTMLElement | null;
-    main: HTMLElement | null;
-    footer: HTMLElement | null;
-}
 
 const elements: LayoutElements = {
     header: null,
@@ -60,25 +68,68 @@ function getElements(): LayoutElements {
 }
 
 /* =========================================================
+   LAYOUT RENDERERS (UNIFIED)
+========================================================= */
+function renderHeader(force = false): void {
+    const { header } = getElements();
+    if (!header) return;
+
+    if (!layoutState.headerRendered || force) {
+        createheader();
+        layoutState.headerRendered = true;
+    }
+}
+
+function renderNav(force = false): void {
+    const { nav } = getElements();
+    if (!nav) return;
+
+    if (!layoutState.navRendered || force) {
+        const nextNav = createNav();
+        if (nextNav) nav.replaceChildren(nextNav);
+        layoutState.navRendered = true;
+    }
+}
+
+function renderFooter(force = false): void {
+    const { footer } = getElements();
+    if (!footer) return;
+
+    if (!layoutState.footerRendered || force) {
+        const nextFooter = Footer();
+        if (nextFooter) footer.replaceChildren(nextFooter);
+        layoutState.footerRendered = true;
+    }
+}
+
+function updateLayout(force = false): void {
+    renderHeader(force);
+    renderNav(force);
+    renderFooter(force);
+}
+
+/* =========================================================
    AUTH HYDRATION
 ========================================================= */
+function getStoredValue(key: string): string | null {
+    return sessionStorage.getItem(key) || localStorage.getItem(key) || null;
+}
+
 export function hydrateAuthState(force = false): void {
     if (layoutState.isHydrated && !force) return;
 
     const state = getState() || {};
     const auth = state.auth || {};
-    const token = sessionStorage.getItem("token") || localStorage.getItem("token") || null;
-    const userRaw = sessionStorage.getItem("user") || localStorage.getItem("user") || null;
+    const token = getStoredValue("token");
+    const userRaw = getStoredValue("user");
     let user: unknown = null;
 
     if (userRaw) {
         try {
             const trimmed = userRaw.trim();
-            if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-                user = JSON.parse(trimmed);
-            } else {
-                user = userRaw;
-            }
+            user = (trimmed.startsWith("{") || trimmed.startsWith("[")) 
+                ? JSON.parse(trimmed) 
+                : userRaw;
         } catch (error) {
             console.warn("Failed parsing stored user JSON:", error);
             user = userRaw;
@@ -103,48 +154,18 @@ export function hydrateAuthState(force = false): void {
 }
 
 /* =========================================================
-   STATIC LAYOUT RENDERERS
+   CONTENT LOADING & ROUTING
 ========================================================= */
-function renderStaticLayout(): void {
-    const { header, nav, footer } = getElements();
-    if (!header || !nav || !footer) return;
-
-    if (!layoutState.headerRendered) {
-        // createheader mutates the header element directly
-        createheader();
-        layoutState.headerRendered = true;
-    }
-    if (!layoutState.navRendered) {
-        const n = createNav();
-        if (n) nav.replaceChildren(n);
-        layoutState.navRendered = true;
-    }
-    // if (!layoutState.footerRendered) {
-    //     const f = Footer();
-    //     if (f) footer.replaceChildren(f);
-    //     layoutState.footerRendered = true;
-    // }
+function renderSkeleton(): string {
+    return `
+        <div class="skeleton-loader" aria-live="polite" aria-busy="true">
+            <div class="skeleton-bar short"></div>
+            <div class="skeleton-bar"></div>
+            <div class="skeleton-bar long"></div>
+        </div>
+    `;
 }
 
-function refreshStaticLayout(): void {
-    const { header, nav, footer } = getElements();
-    if (header) {
-        // createheader updates header in place
-        createheader();
-    }
-    if (nav) {
-        const updatedNav = createNav();
-        if (updatedNav) nav.replaceChildren(updatedNav);
-    }
-    // if (footer) {
-    //     const updatedFooter = Footer();
-    //     if (updatedFooter) footer.replaceChildren(updatedFooter);
-    // }
-}
-
-/* =========================================================
-   CONTENT LOADING
-========================================================= */
 export async function loadContent(
     rawLocation: string = getCurrentAppLocation(),
     { redirectDepth = 0 }: { redirectDepth?: number } = {}
@@ -155,17 +176,27 @@ export async function loadContent(
     }
 
     hydrateAuthState();
-    renderStaticLayout();
+    updateLayout(false);
+
+    main.classList.add("is-transitioning");
+    main.innerHTML = renderSkeleton();
+
+    await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+            window.setTimeout(resolve, 80);
+        });
+    });
 
     const parsed = parseAppLocation(rawLocation);
     const result = await render(parsed.fullPath, main);
 
-    /* --- ROUTER REDIRECT --- */
-    const routeResult = result as any;
+    /* --- ROUTER REDIRECT HANDLING --- */
+    const routeResult = result as RouteRedirectResult;
     if (routeResult && typeof routeResult.redirect === "string" && routeResult.redirect) {
         if (redirectDepth >= 10) {
             throw new Error("Too many consecutive route redirects.");
         }
+        
         const browserTarget = toBrowserTarget(routeResult.redirect, parsed.mode);
         history.replaceState(null, "", browserTarget);
 
@@ -174,10 +205,9 @@ export async function loadContent(
             to: routeResult.redirect
         });
 
-        await loadContent(getCurrentAppLocation(), {
+        return loadContent(getCurrentAppLocation(), {
             redirectDepth: redirectDepth + 1
         });
-        return routeResult;
     }
 
     /* --- NAVIGATION UI --- */
@@ -190,6 +220,10 @@ export async function loadContent(
             restoreScroll(main, routeState);
         });
     }
+
+    requestAnimationFrame(() => {
+        main.classList.remove("is-transitioning");
+    });
 
     return result;
 }
@@ -206,39 +240,28 @@ export async function renderPage(): Promise<void> {
 }
 
 function normalizeStoredRedirect(value: string | null): string | null {
-    if (typeof value !== "string") {
-        return null;
-    }
+    if (typeof value !== "string") return null;
 
     const trimmed = value.trim();
-    if (!trimmed) {
-        return null;
-    }
+    if (!trimmed) return null;
 
     let candidate = trimmed.startsWith("#/") ? trimmed.slice(1) : trimmed;
     candidate = candidate.split("#")[0];
 
-    if (!candidate.startsWith("/")) {
-        return null;
-    }
-
+    if (!candidate.startsWith("/")) return null;
     if (candidate.length > 1 && candidate.endsWith("/")) {
         candidate = candidate.slice(0, -1);
     }
 
     const ignoredPaths = ["/", "/login", "/logout", "/404", "/error/403", "/error/404"];
-    if (ignoredPaths.includes(candidate)) {
-        return null;
-    }
-
-    return candidate;
+    return ignoredPaths.includes(candidate) ? null : candidate;
 }
 
 /* =========================================================
    AUTH REACTIVITY & CROSS-TAB SYNC
 ========================================================= */
 subscribe("token", (token: unknown) => {
-    refreshStaticLayout();
+    updateLayout(true);
 
     if (!token) return;
 
@@ -259,9 +282,8 @@ subscribe("token", (token: unknown) => {
 
 subscribe("lang", async () => {
     try {
-        refreshStaticLayout();
-        const currentLocation = getCurrentAppLocation();
-        await loadContent(currentLocation);
+        updateLayout(true);
+        await loadContent(getCurrentAppLocation());
     } catch (error) {
         console.error("[LANG] Failed to refresh UI after language change:", error);
     }
@@ -270,11 +292,11 @@ subscribe("lang", async () => {
 window.addEventListener("storage", (event: StorageEvent) => {
     if (event.key === "token" || event.key === "user") {
         hydrateAuthState(true);
-        refreshStaticLayout();
+        updateLayout(true);
     }
 
     if (event.key === "lang") {
-        refreshStaticLayout();
+        updateLayout(true);
         loadContent(getCurrentAppLocation()).catch((error) => {
             console.error("[LANG] Failed to re-render after storage language change:", error);
         });
