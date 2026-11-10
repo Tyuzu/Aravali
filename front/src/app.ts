@@ -3,8 +3,14 @@ import { detectLanguage, setLanguage } from "./i18n/i18n.js";
 import { profileEnvironment, setEnvironment, EnvironmentData } from "./utils/app/env.js";
 import { trackError, showApplicationError } from "./utils/app/errors.js";
 import { setupPerformanceMonitoring } from "./utils/app/performance.js";
-//import { setupServiceWorker } from "./utils/app/sw-register.js";
 import { navigate } from "./routes/navigate.js";
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
+}
 
 /* =========================================================
    ACCESSIBILITY
@@ -76,7 +82,7 @@ export function setupGlobalNavigation(): void {
 
     event.preventDefault();
     navigate(href).catch((error: unknown) => {
-      trackError(error, {
+      trackError(toError(error), {
         type: "navigation_failure",
         path: href
       });
@@ -93,7 +99,7 @@ export function setupHistoryNavigation(): void {
       await loadContent(getCurrentAppLocation());
       focusMainContent();
     } catch (error: unknown) {
-      trackError(error, { type: "popstate_navigation_failure" });
+      trackError(toError(error), { type: "popstate_navigation_failure" });
     }
   });
 
@@ -104,7 +110,7 @@ export function setupHistoryNavigation(): void {
       await loadContent(getCurrentAppLocation());
       focusMainContent();
     } catch (error: unknown) {
-      trackError(error, { type: "pageshow_navigation_failure" });
+      trackError(toError(error), { type: "pageshow_navigation_failure" });
     }
   });
 }
@@ -112,7 +118,6 @@ export function setupHistoryNavigation(): void {
 /* =========================================================
    TYPES & EXTENSIONS
 ========================================================= */
-
 declare global {
   interface Window {
     __env?: EnvironmentData;
@@ -120,17 +125,14 @@ declare global {
 }
 
 /* =========================================================
-   CONSTANTS
+   CONSTANTS & STATE
 ========================================================= */
-
 let offlineTimer: ReturnType<typeof setTimeout> | null = null;
 
 /* =========================================================
    OFFLINE / ONLINE MONITORING
 ========================================================= */
-
 function toggleOfflineBanner(isOffline: boolean): void {
-  // Use existing __env or fall back to profileEnvironment to ensure full EnvironmentData
   const currentEnv = window.__env || profileEnvironment();
   const updatedEnvironment: EnvironmentData = {
     ...currentEnv,
@@ -191,9 +193,8 @@ window.addEventListener("online", () => toggleOfflineBanner(false));
 /* =========================================================
    GLOBAL ERROR TRACKING
 ========================================================= */
-
 window.addEventListener("error", (event: ErrorEvent) => {
-  trackError((event.error as Error) || new Error(event.message || "Unknown error"), {
+  trackError(event.error || new Error(event.message || "Unknown error"), {
     type: "uncaught_error",
     filename: event.filename,
     line: event.lineno,
@@ -202,7 +203,7 @@ window.addEventListener("error", (event: ErrorEvent) => {
 });
 
 window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
-  trackError((event.reason as Error) || new Error("Unhandled promise rejection"), {
+  trackError(toError(event.reason) || new Error("Unhandled promise rejection"), {
     type: "unhandled_rejection"
   });
 });
@@ -210,7 +211,6 @@ window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => 
 /* =========================================================
    INITIAL APPLICATION STARTUP
 ========================================================= */
-
 async function startApplication(): Promise<void> {
   try {
     if ("scrollRestoration" in history) {
@@ -219,7 +219,7 @@ async function startApplication(): Promise<void> {
 
     const lang = detectLanguage();
     await setLanguage(lang).catch((error: unknown) => {
-      trackError(error as Error, { type: "language_init_failure" });
+      trackError(toError(error), { type: "language_init_failure" });
     });
 
     hydrateAuthState(true);
@@ -245,16 +245,14 @@ async function startApplication(): Promise<void> {
       setTimeout(initDeferredTasks, 200);
     }
   } catch (error) {
-    trackError(error as Error, { type: "init_failure" });
+    trackError(toError(error), { type: "init_failure" });
     showApplicationError();
   }
 }
 
 /* =========================================================
-   STARTUP
+   STARTUP EXECUTION
 ========================================================= */
-// setupServiceWorker();
-
 if (document.readyState === "loading") {
   window.addEventListener("DOMContentLoaded", () => startApplication(), { once: true });
 } else {

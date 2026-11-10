@@ -18,12 +18,6 @@ interface RouteTabState {
   [key: string]: unknown;
 }
 
-interface GlobalState {
-  routeState?: Record<string, RouteTabState>;
-  scrollPositions?: Record<string, RouteTabState>;
-  [key: string]: unknown;
-}
-
 export type OnTabChangeCallback = (tabId: string) => void;
 
 /* =========================================================
@@ -75,7 +69,7 @@ export function persistTabs(
 }
 
 /**
- * Generates an accessible, performance-lazy rendering tab node interface.
+ * Generates an accessible, performance-lazy rendering tab node interface with WAI-ARIA keyboard navigation.
  */
 export function createTabs(
   tabs: TabItem[],
@@ -87,7 +81,6 @@ export function createTabs(
     return createElement("div", { class: "tabs-empty" });
   }
 
-  // Build UI containers leveraging typed createElement overloads
   const tabContainer = createElement("div", { class: "tabs-container" });
   const tabButtons = createElement("div", {
     class: "tab-buttons",
@@ -98,15 +91,30 @@ export function createTabs(
 
   const tabContentMap = new Map<string, HTMLElement>();
   const buttonMap = new Map<string, HTMLElement>();
+  const tabIds = tabs.map((t) => t.id);
+
+  // State Resolution: Route state takes precedence, followed by initialTabId, then fallback to first tab
+  let initial = tabs[0]?.id;
+  if (routeKey) {
+    const saved = getRouteState(routeKey);
+    if (saved?.activeTab && tabIds.includes(saved.activeTab)) {
+      initial = saved.activeTab;
+    } else if (initialTabId && tabIds.includes(initialTabId)) {
+      initial = initialTabId;
+    }
+  } else if (initialTabId && tabIds.includes(initialTabId)) {
+    initial = initialTabId;
+  }
 
   // Instantiate Interactive Tab View Models
   tabs.forEach(({ id, title }) => {
     const panelId = `panel-${id}`;
     const buttonId = `tab-btn-${id}`;
+    const isActive = id === initial;
 
     const contentContainer = createElement("article", {
       id: panelId,
-      class: "tab-content",
+      class: `tab-content${isActive ? " active" : ""}`,
       role: "tabpanel",
       "aria-labelledby": buttonId,
       tabindex: 0,
@@ -114,19 +122,43 @@ export function createTabs(
 
     const buttonAttributes: ElementAttributes = {
       id: buttonId,
-      class: "tab-button",
+      class: `tab-button${isActive ? " active" : ""}`,
       role: "tab",
       "aria-controls": panelId,
-      "aria-selected": "false",
-      tabindex: 0,
+      "aria-selected": isActive ? "true" : "false",
+      tabindex: isActive ? 0 : -1,
       dataset: { id },
       events: {
-        click: () => activateTab(id),
+        click: () => activateTab(id, true),
         keydown: ((e: Event) => {
           const keyEvent = e as KeyboardEvent;
+          const currentIndex = tabIds.indexOf(id);
+          let targetId: string | null = null;
+
           if (keyEvent.key === "Enter" || keyEvent.key === " ") {
             keyEvent.preventDefault();
-            activateTab(id);
+            activateTab(id, true);
+            return;
+          }
+
+          if (keyEvent.key === "ArrowRight" || keyEvent.key === "ArrowDown") {
+            keyEvent.preventDefault();
+            const nextIndex = (currentIndex + 1) % tabIds.length;
+            targetId = tabIds[nextIndex] ?? null;
+          } else if (keyEvent.key === "ArrowLeft" || keyEvent.key === "ArrowUp") {
+            keyEvent.preventDefault();
+            const prevIndex = (currentIndex - 1 + tabIds.length) % tabIds.length;
+            targetId = tabIds[prevIndex] ?? null;
+          } else if (keyEvent.key === "Home") {
+            keyEvent.preventDefault();
+            targetId = tabIds[0] ?? null;
+          } else if (keyEvent.key === "End") {
+            keyEvent.preventDefault();
+            targetId = tabIds[tabIds.length - 1] ?? null;
+          }
+
+          if (targetId) {
+            activateTab(targetId, true);
           }
         }) as EventListener,
       },
@@ -152,7 +184,7 @@ export function createTabs(
   /**
    * Toggles layout active states and handles lazy evaluation injections
    */
-  function activateTab(tabId: string): void {
+  function activateTab(tabId: string, focusManagement = false): void {
     tabs.forEach(({ id, render }) => {
       const btn = buttonMap.get(id);
       const content = tabContentMap.get(id);
@@ -161,6 +193,7 @@ export function createTabs(
       if (btn && content) {
         btn.classList.toggle("active", isActive);
         btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        btn.setAttribute("tabindex", isActive ? "0" : "-1");
         content.classList.toggle("active", isActive);
 
         // Lazy Rendering Verification Block
@@ -172,6 +205,11 @@ export function createTabs(
         }
       }
     });
+
+    if (focusManagement) {
+      const activeBtn = buttonMap.get(tabId);
+      activeBtn?.focus();
+    }
 
     // Router history persistence integration check
     if (routeKey) {
@@ -185,19 +223,18 @@ export function createTabs(
     }
   }
 
-  // State Resolution Loop
-  let initial = initialTabId || tabs[0]?.id;
-
-  if (routeKey) {
-    const saved = getRouteState(routeKey);
-    if (saved?.activeTab && tabContentMap.has(saved.activeTab)) {
-      initial = saved.activeTab;
-    }
-  }
-
-  // Defer initialization past current execution call stack
+  // Trigger initial lazy render on startup
   if (initial) {
-    queueMicrotask(() => activateTab(initial));
+    const initialContent = tabContentMap.get(initial);
+    if (initialContent && !initialContent.dataset.rendered) {
+      const tabObj = tabs.find((t) => t.id === initial);
+      if (tabObj && typeof tabObj.render === "function") {
+        queueMicrotask(() => {
+          tabObj.render(initialContent);
+          initialContent.dataset.rendered = "true";
+        });
+      }
+    }
   }
 
   return tabContainer;

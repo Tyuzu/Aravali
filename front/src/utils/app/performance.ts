@@ -6,7 +6,8 @@ import type { ErrorTracker } from "./errors.js";
 type PerformanceMetricDetails = Record<string, unknown> & {
   name: string;
   entryType: string;
-  duration: number;
+  value: number;
+  duration: number; // Retained for backward compatibility
   threshold: number;
 };
 
@@ -20,48 +21,67 @@ declare global {
    PERFORMANCE MONITORING
 ========================================================= */
 export function setupPerformanceMonitoring(): void {
-  if (!("PerformanceObserver" in window)) return;
+  if (typeof window === "undefined" || !("PerformanceObserver" in window)) return;
 
   try {
     const supportedTypes = PerformanceObserver.supportedEntryTypes || [];
-    const types = ["navigation", "longtask", "largest-contentful-paint"];
+    const targetTypes = ["navigation", "longtask", "largest-contentful-paint"] as const;
 
-    for (const type of types) {
-      if (!supportedTypes.includes(type)) continue;
+    // Filter only the types supported by the current browser
+    const validTypes = targetTypes.filter((type) => supportedTypes.includes(type));
+    if (validTypes.length === 0) return;
 
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          processPerformanceEntry(entry);
-        }
-      });
-      
-      // type cast needed because observe options accept specific literal strings
-      observer.observe({ type, buffered: true } as PerformanceObserverInit);
+    // Instantiate a single observer to handle all supported performance metrics
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        processPerformanceEntry(entry);
+      }
+    });
+
+    // Observe each valid type with buffering enabled
+    for (const type of validTypes) {
+      observer.observe({ type, buffered: true });
     }
   } catch (error: unknown) {
-    console.warn("[PERF] Monitoring unavailable:", error);
+    console.warn("[PERF] Monitoring initialization failed:", error);
   }
 }
 
 export function processPerformanceEntry(entry: PerformanceEntry): void {
-  if (entry.entryType === "longtask" && entry.duration > 200) {
-    reportPerformanceIssue(entry, 200);
-    return;
-  }
-  if (entry.entryType === "largest-contentful-paint" && entry.startTime > 3000) {
-    reportPerformanceIssue(entry, 3000);
-    return;
-  }
-  if (entry.entryType === "navigation" && entry.duration > 3000) {
-    reportPerformanceIssue(entry, 3000);
+  switch (entry.entryType) {
+    case "longtask":
+      if (entry.duration > 200) {
+        reportPerformanceIssue(entry, entry.duration, 200);
+      }
+      break;
+
+    case "largest-contentful-paint":
+      // Note: LCP entry.duration is always 0; startTime represents the render time.
+      if (entry.startTime > 3000) {
+        reportPerformanceIssue(entry, entry.startTime, 3000);
+      }
+      break;
+
+    case "navigation":
+      if (entry.duration > 3000) {
+        reportPerformanceIssue(entry, entry.duration, 3000);
+      }
+      break;
   }
 }
 
-export function reportPerformanceIssue(entry: PerformanceEntry, threshold: number): void {
+export function reportPerformanceIssue(
+  entry: PerformanceEntry,
+  metricValue: number,
+  threshold: number
+): void {
+  const roundedValue = Math.round(metricValue);
+
   const details: PerformanceMetricDetails = {
     name: entry.name || "unknown",
     entryType: entry.entryType,
-    duration: Math.round(entry.duration),
+    value: roundedValue,
+    duration: roundedValue,
     threshold
   };
 
@@ -69,7 +89,7 @@ export function reportPerformanceIssue(entry: PerformanceEntry, threshold: numbe
 
   if (window.__errorTracker?.trackMetric) {
     try {
-      window.__errorTracker.trackMetric("performance_degradation", details as Record<string, unknown>);
+      window.__errorTracker.trackMetric("performance_degradation", details);
     } catch (error: unknown) {
       console.warn("[PERF] Metric tracking failed:", error);
     }
