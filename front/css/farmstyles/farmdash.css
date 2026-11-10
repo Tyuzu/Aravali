@@ -31,76 +31,6 @@
    TAB NAVIGATION
    ========================================================================== */
 
-.tab-buttons {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  background-color: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border-light);
-  padding: 0 var(--space-sm);
-  overflow-x: auto;
-  scrollbar-width: none;
-  position: relative;
-  z-index: 1;
-}
-
-.tab-buttons::-webkit-scrollbar {
-  display: none;
-}
-
-.tab-button {
-  position: relative;
-  flex: 0 0 auto;
-  font-family: var(--font-base);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-muted);
-  padding: 0.75rem 1.25rem;
-  background: transparent;
-  border: 1px solid transparent;
-  border-bottom-color: var(--color-border-light);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  margin: 0.5rem 0.25rem -1px 0.25rem;
-  cursor: pointer;
-  outline: none;
-  user-select: none;
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-}
-
-.tab-button:hover {
-  color: var(--color-fg);
-  background-color: var(--color-card-bg);
-}
-
-.tab-button:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-}
-
-.tab-button.active,
-.tab-button[aria-selected="true"] {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
-  background-color: var(--color-surface);
-  border-color: var(--color-border-light);
-  border-bottom-color: var(--color-surface);
-  box-shadow: 0 -1px 0 0 var(--color-surface);
-}
-
-/* ==========================================================================
-   TAB CONTENT PANELS
-   ========================================================================== */
-
-.tab-contents {
-  background-color: var(--color-surface);
-  padding: var(--space-md);
-}
-
-.tab-content {
-  display: none;
-}
-
 .tab-content.active {
   display: block;
   animation: themeFadeIn var(--transition-fast);
@@ -391,13 +321,13 @@
 .payment-pending,
 .status-pending {
   background-color: var(--color-warning);
-  color: #ffffff;
+  color: var(--color-bg);
 }
 
 .payment-unpaid,
 .status-rejected {
   background-color: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-fg);
 }
 
 /* ==========================================================================

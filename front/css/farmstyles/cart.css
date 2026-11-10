@@ -167,30 +167,13 @@
    Buttons Framework
    ========================================================================== */
 
-.primary-button {
-  font-family: var(--font-body);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  padding: 10px var(--space-md);
-  border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-  line-height: 1;
-}
-
 /* Primary Button */
-.primary-button,
 #checkout-all-btn,
 #confirm-order-btn {
   background-color: var(--color-btn-bg);
   color: var(--color-btn-fg);
 }
 
-.primary-button:hover,
 #checkout-all-btn:hover,
 #confirm-order-btn:hover {
   background-color: var(--color-btn-hover-bg);
