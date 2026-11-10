@@ -18,7 +18,7 @@ export default defineConfig(({ mode, command }) => {
       // Only run HTTPS cert generation during dev server tasks
       isDevServer && mkcert(),
       isProd && compression({
-        algorithm: 'gzip',
+        algorithms: ['gzip'],
         threshold: 1024,
         deleteOriginalAssets: false,
         include: [/\.(js|css|html|svg|json|txt)$/],
@@ -28,8 +28,18 @@ export default defineConfig(({ mode, command }) => {
 
     build: {
       outDir: 'dist',
-      // Esbuild is vastly faster; drop console/debugger via esbuild directly
-      minify: 'esbuild',
+      // Use Terser for more aggressive production minification after chunk splitting.
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          defaults: true,
+          passes: 2,
+        },
+        mangle: true,
+        format: {
+          comments: false,
+        },
+      },
       chunkSizeWarningLimit: 400,
       assetsInlineLimit: 4096,
       cssCodeSplit: true,
@@ -55,11 +65,17 @@ export default defineConfig(({ mode, command }) => {
               return 'vendor-core';
             }
 
-            if (
-              normalizedId.includes('/pages/farm/') ||
-              normalizedId.includes('/pages/crop/')
-            ) {
+            if (normalizedId.includes('/pages/farm/')) {
               return 'feature-farms';
+            }
+            if (
+              normalizedId.includes('/pages/crop/') ||
+              normalizedId.includes('/pages/product/')
+            ) {
+              return 'feature-crops';
+            }
+            if (normalizedId.includes('/pages/recipe/')) {
+              return 'feature-recipes';
             }
             if (
               normalizedId.includes('/pages/merechats/') ||

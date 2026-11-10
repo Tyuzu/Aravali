@@ -172,10 +172,6 @@
   color: #ffffff;
 }
 
-  border: none;
-  margin: var(--space-md) var(--space-lg);
-}
-
 .buttonx.primary:hover {
   background-color: var(--color-btn-hover-bg);
 }

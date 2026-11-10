@@ -41,3 +41,4 @@ tmp
 
 __pycache__/
 postgresQueries
+backend/nae
