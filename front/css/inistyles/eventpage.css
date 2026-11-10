@@ -165,35 +165,3 @@
     gap: var(--space-sm, 8px);
     margin-top: var(--space-xs, 4px);
 }
-
-.buttonx {
-    background-color: var(--color-btn-bg, var(--color-primary));
-    color: var(--color-btn-fg, #ffffff);
-    border: 1px solid var(--color-border);
-    padding: var(--space-sm, 8px) var(--space-md, 16px);
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: var(--font-weight-medium, 600);
-    border-radius: var(--radius-sm, 4px);
-    cursor: pointer;
-    transition: background-color var(--transition-fast, 100ms ease), box-shadow var(--transition-fast, 100ms ease);
-}
-
-.buttonx:hover {
-    background-color: var(--color-btn-hover-bg, var(--color-primary-hover));
-}
-
-.buttonx.delete-btn {
-    background-color: transparent;
-    color: var(--color-danger, #a80000);
-    border-color: var(--color-danger, #a80000);
-}
-
-.buttonx.delete-btn:hover {
-    background-color: var(--color-danger, #a80000);
-    color: #ffffff;
-}
-
-.buttonx.primary {
-    background-color: var(--color-primary, #0078d4);
-    color: var(--color-primary-fg, #ffffff);
-}

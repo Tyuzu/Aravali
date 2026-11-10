@@ -246,27 +246,14 @@
   box-sizing: border-box;
 }
 
-.buttonx.primary,
 .media-section button.primary {
   background-color: var(--fluent-accent);
   color: #ffffff;
   border: none;
 }
 
-.buttonx.primary:hover,
 .media-section button.primary:hover {
   background-color: var(--fluent-accent-hover);
-}
-
-.buttonx.secondary {
-  background-color: var(--fluent-bg-secondary);
-  color: var(--fluent-fg-primary);
-  border: 1px solid var(--fluent-border-subtle);
-}
-
-.buttonx.secondary:hover {
-  background-color: var(--fluent-bg-tertiary);
-  border-color: var(--fluent-border-strong);
 }
 
 .buttonx:active,
@@ -528,10 +515,6 @@
 
   .recipe-actions {
     flex-direction: column;
-  }
-
-  .buttonx {
-    width: 100%;
   }
 
   .ingredient-item,

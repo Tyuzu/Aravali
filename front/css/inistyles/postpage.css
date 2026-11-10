@@ -160,22 +160,6 @@
   margin-bottom: 1.5rem;
 }
 
-.buttonx,
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  height: 34px;
-  padding: 0 0.9rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all var(--transition-fast);
-}
-
 .btn-warning {
   background-color: var(--color-bg-secondary);
   color: var(--color-fg);
@@ -257,9 +241,5 @@
 
   .post-actions {
     flex-direction: column;
-  }
-
-  .buttonx {
-    width: 100%;
   }
 }

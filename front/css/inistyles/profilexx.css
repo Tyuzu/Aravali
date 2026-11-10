@@ -143,8 +143,7 @@
   margin-bottom: var(--space-md);
 }
 
-.profile-actions button,
-.buttonx {
+.profile-actions button {
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
@@ -175,9 +174,6 @@
   color: #ffffff;
 }
 
-.buttonx.primary {
-  background-color: var(--color-btn-bg);
-  color: var(--color-btn-fg);
   border: none;
   margin: var(--space-md) var(--space-lg);
 }

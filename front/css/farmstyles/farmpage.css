@@ -234,24 +234,6 @@
   object-fit: cover;
 }
 
-/* ─────────── Buttons & Actions ─────────── */
-.buttonx {
-  background: var(--color-btn-bg);
-  color: var(--color-btn-fg);
-  border: none;
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-  text-align: center;
-}
-
-.buttonx:hover {
-  background: var(--color-btn-hover-bg);
-}
-
 #add-crop-btn {
   margin-bottom: var(--space-md);
 }

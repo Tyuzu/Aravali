@@ -85,15 +85,55 @@
 }
 
 /* Secondary Variant */
-.buttonx.secondary {
+.buttonx.primary,
+.buttonx.btn-primary {
+  background-color: var(--color-btn-bg);
+  color: var(--color-btn-fg);
+  border-color: transparent;
+}
+
+.buttonx.primary:hover,
+.buttonx.btn-primary:hover {
+  background-color: var(--color-btn-hover-bg);
+}
+
+.buttonx.secondary,
+.buttonx.btn-secondary {
   background-color: var(--color-bg-tertiary);
   color: var(--color-fg);
   border-color: var(--color-border);
 }
 
-.buttonx.secondary:hover {
+.buttonx.secondary:hover,
+.buttonx.btn-secondary:hover {
   background-color: var(--color-border-light);
   border-color: var(--color-border);
+}
+
+.buttonx.subtle {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+
+.buttonx.subtle:hover {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+}
+
+.buttonx.delete-btn,
+.buttonx.btn-danger,
+.buttonx.danger {
+  background-color: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.buttonx.delete-btn:hover,
+.buttonx.btn-danger:hover,
+.buttonx.danger:hover {
+  background-color: var(--color-danger);
+  color: #fff;
 }
 
 /* Outline Variant */
@@ -108,12 +148,3 @@
   color: #fff;
 }
 
-/* Danger / Destructive Variant */
-.buttonx.danger {
-  background-color: var(--color-danger);
-  color: #fff;
-}
-
-.buttonx.danger:hover {
-  background-color: #b91c1c;
-}

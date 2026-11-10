@@ -195,47 +195,6 @@
   flex-wrap: wrap;
 }
 
-/* Buttons */
-.buttonx {
-  background: var(--color-btn-bg);
-  color: var(--color-btn-fg);
-  border: none;
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-  text-align: center;
-}
-
-.buttonx:hover {
-  background: var(--color-btn-hover-bg);
-}
-
-.buttonx.secondary {
-  background: var(--color-bg-secondary);
-  color: var(--color-fg);
-  border: 1px solid var(--color-border);
-}
-
-.buttonx.secondary:hover {
-  background: var(--color-bg-tertiary);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.buttonx.delete-btn {
-  background: rgba(209, 52, 56, 0.1);
-  color: var(--color-error);
-  border: 1px solid rgba(209, 52, 56, 0.2);
-}
-
-.buttonx.delete-btn:hover {
-  background: var(--color-error);
-  color: #fff;
-}
-
 /* ─────────── Tabs System ─────────── */
 /* .tabs-container {
   background: var(--color-surface);
