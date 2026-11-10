@@ -86,12 +86,6 @@ export async function displayPosts(
       width: 728,
       height: 90,
       refreshInterval: 45000
-    }),
-    adspace("inbody", PAGE_NAME, {
-      layout: "horizontal",
-      width: 728,
-      height: 90,
-      refreshInterval: 52000
     })
   ];
 
@@ -128,6 +122,13 @@ export async function displayPosts(
 
   if (mainElement) {
     mainElement.append(viewToggle, list);
+    mainElement.append(
+    adspace("inbody", PAGE_NAME, {
+      layout: "horizontal",
+      width: 728,
+      height: 90,
+      refreshInterval: 52000
+    }));
   }
 
   try {

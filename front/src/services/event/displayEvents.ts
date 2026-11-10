@@ -132,12 +132,6 @@ export async function displayEvents(isLoggedIn: boolean, container: HTMLElement)
             height: 90,
             refreshInterval: 45000,
         }),
-        adspace("inbody", PAGE_NAME, {
-            layout: "horizontal",
-            width: 728,
-            height: 90,
-            refreshInterval: 52000,
-        }),
     ];
 
     // ---------- LAYOUT ----------
@@ -191,6 +185,13 @@ export async function displayEvents(isLoggedIn: boolean, container: HTMLElement)
 
     if (mainElement) {
         mainElement.append(list);
+        mainElement.append(
+        adspace("inbody", PAGE_NAME, {
+            layout: "horizontal",
+            width: 728,
+            height: 90,
+            refreshInterval: 52000,
+        }),);
     }
 }
 

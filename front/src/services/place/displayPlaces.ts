@@ -49,7 +49,7 @@ function buildListViewToggle(onChange: (mode: ViewMode) => void): HTMLElement {
 }
 
 export async function displayPlaces(
-  isLoggedIn: boolean, 
+  isLoggedIn: boolean,
   container: HTMLElement
 ): Promise<void> {
   container.replaceChildren();
@@ -121,12 +121,6 @@ export async function displayPlaces(
       width: 728,
       height: 90,
       refreshInterval: 45000
-    }),
-    adspace("inbody", PAGE_NAME, {
-      layout: "horizontal",
-      width: 728,
-      height: 90,
-      refreshInterval: 52000
     })
   ];
 
@@ -151,6 +145,13 @@ export async function displayPlaces(
 
   if (mainElement) {
     mainElement.append(viewToggle, list);
+    mainElement.append(
+      adspace("inbody", PAGE_NAME, {
+      layout: "horizontal",
+      width: 728,
+      height: 90,
+      refreshInterval: 52000
+    }));
   }
 
   // ---------- FETCH PLACES ----------

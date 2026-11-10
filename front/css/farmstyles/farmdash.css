@@ -1,5 +1,3 @@
-@import url("dashfarm.css");
-
 /* Base text selection styles */
 ::selection {
   background-color: var(--color-selection-bg);
@@ -20,6 +18,14 @@
   box-sizing: border-box;
 }
 
+.tabs-container {
+  width: 100%;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-elev-1);
+}
 
 /* ==========================================================================
    TAB NAVIGATION
@@ -27,13 +33,15 @@
 
 .tab-buttons {
   display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  background-color: var(--color-surface);
+  align-items: stretch;
+  gap: 0;
+  background-color: var(--color-bg-secondary);
   border-bottom: 1px solid var(--color-border-light);
-  padding: var(--space-sm) var(--space-md) 0;
+  padding: 0 var(--space-sm);
   overflow-x: auto;
   scrollbar-width: none;
+  position: relative;
+  z-index: 1;
 }
 
 .tab-buttons::-webkit-scrollbar {
@@ -41,15 +49,18 @@
 }
 
 .tab-button {
+  position: relative;
+  flex: 0 0 auto;
   font-family: var(--font-base);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-muted);
-  padding: 0.6rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
+  border: 1px solid transparent;
+  border-bottom-color: var(--color-border-light);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin: 0.5rem 0.25rem -1px 0.25rem;
   cursor: pointer;
   outline: none;
   user-select: none;
@@ -71,8 +82,10 @@
 .tab-button[aria-selected="true"] {
   color: var(--color-primary);
   font-weight: var(--font-weight-bold);
-  background-color: var(--color-card-bg);
-  border-bottom-color: var(--color-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border-light);
+  border-bottom-color: var(--color-surface);
+  box-shadow: 0 -1px 0 0 var(--color-surface);
 }
 
 /* ==========================================================================
@@ -80,6 +93,7 @@
    ========================================================================== */
 
 .tab-contents {
+  background-color: var(--color-surface);
   padding: var(--space-md);
 }
 
