@@ -17,6 +17,19 @@ let cachedPluralRules: Intl.PluralRules | null = null;
 
 const SUPPORTED_LANGS: readonly string[] = ["en", "es", "fr", "hi", "ar", "jp"];
 const FALLBACK_LANG: string = "en";
+const LEGACY_TRANSLATION_ALIASES: Record<string, readonly string[]> = {
+  "nav.baitos": ["nav.baito"],
+  "nav.baito": ["nav.baitos"],
+  "nav.dash": ["nav.dashboard", "common.dashboard"],
+  "nav.more": ["common.more"],
+  "footer.copyright": ["common.copyright"],
+  "footer.lang.en": ["common.lang.en"],
+  "footer.lang.es": ["common.lang.es"],
+  "footer.lang.fr": ["common.lang.fr"],
+  "footer.lang.hi": ["common.lang.hi"],
+  "footer.lang.ar": ["common.lang.ar"],
+  "footer.lang.jp": ["common.lang.jp"]
+};
 
 function normalizeLanguageCode(lang: string): string {
   const raw = (lang || "").trim().toLowerCase();
@@ -113,12 +126,49 @@ function getNested(obj: TranslationDictionary, path: string): unknown {
   if (!obj || typeof obj !== "object") {
     return undefined;
   }
-  return path.split(".").reduce<unknown>((value, key) => {
-    if (value === null || value === undefined || typeof value !== "object") {
+
+  const segments = path.split(".");
+  let current: unknown = obj;
+
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
+    if (current === null || current === undefined || typeof current !== "object") {
       return undefined;
     }
-    return (value as Record<string, unknown>)[key];
-  }, obj);
+
+    const record = current as Record<string, unknown>;
+    const exactMatch = record[segment];
+    if (Object.prototype.hasOwnProperty.call(record, segment)) {
+      current = exactMatch;
+      continue;
+    }
+
+    const remainder = segments.slice(index).join(".");
+    if (Object.prototype.hasOwnProperty.call(record, remainder)) {
+      return record[remainder];
+    }
+
+    return undefined;
+  }
+
+  return current;
+}
+
+function resolveTranslation(key: string): unknown {
+  const direct = getNested(translations, key);
+  if (typeof direct === "string") {
+    return direct;
+  }
+
+  const aliases = LEGACY_TRANSLATION_ALIASES[key] ?? [];
+  for (const alias of aliases) {
+    const value = getNested(translations, alias);
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+
+  return direct;
 }
 
 export function t(key: string, vars: InterpolationVars = {}, fallback: string = ""): string {
@@ -131,7 +181,7 @@ export function t(key: string, vars: InterpolationVars = {}, fallback: string = 
     return fallback || "";
   }
 
-  let template: unknown = getNested(translations, key);
+  let template: unknown = resolveTranslation(key);
 
   if (typeof vars.count === "number") {
     if (!cachedPluralRules) {
@@ -146,7 +196,8 @@ export function t(key: string, vars: InterpolationVars = {}, fallback: string = 
   }
 
   if (typeof template !== "string") {
-    if (isDev) {
+    const hasLoadedTranslations = Object.keys(translations || {}).length > 0;
+    if (isDev && hasLoadedTranslations && !fallback) {
       console.warn(`Missing or non-string translation key: ${key}`, {
         language: currentLang,
         value: template,

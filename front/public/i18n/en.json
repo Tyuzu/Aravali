@@ -27,6 +27,7 @@
     "learnMore":"Learn More"
   },
   "nav": {
+    "dash": "Dash",
     "farms": "Farms",
     "products": "Products",
     "grocery": "Grocery",
@@ -38,8 +39,10 @@
     "social": "Social",
     "posts": "Posts",
     "baito": "Baito",
+    "baitos": "Baitos",
     "hire": "Hire",
-    "tools":"Tools"
+    "tools": "Tools",
+    "more": "More"
   },
   "baito": {
     "yourProfile": "Your Profile",
@@ -152,6 +155,12 @@
     "blog": "Blog",
     "allRightsReserved": "All rights reserved",
     "feedback": "Feedback",
-    "lang.en": "English"
+    "lang.en": "English",
+    "lang.es": "Español",
+    "lang.fr": "Français",
+    "lang.hi": "हिन्दी",
+    "lang.ar": "العربية",
+    "lang.jp": "日本語",
+    "copyright": "© {year} {site}. All rights reserved."
   }
 }

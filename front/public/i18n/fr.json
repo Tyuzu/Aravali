@@ -25,6 +25,7 @@
     "advertisement": "Publicité"
   },
   "nav": {
+    "dash": "Tableau",
     "farms": "Fermes",
     "products": "Produits",
     "grocery": "Épicerie",
@@ -36,7 +37,10 @@
     "social": "Social",
     "posts": "Publications",
     "baito": "Baito",
-    "hire": "Embaucher"
+    "baitos": "Baitos",
+    "hire": "Embaucher",
+    "tools": "Outils",
+    "more": "Plus"
   },
   "baito": {
     "yourProfile": "Votre Profil",
@@ -142,6 +146,13 @@
     "disclaimer": "Clause de Non-Responsabilité",
     "blog": "Blog",
     "allRightsReserved": "Tous droits réservés",
-    "feedback": "Retours d''Expérience"
+    "feedback": "Retours d''Expérience",
+    "lang.en": "English",
+    "lang.es": "Español",
+    "lang.fr": "Français",
+    "lang.hi": "हिन्दी",
+    "lang.ar": "العربية",
+    "lang.jp": "日本語",
+    "copyright": "© {year} {site}. Tous droits réservés."
   }
 }
