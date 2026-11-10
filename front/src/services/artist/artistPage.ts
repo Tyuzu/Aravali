@@ -24,6 +24,7 @@ import { renderBandMembers, renderManageMembersButton } from "./memberManage.js"
 import { blueskySVG, facebookSVG, instagramSVG, soundcloudSVG, spotifySVG, tiktokSVG, twitterSVG, xitterSVG, youtubeSVG } from "../../components/svgs/socialSVGs.js";
 import { createIconButton } from "../../utils/svgIconButton.js";
 import { payViaStripe } from "../pay/pay.js";
+import { adspace } from "../ads/newads.js";
 
 // ---------------------------------
 // INTERFACES & TYPES
@@ -181,6 +182,14 @@ export async function displayArtist(content: HTMLElement, artistID: string | num
         }
 
         contentContainer.appendChild(buttonRow);
+        contentContainer.appendChild(
+            adspace("inbody", "artist", {
+                layout: "horizontal",
+                width: 728,
+                height: 90,
+                refreshInterval: 45000,
+            })
+        );
 
         // --- BASE TABS ---
         const baseTabs: TabConfig[] = [

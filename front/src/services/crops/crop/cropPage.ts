@@ -7,6 +7,7 @@ import Button from "../../../components/base/Button";
 import { createFilterForm } from "./components/filterForm";
 import { createListingCard } from "./components/listingCard";
 import type { CropApiResponse, CropListing } from "./types";
+import { adspace } from "../../ads/newads.js";
 
 /**
  * Main entry function to fetch and display crop listings.
@@ -37,6 +38,13 @@ export async function displayCrop(content: HTMLElement, cropID: string | number,
       ),
       createElement("p", { class: "crop-meta" }, [`Total Listings: ${resp.total ?? listings.length}`])
     ]) as HTMLElement;
+
+    const cropAd = adspace("inbody", "crops", {
+      layout: "horizontal",
+      width: 728,
+      height: 90,
+      refreshInterval: 45000,
+    });
 
     // 2. Setup Filters & Listings Wrapper
     const toggleFiltersBtn = Button({ title: "Filters", id: "button", events: {}, classes: "toggle-filters-btn buttonx" }) as HTMLElement;
@@ -69,7 +77,7 @@ export async function displayCrop(content: HTMLElement, cropID: string | number,
     const { setupFilterInteractions } = await import("./controllers/setupFilterInteractions");
     setupFilterInteractions({ filterForm, toggleFiltersBtn, listings, onFiltered: renderListings });
 
-    container.append(header, toggleFiltersBtn, filterForm, listingsWrapper);
+    container.append(header, cropAd, toggleFiltersBtn, filterForm, listingsWrapper);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Failed to load crop details.";
     Notify(errorMessage, { type: "error", dismissible: true });

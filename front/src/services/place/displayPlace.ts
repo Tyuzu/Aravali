@@ -26,6 +26,7 @@ import Notify from "../../components/ui/Notify.js";
 import { displayBooking } from "../booking/booking.js";
 import Bannerx from "../../components/base/Bannerx.js";
 import { EntityType } from "../../utils/imagePaths.js";
+import { adspace } from "../ads/newads.js";
 
 export type PlaceCoordinates = SharedPlaceCoordinates;
 export type Place = SharedPlace;
@@ -89,6 +90,14 @@ export default async function displayPlace(
     // 2. Render Header
     const headerSection = createPlaceHeader(placeId, placeData, isCreator);
     contentContainer.appendChild(headerSection);
+    contentContainer.appendChild(
+      adspace("inbody", "places", {
+        layout: "horizontal",
+        width: 728,
+        height: 90,
+        refreshInterval: 45000,
+      })
+    );
 
     // 3. Render Details & Map area
     const editSection = createElement("div", { class: "detail-section vflex" });

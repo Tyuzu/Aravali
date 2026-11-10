@@ -16,6 +16,7 @@ import Imagex from "../../../components/base/Imagex";
 import Bannerx from "../../../components/base/Bannerx";
 import Datex from "../../../components/base/Datex";
 import { reportEntity } from "../../reporting/reporting.js";
+import { adspace } from "../../ads/newads.js";
 
 // ---------------------------------
 // INTERFACES & TYPES
@@ -466,6 +467,14 @@ export async function displayBaito(
     if (employerSection) section.appendChild(employerSection);
 
     section.appendChild(createMetaSection(baito));
+    section.appendChild(
+      adspace("inbody", "baitos", {
+        layout: "horizontal",
+        width: 728,
+        height: 90,
+        refreshInterval: 45000,
+      })
+    );
 
     const tagsSection = createTagsSection(baito.tags);
     if (tagsSection) section.appendChild(tagsSection);

@@ -39,6 +39,12 @@ export function YoHome(isLoggedIn: boolean, container: HTMLElement): void {
       height: 90,
       refreshInterval: 45000,
     }),
+    adspace("middle", PAGE_NAME, {
+      layout: "horizontal",
+      width: 728,
+      height: 90,
+      refreshInterval: 50000,
+    }),
     adspace("bottom", PAGE_NAME, {
       layout: "horizontal",
       width: 728,

@@ -10,6 +10,7 @@ import { createIconButton } from "../../utils/svgIconButton.js";
 import { hireVendors } from "../jobs/vendors/vendors.js";
 import Bannerx from "../../components/base/Bannerx.js";
 import Datex from "../../components/base/Datex.js";
+import { adspace } from "../ads/newads.js";
 
 /* =========================================================
    TYPES & INTERFACES
@@ -252,6 +253,14 @@ export async function displayEventDetails(
 
     wrapper.appendChild(card);
     content.appendChild(wrapper);
+    content.appendChild(
+        adspace("inbody", "events", {
+            layout: "horizontal",
+            width: 728,
+            height: 90,
+            refreshInterval: 45000,
+        })
+    );
     content.appendChild(createElement("div", { id: "edittabs" }, []));
 }
 

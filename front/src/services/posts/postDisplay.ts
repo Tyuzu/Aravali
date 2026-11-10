@@ -15,6 +15,7 @@ import Imagex from "../../components/base/Imagex.js";
 import { fetchUserMeta } from "../../utils/usersMeta.js";
 import ZoomBox from "../../components/ui/zoomBox/ZoomBox.js";
 import { renderRelatedPosts } from "./relatedPosts.js";
+import { adspace } from "../ads/newads.js";
 
 /* ---------------------- TYPES ---------------------- */
 export interface TextBlock {
@@ -211,6 +212,14 @@ export async function displayPost(
 
   frag.append(renderHeader(post));
   frag.append(renderBody(post));
+  frag.append(
+    adspace("inbody", "posts", {
+      layout: "horizontal",
+      width: 728,
+      height: 90,
+      refreshInterval: 45000,
+    })
+  );
 
   const refEl = renderReference(post);
   if (refEl) {
