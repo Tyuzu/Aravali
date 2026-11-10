@@ -45,11 +45,19 @@
 .ad-slot {
   position: relative;
   width: 100%;
+  min-height: 180px;
   box-sizing: border-box;
   border: 1px solid var(--ad-border-color);
   border-radius: var(--ad-radius);
   overflow: hidden;
   transition: var(--ad-transition);
+}
+
+.ad-layout-horizontal,
+.ad-layout-vertical,
+.ad-layout-banner,
+.ad-layout-compact {
+  min-height: 180px;
 }
 
 .ad-slot[data-ad-state="loaded"]:hover {
@@ -149,6 +157,7 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  aspect-ratio: 16 / 9;
 }
 
 .ad-card-img {
@@ -234,6 +243,7 @@
 .ad-layout-horizontal .ad-card-media {
   width: 220px;
   min-height: 140px;
+  aspect-ratio: 16 / 9;
 }
 
 @media (width <= 640px) {
@@ -257,6 +267,7 @@
 .ad-layout-vertical .ad-card-media {
   width: 100%;
   height: 200px;
+  aspect-ratio: auto;
 }
 
 /* 3. BANNER LAYOUT (Header / Footer Leaderboards) */
@@ -269,6 +280,7 @@
 .ad-layout-banner .ad-card-media {
   width: 80px;
   height: 60px;
+  aspect-ratio: auto;
   border-radius: 6px;
 }
 

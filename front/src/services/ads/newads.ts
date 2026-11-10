@@ -305,7 +305,14 @@ export function advertEmbed(page?: string, position = "", options: AdEmbedOption
   } = options;
 
   const slotId = `ad-slot-${resolvedPage}-${position || "default"}-${adCounter}`;
-  const styleMinH = typeof height === "number" ? `${height}px` : height;
+  const layoutDefaultHeights: Record<string, string | number> = {
+    horizontal: 180,
+    vertical: 240,
+    banner: 96,
+    compact: 90
+  };
+  const resolvedHeight = height === "auto" ? layoutDefaultHeights[layout] ?? 180 : height;
+  const styleMinH = typeof resolvedHeight === "number" ? `${resolvedHeight}px` : resolvedHeight;
 
   const slotEl = createElement(
     "div",
@@ -317,7 +324,7 @@ export function advertEmbed(page?: string, position = "", options: AdEmbedOption
       "data-category": category,
       "data-ad-layout": layout,
       "data-ad-state": "waiting",
-      style: { minHeight: styleMinH }
+      style: { minHeight: styleMinH, contain: "layout paint" }
     },
     [
       createElement("div", { class: "ad-skeleton" }, [
