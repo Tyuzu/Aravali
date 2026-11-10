@@ -61,10 +61,10 @@ async function fetchResults(tabId: string, query: string, container: HTMLElement
 export async function displaySearchForm(container: HTMLElement): Promise<void> {
   container.textContent = "";
 
-  const searchContainer = createElement("div", { class: "search-container vflex" });
+  const searchContainer = createElement("div", { class: "search-container flex vflex" });
 
   // --- SEARCH BAR UI ---
-  const searchBarWrapper = createElement("div", { class: "search-bar-wrapper hflex", style: { position: "relative" } });
+  const searchBarWrapper = createElement("div", { class: "search-bar-wrapper flex hflex", style: { position: "relative" } });
   
   const searchInput = createElement("input", {
     id: "search-query",
@@ -314,7 +314,7 @@ function displaySearchResults(entityType: string, data: SearchResult | null, con
 
 function createCard(entityType: string, item: SearchItem): HTMLElement {
   const card = createElement("div", { class: `result-card type-${entityType}` });
-  const header = createElement("div", { class: "result-header hflex" });
+  const header = createElement("div", { class: "result-header flex hflex" });
 
   if (item.image) {
     const entityEnumVal = EntityType[entityType.toUpperCase() as keyof typeof EntityType] || EntityType.BLOGPOST;

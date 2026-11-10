@@ -176,7 +176,7 @@ function askUpdateMethod(imageType: string): Promise<UpdateMethodChoice> {
       resolve(action);
     };
 
-    const content = createElement("div", { class: "vflex gap10" }, [
+    const content = createElement("div", { class: "flex vflex gap10" }, [
       createElement("p", {}, [`Update ${imageType} picture:`]),
       Button({
         title: "Upload Image",
@@ -250,10 +250,10 @@ function promptUrlInput(): Promise<string | null> {
       events: { click: () => handleDone(null) }
     });
 
-    const content = createElement("div", { class: "vflex gap10" }, [
+    const content = createElement("div", { class: "flex vflex gap10" }, [
       createElement("label", {}, ["Enter image URL:"]),
       input,
-      createElement("div", { class: "hflex gap10 justify-end" }, [cancelBtn, submitBtn])
+      createElement("div", { class: "flex hflex gap10 justify-end" }, [cancelBtn, submitBtn])
     ]);
 
     modalInstance = Modal({

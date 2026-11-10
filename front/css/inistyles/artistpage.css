@@ -6,19 +6,16 @@
 
 /* Flex utilities */
 .hflex {
-  display: flex;
   gap: 12px;
 }
 
 .hflex-sb {
-  display: flex;
   width: 100%;
   justify-content: space-between;
   gap: 12px;
 }
 
 .hvflex-sb {
-  display: flex;
   flex-wrap: wrap;
   width: 100%;
   justify-content: space-between;

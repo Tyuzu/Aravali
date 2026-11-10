@@ -88,6 +88,7 @@ export async function generateVideoPlayer(
 ): Promise<HTMLDivElement> {
   const videoPlayer = document.createElement("div");
   videoPlayer.id = "video-player";
+  videoPlayer.classList.add("flex");
 
   // Video element
   const video = createVideoElement({ mediaSrc, poster, qualities });

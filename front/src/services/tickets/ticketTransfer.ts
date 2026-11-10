@@ -41,7 +41,7 @@ const handleTicketAction = (action: TicketAction, eventId: string | number): voi
 
   const form = createElement(
     "form",
-    { class: "vflex gap10" },
+    { class: "flex vflex gap10" },
     [...children, submitBtn]
   ) as HTMLFormElement;
 

@@ -14,6 +14,7 @@ async function generateVideoPlayer(
 ): Promise<HTMLDivElement> {
   const videoPlayer = document.createElement("div");
   videoPlayer.id = "video-player";
+  videoPlayer.classList.add("flex");
 
   const video = document.createElement("video");
   video.id = "main-video";

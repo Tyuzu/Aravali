@@ -100,28 +100,20 @@ textarea {
 
 
 .vflex {
-  display: flex;
   flex-direction: column;
 }
 
 .hflex {
-  display: flex;
   flex-direction: row;
 }
 
 .hflex-sb {
-  display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
 
 /* Shared utility classes for repeated layout declarations */
-.flex {
-  display: flex;
-}
-
 .flex-col {
-  display: flex;
   flex-direction: column;
 }
 

@@ -131,7 +131,7 @@ export async function displayArtist(content: HTMLElement, artistID: string | num
         const isSubscribed = artist.subscribed === true;
 
         // --- PHOTO & BANNER ROW ---
-        const photoBannerRow = createElement("div", { class: "hflex-sb photocon" }) as HTMLElement;
+        const photoBannerRow = createElement("div", { class: "flex hflex-sb photocon" }) as HTMLElement;
         const photoSection = createArtistPhotoSection(artist, isCreator);
         if (photoSection) {
             photoBannerRow.appendChild(photoSection);
@@ -140,7 +140,7 @@ export async function displayArtist(content: HTMLElement, artistID: string | num
         contentContainer.appendChild(photoBannerRow);
 
         // --- BUTTONS ---
-        const buttonRow = createElement("div", { class: "hflex hcen" }) as HTMLElement;
+        const buttonRow = createElement("div", { class: "flex hflex hcen" }) as HTMLElement;
 
         const subscribeButton = Button(isSubscribed ? "Unsubscribe" : "Subscribe", "", {
             click: () => SubscribeToArtist(subscribeButton as HTMLButtonElement, artist.artistid)

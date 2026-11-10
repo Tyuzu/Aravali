@@ -65,7 +65,7 @@ export function reportEntity(
     return;
   }
 
-  const content = createElement("div", { class: "vflex report-modal-content" });
+  const content = createElement("div", { class: "flex vflex report-modal-content" });
 
   const reasonLabel = createElement("label", { htmlFor: "report-reason" }, ["Reason"]);
   const reasonSelect = createElement(
@@ -160,7 +160,7 @@ export function reportEntity(
 
   const actionsRow = createElement(
     "div",
-    { class: "hflex modal-actions", style: { display: "flex", gap: "0.5rem", marginTop: "1rem" } },
+    { class: "flex hflex modal-actions", style: { gap: "0.5rem", marginTop: "1rem" } },
     [cancelBtnNode, submitBtnNode]
   );
 
@@ -190,7 +190,7 @@ export function appealContent(targetId: string, targetType: TargetType): void {
     return;
   }
 
-  const content = createElement("div", { class: "vflex appeal-modal-content" });
+  const content = createElement("div", { class: "flex vflex appeal-modal-content" });
 
   const info = createElement("p", {}, ["Explain why this content should be restored."]);
 
@@ -270,7 +270,7 @@ export function appealContent(targetId: string, targetType: TargetType): void {
 
   const actionsRow = createElement(
     "div",
-    { class: "hflex modal-actions", style: { display: "flex", gap: "0.5rem", marginTop: "1rem" } },
+    { class: "flex hflex modal-actions", style: { gap: "0.5rem", marginTop: "1rem" } },
     [cancelBtnNode, submitBtnNode]
   );
 

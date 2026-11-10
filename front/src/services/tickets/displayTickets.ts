@@ -255,7 +255,7 @@ function createTicketCard(
 
   if (isCreator) {
     const actions = createElement("div", {
-      class: "hflex-sb",
+      class: "flex hflex-sb",
       style: { padding: "0 0.5rem" }
     });
 

@@ -35,10 +35,10 @@ export function createControls(
   videoid: string | number,
   videoPlayer: HTMLElement
 ): HTMLElement {
-  const controls = createElement("div", { class: "controlcon" }) as HTMLElement;
+  const controls = createElement("div", { class: "controlcon flex-col" }) as HTMLElement;
 
   // --- Time Display ---
-  const timeDisplay = createElement("div", { class: "time-display" }, [
+  const timeDisplay = createElement("div", { class: "time-display flex" }, [
     "0:00 / 0:00",
   ]) as HTMLElement;
 
@@ -46,7 +46,7 @@ export function createControls(
   const { bar: progressBar } = createProgressBar();
 
   // Buttons container
-  const buttons = createElement("div", { class: "buttons" }) as HTMLElement;
+  const buttons = createElement("div", { class: "buttons flex" }) as HTMLElement;
 
   // Optional Quality Selector
   const qualitySelector = qualities.length
@@ -108,7 +108,7 @@ export function createControls(
 
   // --- Dropup Menu ---
   const dropupMenu = createElement("div", {
-    class: "dropup-menu hidden",
+    class: "dropup-menu flex hidden",
   }) as HTMLElement;
   appendElements(dropupMenu, [speedDropdown, filterSelector]);
 

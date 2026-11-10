@@ -12,7 +12,7 @@ export function createStatistics(profile: UserProfile): HTMLDivElement {
 
     stats.forEach(({ label, value }) => {
         const statItem = document.createElement("p");
-        statItem.className = "hflex";
+        statItem.className = "flex hflex";
 
         const strong = document.createElement("strong");
         strong.textContent = String(value);

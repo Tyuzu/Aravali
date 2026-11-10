@@ -120,15 +120,15 @@ function profilGen(
   const isCreator = Boolean(profile.userid && profile.userid === currentUserId);
 
   const profileContainer = createElement("div", {
-    class: "profile-container hflex"
+    class: "profile-container flex hflex"
   });
 
   const section = createElement("section", {
-    class: "channel vflex"
+    class: "channel flex vflex"
   });
 
   const suggs = createElement("section", {
-    class: "followcon hflex"
+    class: "followcon flex hflex"
   });
 
   // Append primary profile header elements

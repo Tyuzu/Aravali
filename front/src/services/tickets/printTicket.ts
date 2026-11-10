@@ -55,7 +55,7 @@ const printTicket = async (eventId: string | number): Promise<void> => {
 
   const form = createElement(
     "form",
-    { class: "vflex gap10" },
+    { class: "flex vflex gap10" },
     [
       createElement("label", { for: "unique-code" }, ["Enter Unique Code"]),
       codeInput,

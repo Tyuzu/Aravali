@@ -72,9 +72,9 @@ function MiniAudio({ audioUrl, poster = "", title = "" }: MiniAudioProps): HTMLD
 
   const loopBtn = createElement("button", { class: "btn loop-btn" }, ["🔁"]) as HTMLButtonElement;
 
-  const volcon = createElement("div", { class: "hflex volume-container" }, [muteBtn, volumeSlider]);
-  const loopcon = createElement("div", { class: "hflex macro-container" }, [speedControl, loopBtn]);
-  const right = createElement("div", { class: "right-controls vflex" }, [volcon, loopcon]);
+  const volcon = createElement("div", { class: "flex hflex volume-container" }, [muteBtn, volumeSlider]);
+  const loopcon = createElement("div", { class: "flex hflex macro-container" }, [speedControl, loopBtn]);
+  const right = createElement("div", { class: "right-controls flex vflex" }, [volcon, loopcon]);
 
   // --- Audio Engine Initialization (Lazy Loaded) ---
   function initAudio(): void {

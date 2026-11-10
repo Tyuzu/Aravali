@@ -3,13 +3,11 @@
    ========================================================================== */
 
 .hflex {
-  display: flex;
   flex-direction: row;
   align-items: center;
 }
 
 .vflex {
-  display: flex;
   flex-direction: column;
 }
 

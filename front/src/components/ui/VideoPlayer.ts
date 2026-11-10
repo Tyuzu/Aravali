@@ -325,7 +325,7 @@ const VideoPlayer = (
     qualityCleanup = cleanup;
   }
 
-  const controlsl = createElement("div", { class: "hflex" }, controlslChildren);
+  const controlsl = createElement("div", { class: "flex hflex" }, controlslChildren);
 
   // --- Theater Mode Button ---
   const theaterButton = createIconButton({
@@ -349,10 +349,10 @@ const VideoPlayer = (
   }) as HTMLElement;
   theaterButton.setAttribute("title", "Activate Theater Mode");
 
-  const controlsr = createElement("div", { class: "hflex" }, [theaterButton]);
+  const controlsr = createElement("div", { class: "flex hflex" }, [theaterButton]);
 
   // --- Controls Bar ---
-  const controlsContainer = createElement("div", { class: "hflex-sb vcon" }, [controlsl, controlsr]);
+  const controlsContainer = createElement("div", { class: "flex hflex-sb vcon" }, [controlsl, controlsr]);
 
   // --- Videocon Shell ---
   const videoconChildren: HTMLElement[] = [video, controlsContainer];
