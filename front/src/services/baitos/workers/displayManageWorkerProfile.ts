@@ -126,14 +126,14 @@ export async function displayManageWorkerProfile(
                                     }, [`📄 Document ${i + 1}`])
                                 ])
                             )),
-                            Button("📤 Upload Documents", "", { click: () => uploadDocuments() }, "secondary")
+                            Button("📤 Upload Documents", "", { click: () => uploadDocuments() }, "buttonx secondary")
                         ])
                     );
                 } else {
                     tabContainer.replaceChildren(
                         createSectionCard("Documents", [
                             createElement("p", { class: "empty-state" }, ["No documents uploaded yet"]),
-                            Button("📤 Upload Documents", "", { click: () => uploadDocuments() }, "primary")
+                            Button("📤 Upload Documents", "", { click: () => uploadDocuments() }, "buttonx primary")
                         ])
                     );
                 }
@@ -156,9 +156,9 @@ export async function displayManageWorkerProfile(
                 tabContainer.replaceChildren(createSectionCard("Manage Profile", [
                     createElement("div", { class: "settings-section" }, [
                         createElement("h4", {}, ["Profile Management"]),
-                        Button("✏️ Edit Full Profile", "", { click: () => editProfile() }, "secondary"),
-                        Button("📸 Update Photo", "", { click: () => updatePhoto() }, "secondary"),
-                        Button("🖼️ Manage Gallery", "", { click: () => manageGallery() }, "secondary")
+                        Button("✏️ Edit Full Profile", "", { click: () => editProfile() }, "buttonx secondary"),
+                        Button("📸 Update Photo", "", { click: () => updatePhoto() }, "buttonx secondary"),
+                        Button("🖼️ Manage Gallery", "", { click: () => manageGallery() }, "buttonx secondary")
                     ]),
                     createElement("div", { class: "settings-section danger" }, [
                         createElement("h4", {}, ["Danger Zone"]),
@@ -176,7 +176,7 @@ export async function displayManageWorkerProfile(
                                     Notify("Failed to delete: " + (err.message || "Unknown error"), { type: "error" });
                                 }
                             }
-                        }, "danger")
+                        }, "buttonx danger")
                     ])
                 ]));
             }

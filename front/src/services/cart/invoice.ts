@@ -1,10 +1,16 @@
 // src/ui/cart/printInvoice.ts
 import Notify from "../../components/ui/Notify.js";
+import { getState } from "../../state/state.js";
 
 // --- INTERFACES & TYPES ---
 export interface InvoiceItem {
   price?: number;
   quantity?: number;
+  unit?: string;
+  itemUnit?: string;
+  measurementUnit?: string;
+  unitName?: string;
+  uom?: string;
   itemName?: string;
   name?: string;
   [key: string]: unknown;
@@ -12,6 +18,10 @@ export interface InvoiceItem {
 
 export interface InvoiceOrder {
   orderid?: string | number;
+  orderId?: string | number;
+  OrderID?: string | number;
+  id?: string | number;
+  _id?: string | number;
   createdAt?: string | number;
   created_at?: string | number;
   status?: string;
@@ -123,16 +133,26 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
 
   const flattenedItems = Array.isArray(items) ? items : Object.values(items || {}).flat();
 
-  // FIXED: Escaped all dynamic array property maps securely against code injection vulnerabilities
+  // FIXED: Corrected line-item total calculation bug and escaped properties securely
   const itemRows = flattenedItems
     .map(item => {
       const price = toRupees(item.price || 0);
-      const total = price * (Number(item.quantity) || 0);
+      const quantity = Number(item.quantity) || 0;
+      const unit = firstNonEmpty(
+        item.unit,
+        item.itemUnit,
+        item.measurementUnit,
+        item.unitName,
+        item.uom,
+        ""
+      );
+      const quantityLabel = unit ? `${quantity} ${unit}` : String(quantity);
+      const total = price * quantity;
 
       return `
         <tr>
           <td>${escapeHTML(item.itemName || item.name || "Item")}</td>
-          <td>${Number(item.quantity) || 0}</td>
+          <td>${escapeHTML(quantityLabel)}</td>
           <td>${escapeHTML(formatINR(price))}</td>
           <td>${escapeHTML(formatINR(total))}</td>
         </tr>
@@ -142,12 +162,27 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
 
   const rawDate = order.createdAt || order.created_at || Date.now();
   const invoiceDate = new Date(rawDate).toLocaleString();
-  const userProfile = order.user;
+  const invoiceOrderId = firstNonEmpty(
+    order.orderid,
+    order.orderId,
+    order.OrderID,
+    order.id,
+    order._id,
+    "Draft"
+  );
+  const currentProfile = (getState("userProfile") || {}) as Record<string, unknown>;
+  const userProfile = (order.user && typeof order.user === "object" ? order.user : {}) as Record<string, unknown>;
+  const fallbackProfile = {
+    ...currentProfile,
+    ...userProfile,
+  } as Record<string, unknown>;
+
   const customerName = firstNonEmpty(
     order.customerName,
     order.customer_name,
     order.name,
     order.fullName,
+    readNestedString(fallbackProfile, ["name", "fullName"]),
     readNestedString(userProfile, ["name", "fullName"]),
     "-"
   );
@@ -157,25 +192,26 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
     order.customer_phone,
     order.phone_number,
     order.phoneNumber,
-    readNestedString(userProfile, ["phone", "phone_number"]),
+    readNestedString(fallbackProfile, ["phone", "phone_number", "mobile"]),
+    readNestedString(userProfile, ["phone", "phone_number", "mobile"]),
     "-"
   );
   const customerAddress = firstNonEmpty(
     order.address,
     order.deliveryAddress,
     order.shippingAddress,
+    readNestedString(fallbackProfile, ["address"]),
     readNestedString(userProfile, ["address"]),
     "-"
   );
 
-  // FIXED: Double-wrapped all parameters in validation escape filters
   invoiceWindow.document.write(`
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Invoice - ${escapeHTML(order.orderid || "Draft")}</title>
+        <title>Invoice - ${escapeHTML(invoiceOrderId)}</title>
         <style>
           * { box-sizing: border-box; }
           body {
@@ -230,7 +266,7 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
         <div class="header">
           <div>
             <h1 class="title">Invoice</h1>
-            <p style="margin-top: 8px;">Order ID: <strong>${escapeHTML(order.orderid || "-")}</strong></p>
+            <p style="margin-top: 8px;">Order ID: <strong>${escapeHTML(invoiceOrderId)}</strong></p>
           </div>
           <div class="meta">
             <p><strong>Date:</strong> ${escapeHTML(invoiceDate)}</p>
@@ -252,7 +288,7 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
             <thead>
               <tr>
                 <th>Item</th>
-                <th>Qty</th>
+                <th>Qty / Unit</th>
                 <th>Price</th>
                 <th>Total</th>
               </tr>
@@ -291,11 +327,9 @@ export function printInvoice(order: InvoiceOrder, items: InvoiceItem[] | Record<
         </div>
 
         <script>
-          // FIXED: Use DOMContentLoaded listener loops instead of single window.onload assignments
           document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
               window.print();
-              // Gracefully shut down context stream cleanly after system thread tasks conclude
               window.onafterprint = () => { window.close(); };
             }, 500);
           });

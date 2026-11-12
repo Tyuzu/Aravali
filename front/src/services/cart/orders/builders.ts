@@ -10,6 +10,7 @@ import {
 } from "./orderutils.js";
 import { createElement } from "../../../components/createElement.js";
 import { Button } from "../../../components/base/Button.js";
+import { printInvoice } from "../invoice.js";
 import { Order, OrderItem, OrderPageState } from "./types.js";
 
 const PAGE_SIZE = 5;
@@ -28,6 +29,15 @@ type RerenderCallback = () => void;
 
 /* ───────────────── Helper ───────────────── */
 const valOrFallback = (val: string | undefined | null, fallback = "N/A") => val || fallback;
+
+const toInvoiceItems = (items: OrderItem[] = []) =>
+  items.map((item) => ({
+    ...item,
+    itemName: item.itemName || item.entityName || "Item",
+    name: item.itemName || item.entityName || "Item",
+    quantity: Number(item.quantity || 0),
+    price: Number(item.price || 0),
+  }));
 
 /* ───────────────── Page ───────────────── */
 
@@ -166,8 +176,8 @@ function buildExpandableOrderRows(
       createElement("td", {}, [capitalize(valOrFallback(meta.payment))]),
       createElement("td", {}, [
         Button({
-          title: "Receipt",
-          events: { click: () => downloadReceipt(order) },
+          title: "Invoice",
+          events: { click: () => printInvoice(order as any, toInvoiceItems(getOrderProducts(order) || [])) },
         }),
       ]),
     ]),
@@ -286,9 +296,9 @@ function buildExpandableOrderCard(
 
   cardChildren.push(
     Button({
-      title: "Receipt",
+      title: "Invoice",
       classes: "buttonx btn-receipt",
-      events: { click: () => downloadReceipt(order) },
+      events: { click: () => printInvoice(order as any, toInvoiceItems(getOrderProducts(order) || [])) },
     })
   );
 

@@ -5,6 +5,9 @@ import Notify from "../../components/ui/Notify.js";
 import Button from "../../components/base/Button.js";
 import { printInvoice } from "./invoice.js";
 import { createCartOrder, clearCart } from "./api.js";
+import { getState, setState } from "../../state/state.js";
+import { navigate } from "../../routes/navigate.js";
+import { fetchMyProfile } from "../profile/profileAPI.js";
 
 // --- INTERFACES & TYPES ---
 interface OrderItem {
@@ -136,6 +139,30 @@ function renderTotalsFromBackend(order: OrderData): HTMLElement {
 
 /* ────────────────────── API ────────────────────── */
 
+async function ensureProfileReadyForInvoice(): Promise<boolean> {
+  let profile = (getState("userProfile") || {}) as Record<string, any>;
+
+  const hasName = !!String(profile?.name || profile?.fullName || "").trim();
+  const hasPhone = !!String(profile?.phone_number || profile?.phone || profile?.mobile || "").trim();
+
+  if (!hasName || !hasPhone) {
+    try {
+      const freshProfile = await fetchMyProfile();
+      if (freshProfile) {
+        profile = freshProfile as Record<string, any>;
+        setState({ userProfile: profile }, true);
+      }
+    } catch (error) {
+      console.warn("Failed to refresh profile before invoice print:", error);
+    }
+  }
+
+  const finalName = String(profile?.name || profile?.fullName || "").trim();
+  const finalPhone = String(profile?.phone_number || profile?.phone || profile?.mobile || "").trim();
+
+  return Boolean(finalName && finalPhone);
+}
+
 async function createOrder({ items, address, couponCode }: { items: OrderItem[]; address?: string; couponCode?: string }): Promise<OrderData & { orderid: string | number; total: number }> {
   const payload: OrderPayload = {
     address,
@@ -261,7 +288,23 @@ export function displayPayment(container: HTMLElement, sessionData: SessionData 
       const printBtn = Button({
         title: "Print Invoice",
         id: "print-invoice-btn",
-        events: { click: () => printInvoice(createdOrder!, items) },
+        events: {
+          click: async () => {
+            const profileReady = await ensureProfileReadyForInvoice();
+
+            if (!profileReady) {
+              Notify("Please add your name and phone number to your profile before printing an invoice.", {
+                type: "warning",
+                duration: 5000,
+                dismissible: true
+              });
+              await navigate("/profile");
+              return;
+            }
+
+            printInvoice(createdOrder!, items);
+          }
+        },
         classes: "secondary-button"
       });
 

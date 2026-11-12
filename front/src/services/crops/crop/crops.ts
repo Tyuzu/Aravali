@@ -25,8 +25,20 @@ export interface Crop {
 }
 
 export type CategorizedCrops = Record<string, Crop[]>;
-
 export type ViewMode = "grid" | "list";
+
+export interface MarketHighlightItem {
+  id: string;
+  text: string;
+}
+
+export interface MarketHighlightsData {
+  activeDeals?: MarketHighlightItem[];
+  seasonalPicks?: MarketHighlightItem[];
+  cropTrends?: MarketHighlightItem[];
+  announcements?: MarketHighlightItem[];
+  showcase?: MarketHighlightItem[];
+}
 
 interface FilterOptions {
   term: string;
@@ -64,19 +76,21 @@ interface CropsApiResponse {
 /**
  * Creates formatted promo items/list configuration for createAsideContent sections.
  */
-function createPromoSection(title: string, items: string[]) {
+function createPromoSection(title: string, items: MarketHighlightItem[] = []) {
   return {
     title,
     className: "promo-box",
     content: createElement(
       "ul",
       { class: "promo-list" },
-      items.map((item) => createElement("li", {}, [item]))
+      items.length > 0 
+        ? items.map((item) => createElement("li", { key: item.id }, [item.text]))
+        : [createElement("li", { class: "no-data" }, ["No updates available"])]
     )
   };
 }
 
-export function cropAside(_cropData: CategorizedCrops) {
+export function cropAside(_cropData: CategorizedCrops, highlights: MarketHighlightsData = {}) {
   return createAsideContent({
     title: "Market Highlights",
     actions: [
@@ -86,14 +100,12 @@ export function cropAside(_cropData: CategorizedCrops) {
         events: { click: () => navigate("/products") },
         classes: "action-btn buttonx primary"
       }),
-
       Button({
         title: "See Recipes",
         id: "recipes-crp-btn",
         events: { click: () => navigate("/recipes") },
         classes: "buttonx secondary"
       }),
-
       Button({
         title: "List Your Farm",
         id: "newfrm-btn",
@@ -102,26 +114,11 @@ export function cropAside(_cropData: CategorizedCrops) {
       })
     ],
     sections: [
-      createPromoSection("💸 Active Deals", [
-        "🧃 Buy 2 kg Tomatoes, get 10% off!",
-        "🥭 Fresh Mangoes now ₹40/kg!"
-      ]),
-      createPromoSection("📅 Seasonal Picks", [
-        "🍉 Watermelons are ripe this week",
-        "🌽 Baby corn harvest starting soon"
-      ]),
-      createPromoSection("📊 Crop Trends", [
-        "📈 Onion prices up 12% this week",
-        "📉 Cauliflower down due to surplus"
-      ]),
-      createPromoSection("🔔 Announcements", [
-        "🛠 Maintenance scheduled this Friday",
-        "🚚 New delivery zones added in Karnal"
-      ]),
-      createPromoSection("📷 Farmer's Showcase", [
-        "🏞️ Featured: Ajay’s organic carrot patch",
-        "🧑‍🌾 Share your crop stories with us!"
-      ])
+      createPromoSection("💸 Active Deals", highlights.activeDeals),
+      createPromoSection("📅 Seasonal Picks", highlights.seasonalPicks),
+      createPromoSection("📊 Crop Trends", highlights.cropTrends),
+      createPromoSection("🔔 Announcements", highlights.announcements),
+      createPromoSection("📷 Farmer's Showcase", highlights.showcase)
     ],
     showAd: true,
     adOptions: {
@@ -148,68 +145,45 @@ function filterAndSortCrops(crops: Crop[] = [], { term, tags, sortBy }: FilterOp
     );
 }
 
-function formatPrice(value?: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0
-  }).format(value || 0);
-}
-
-function formatPriceRange(min?: number, max?: number): string {
-  return `${formatPrice(min)} - ${formatPrice(max)}`;
-}
-
-function isSeasonal(crop: Crop): boolean {
-  const currentMonth = new Date().getMonth() + 1;
-  return Array.isArray(crop.seasonMonths) && crop.seasonMonths.includes(currentMonth);
-}
-
 function formatCropSlug(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "_");
 }
 
 // --- Interface State Management ---
 
-export function renderCropInterface(container: HTMLElement, cropData: CategorizedCrops): void {
+export function renderCropInterface(
+  container: HTMLElement, 
+  cropData: CategorizedCrops, 
+  highlights: MarketHighlightsData
+): void {
   const mainContent = createElement("div", { class: "catalogue-main" });
 
   const searchBox = createElement("input", {
     type: "text",
     name: "search",
-    placeholder: "Search crops…",
-    class: "search-box"
+    placeholder: "Search crops by name...",
+    class: "search-box",
+    "aria-label": "Search crops"
   }) as HTMLInputElement;
 
-  const sortSelect = createElement("select", { class: "sort-box", name: "sortby" }, [
+  const sortSelect = createElement("select", { class: "sort-box", name: "sortby", "aria-label": "Sort crops" }, [
     createElement("option", { value: "az" }, ["A → Z"]),
     createElement("option", { value: "za" }, ["Z → A"])
   ]) as HTMLSelectElement;
 
-  // View Toggle Buttons
   const gridViewBtn = createElement(
     "button",
-    {
-      class: "view-btn active",
-      type: "button",
-      "aria-label": "Grid View",
-      title: "Grid View"
-    },
+    { class: "view-btn active", type: "button", "aria-label": "Grid View", title: "Grid View" },
     ["田"]
   ) as HTMLButtonElement;
 
   const listViewBtn = createElement(
     "button",
-    {
-      class: "view-btn",
-      type: "button",
-      "aria-label": "List View",
-      title: "List View"
-    },
+    { class: "view-btn", type: "button", "aria-label": "List View", title: "List View" },
     ["☰"]
   ) as HTMLButtonElement;
 
-  const viewToggleGroup = createElement("div", { class: "view-toggle-group" }, [
+  const viewToggleGroup = createElement("div", { class: "view-toggle-group", role: "group", "aria-label": "View mode" }, [
     gridViewBtn,
     listViewBtn
   ]);
@@ -220,7 +194,7 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
     viewToggleGroup
   ]);
 
-  const tabButtons = createElement("div", { class: "tabs" });
+  const tabButtons = createElement("div", { class: "tabs", role: "tablist" });
   const tabsWrapper = createElement("div", { id: "catalogue-container" });
 
   mainContent.append(
@@ -245,14 +219,12 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
     tabButtons
   };
 
-  // Switch View Mode Handler
   const setViewMode = (mode: ViewMode) => {
     if (state.viewMode === mode) return;
     state.viewMode = mode;
 
     gridViewBtn.classList.toggle("active", mode === "grid");
     listViewBtn.classList.toggle("active", mode === "list");
-
     updateAllTabs(state);
   };
 
@@ -262,13 +234,18 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
   categories.forEach((cat, index) => {
     const isFirst = index === 0;
     const count = cropData[cat]?.length || 0;
+    const tabId = `tab-${formatCropSlug(cat)}`;
 
     const btn = createElement(
       "button",
       {
         class: `buttonx ${isFirst ? "active" : ""}`,
+        role: "tab",
+        id: tabId,
+        "aria-selected": String(isFirst),
+        "aria-controls": `panel-${formatCropSlug(cat)}`,
         disabled: count === 0,
-        "data-category": cat.toLowerCase()
+        "data-category": cat
       },
       [`${cat.charAt(0).toUpperCase() + cat.slice(1)} (${count})`]
     ) as HTMLButtonElement;
@@ -282,20 +259,22 @@ export function renderCropInterface(container: HTMLElement, cropData: Categorize
 
     const pane = createElement("div", {
       class: `tab-content ${state.viewMode}-view`,
-      id: cat
+      role: "tabpanel",
+      id: `panel-${formatCropSlug(cat)}`,
+      "aria-labelledby": tabId
     });
     state.tabs[cat] = pane;
     tabsWrapper.appendChild(pane);
   });
 
   sortSelect.onchange = () => updateAllTabs(state);
-  searchBox.addEventListener("input", debounce(() => updateAllTabs(state)));
+  searchBox.addEventListener("input", debounce(() => updateAllTabs(state), 250));
 
   updateAllTabs(state);
 
   const layout = createMainLayout({
     mainContent: [mainContent],
-    asideContent: cropAside(cropData),
+    asideContent: cropAside(cropData, highlights),
     pageClass: "catalogue-layout",
     showMainAd: true,
     mainAdPlacement: "top"
@@ -308,23 +287,27 @@ function updateAllTabs(state: InterfaceState): void {
   const { categories, currentTab, tabButtons, tabs, viewMode } = state;
   if (!currentTab) return;
 
-  updateTab(currentTab, state);
-
   categories.forEach(cat => {
     const pane = tabs[cat];
     if (pane) {
-      pane.style.display = cat === currentTab ? "flex" : "none";
-      
-      // Keep view mode class updated across all tab content panels
+      const isCurrent = cat === currentTab;
+      pane.style.display = isCurrent ? "flex" : "none";
       pane.classList.remove("grid-view", "list-view");
       pane.classList.add(`${viewMode}-view`);
+
+      if (isCurrent) {
+        updateTab(cat, state);
+      }
     }
   });
 
   Array.from(tabButtons.children).forEach(btn => {
     const htmlBtn = btn as HTMLElement;
-    const btnCategory = htmlBtn.dataset.category || htmlBtn.textContent?.split(" (")[0].trim().toLowerCase() || "";
-    htmlBtn.classList.toggle("active", btnCategory === currentTab.toLowerCase());
+    const btnCategory = htmlBtn.dataset.category || "";
+    const isActive = btnCategory.toLowerCase() === currentTab.toLowerCase();
+    
+    htmlBtn.classList.toggle("active", isActive);
+    htmlBtn.setAttribute("aria-selected", String(isActive));
   });
 }
 
@@ -333,7 +316,6 @@ function updateTab(category: string, state: InterfaceState): void {
   const container = tabs[category];
 
   if (!container) return;
-
   container.replaceChildren();
 
   const filtered = filterAndSortCrops(cropData[category], {
@@ -344,14 +326,13 @@ function updateTab(category: string, state: InterfaceState): void {
 
   if (filtered.length === 0) {
     container.appendChild(
-      createElement("p", { class: "empty-category" }, ["No crops available."])
+      createElement("p", { class: "empty-category" }, ["No crops found matching your criteria."])
     );
     return;
   }
 
   const fragment = document.createDocumentFragment();
   filtered.forEach(crop => {
-    // Pass viewMode down if renderCropCard accepts it
     fragment.appendChild(renderCropCard(crop, viewMode));
   });
   container.appendChild(fragment);
@@ -364,15 +345,22 @@ export async function displayCrops(content: HTMLElement): Promise<void> {
   content.replaceChildren(contentContainer);
 
   const categorized: CategorizedCrops = {};
+  let highlights: MarketHighlightsData = {};
 
   try {
-    const response = await apiFetch<CropsApiResponse>("/crops/types");
+    // Fetch crops and market highlights concurrently
+    const [cropsResponse, highlightsResponse] = await Promise.all([
+      apiFetch<CropsApiResponse>("/crops/types"),
+      apiFetch<MarketHighlightsData>("/market/highlights").catch(() => ({})) // Graceful fallback if endpoint fails
+    ]);
 
-    if (!response?.cropTypes || !Array.isArray(response.cropTypes)) {
+    if (!cropsResponse?.cropTypes || !Array.isArray(cropsResponse.cropTypes)) {
       throw new Error("Invalid response format: 'cropTypes' array missing");
     }
 
-    response.cropTypes.forEach((raw: RawCropType) => {
+    highlights = highlightsResponse || {};
+
+    cropsResponse.cropTypes.forEach((raw: RawCropType) => {
       if (!raw.Name) return;
 
       const crop: Crop = {
@@ -393,8 +381,14 @@ export async function displayCrops(content: HTMLElement): Promise<void> {
       categorized[category].push(crop);
     });
   } catch (err) {
-    console.error("Error fetching crops:", err);
+    console.error("Error fetching market data:", err);
+    contentContainer.appendChild(
+      createElement("div", { class: "error-banner" }, [
+        createElement("p", {}, ["Failed to load marketplace data. Please try again later."])
+      ])
+    );
+    return;
   }
 
-  renderCropInterface(contentContainer, categorized);
+  renderCropInterface(contentContainer, categorized, highlights);
 }

@@ -55,7 +55,7 @@ export const baitoRoutes: AppRoute[] = [
     functionName: "CreateBaitoProfile",
     meta: {
       requiresAuth: true,
-      roles: ["worker", "admin"],
+      roles: ["user","worker", "admin"],
       roleMatchMode: "ANY",
       title: "Create Baito Profile"
     }

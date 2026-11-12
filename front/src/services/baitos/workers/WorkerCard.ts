@@ -53,7 +53,7 @@ export function HireWorkerCard(worker: Worker, isLoggedIn?: boolean): HTMLElemen
                     openHireWorkerModal(worker);
                 }
             },
-            "btn btn-secondary"
+            "buttonx btn-secondary"
         ),
 
         !isSelf && userLoggedIn

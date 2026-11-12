@@ -118,12 +118,14 @@ export function createTabs(
       role: "tabpanel",
       "aria-labelledby": buttonId,
       tabindex: 0,
+      hidden: !isActive,
     });
 
     const buttonAttributes: ElementAttributes = {
       id: buttonId,
       class: `tab-button${isActive ? " active" : ""}`,
       role: "tab",
+      type: "button",
       "aria-controls": panelId,
       "aria-selected": isActive ? "true" : "false",
       tabindex: isActive ? 0 : -1,
@@ -164,7 +166,7 @@ export function createTabs(
       },
     };
 
-    const tabButton = createElement("div", buttonAttributes, title);
+    const tabButton = createElement("button", buttonAttributes, title);
 
     tabButtons.appendChild(tabButton);
     tabContents.appendChild(contentContainer);
@@ -195,6 +197,7 @@ export function createTabs(
         btn.setAttribute("aria-selected", isActive ? "true" : "false");
         btn.setAttribute("tabindex", isActive ? "0" : "-1");
         content.classList.toggle("active", isActive);
+        content.hidden = !isActive;
 
         // Lazy Rendering Verification Block
         if (isActive && !content.dataset.rendered) {

@@ -1,6 +1,6 @@
 import { createElement } from "../../../components/createElement.js";
 import Button from "../../../components/base/Button.js";
-import { generateFormField } from "../../profile/generators.js";
+import { createFormGroup } from "../../../components/form/createFormGroupEnhanced.js";
 import type { UserProfile } from "../../profile/profileGenHelpers.js";
 
 export function renderEditProfileForm(profile: UserProfile, onSubmit: (form: HTMLFormElement) => void, onDelete?: () => void): HTMLElement {
@@ -12,14 +12,14 @@ export function renderEditProfileForm(profile: UserProfile, onSubmit: (form: HTM
   }) as HTMLFormElement;
 
   const fields = [
-    generateFormField("Username", "username", "text", String(profile.username || "")),
-    generateFormField("Name", "name", "text", String(profile.name || "")),
-    generateFormField("Email", "email", "email", String((profile as any).email || "")),
-    generateFormField("Bio", "bio", "textarea", String(profile.bio || "")),
-    generateFormField("Phone Number", "phone_number", "text", String((profile as any).phone_number || ""))
-  ];
+    { label: "Username", id: "username", name: "username", type: "text", value: String(profile.username || "") },
+    { label: "Name", id: "name", name: "name", type: "text", value: String(profile.name || "") },
+    { label: "Email", id: "email", name: "email", type: "email", value: String((profile as any).email || "") },
+    { label: "Bio", id: "bio", name: "bio", type: "textarea", value: String(profile.bio || "") },
+    { label: "Phone Number", id: "phone_number", name: "phone_number", type: "text", value: String((profile as any).phone_number || "") }
+  ] as const;
 
-  fields.forEach((field) => field && form.appendChild(field));
+  fields.forEach((field) => form.appendChild(createFormGroup(field)));
 
   const updateBtn = Button({
     title: "Update Profile",
@@ -48,7 +48,7 @@ export function renderEditProfileForm(profile: UserProfile, onSubmit: (form: HTM
   const deleteBtn = Button({
     title: "Delete Profile",
     id: "btndelprof",
-    classes: "btn delete-btn",
+    classes: "buttonx delete-btn",
     type: "button",
     "data-action": "delete-profile",
     events: {
