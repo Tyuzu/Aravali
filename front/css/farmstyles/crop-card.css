@@ -1,0 +1,30 @@
+/* =========================================================
+   SHARED CROP CARD BASE
+   ========================================================= */
+
+.crop-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elev-1);
+  overflow: hidden;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.crop-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-elev-2);
+}
+
+.crop-card-image {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+  background: var(--color-bg-tertiary);
+}

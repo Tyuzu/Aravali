@@ -1,6 +1,7 @@
 
 // import "../../css/home.css";
 // import "../../css/farmstyles/crops.css";
+import "../../css/farmstyles/crop-card.css";
 import "../../css/farmstyles/crops.css";
 
 // import { YoHome } from "../services/home/yohome.js";

@@ -1,4 +1,5 @@
 
+import "../../../css/farmstyles/crop-card.css";
 import "../../../css/farmstyles/farmpage.css";
 import { displayFarm } from "../../services/crops/farm/farmDisplay.js";
 
