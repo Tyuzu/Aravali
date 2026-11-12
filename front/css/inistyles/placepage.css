@@ -134,25 +134,7 @@
   object-fit: cover;
 }
 
-.edit-banner-pic {
-  position: absolute;
-  bottom: var(--space-md);
-  right: var(--space-md);
-  background: var(--color-overlay);
-  color: #fff;
-  border: none;
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-  transition: background var(--transition-fast);
-}
 
-.edit-banner-pic:hover {
-  background: var(--color-accent);
-}
 
 /* Placedetails Container */
 .placedetails {
