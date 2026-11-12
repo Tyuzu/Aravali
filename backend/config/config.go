@@ -24,10 +24,10 @@ type Config struct {
 	RTMPIngestURL         string
 	TURNServers           string
 	CDNBaseURL            string
-	TLSCertPath           string
-	TLSKeyPath            string
-	AllowCredentials      bool
-	TerminateTLSAtLB      bool // Added to support external TLS termination
+	// TLSCertPath           string
+	// TLSKeyPath            string
+	AllowCredentials bool
+	// TerminateTLSAtLB      bool // Added to support external TLS termination
 }
 
 // InitConfig loads environment variables and performs basic validation.
@@ -57,50 +57,50 @@ func InitConfig() (*Config, error) {
 		}
 	}
 
-	// Parse TLS termination setting
-	terminateTLSAtLB := false
-	if v := os.Getenv("TERMINATE_TLS_AT_LB"); v != "" {
-		if b, err := strconv.ParseBool(v); err == nil {
-			terminateTLSAtLB = b
-		}
-	}
+	// // Parse TLS termination setting
+	// terminateTLSAtLB := false
+	// if v := os.Getenv("TERMINATE_TLS_AT_LB"); v != "" {
+	// 	if b, err := strconv.ParseBool(v); err == nil {
+	// 		terminateTLSAtLB = b
+	// 	}
+	// }
 
-	// Load Postgres discrete parameters with defaults
-	pgUser := envOrDefault("POSTGRES_USER", "apeman")
-	pgPass := envOrDefault("POSTGRES_PASSWORD", "ningning")
-	pgHost := envOrDefault("POSTGRES_HOST", "localhost")
-	pgPort := envOrDefault("POSTGRES_PORT", "5432")
-	pgDB := envOrDefault("POSTGRES_DB", "eventdb")
+	// // Load Postgres discrete parameters with defaults
+	// pgUser := envOrDefault("POSTGRES_USER", "apeman")
+	// pgPass := envOrDefault("POSTGRES_PASSWORD", "ningning")
+	// pgHost := envOrDefault("POSTGRES_HOST", "localhost")
+	// pgPort := envOrDefault("POSTGRES_PORT", "5432")
+	// pgDB := envOrDefault("POSTGRES_DB", "eventdb")
 
-	// Fallback to explicit connection URLs if available
-	dbURL := os.Getenv("POSTGRES_URL")
-	if dbURL == "" {
-		dbURL = os.Getenv("DATABASE_URL")
-	}
+	// // Fallback to explicit connection URLs if available
+	// dbURL := os.Getenv("POSTGRES_URL")
+	// if dbURL == "" {
+	// 	dbURL = os.Getenv("DATABASE_URL")
+	// }
 
-	// Construct connection string if no full URL is provided explicitly
-	if dbURL == "" {
-		dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", pgUser, pgPass, pgHost, pgPort, pgDB)
-	}
+	// // Construct connection string if no full URL is provided explicitly
+	// if dbURL == "" {
+	// 	dbURL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s", pgUser, pgPass, pgHost, pgPort, pgDB)
+	// }
 
 	cfg := &Config{
-		Env:                   env,
-		DatabaseURL:           dbURL,
-		PostgresUser:          pgUser,
-		PostgresPassword:      pgPass,
-		PostgresHost:          pgHost,
-		PostgresPort:          pgPort,
-		PostgresDB:            pgDB,
+		Env: env,
+		// DatabaseURL:           dbURL,
+		// PostgresUser:          pgUser,
+		// PostgresPassword:      pgPass,
+		// PostgresHost:          pgHost,
+		// PostgresPort:          pgPort,
+		// PostgresDB:            pgDB,
 		HTTPPort:              port,
 		AllowedOrigins:        allowedOrigins,
 		STRIPE_WEBHOOK_SECRET: os.Getenv("STRIPE_WEBHOOK_SECRET"),
 		RTMPIngestURL:         os.Getenv("RTMP_INGEST_URL"),
 		TURNServers:           os.Getenv("TURN_SERVERS"),
 		CDNBaseURL:            os.Getenv("CDN_BASE_URL"),
-		TLSCertPath:           os.Getenv("TLS_CERT_PATH"),
-		TLSKeyPath:            os.Getenv("TLS_KEY_PATH"),
-		AllowCredentials:      allowCreds,
-		TerminateTLSAtLB:      terminateTLSAtLB,
+		// TLSCertPath:           os.Getenv("TLS_CERT_PATH"),
+		// TLSKeyPath:            os.Getenv("TLS_KEY_PATH"),
+		AllowCredentials: allowCreds,
+		// TerminateTLSAtLB:      terminateTLSAtLB,
 	}
 
 	// Basic validation
@@ -117,12 +117,12 @@ func InitConfig() (*Config, error) {
 			return nil, fmt.Errorf("REDIS_URL or REDIS_ADDR must be set in production")
 		}
 
-		// Only enforce internal TLS if we aren't terminating it upstream at a load balancer
-		if !cfg.TerminateTLSAtLB {
-			if cfg.TLSCertPath == "" || cfg.TLSKeyPath == "" {
-				return nil, fmt.Errorf("TLS_CERT_PATH and TLS_KEY_PATH must be set in production or set TERMINATE_TLS_AT_LB=true")
-			}
-		}
+		// // Only enforce internal TLS if we aren't terminating it upstream at a load balancer
+		// if !cfg.TerminateTLSAtLB {
+		// 	if cfg.TLSCertPath == "" || cfg.TLSKeyPath == "" {
+		// 		return nil, fmt.Errorf("TLS_CERT_PATH and TLS_KEY_PATH must be set in production or set TERMINATE_TLS_AT_LB=true")
+		// 	}
+		// }
 
 		// Do not allow wildcard origins with credentials in production
 		if cfg.AllowCredentials {
@@ -152,9 +152,9 @@ func parseAllowedOrigins(env string) []string {
 	return out
 }
 
-func envOrDefault(key string, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}
+// func envOrDefault(key string, fallback string) string {
+// 	if v := os.Getenv(key); v != "" {
+// 		return v
+// 	}
+// 	return fallback
+// }
