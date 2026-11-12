@@ -23,6 +23,7 @@ func AddCropRoutes(router *httprouter.Router, app *infra.Deps, rateLimiter *midd
 	router.HandlerFunc(http.MethodGet, "/api/v1/crops/catalogue", GetCropCatalogue(app))       // Public
 	router.HandlerFunc(http.MethodGet, "/api/v1/crops/precatalogue", GetPreCropCatalogue(app)) // Public
 	router.HandlerFunc(http.MethodGet, "/api/v1/crops/types", GetCropTypes(app))               // Public
+	router.HandlerFunc(http.MethodGet, "/api/v1/market/highlights", GetMarketHighlights(app))  // Public
 
 	// Crop Wiki
 	router.HandlerFunc(http.MethodGet, "/api/v1/crops/about", rateLimiter.Limit(GetAllCropAboutsHandler(app)))

@@ -213,6 +213,100 @@ func GetCropCatalogue(app *infra.Deps) http.HandlerFunc {
 	}
 }
 
+type MarketHighlightItem struct {
+	ID   string `json:"id"`
+	Text string `json:"text"`
+}
+
+func GetMarketHighlights(app *infra.Deps) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fallback := map[string][]MarketHighlightItem{
+			"activeDeals": {
+				{ID: "deal-1", Text: "Fresh harvest offers are arriving this week from nearby farms."},
+				{ID: "deal-2", Text: "Weekend market bundles on leafy greens and tomatoes are in stock."},
+			},
+			"seasonalPicks": {
+				{ID: "season-1", Text: "Seasonal favourites are at their peak quality and freshness."},
+				{ID: "season-2", Text: "Cool-weather staples are selling fast across local mandis."},
+			},
+			"cropTrends": {
+				{ID: "trend-1", Text: "Demand is trending up for high-value, low-water crops."},
+				{ID: "trend-2", Text: "Farmers are pacing harvests around buyer demand and weather."},
+			},
+			"announcements": {
+				{ID: "announce-1", Text: "New supply loads are hitting the market every morning."},
+				{ID: "announce-2", Text: "Farm-to-door delivery slots are open for premium produce."},
+			},
+			"showcase": {
+				{ID: "showcase-1", Text: "Farmer spotlight: fresh, traceable produce from trusted growers."},
+				{ID: "showcase-2", Text: "Community harvest stories are now live for the latest market arrivals."},
+			},
+		}
+
+		if app == nil || app.DB == nil {
+			utils.RespondWithJSON(w, http.StatusOK, fallback)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		crops, err := getAllCrops(ctx, app.DB)
+		if err != nil || len(crops) == 0 {
+			utils.RespondWithJSON(w, http.StatusOK, fallback)
+			return
+		}
+
+		seen := map[string]bool{}
+		cropNames := make([]string, 0, len(crops))
+		for _, crop := range crops {
+			name := strings.TrimSpace(crop.Name)
+			if name == "" {
+				continue
+			}
+			k := strings.ToLower(name)
+			if !seen[k] {
+				seen[k] = true
+				cropNames = append(cropNames, name)
+			}
+		}
+		if len(cropNames) == 0 {
+			utils.RespondWithJSON(w, http.StatusOK, fallback)
+			return
+		}
+
+		sequence := append([]string{}, cropNames...)
+		if len(sequence) > 5 {
+			sequence = sequence[:5]
+		}
+
+		payload := map[string][]MarketHighlightItem{
+			"activeDeals": {
+				{ID: "deal-1", Text: "Fresh deals on " + sequence[0] + " are flowing in this week."},
+				{ID: "deal-2", Text: "Local buyers are picking up " + sequence[min(1, len(sequence)-1)] + " at competitive prices."},
+			},
+			"seasonalPicks": {
+				{ID: "season-1", Text: "Seasonal pick: " + sequence[0] + " is at peak quality."},
+				{ID: "season-2", Text: "Best of the season: " + sequence[min(2, len(sequence)-1)] + " is stocked and fresh."},
+			},
+			"cropTrends": {
+				{ID: "trend-1", Text: "Supply is rising for " + sequence[0] + " across nearby farms."},
+				{ID: "trend-2", Text: "Market demand remains strong for " + sequence[min(3, len(sequence)-1)] + "."},
+			},
+			"announcements": {
+				{ID: "announce-1", Text: "New harvest arrivals are expected for " + sequence[0] + "."},
+				{ID: "announce-2", Text: "Fresh collections of " + sequence[min(4, len(sequence)-1)] + " are now available."},
+			},
+			"showcase": {
+				{ID: "showcase-1", Text: "Farmer showcase: " + sequence[0] + " from a trusted local grower."},
+				{ID: "showcase-2", Text: "Spotlight crop: " + sequence[min(1, len(sequence)-1)] + " bringing in premium quality."},
+			},
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, payload)
+	}
+}
+
 /* ---------------------------------------------------- */
 /* Crop Types (grouped in application layer)             */
 /* ---------------------------------------------------- */
