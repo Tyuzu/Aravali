@@ -3,6 +3,7 @@ import { t } from "../../i18n/i18n.js";
 import { navigate } from "../../routes/navigate.js";
 import { getCurrentAllowedFeatures } from "../../config/domainFeatures.js";
 import { getState } from "../../state/state.js";
+import { normalizeNavPath } from "../../utils/navPath.js";
 import { enableDragDrop, getNavOrder } from "./navigationDrag.js";
 
 export interface NavItemConfig {
@@ -39,8 +40,12 @@ const getCurrentUserRoles = (): string[] => {
 
 /** Highlight current active link */
 export const highlightActiveNav = (path: string): void => {
+  const currentPath = normalizeNavPath(path);
+
   document.querySelectorAll<HTMLAnchorElement>(".navigation__link").forEach((link) => {
-    link.classList.toggle("active", link.getAttribute("href") === path);
+    const href = link.getAttribute("href") || "";
+    const normalizedHref = normalizeNavPath(href);
+    link.classList.toggle("active", normalizedHref === currentPath);
   });
 };
 
@@ -98,6 +103,7 @@ const getPermittedNavItems = (allNavItems: NavItemConfig[]): NavItemConfig[] => 
 const createNav = (): HTMLDivElement => {
   // 1. Master list of navigation items mapped to feature keys
   const allNavItems: NavItemConfig[] = [
+    { href: "/", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },
     { href: "/dash", label: t("nav.dash", {}, "Dash"), feature: "farms", roles: ["farmer", "admin"] },
     { href: "/farms", label: t("nav.farms", {}, "Farms"), feature: "farms" },
     { href: "/grocery", label: t("nav.grocery", {}, "Grocery"), feature: "farms" },

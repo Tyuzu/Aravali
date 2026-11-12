@@ -5,6 +5,7 @@ import { render } from "./router.js";
 import { getState, setState, restoreScroll, subscribe } from "../state/state.js";
 import { track } from "../services/activity/metrics.js";
 import { startPerfMonitoring } from "../services/activity/perfMonitor.js";
+import { normalizeStoredRedirect } from "../utils/navPath.js";
 import {
     getCurrentAppLocation,
     parseAppLocation,
@@ -239,23 +240,6 @@ export async function renderPage(): Promise<void> {
     await loadContent(getCurrentAppLocation());
 }
 
-function normalizeStoredRedirect(value: string | null): string | null {
-    if (typeof value !== "string") return null;
-
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-
-    let candidate = trimmed.startsWith("#/") ? trimmed.slice(1) : trimmed;
-    candidate = candidate.split("#")[0];
-
-    if (!candidate.startsWith("/")) return null;
-    if (candidate.length > 1 && candidate.endsWith("/")) {
-        candidate = candidate.slice(0, -1);
-    }
-
-    const ignoredPaths = ["/", "/login", "/logout", "/404", "/error/403", "/error/404"];
-    return ignoredPaths.includes(candidate) ? null : candidate;
-}
 
 /* =========================================================
    AUTH REACTIVITY & CROSS-TAB SYNC
