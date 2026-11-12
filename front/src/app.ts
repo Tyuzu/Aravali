@@ -3,6 +3,7 @@ import { detectLanguage, setLanguage } from "./i18n/i18n.js";
 import { profileEnvironment, setEnvironment, EnvironmentData } from "./utils/app/env.js";
 import { trackError, showApplicationError } from "./utils/app/errors.js";
 import { setupPerformanceMonitoring } from "./utils/app/performance.js";
+import { setupServiceWorker } from "./utils/app/sw-register.js";
 import { navigate } from "./routes/navigate.js";
 
 /* =========================================================
@@ -225,6 +226,7 @@ async function startApplication(): Promise<void> {
     hydrateAuthState(true);
     profileEnvironment();
 
+    setupServiceWorker();
     setupGlobalNavigation();
     setupHistoryNavigation();
 

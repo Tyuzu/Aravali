@@ -10,10 +10,16 @@ export interface SkipWaitingMessage {
   type: "SKIP_WAITING";
 }
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
 /* =========================================================
    STATE & MAIN EXPORT
 ========================================================= */
 let serviceWorkerRefreshing = false;
+let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
 
 export function setupServiceWorker(): void {
   if (!("serviceWorker" in navigator)) {
@@ -22,6 +28,17 @@ export function setupServiceWorker(): void {
   }
 
   let hadController = Boolean(navigator.serviceWorker.controller);
+
+  window.addEventListener("beforeinstallprompt", (event: Event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event as BeforeInstallPromptEvent;
+    window.dispatchEvent(new CustomEvent("pwa:install-ready"));
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    window.dispatchEvent(new CustomEvent("pwa:installed"));
+  });
 
   window.addEventListener("load", async () => {
     try {
@@ -73,6 +90,20 @@ export function setupServiceWorker(): void {
 /* =========================================================
    HELPER FUNCTIONS
 ========================================================= */
+export async function triggerInstallPrompt(): Promise<boolean> {
+  if (!deferredInstallPrompt) return false;
+
+  try {
+    await deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    return choice.outcome === "accepted";
+  } catch {
+    deferredInstallPrompt = null;
+    return false;
+  }
+}
+
 function requestServiceWorkerActivation(worker: ServiceWorker | null): void {
   if (!worker) return;
   const message: SkipWaitingMessage = { type: "SKIP_WAITING" };

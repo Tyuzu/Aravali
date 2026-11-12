@@ -1,12 +1,24 @@
 {
+  "id": "/",
   "name": "Scav",
-  "short_name": "SPA",
+  "short_name": "Scav",
+  "description": "Scav is a mobile-friendly community app for discovery, buying, selling, and managing everyday experiences.",
   "start_url": "/?source=homescreen",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "browser"
+  ],
   "orientation": "portrait",
+  "lang": "en",
   "theme_color": "#222222",
   "background_color": "#ffffff",
+  "categories": [
+    "shopping",
+    "productivity",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "/assets/icon-72.png",
@@ -42,7 +54,8 @@
       "icons": [
         {
           "src": "/assets/icon-96.png",
-          "sizes": "96x96"
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     },
@@ -53,7 +66,8 @@
       "icons": [
         {
           "src": "/assets/icon-96.png",
-          "sizes": "96x96"
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     }

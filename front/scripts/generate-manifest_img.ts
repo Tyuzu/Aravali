@@ -10,29 +10,30 @@ type IconEntry = {
 };
 
 const domain = process.env.VITE_DOMAIN || "https://indium.netlify.app";
-const baseIcon = "assets/logo.png";      // your source logo
+const baseIconCandidates = [
+  "assets/icon-192.png",
+  "assets/logo.png",
+  "public/assets/icon-192.png",
+  "public/assets/logo.png",
+];
 const outputDir = path.resolve("public", "assets");
 const manifestPath = path.join(path.resolve("public"), "manifest.json");
-
 const sizes = [72, 96, 128, 192, 512];
 
-// ensure output directory exists
 if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
-
-// ensure manifest directory exists
 const manifestDir = path.dirname(manifestPath);
 if (!existsSync(manifestDir)) mkdirSync(manifestDir, { recursive: true });
 
-// generate icons (skip if base icon missing)
+const baseIcon = baseIconCandidates.find((candidate) => existsSync(candidate));
 let icons: IconEntry[] = [];
-if (!existsSync(baseIcon)) {
-  console.warn(`⚠️ base icon not found at ${baseIcon}, skipping icon generation.`);
+if (!baseIcon) {
+  console.warn("⚠️ no app icon found; manifest will not include generated icons.");
 } else {
   for (const size of sizes) {
     const output = path.join(outputDir, `icon-${size}.png`);
     await sharp(baseIcon)
-      .resize(size, size)
-      .png({ compressionLevel: 9 })
+      .resize(size, size, { fit: "cover", position: "centre" })
+      .png({ compressionLevel: 9, quality: 90 })
       .toFile(output);
     console.log(`✅ generated icon-${size}.png`);
   }
@@ -45,39 +46,38 @@ if (!existsSync(baseIcon)) {
 }
 
 const manifest = {
+  id: "/",
   name: "Scav",
-  short_name: "SPA",
+  short_name: "Scav",
+  description: "Scav is a mobile-friendly community app for discovery, buying, selling, and managing everyday experiences.",
   start_url: "/?source=homescreen",
   scope: "/",
   display: "standalone",
+  display_override: ["standalone", "browser"],
   orientation: "portrait",
+  lang: "en",
   theme_color: "#222222",
   background_color: "#ffffff",
+  categories: ["shopping", "productivity", "lifestyle"],
   icons,
   shortcuts: [
     {
       name: "Dashboard",
       short_name: "Dashboard",
       url: "/dashboard",
-      icons: [{ src: "/assets/icon-96.png", sizes: "96x96" }],
+      icons: [{ src: "/assets/icon-96.png", sizes: "96x96", type: "image/png" }],
     },
     {
       name: "Profile",
       short_name: "Profile",
       url: "/profile",
-      icons: [{ src: "/assets/icon-96.png", sizes: "96x96" }],
+      icons: [{ src: "/assets/icon-96.png", sizes: "96x96", type: "image/png" }],
     },
   ],
-  related_applications: [
-    { platform: "webapp", url: `${domain}/manifest.json` },
-    // { platform: "play", id: "com.yourcompany.app" },
-  ],
+  related_applications: [{ platform: "webapp", url: `${domain}/manifest.json` }],
   prefer_related_applications: false,
-  url_handlers: [
-    { origin: new URL(domain).origin },
-  ],
+  url_handlers: [{ origin: new URL(domain).origin }],
 };
 
-// write manifest
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 console.log("✅ manifest generated at:", manifestPath);
