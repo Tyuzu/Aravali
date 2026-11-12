@@ -109,10 +109,10 @@ func InitConfig() (*Config, error) {
 	}
 
 	if cfg.Env == "production" {
-		// ensure essential services are configured in production
-		if cfg.DatabaseURL == "" {
-			return nil, fmt.Errorf("POSTGRES_URL or discrete POSTGRES_* environment variables must be set in production")
-		}
+		// // ensure essential services are configured in production
+		// if cfg.DatabaseURL == "" {
+		// 	return nil, fmt.Errorf("POSTGRES_URL or discrete POSTGRES_* environment variables must be set in production")
+		// }
 		if os.Getenv("REDIS_URL") == "" && os.Getenv("REDIS_ADDR") == "" {
 			return nil, fmt.Errorf("REDIS_URL or REDIS_ADDR must be set in production")
 		}
