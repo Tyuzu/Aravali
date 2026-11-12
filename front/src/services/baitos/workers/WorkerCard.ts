@@ -66,7 +66,7 @@ export function HireWorkerCard(worker: Worker, isLoggedIn?: boolean): HTMLElemen
                         navigate(`/baitos/worker/${worker.baitoWorkerId}`);
                     }
                 },
-                "btn btn-primary"
+                "buttonx btn-primary"
             )
             : !isSelf
                 ? createElement("p", { class: "login-warning-text" }, ["🔒 Login to hire"])

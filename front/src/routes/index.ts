@@ -1,6 +1,7 @@
 import { createheader } from "../components/layout/header.js";
 import { createNav, highlightActiveNav } from "../components/layout/navigation.js";
 import { Footer } from "../components/layout/footer.js";
+import LoadingSpinner from "../components/ui/LoadingSpinner.js";
 import { render } from "./router.js";
 import { getState, setState, restoreScroll, subscribe } from "../state/state.js";
 import { track } from "../services/activity/metrics.js";
@@ -54,9 +55,38 @@ const layoutState = {
 const elements: LayoutElements = {
     header: null,
     nav: null,
-    main: null,
-    footer: null
+    footer: null,
+    main: null
 };
+
+let pageLoadingIndicator: HTMLElement | null = null;
+
+function showPageLoadingIndicator(): void {
+    if (pageLoadingIndicator && pageLoadingIndicator.isConnected) {
+        return;
+    }
+
+    const indicator = document.createElement("div");
+    indicator.id = "page-navigation-loader";
+    indicator.className = "page-navigation-loader";
+    indicator.setAttribute("role", "status");
+    indicator.setAttribute("aria-live", "polite");
+    indicator.setAttribute("aria-busy", "true");
+    indicator.appendChild(LoadingSpinner.createElement());
+
+    const root = document.body || document.documentElement;
+    if (root) {
+        root.appendChild(indicator);
+        pageLoadingIndicator = indicator;
+    }
+}
+
+function hidePageLoadingIndicator(): void {
+    if (!pageLoadingIndicator) return;
+
+    pageLoadingIndicator.remove();
+    pageLoadingIndicator = null;
+}
 
 function getElements(): LayoutElements {
     if (!elements.main) {
@@ -176,57 +206,66 @@ export async function loadContent(
         throw new Error("SPA content container #content was not found.");
     }
 
-    hydrateAuthState();
-    updateLayout(false);
+    showPageLoadingIndicator();
 
-    main.classList.add("is-transitioning");
-    main.innerHTML = renderSkeleton();
+    try {
+        hydrateAuthState();
+        updateLayout(false);
 
-    await new Promise((resolve) => {
-        requestAnimationFrame(() => {
-            window.setTimeout(resolve, 80);
+        main.classList.add("is-transitioning");
+        main.innerHTML = renderSkeleton();
+
+        await new Promise((resolve) => {
+            requestAnimationFrame(() => {
+                window.setTimeout(resolve, 80);
+            });
         });
-    });
 
-    const parsed = parseAppLocation(rawLocation);
-    const result = await render(parsed.fullPath, main);
+        const parsed = parseAppLocation(rawLocation);
+        const result = await render(parsed.fullPath, main);
 
-    /* --- ROUTER REDIRECT HANDLING --- */
-    const routeResult = result as RouteRedirectResult;
-    if (routeResult && typeof routeResult.redirect === "string" && routeResult.redirect) {
-        if (redirectDepth >= 10) {
-            throw new Error("Too many consecutive route redirects.");
+        /* --- ROUTER REDIRECT HANDLING --- */
+        const routeResult = result as RouteRedirectResult;
+        if (routeResult && typeof routeResult.redirect === "string" && routeResult.redirect) {
+            if (redirectDepth >= 10) {
+                throw new Error("Too many consecutive route redirects.");
+            }
+
+            const browserTarget = toBrowserTarget(routeResult.redirect, parsed.mode);
+            history.replaceState(null, "", browserTarget);
+
+            track("route_redirect", {
+                from: parsed.fullPath,
+                to: routeResult.redirect
+            });
+
+            return loadContent(getCurrentAppLocation(), {
+                redirectDepth: redirectDepth + 1
+            });
         }
-        
-        const browserTarget = toBrowserTarget(routeResult.redirect, parsed.mode);
-        history.replaceState(null, "", browserTarget);
 
-        track("route_redirect", {
-            from: parsed.fullPath,
-            to: routeResult.redirect
-        });
+        /* --- NAVIGATION UI --- */
+        highlightActiveNav(parsed.path);
 
-        return loadContent(getCurrentAppLocation(), {
-            redirectDepth: redirectDepth + 1
-        });
-    }
+        /* --- SCROLL RESTORATION --- */
+        const routeState = getRouteStateHelper(getCurrentAppLocation());
+        if (routeState) {
+            requestAnimationFrame(() => {
+                restoreScroll(main, routeState);
+            });
+        }
 
-    /* --- NAVIGATION UI --- */
-    highlightActiveNav(parsed.path);
-
-    /* --- SCROLL RESTORATION --- */
-    const routeState = getRouteStateHelper(getCurrentAppLocation());
-    if (routeState) {
         requestAnimationFrame(() => {
-            restoreScroll(main, routeState);
+            main.classList.remove("is-transitioning");
+        });
+
+        return result;
+    } finally {
+        hidePageLoadingIndicator();
+        requestAnimationFrame(() => {
+            main.classList.remove("is-transitioning");
         });
     }
-
-    requestAnimationFrame(() => {
-        main.classList.remove("is-transitioning");
-    });
-
-    return result;
 }
 
 // Register loader with navigate module to avoid circular dependency
