@@ -21,14 +21,16 @@
 }
 
 .buttonx.secondary,
-.buttonx.btn-secondary {
+.buttonx.btn-secondary,
+#cancel-profile-btn {
   background-color: var(--color-bg-tertiary);
   color: var(--color-fg);
   border-color: var(--color-border);
 }
 
 .buttonx.secondary:hover,
-.buttonx.btn-secondary:hover {
+.buttonx.btn-secondary:hover,
+#cancel-profile-btn:hover {
   background-color: var(--color-border-light);
   border-color: var(--color-border);
 }

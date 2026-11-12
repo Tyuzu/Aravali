@@ -21,30 +21,44 @@ async function displayProfile(
 ): Promise<void> {
   if (!content) return;
 
-  content.textContent = ""; // Clear existing content
+  const renderProfileIntoContent = (profile: any) => {
+    const profileElement = renderProfile(profile, isLoggedIn, displayUserProfileData);
+    content.replaceChildren(profileElement);
+    attachProfileEventListeners(content);
+  };
+
+  const cachedProfile = (getState("userProfile") || null) as Record<string, any> | null;
+  content.textContent = "";
 
   if (!isLoggedIn) {
     navigate("/login");
     return;
   }
 
+  if (cachedProfile && Object.keys(cachedProfile).length > 0) {
+    renderProfileIntoContent(cachedProfile);
+  }
+
   try {
     const profile = await fetchProfile();
 
     if (profile) {
-      const profileElement = renderProfile(profile, isLoggedIn, displayUserProfileData);
-      content.appendChild(profileElement);
-      attachProfileEventListeners(content);
-    } else {
+      const shouldRefresh = !cachedProfile || profile.username !== cachedProfile.username || profile.userid !== cachedProfile.userid || profile.updatedAt !== cachedProfile.updatedAt;
+      if (shouldRefresh) {
+        renderProfileIntoContent(profile);
+      }
+    } else if (!cachedProfile || Object.keys(cachedProfile).length === 0) {
       const loginMessage = document.createElement("p");
       loginMessage.textContent = "Please log in to see your profile.";
       content.appendChild(loginMessage);
     }
   } catch (error) {
     console.error("Error displaying profile:", error);
-    const errorMessage = document.createElement("p");
-    errorMessage.textContent = "Failed to load profile. Please try again later.";
-    content.appendChild(errorMessage);
+    if (!cachedProfile || Object.keys(cachedProfile).length === 0) {
+      const errorMessage = document.createElement("p");
+      errorMessage.textContent = "Failed to load profile. Please try again later.";
+      content.appendChild(errorMessage);
+    }
   }
 }
 
