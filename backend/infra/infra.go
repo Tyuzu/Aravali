@@ -38,8 +38,14 @@ func New(cfg *config.Config) (*Deps, error) {
 	}
 	/* -------- Mongo -------- */
 
-	mongoURI := env("MONGO_URI", "mongodb://localhost:27017")
-	mongoDB := env("MONGO_DB", "eventdb")
+	mongoURI := cfg.MongoURI
+	if mongoURI == "" {
+		mongoURI = env("MONGO_URI", "mongodb://localhost:27017")
+	}
+	mongoDB := cfg.MongoDB
+	if mongoDB == "" {
+		mongoDB = env("MONGO_DB", "eventdb")
+	}
 
 	client, database, err := NewMongo(mongoURI, mongoDB)
 	if err != nil {
@@ -50,9 +56,15 @@ func New(cfg *config.Config) (*Deps, error) {
 
 	/* -------- Redis -------- */
 
-	redisAddr := env("REDIS_ADDR", "localhost:6379")
-	redisPassword := env("REDIS_PASSWORD", "")
-	redisDB := 0
+	redisAddr := cfg.RedisAddr
+	if redisAddr == "" {
+		redisAddr = env("REDIS_ADDR", "localhost:6379")
+	}
+	redisPassword := cfg.RedisPassword
+	if redisPassword == "" {
+		redisPassword = env("REDIS_PASSWORD", "")
+	}
+	redisDB := cfg.RedisDB
 
 	rclient, err := NewRedis(redisAddr, redisPassword, redisDB)
 	if err != nil {

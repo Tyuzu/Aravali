@@ -12,6 +12,11 @@ import (
 
 type Config struct {
 	Env                   string
+	MongoURI              string
+	MongoDB               string
+	RedisAddr             string
+	RedisPassword         string
+	RedisDB               int
 	DatabaseURL           string
 	PostgresUser          string
 	PostgresPassword      string
@@ -46,6 +51,29 @@ func InitConfig() (*Config, error) {
 	}
 	if port[0] != ':' {
 		port = ":" + port
+	}
+
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017"
+	}
+
+	mongoDB := os.Getenv("MONGO_DB")
+	if mongoDB == "" {
+		mongoDB = "eventdb"
+	}
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := 0
+	if v := os.Getenv("REDIS_DB"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil {
+			redisDB = parsed
+		}
 	}
 
 	allowedOrigins := parseAllowedOrigins(os.Getenv("ALLOWED_ORIGINS"))
@@ -84,7 +112,12 @@ func InitConfig() (*Config, error) {
 	// }
 
 	cfg := &Config{
-		Env: env,
+		Env:           env,
+		MongoURI:      mongoURI,
+		MongoDB:       mongoDB,
+		RedisAddr:     redisAddr,
+		RedisPassword: redisPassword,
+		RedisDB:       redisDB,
 		// DatabaseURL:           dbURL,
 		// PostgresUser:          pgUser,
 		// PostgresPassword:      pgPass,
