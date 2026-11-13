@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -55,6 +56,9 @@ func InitConfig() (*Config, error) {
 
 	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
+		if env == "production" {
+			return nil, fmt.Errorf("MONGO_URI must be set in production")
+		}
 		mongoURI = "mongodb://localhost:27017"
 	}
 
@@ -64,12 +68,27 @@ func InitConfig() (*Config, error) {
 	}
 
 	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		redisAddr = "localhost:6379"
-	}
-
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	redisDB := 0
+	if redisAddr == "" {
+		if rawURL := os.Getenv("REDIS_URL"); rawURL != "" {
+			parsedAddr, parsedPassword, parsedDB, err := parseRedisURL(rawURL)
+			if err != nil {
+				return nil, fmt.Errorf("invalid REDIS_URL: %w", err)
+			}
+			redisAddr = parsedAddr
+			if redisPassword == "" {
+				redisPassword = parsedPassword
+			}
+			redisDB = parsedDB
+		}
+	}
+	if redisAddr == "" {
+		if env == "production" {
+			return nil, fmt.Errorf("REDIS_URL or REDIS_ADDR must be set in production")
+		}
+		redisAddr = "localhost:6379"
+	}
 	if v := os.Getenv("REDIS_DB"); v != "" {
 		if parsed, err := strconv.Atoi(v); err == nil {
 			redisDB = parsed
@@ -183,6 +202,43 @@ func parseAllowedOrigins(env string) []string {
 		}
 	}
 	return out
+}
+
+func parseRedisURL(rawURL string) (string, string, int, error) {
+	rawURL = strings.TrimSpace(rawURL)
+	if rawURL == "" {
+		return "", "", 0, nil
+	}
+	if !strings.Contains(rawURL, "://") {
+		return rawURL, "", 0, nil
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", "", 0, err
+	}
+	if u.Host == "" {
+		return "", "", 0, fmt.Errorf("missing host in REDIS_URL")
+	}
+
+	password := ""
+	if u.User != nil {
+		if p, ok := u.User.Password(); ok {
+			password = p
+		}
+	}
+
+	db := 0
+	if u.Path != "" && u.Path != "/" {
+		pathDB := strings.TrimPrefix(u.Path, "/")
+		if pathDB != "" {
+			if parsedDB, err := strconv.Atoi(pathDB); err == nil {
+				db = parsedDB
+			}
+		}
+	}
+
+	return u.Host, password, db, nil
 }
 
 // func envOrDefault(key string, fallback string) string {

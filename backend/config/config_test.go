@@ -6,7 +6,7 @@ func TestInitConfigLoadsDatabaseSettings(t *testing.T) {
 	t.Setenv("ALLOWED_ORIGINS", "http://localhost:3000")
 	t.Setenv("MONGO_URI", "mongodb://mongo:27017")
 	t.Setenv("MONGO_DB", "scav")
-	t.Setenv("REDIS_ADDR", "redis:6379")
+	t.Setenv("REDIS_URL", "redis://:secret@redis:6379/2")
 	t.Setenv("REDIS_PASSWORD", "secret")
 	t.Setenv("REDIS_DB", "2")
 
@@ -29,5 +29,17 @@ func TestInitConfigLoadsDatabaseSettings(t *testing.T) {
 	}
 	if cfg.RedisDB != 2 {
 		t.Fatalf("RedisDB = %d, want %d", cfg.RedisDB, 2)
+	}
+}
+
+func TestInitConfigRequiresProductionDatabaseSettings(t *testing.T) {
+	t.Setenv("ENV", "production")
+	t.Setenv("ALLOWED_ORIGINS", "https://example.com")
+	t.Setenv("REDIS_URL", "")
+	t.Setenv("REDIS_ADDR", "")
+	t.Setenv("MONGO_URI", "")
+
+	if _, err := InitConfig(); err == nil {
+		t.Fatal("InitConfig() = nil error, want production validation error")
 	}
 }
