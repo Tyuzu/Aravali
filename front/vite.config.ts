@@ -8,8 +8,10 @@ export default defineConfig(({ mode, command }) => {
   const isProd = mode === 'production';
   const isDevServer = command === 'serve';
 
-  // Target Go backend running locally
-  const BACKEND_TARGET = env.VITE_BACKEND_URL || 'http://localhost:4000';
+  // Default backend target for development vs production deployment
+  const BACKEND_TARGET =
+    env.VITE_BACKEND_URL ||
+    (isProd ? 'https://aravali-i0ez.onrender.com' : 'http://localhost:4000');
 
   return {
     root: '.',
@@ -128,7 +130,32 @@ export default defineConfig(({ mode, command }) => {
 
     server: {
       allowedHosts: ['.trycloudflare.com', 'localhost'],
-      
+
+      proxy: {
+        '/api/v1': {
+          target: BACKEND_TARGET,
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
+
+        '/ws': {
+          target: BACKEND_TARGET,
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
+
+        '/static': {
+          target: BACKEND_TARGET,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+
+    preview: {
+      port: 4173,
       proxy: {
         '/api/v1': {
           target: BACKEND_TARGET,
