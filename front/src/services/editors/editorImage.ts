@@ -75,16 +75,6 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	// MAIN WRAPPER
 	// --------------------------------------------------
 	const wrapper = element("div", "image-editor-fullscreen-wrapper") as EditorElement;
-	wrapper.style.cssText = `
-		width: 100%;
-		min-height: 100%;
-		display: flex;
-		flex-direction: column;
-		position: relative;
-		overflow: hidden;
-		background: #101114;
-		color: #fff;
-	`;
 
 	// --------------------------------------------------
 	// HEADER
@@ -105,48 +95,13 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	// STATUS MESSAGE
 	// --------------------------------------------------
 	const statusMessage = element("div", "editor-status-message");
-	statusMessage.style.cssText = `
-		display: none;
-		padding: 10px 14px;
-		background: #25272d;
-		color: #fff;
-		font-size: 13px;
-		border-bottom: 1px solid #3a3c42;
-	`;
 
 	// --------------------------------------------------
 	// WORKSPACE
 	// --------------------------------------------------
 	const workspace = element("div", "editor-split-workspace");
-	workspace.style.cssText = `
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		min-height: 0;
-		overflow: hidden;
-	`;
-
 	const upperPane = element("section", "editor-upper-canvas-pane");
-	upperPane.style.cssText = `
-		position: relative;
-		flex: 1;
-		min-height: 300px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
-		background: #17181d;
-	`;
-
 	const lowerPane = element("section", "editor-lower-controls-pane");
-	lowerPane.style.cssText = `
-		flex-shrink: 0;
-		max-height: 45%;
-		overflow-y: auto;
-		padding: 14px;
-		background: #202127;
-		border-top: 1px solid #373941;
-	`;
 
 	// --------------------------------------------------
 	// CAPTURE MODULE
@@ -371,17 +326,12 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	}
 
 	// --------------------------------------------------
-	// CONTROLS & TOOL GRID
+	// CONTROLS & TOOL GRID (Placed at top of control panel)
 	// --------------------------------------------------
 	const controlsHeading = element("h4", "controls-heading", "Editing Tools");
 	lowerPane.appendChild(controlsHeading);
 
 	const toolGrid = element("div", "controls-grid");
-	toolGrid.style.cssText = `
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
-		gap: 10px;
-	`;
 
 	function addTool(label: string, icon: string, callback: () => void): HTMLButtonElement {
 		const btn = button(`${icon} ${label}`, "tool-btn", label);
@@ -450,23 +400,10 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	addTool("Flip Vertical", "↕", () => flipImage(false));
 
 	// --------------------------------------------------
-	// CROP TOOL, ASPECT RATIO LOCKS & POINTER INTERACTION
+	// CROP TOOL & ASPECT RATIO LOCKS
 	// --------------------------------------------------
 	const cropControlsContainer = element("div", "crop-aspect-controls");
-	cropControlsContainer.style.cssText = `
-		display: none;
-		gap: 8px;
-		align-items: center;
-		flex-wrap: wrap;
-		margin: 12px 0;
-		padding: 8px 12px;
-		background: #2a2c35;
-		border-radius: 6px;
-	`;
-
 	const ratioLabel = element("span", "", "Aspect Ratio:");
-	ratioLabel.style.fontSize = "12px";
-	ratioLabel.style.color = "#aaa";
 
 	const ratioButtons: { label: string; ratio: number | null }[] = [
 		{ label: "Free", ratio: null },
@@ -479,8 +416,6 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 
 	ratioButtons.forEach(({ label, ratio }) => {
 		const rBtn = button(label, "tool-btn ratio-btn");
-		rBtn.style.padding = "4px 10px";
-		rBtn.style.minWidth = "50px";
 		if (ratio === null) rBtn.classList.add("active");
 
 		rBtn.addEventListener("click", () => {
@@ -582,7 +517,7 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.drawImage(cropBaseCanvas, 0, 0);
 			ctx.save();
-			ctx.strokeStyle = "#00aaff";
+			ctx.strokeStyle = "#f59e0b"; // Amber highlight matching theme
 			ctx.lineWidth = Math.max(2, canvas.width / 500);
 			ctx.setLineDash([10, 5]);
 			ctx.strokeRect(x, y, width, height);
@@ -647,20 +582,31 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	addTool("Noir", "◑", () => applyFilter("grayscale(100%) contrast(140%)"));
 	addTool("Blur", "◌", () => applyFilter("blur(2px)"));
 
-	// --------------------------------------------------
-	// ADJUSTMENTS (BRIGHTNESS & CONTRAST)
-	// --------------------------------------------------
-	const adjustmentHeading = element("h4", "controls-heading", "Adjustments");
-	lowerPane.appendChild(adjustmentHeading);
+	// Append main tool grid right after tools
+	lowerPane.appendChild(toolGrid);
 
-	const brightnessLabel = element("label", "adjustment-label", "Brightness");
+	const separator1 = element("div", "editor-toolbar-divider");
+	lowerPane.appendChild(separator1);
+
+	// --------------------------------------------------
+	// ADJUSTMENTS (Semantically grouped with Fieldset & Live Value Readouts)
+	// --------------------------------------------------
+	const adjustmentFieldset = document.createElement("fieldset");
+	adjustmentFieldset.style.cssText = "border: none; padding: 0; margin: 0 0 12px 0;";
+	
+	const adjLegend = document.createElement("legend");
+	adjLegend.className = "controls-heading";
+	adjLegend.textContent = "Adjustments";
+	adjustmentFieldset.appendChild(adjLegend);
+
+	const brightnessLabel = element("label", "adjustment-label", "Brightness: 100%");
 	const brightnessSlider = element("input", "adjustment-slider") as HTMLInputElement;
 	brightnessSlider.type = "range";
 	brightnessSlider.min = "0";
 	brightnessSlider.max = "200";
 	brightnessSlider.value = "100";
 
-	const contrastLabel = element("label", "adjustment-label", "Contrast");
+	const contrastLabel = element("label", "adjustment-label", "Contrast: 100%");
 	const contrastSlider = element("input", "adjustment-slider") as HTMLInputElement;
 	contrastSlider.type = "range";
 	contrastSlider.min = "0";
@@ -678,6 +624,9 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 
 	function renderAdjustments(): void {
 		if (!ctx || !canvas.width || !canvas.height) return;
+		brightnessLabel.textContent = `Brightness: ${brightnessSlider.value}%`;
+		contrastLabel.textContent = `Contrast: ${contrastSlider.value}%`;
+
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.save();
 		ctx.filter = `brightness(${brightnessSlider.value}%) contrast(${contrastSlider.value}%)`;
@@ -695,19 +644,28 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	adjustmentResetBtn.addEventListener("click", () => {
 		brightnessSlider.value = "100";
 		contrastSlider.value = "100";
+		renderAdjustments();
 		if (!requireImage()) return;
 		captureAdjustmentBase();
-		renderAdjustments();
 		saveHistory();
 	});
 
-	lowerPane.append(brightnessLabel, brightnessSlider, contrastLabel, contrastSlider, adjustmentResetBtn);
+	adjustmentFieldset.append(brightnessLabel, brightnessSlider, contrastLabel, contrastSlider, adjustmentResetBtn);
+	lowerPane.appendChild(adjustmentFieldset);
+
+	const separator2 = element("div", "editor-toolbar-divider");
+	lowerPane.appendChild(separator2);
 
 	// --------------------------------------------------
-	// DRAWING & TEXT
+	// DRAWING & TEXT (Semantically grouped)
 	// --------------------------------------------------
-	const drawingHeading = element("h4", "controls-heading", "Drawing & Text");
-	lowerPane.appendChild(drawingHeading);
+	const drawingFieldset = document.createElement("fieldset");
+	drawingFieldset.style.cssText = "border: none; padding: 0; margin: 0 0 12px 0;";
+
+	const drawLegend = document.createElement("legend");
+	drawLegend.className = "controls-heading";
+	drawLegend.textContent = "Drawing & Text";
+	drawingFieldset.appendChild(drawLegend);
 
 	const brushColor = element("input", "brush-color") as HTMLInputElement;
 	brushColor.type = "color";
@@ -730,13 +688,6 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	});
 
 	const drawControls = element("div", "drawing-controls");
-	drawControls.style.cssText = `
-		display: flex;
-		gap: 12px;
-		align-items: center;
-		flex-wrap: wrap;
-		margin: 12px 0;
-	`;
 	const colorLabel = element("label", "", "Brush color");
 	colorLabel.appendChild(brushColor);
 	const sizeLabel = element("label", "", "Brush size");
@@ -763,7 +714,11 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 		showMessage("Text added to image.");
 	});
 
-	lowerPane.appendChild(drawControls);
+	drawingFieldset.append(drawControls);
+	lowerPane.appendChild(drawingFieldset);
+
+	const separator3 = element("div", "editor-toolbar-divider");
+	lowerPane.appendChild(separator3);
 
 	// --------------------------------------------------
 	// RESIZE
@@ -804,17 +759,6 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	// FOOTER & EXPORT
 	// --------------------------------------------------
 	const footer = element("footer", "editor-custom-footer");
-	footer.style.cssText = `
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 12px;
-		padding: 14px;
-		background: #202127;
-		border-top: 1px solid #373941;
-		flex-shrink: 0;
-	`;
-
 	const cancelBtn = button("Cancel", "btn-secondary cancel-btn");
 	const saveBtn = button("Save Image", "btn-primary save-btn");
 
@@ -896,18 +840,8 @@ export function displayImageEditor(isLoggedIn: boolean, contentContainer: HTMLEl
 	document.addEventListener("fullscreenchange", updateFullscreenButton);
 
 	// --------------------------------------------------
-	// ASSEMBLE TOOLBAR & WORKSPACE
+	// ASSEMBLE WORKSPACE
 	// --------------------------------------------------
-	lowerPane.appendChild(toolGrid);
-	
-	const separator = element("div", "editor-toolbar-divider");
-	separator.style.cssText = `
-		height: 1px;
-		background: #3b3d45;
-		margin: 14px 0;
-	`;
-	lowerPane.insertBefore(separator, adjustmentHeading);
-
 	workspace.append(upperPane, lowerPane);
 	wrapper.append(header, statusMessage, workspace, footer);
 

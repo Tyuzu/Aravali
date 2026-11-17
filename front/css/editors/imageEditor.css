@@ -1,5 +1,5 @@
 /* =======================================================
-   IMAGE EDITOR SPLIT & FULLSCREEN STYLES (Fluent UI Theme)
+   IMAGE STUDIO & MEDIA CAPTURE - MODERN DARK THEME
 ======================================================= */
 
 .image-editor-fullscreen-wrapper {
@@ -7,58 +7,74 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: var(--font-body);
+  background: #111318;
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
 }
 
-/* When in browser fullscreen mode */
 .image-editor-fullscreen-wrapper:fullscreen {
   height: 100vh;
   width: 100vw;
   padding: 0;
 }
 
-/* --- Custom Header --- */
+/* --- Top Header & Action Toolbar --- */
 .editor-custom-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
+  padding: 10px 20px;
+  background: #181b22;
+  border-bottom: 1px solid #262a35;
   flex-shrink: 0;
 }
 
 .editor-title {
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-lg);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: #e5e7eb;
 }
 
 .header-actions {
   display: flex;
-  gap: var(--space-sm);
+  gap: 8px;
 }
 
 .btn-icon {
-  background: var(--color-bg-tertiary);
-  border: none;
-  color: var(--color-fg);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-sm);
+  background: #222630;
+  border: 1px solid #2e3442;
+  color: #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: var(--font-size-sm);
-  box-shadow: var(--shadow-elev-1);
-  transition: background var(--transition), box-shadow var(--transition);
+  font-size: 0.95rem;
+  transition: all 0.15s ease;
 }
 
-.btn-icon:hover {
-  background: var(--color-card-hover);
-  box-shadow: var(--shadow-elev-2);
+.btn-icon:hover:not(:disabled) {
+  background: #2c3240;
+  color: #ffffff;
+  border-color: #3b4252;
 }
 
-/* --- Split Workspace (Mobile 50/50 Layout) --- */
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Status Notification Message --- */
+.editor-status-message {
+  display: none;
+  padding: 10px 16px;
+  background: #1f2430;
+  color: #e5e7eb;
+  font-size: 13px;
+  border-bottom: 1px solid #2a2f3d;
+}
+
+/* --- Split Workspace --- */
 .editor-split-workspace {
   display: flex;
   flex-direction: column;
@@ -68,100 +84,214 @@
 
 .editor-upper-canvas-pane {
   flex: 3;
-  background: var(--color-space);
+  background: #0b0d10;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: auto;
-  border-bottom: 1px solid var(--color-border);
+  position: relative;
 }
 
 .editor-lower-controls-pane {
   flex: 1;
-  background: var(--color-bg-secondary);
-  padding: var(--space-md);
+  background: #151821;
+  padding: 16px 20px;
   overflow-y: auto;
+  border-top: 1px solid #222632;
 }
 
+/* --- Section Headings & Dividers --- */
 .controls-heading {
-  margin: 0 0 var(--space-sm) 0;
-  font-size: var(--font-size-xs);
-  color: var(--color-muted);
+  margin: 14px 0 8px 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.08em;
+  font-weight: 600;
 }
 
+.editor-toolbar-divider {
+  height: 1px;
+  background: #222632;
+  margin: 14px 0;
+}
+
+/* --- Tool Grid & Buttons --- */
 .controls-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
 }
 
 .tool-btn {
-  padding: var(--space-md);
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  color: var(--color-fg);
-  border-radius: var(--radius-sm);
-  font-weight: var(--font-weight-medium);
+  padding: 10px 12px;
+  background: #1c202a;
+  border: 1px solid #262b38;
+  color: #d1d5db;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.15s ease;
   text-align: center;
 }
 
 .tool-btn:hover {
-  background: var(--color-primary);
-  color: var(--color-primary-fg);
-  border-color: var(--color-accent);
+  background: #252b3a;
+  border-color: #3b4252;
+  color: #ffffff;
 }
 
-/* --- Custom Footer --- */
+.tool-btn.active, .ratio-btn.active {
+  background: #d97706 !important; /* Amber Accent */
+  color: #ffffff !important;
+  border-color: #f59e0b !important;
+  font-weight: 600;
+}
+
+/* --- Aspect Ratio Toolbar --- */
+.crop-aspect-controls {
+  display: none;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  padding: 10px 14px;
+  background: #191d28;
+  border: 1px solid #262b38;
+  border-radius: 8px;
+}
+
+.crop-aspect-controls span {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.ratio-btn {
+  padding: 4px 10px;
+  min-width: 48px;
+  font-size: 0.8rem;
+}
+
+/* --- Sliders & Adjustments --- */
+.adjustment-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.adjustment-slider {
+  width: 100%;
+  height: 6px;
+  background: #222632;
+  border-radius: 3px;
+  outline: none;
+  margin-bottom: 12px;
+  accent-color: #f59e0b; /* Amber slider handle */
+  cursor: pointer;
+}
+
+.adjustment-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f59e0b;
+  cursor: pointer;
+}
+
+/* --- Drawing & Text controls --- */
+.drawing-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  padding: 10px 14px;
+  background: #191d28;
+  border-radius: 8px;
+  border: 1px solid #262b38;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.drawing-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.brush-color {
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.brush-size {
+  accent-color: #f59e0b;
+}
+
+/* --- Image Info Text --- */
+.image-info {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin: 4px 0 12px 0;
+}
+
+/* --- Footer & Action Buttons --- */
 .editor-custom-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-secondary);
-  border-top: 1px solid var(--color-border);
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #181b22;
+  border-top: 1px solid #262a35;
   flex-shrink: 0;
 }
 
 .btn-secondary {
-  padding: var(--space-sm) var(--space-lg);
-  background: var(--color-bg-tertiary);
-  color: var(--color-fg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-weight: var(--font-weight-medium);
+  padding: 8px 18px;
+  background: #222630;
+  color: #d1d5db;
+  border: 1px solid #2e3442;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background 0.15s;
 }
 
 .btn-secondary:hover {
-  background: var(--color-card-hover);
+  background: #2c3240;
+  color: #ffffff;
 }
 
 .save-btn {
-  padding: var(--space-sm) var(--space-xl);
-  background: var(--color-btn-bg);
-  color: var(--color-btn-fg);
+  padding: 8px 22px;
+  background: #d97706; /* Amber primary button */
+  color: #ffffff;
   border: none;
-  border-radius: var(--radius-sm);
-  font-weight: var(--font-weight-medium);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
-  box-shadow: var(--shadow-elev-1);
-  transition: background var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+  transition: background 0.15s, box-shadow 0.15s;
 }
 
-.save-btn:hover {
-  background: var(--color-btn-hover-bg);
-  box-shadow: var(--shadow-elev-2);
+.save-btn:hover:not(:disabled) {
+  background: #b45309;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
 }
 
-/* Desktop override */
-@media (min-width: 768px) {
-  .editor-split-workspace {
-    flex-direction: row;
-  }
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

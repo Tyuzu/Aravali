@@ -30,6 +30,8 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 	let cameraStarting = false;
 	let discardRecording = false;
 	let cameraGeneration = 0;
+	let recordingTimerInterval: number | null = null;
+	let recordingSeconds = 0;
 
 	// Root container
 	const container = createElement("div", {
@@ -58,7 +60,6 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 	const flashBtn = createButton("top-icon-btn flash-btn", "⚡", "Toggle flash");
 	
 	tabsContainer.append(cameraTab, uploadTab);
-	
 	const topBar = createElement("div", { class: "capture-top-bar" }, [closeBtn, tabsContainer, flashBtn]);
 
 	// Error Message Box
@@ -82,6 +83,23 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 	videoElement.muted = true;
 	videoElement.setAttribute("aria-label", "Live camera preview");
 
+	// UX Additions: Loading Spinner Overlay & Flash Overlay
+	const loadingOverlay = createElement("div", { class: "camera-loading-overlay" }, [
+		createElement("div", { class: "camera-spinner" }, []),
+		createElement("span", {}, ["Starting camera..."])
+	]);
+	loadingOverlay.style.cssText = "position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.85); color:#fff; z-index:4; gap:12px; font-size:14px;";
+
+	const flashOverlay = createElement("div", { class: "camera-flash-overlay" }, []);
+	flashOverlay.style.cssText = "position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:6; transition: opacity 0.15s ease;";
+
+	// Recording Timer Pill Overlay (Hidden by default)
+	const recordingBadge = createElement("div", { class: "recording-badge" }, [
+		createElement("span", { class: "recording-dot" }, []),
+		createElement("span", { class: "recording-time" }, ["00:00"])
+	]);
+	recordingBadge.style.cssText = "position:absolute; top:20px; left:50%; transform:translateX(-50%); display:none; align-items:center; gap:8px; background:rgba(180,35,24,0.9); color:#fff; padding:6px 14px; border-radius:20px; font-weight:600; font-size:13px; z-index:5; backdrop-filter:blur(4px);";
+
 	// Camera Guide Overlay
 	const guideTextContent = type === "scan" 
 		? "Position your document inside the frame. Keep all four corners visible." 
@@ -103,7 +121,7 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 	const switchCameraBtn = createButton("control-icon-btn switch-camera-btn", "🔄", "Switch camera");
 	
 	bottomControls.append(leftSpacer, shutterBtn, switchCameraBtn);
-	cameraView.append(videoElement, guideOverlay, bottomControls);
+	cameraView.append(videoElement, loadingOverlay, flashOverlay, recordingBadge, guideOverlay, bottomControls);
 
 	// Upload View
 	const uploadView = createElement("div", { class: "upload-view" }, []);
@@ -155,6 +173,7 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 		videoElement.srcObject = null;
 		torchEnabled = false;
 		flashBtn.classList.remove("active");
+		loadingOverlay.style.display = "none";
 	}
 
 	function validateFile(file: File): boolean {
@@ -176,8 +195,8 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 		clearError();
 		if (!validateFile(file)) return;
 		if (isRecording) {
+			stopRecording();
 			discardRecording = true;
-			mediaRecorder?.stop();
 		}
 		stopCamera();
 		options.onMediaCaptured(file, "upload");
@@ -187,10 +206,12 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 		if (destroyed || cameraStarting || mediaStream) return;
 		if (!navigator.mediaDevices?.getUserMedia) {
 			showError("Camera access is unavailable. Use HTTPS or a supported browser.");
+			loadingOverlay.style.display = "none";
 			return;
 		}
 
 		clearError();
+		loadingOverlay.style.display = "flex";
 		const generation = ++cameraGeneration;
 		cameraStarting = true;
 		cameraTab.disabled = true;
@@ -213,6 +234,7 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 			mediaStream = stream;
 			videoElement.srcObject = stream;
 			await videoElement.play();
+			loadingOverlay.style.display = "none";
 
 			const track = stream.getVideoTracks()[0];
 			const capabilities = track?.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined;
@@ -221,6 +243,7 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 			switchCameraBtn.disabled = false;
 		} catch (error) {
 			console.error("Camera initialization failed:", error);
+			loadingOverlay.style.display = "none";
 			showError("Unable to access the camera. Check camera permissions and ensure HTTPS is enabled.");
 		} finally {
 			cameraStarting = false;
@@ -244,6 +267,10 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 			showError("Please wait for the camera preview to load.");
 			return;
 		}
+
+		// Trigger tactile flash animation
+		flashOverlay.style.opacity = "0.8";
+		setTimeout(() => { flashOverlay.style.opacity = "0"; }, 150);
 
 		const canvas = document.createElement("canvas");
 		canvas.width = videoElement.videoWidth;
@@ -301,7 +328,7 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 			mediaRecorder.onerror = (event) => {
 				console.error("Recording error:", event);
 				showError("Video recording failed.");
-				isRecording = false;
+				stopRecording();
 			};
 
 			mediaRecorder.onstop = () => {
@@ -323,8 +350,22 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 			shutterBtn.title = "Stop recording";
 			shutterInner.classList.add("recording-indicator");
 			
+			// Start Live Timer Badge
+			recordingSeconds = 0;
+			const timeEl = recordingBadge.querySelector(".recording-time");
+			if (timeEl) timeEl.textContent = "00:00";
+			recordingBadge.style.display = "flex";
+
+			if (recordingTimerInterval) window.clearInterval(recordingTimerInterval);
+			recordingTimerInterval = window.setInterval(() => {
+				recordingSeconds++;
+				const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+				const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+				if (timeEl) timeEl.textContent = `${mins}:${secs}`;
+			}, 1000);
+
 			const guideTextEl = guideOverlay.querySelector(".guide-text");
-			if (guideTextEl) guideTextEl.textContent = "Recording video. Tap the button to finish.";
+			if (guideTextEl) guideTextEl.textContent = "Recording video. Tap button to finish.";
 		} catch (error) {
 			console.error("Unable to start recording:", error);
 			showError("Unable to start video recording.");
@@ -332,6 +373,12 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 	}
 
 	function stopRecording(): void {
+		if (recordingTimerInterval) {
+			window.clearInterval(recordingTimerInterval);
+			recordingTimerInterval = null;
+		}
+		recordingBadge.style.display = "none";
+
 		if (mediaRecorder?.state === "recording") {
 			mediaRecorder.stop();
 		}
@@ -432,6 +479,7 @@ export function createMediaCaptureModule(options: MediaCaptureOptions): ManagedE
 		if (destroyed) return;
 		destroyed = true;
 		discardRecording = true;
+		if (recordingTimerInterval) window.clearInterval(recordingTimerInterval);
 		if (mediaRecorder?.state === "recording") {
 			mediaRecorder.stop();
 		}
