@@ -24,6 +24,7 @@ import { baitoRoutes } from "./modules/baito.js";
 import { socialRoutes } from "./modules/social.js";
 import { chatsRoutes } from "./modules/chats.js";
 import { placesRoutes } from "./modules/places.js";
+import { mediaRoutes } from "./modules/media.js";
 
 /* =========================================================
    TYPES & INTERFACES
@@ -40,6 +41,8 @@ export interface RouteMeta {
   permissions?: string[];
   featureFlag?: string;
   [key: string]: any;
+  description?: string;
+  keywords?: string;
 }
 
 export interface Route {
@@ -355,7 +358,8 @@ const featureModules: Record<string, Route[]> = {
   baito: baitoRoutes,
   social: socialRoutes,
   chats: chatsRoutes,
-  places: placesRoutes
+  places: placesRoutes,
+  media: mediaRoutes
 };
 
 /* =========================================================

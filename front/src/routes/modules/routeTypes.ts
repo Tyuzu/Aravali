@@ -3,6 +3,8 @@ export interface RouteMeta {
   roles?: string[];
   roleMatchMode?: "ANY" | "ALL";
   title?: string;
+  description?: string;
+  keywords?: string;
 }
 
 export interface AppRoute {
