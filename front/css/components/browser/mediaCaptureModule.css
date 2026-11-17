@@ -1,65 +1,233 @@
 /* =======================================================
-   MEDIA CAPTURE MODULE STYLES
+   MOBILE-OPTIMIZED MEDIA CAPTURE MODULE STYLES
 ======================================================= */
 
-.media-capture-module {
+.media-capture-module.mobile-immersive {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  height: 100%;
+  min-height: 100vh;
+  background: #000000;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
-  font-family: inherit;
+  box-sizing: border-box;
 }
 
-/* --- Tab Header --- */
-.capture-tabs {
+/* --- Top Navigation & Controls Bar --- */
+.capture-top-bar {
   display: flex;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
+  z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.tab-btn {
-  flex: 1;
-  padding: 14px 20px;
+.top-icon-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s;
+}
+
+.top-icon-btn:hover, .top-icon-btn.active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Mode Switcher Tabs Pill */
+.capture-mode-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 4px;
+  border-radius: 20px;
+  gap: 4px;
+}
+
+.tab-pill {
   background: transparent;
   border: none;
-  font-size: 1rem;
+  color: #a1a1aa;
+  padding: 6px 14px;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #64748b;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  text-align: center;
+  transition: all 0.2s ease;
 }
 
-.tab-btn:hover {
-  color: #0f172a;
-  background: #f1f5f9;
-}
-
-.tab-btn.active {
-  color: #2563eb;
+.tab-pill.active {
   background: #ffffff;
-  border-bottom: 2px solid #2563eb;
+  color: #000000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 /* --- Viewport --- */
 .capture-viewport {
   position: relative;
-  min-height: 350px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* --- Camera View --- */
+.camera-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.camera-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* Framing & Guide Overlay */
+.camera-guide-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.scan-frame-box {
+  width: 85%;
+  max-width: 360px;
+  height: 220px;
+  border: 2px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  margin-bottom: 24px;
+}
+
+.guide-text {
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+  max-width: 300px;
+  backdrop-filter: blur(4px);
+  margin: 0;
+}
+
+/* Bottom Controls Bar */
+.camera-bottom-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 24px 20px 36px 20px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+.control-spacer {
+  width: 44px;
+}
+
+/* Shutter Button */
+.shutter-btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease;
+}
+
+.shutter-btn:active {
+  transform: scale(0.92);
+}
+
+.shutter-inner {
+  width: 60px;
+  height: 60px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.control-icon-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s;
+}
+
+.control-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* --- Upload View --- */
+.upload-view {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #121212;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #ffffff;
-}
-
-/* --- Upload View & Drop Zone --- */
-.upload-view {
-  width: 100%;
+  box-sizing: border-box;
+  z-index: 3;
 }
 
 .drop-zone {
@@ -67,71 +235,44 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 24px;
-  border: 2px dashed #cbd5e1;
-  border-radius: 8px;
-  background: #fafafa;
-  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 400px;
+  height: 320px;
+  border: 2px dashed #3f3f46;
+  border-radius: 20px;
+  background: #18181b;
+  padding: 24px;
   text-align: center;
+  transition: all 0.2s;
 }
 
 .drop-zone.dragover {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.upload-icon-lg {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
 }
 
 .drop-text {
-  margin: 0 0 16px 0;
-  font-size: 1rem;
-  color: #475569;
+  color: #a1a1aa;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
 }
 
 .browse-btn-label {
   display: inline-block;
-  padding: 10px 20px;
-  background: #2563eb;
+  padding: 12px 24px;
+  background: #3b82f6;
   color: #ffffff;
-  font-weight: 500;
-  border-radius: 6px;
+  font-weight: 600;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s;
 }
 
 .browse-btn-label:hover {
-  background: #1d4ed8;
-}
-
-/* --- Camera View --- */
-.camera-view {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  gap: 16px;
-}
-
-.camera-preview {
-  width: 100%;
-  max-width: 640px;
-  height: auto;
-  border-radius: 8px;
-  background: #000000;
-  object-fit: cover;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.capture-action-btn {
-  padding: 12px 28px;
-  background: #dc2626;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.capture-action-btn:hover {
-  background: #b91c1c;
+  background: #2563eb;
 }
