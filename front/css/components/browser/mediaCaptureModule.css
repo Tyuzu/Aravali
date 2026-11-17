@@ -9,9 +9,9 @@
   width: 100%;
   height: 100%;
   min-height: 100vh;
-  background: #000000;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -21,7 +21,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-md) var(--space-lg);
   background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
   z-index: 10;
   width: 100%;
@@ -29,51 +29,51 @@
 }
 
 .top-icon-btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-overlay);
   border: none;
-  color: #ffffff;
+  color: var(--color-primary-fg);
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: var(--font-size-base);
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: background 0.2s;
+  transition: background var(--transition);
 }
 
 .top-icon-btn:hover, .top-icon-btn.active {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-secondary);
 }
 
 /* Mode Switcher Tabs Pill */
 .capture-mode-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-overlay);
   backdrop-filter: blur(10px);
-  padding: 4px;
-  border-radius: 20px;
-  gap: 4px;
+  padding: var(--space-xxs);
+  border-radius: var(--radius-full);
+  gap: var(--space-xxs);
 }
 
 .tab-pill {
   background: transparent;
   border: none;
-  color: #a1a1aa;
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-radius: 16px;
+  color: var(--color-muted);
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition);
 }
 
 .tab-pill.active {
-  background: #ffffff;
-  color: #000000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-elev-1);
 }
 
 /* --- Viewport --- */
@@ -121,7 +121,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-lg);
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -131,17 +131,17 @@
   max-width: 360px;
   height: 220px;
   border: 2px dashed rgba(255, 255, 255, 0.6);
-  border-radius: 16px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
-  margin-bottom: 24px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 0 9999px var(--color-overlay);
+  margin-bottom: var(--space-lg);
 }
 
 .guide-text {
-  color: #ffffff;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  color: var(--color-primary-fg);
+  background: var(--color-overlay);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
   text-align: center;
   max-width: 300px;
   backdrop-filter: blur(4px);
@@ -157,7 +157,7 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 24px 20px 36px 20px;
+  padding: var(--space-lg) var(--space-md) var(--space-xl) var(--space-md);
   background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
   z-index: 5;
   box-sizing: border-box;
@@ -171,15 +171,15 @@
 .shutter-btn {
   width: 76px;
   height: 76px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: transparent;
-  border: 4px solid #ffffff;
+  border: 4px solid var(--color-primary-fg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.1s ease;
+  transition: transform var(--transition-fast);
 }
 
 .shutter-btn:active {
@@ -189,29 +189,29 @@
 .shutter-inner {
   width: 60px;
   height: 60px;
-  background: #ffffff;
-  border-radius: 50%;
-  transition: background 0.2s;
+  background: var(--color-primary-fg);
+  border-radius: var(--radius-circle);
+  transition: background var(--transition);
 }
 
 .control-icon-btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-overlay);
   border: none;
-  color: #ffffff;
+  color: var(--color-primary-fg);
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: var(--font-size-lg);
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: background 0.2s;
+  transition: background var(--transition);
 }
 
 .control-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-secondary);
 }
 
 /* --- Upload View --- */
@@ -221,11 +221,11 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: #121212;
+  background: var(--color-bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-lg);
   box-sizing: border-box;
   z-index: 3;
 }
@@ -238,41 +238,41 @@
   width: 100%;
   max-width: 400px;
   height: 320px;
-  border: 2px dashed #3f3f46;
-  border-radius: 20px;
-  background: #18181b;
-  padding: 24px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-lg);
   text-align: center;
-  transition: all 0.2s;
+  transition: all var(--transition);
 }
 
 .drop-zone.dragover {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  background: var(--color-bg-tertiary);
 }
 
 .upload-icon-lg {
   font-size: 2.5rem;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-sm);
 }
 
 .drop-text {
-  color: #a1a1aa;
-  font-size: 0.95rem;
-  margin-bottom: 20px;
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-lg);
 }
 
 .browse-btn-label {
   display: inline-block;
-  padding: 12px 24px;
-  background: #3b82f6;
-  color: #ffffff;
-  font-weight: 600;
-  border-radius: 10px;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-btn-bg);
+  color: var(--color-btn-fg);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--transition);
 }
 
 .browse-btn-label:hover {
-  background: #2563eb;
+  background: var(--color-btn-hover-bg);
 }

@@ -1,0 +1,217 @@
+/* ==========================================================================
+   Fluent Design System - Global Styles & Components
+   ========================================================================== */
+
+/* Box-sizing Reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Document & Body Base */
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-normal);
+    color: var(--color-fg);
+    background-color: var(--color-bg);
+    /* selection-background-color: var(--color-selection-bg); */
+    /* selection-color: var(--color-selection-fg); */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+    background-color: var(--color-selection-bg);
+    color: var(--color-selection-fg);
+}
+
+/* ==========================================================================
+   Typography Hierarchy
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-heading);
+    color: var(--color-fg);
+    margin-bottom: var(--space-md);
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+h4 { font-size: var(--font-size-lg); }
+h5, h6 { font-size: var(--font-size-base); }
+
+p {
+    margin-bottom: var(--space-md);
+    color: var(--color-fg);
+}
+
+a {
+    color: var(--color-link);
+    text-decoration: none;
+    transition: color var(--transition);
+}
+
+a:hover {
+    color: var(--color-link-hover);
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Layout Containers & Grid Utilities
+   ========================================================================== */
+
+.container {
+    width: 100%;
+    max-width: var(--max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-md {
+    gap: var(--space-md);
+}
+
+/* ==========================================================================
+   Fluent Form Controls & Buttons
+   ========================================================================== */
+
+button, 
+.fluent-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-base);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: 1;
+    padding: var(--space-sm) var(--space-lg);
+    background-color: var(--color-btn-bg);
+    color: var(--color-btn-fg);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    box-shadow: var(--shadow-elev-1);
+    transition: background-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+button:hover:not(:disabled),
+.fluent-btn:hover:not(:disabled) {
+    background-color: var(--color-btn-hover-bg);
+    box-shadow: var(--shadow-elev-2);
+}
+
+button:active:not(:disabled),
+.fluent-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+button:disabled,
+.fluent-btn:disabled {
+    background-color: var(--color-btn-disabled-bg);
+    color: var(--color-btn-disabled-fg);
+    border-color: var(--color-border);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    font-family: var(--font-base);
+    font-size: var(--font-size-sm);
+    color: var(--color-fg);
+    background-color: var(--color-input-bg);
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm) var(--space-md);
+    width: 100%;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--color-input-focus);
+    box-shadow: 0 0 0 1px var(--color-input-focus);
+}
+
+/* ==========================================================================
+   Fluent Surface Cards & Elevational Containers
+   ========================================================================== */
+
+.fluent-card {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-card);
+    transition: background-color var(--transition), box-shadow var(--transition);
+}
+
+.fluent-card:hover {
+    background-color: var(--color-card-hover);
+    box-shadow: var(--shadow-elev-3);
+}
+
+/* ==========================================================================
+   Tooltips & Overlays
+   ========================================================================== */
+
+.fluent-tooltip {
+    position: absolute;
+    background-color: var(--color-tooltip-bg);
+    color: var(--color-tooltip-fg);
+    font-size: var(--font-size-xs);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-tooltip);
+    box-shadow: var(--shadow-elev-2);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.fluent-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--color-overlay);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+}
