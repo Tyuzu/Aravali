@@ -1,5 +1,5 @@
-import { createElement } from "../../components/createElement.js";
-import Notify from "../../components/ui/Notify.js";
+import { createElement } from "../../../components/createElement.js";
+import Notify from "../../../components/ui/Notify.js";
 
 /* ------------------------------------------------------
     TRANSLATION HELPERS
