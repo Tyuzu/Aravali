@@ -1,12 +1,13 @@
 import { createElement } from "../../components/createElement.js";
+const { createScanPage } = await import('../../src/pages/ScanCapture.js');
 
 /**
  * Document Scanner / Scan Editor Page Component
  */
-export function displayScanEditor(
+export async function displayScanEditor(
   isLoggedIn: boolean,
   contentContainer: HTMLElement
-): void {
+): Promise<void> {
   // Clean up any active camera streams from previous page states
   const existingChild = contentContainer.firstElementChild as any;
   if (existingChild && typeof existingChild.destroy === "function") {
@@ -20,6 +21,8 @@ export function displayScanEditor(
     ]);
     container.appendChild(loginNotice);
   }
+
+  container.append(await createScanPage());
 
   contentContainer.replaceChildren(container);
 }

@@ -43,6 +43,11 @@ export function displayMediaEditor(
       active: window.location.pathname === "/tools/online-document-scanner"
     },
     {
+      label: "PDF Editor",
+      href: "/tools/online-pdf-editor",
+      active: window.location.pathname === "/tools/online-pdf-editor"
+    },
+    {
       label: "Media Converter",
       href: "/tools/online-media-converter",
       active: window.location.pathname === "/tools/online-media-converter"

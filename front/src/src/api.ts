@@ -1,0 +1,213 @@
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/+$/, '');
+
+export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface ApiOptions extends RequestInit {
+  requiresAuth?: boolean;
+  method?: ApiMethod;
+}
+
+function getAuthHeaders(customHeaders?: HeadersInit): Record<string, string> {
+  const headers: Record<string, string> = {};
+
+  if (customHeaders instanceof Headers) {
+    customHeaders.forEach((value, key) => {
+      headers[key] = value;
+    });
+    return headers;
+  }
+
+  if (Array.isArray(customHeaders)) {
+    for (const [key, value] of customHeaders) {
+      headers[key] = value;
+    }
+    return headers;
+  }
+
+  if (customHeaders && typeof customHeaders === 'object') {
+    Object.assign(headers, customHeaders as Record<string, string>);
+  }
+
+  return headers;
+}
+
+async function readJsonResponse<T>(response: Response): Promise<T | undefined> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
+}
+
+export async function apiFetch<T = any>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+  const { requiresAuth = false, method = 'GET', headers: customHeaders, body, ...customOptions } = options;
+  const headers = getAuthHeaders(customHeaders);
+
+  if (body !== undefined && body !== null && !(body instanceof FormData) && !(typeof body === 'string')) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const requestInit: RequestInit = {
+    ...customOptions,
+    method: method.toUpperCase(),
+    headers,
+  };
+
+  if (body !== undefined && body !== null && !(body instanceof FormData) && !(typeof body === 'string')) {
+    requestInit.body = JSON.stringify(body);
+  } else if (body !== undefined && body !== null) {
+    requestInit.body = body as BodyInit;
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, requestInit);
+
+  if (response.status === 401) {
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    const errorData = (await readJsonResponse<{ error?: string; message?: string }>(response).catch(
+      () => ({}) as { error?: string; message?: string }
+    )) ?? {};
+    throw new Error(errorData.error || errorData.message || `HTTP error ${response.status}`);
+  }
+
+  return (await readJsonResponse<T>(response)) as T;
+}
+
+export interface MediaServerProcessRequest {
+  operation: string;
+  mediaType?: 'image' | 'video' | 'scan' | 'pdf' | 'document' | 'media';
+  fileName?: string;
+  dataUrl?: string;
+  mode?: 'browser' | 'server';
+  metadata?: Record<string, unknown>;
+}
+
+export interface VideoExportStatusResponse {
+  ok: boolean;
+  jobId?: string;
+  status?: string;
+  message?: string;
+  fileName?: string;
+  output?: string;
+  progress?: number;
+  error?: string;
+}
+
+export function buildMediaOperationRequest(
+  operation: string,
+  mediaType: MediaServerProcessRequest['mediaType'],
+  fileName: string,
+  dataUrl?: string,
+  metadata?: Record<string, unknown>
+): MediaServerProcessRequest {
+  return {
+    operation,
+    mediaType,
+    fileName,
+    dataUrl,
+    mode: 'server',
+    metadata,
+  };
+}
+
+export const api = {
+  get: <T = any>(endpoint: string, options: Omit<ApiOptions, 'method' | 'body'> = {}) =>
+    apiFetch<T>(endpoint, { ...options, method: 'GET' }),
+  post: <T = any>(endpoint: string, body?: unknown, options: Omit<ApiOptions, 'method' | 'body'> = {}) =>
+    apiFetch<T>(endpoint, { ...options, method: 'POST', body: body as BodyInit | undefined }),
+  put: <T = any>(endpoint: string, body?: unknown, options: Omit<ApiOptions, 'method' | 'body'> = {}) =>
+    apiFetch<T>(endpoint, { ...options, method: 'PUT', body: body as BodyInit | undefined }),
+  patch: <T = any>(endpoint: string, body?: unknown, options: Omit<ApiOptions, 'method' | 'body'> = {}) =>
+    apiFetch<T>(endpoint, { ...options, method: 'PATCH', body: body as BodyInit | undefined }),
+  delete: <T = any>(endpoint: string, options: Omit<ApiOptions, 'method' | 'body'> = {}) =>
+    apiFetch<T>(endpoint, { ...options, method: 'DELETE' }),
+};
+
+export async function exportVideoWithFFmpeg(payload: MediaServerProcessRequest) {
+  return api.post<{
+    ok: boolean;
+    mode: string;
+    operation: string;
+    message: string;
+    fileName?: string;
+    size?: number;
+    output?: string;
+    status?: string;
+    jobId?: string;
+    progress?: number;
+    error?: string;
+  }>(
+    '/video/export',
+    {
+      ...payload,
+      operation: payload.operation || 'video-export',
+      mediaType: 'video',
+      mode: payload.mode ?? 'server',
+      metadata: payload.metadata ?? {},
+    }
+  );
+}
+
+export async function getVideoExportStatus(jobId: string) {
+  return api.get<VideoExportStatusResponse>(`/video/export/status?jobId=${encodeURIComponent(jobId)}`);
+}
+
+export async function downloadVideoFromServer(path: string, fileName?: string) {
+  const safeFileName = encodeURIComponent(fileName || 'rendered-video.mp4');
+  const safePath = encodeURIComponent(path);
+  const response = await fetch(`${API_BASE}/video/download?path=${safePath}&fileName=${safeFileName}`);
+
+  if (!response.ok) {
+    throw new Error('Video download failed');
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName || 'rendered-video.mp4';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+
+  return blob;
+}
+
+export async function processMediaOnServer(payload: MediaServerProcessRequest) {
+  const mediaType = payload.mediaType ?? 'media';
+  const endpoint =
+    mediaType === 'video'
+      ? payload.operation === 'video-export' || payload.operation === 'ffmpeg-export'
+        ? '/video/export'
+        : '/video/process'
+      : mediaType === 'scan'
+        ? '/scan/process'
+        : mediaType === 'pdf'
+          ? '/pdf/process'
+          : mediaType === 'image'
+            ? '/image/process'
+            : '/media/process';
+
+  return api.post<{ ok: boolean; mode: string; operation: string; message: string; fileName?: string; size?: number; output?: string }>(
+    endpoint,
+    {
+      ...payload,
+      mode: payload.mode ?? 'server',
+      metadata: payload.metadata ?? {},
+    }
+  );
+}

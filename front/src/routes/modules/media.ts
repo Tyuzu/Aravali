@@ -69,6 +69,23 @@ export const mediaRoutes: AppRoute[] = [
     }
   },
 
+/* =======================================================
+     PDF Editor
+  ======================================================= */
+  {
+    path: "/tools/online-pdf-editor",
+    component: () =>
+      import(
+        "../../pages/editors/pdfEditor.js"
+      ),
+    functionName: "PDFEditor",
+    meta: {
+      title: "Online PDF Editor - Edit, Annotate & Modify PDFs Free",
+      description: "Edit, annotate, add text, sign, and rearrange pages in your PDF files directly in your browser—fast, free, and without installing software.",
+      keywords: "online pdf editor, edit pdf online, free pdf editor, annotate pdf, modify pdf, sign pdf online"
+    }
+  },
+
   /* =======================================================
      DYNAMIC ROUTES (SEO Friendly Slug Support)
   ================================================       * */
