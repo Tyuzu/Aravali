@@ -11,7 +11,7 @@ import type {
 import { cloneCaptionSegments } from './utils';
 import { parseCubeLut } from './rendering';
 import { fileToDataUrl } from './storage';
-import { button, div, input, label, p, span } from '../../components/ui/dom';
+import { button, div, input, label, p, span } from '../../ui/dom';
 
 export type VideoEditorPanelsDeps = {
   toolContainer: HTMLElement;

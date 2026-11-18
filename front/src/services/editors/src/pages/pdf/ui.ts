@@ -1,4 +1,4 @@
-import { button, div, p, span, strong } from '../../components/ui/dom';
+import { button, div, p, span, strong } from '../../ui/dom';
 import type { MergeQueueItem, ScannerPageItem } from './types';
 import { createIcon } from './utils';
 

@@ -1,5 +1,5 @@
 import { createElement } from "../../components/createElement.js";
-const { createVideoEditorPage } = await import('../../src/pages/VideoEditor.js');
+const { createVideoEditorPage } = await import('./src/pages/VideoEditor.js');
 
 /**
  * Video Editor Page Component

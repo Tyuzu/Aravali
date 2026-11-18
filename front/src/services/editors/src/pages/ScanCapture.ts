@@ -1,4 +1,4 @@
-import '../css/scan.css';
+import '../../css/scan.css';
 import {
   button,
   createButton,
@@ -9,7 +9,7 @@ import {
   p,
   span,
   svgElement,
-} from '../components/ui/dom';
+} from '../ui/dom';
 import {
   createEditorFooter,
   createEditorShell,

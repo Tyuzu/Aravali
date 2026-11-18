@@ -9,7 +9,7 @@ export function getFileType(file: File): 'pdf' | 'image' {
     : 'image';
 }
 
-import { svgElement } from '../../components/ui/dom';
+import { svgElement } from '../../ui/dom';
 
 export function createIcon(name: string) {
   const paths: Record<string, string> = {

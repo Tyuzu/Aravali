@@ -1,5 +1,5 @@
-import { createStore } from './state/store';
-import { withPersistence } from './state/persistence';
+import { createStore } from '../src/state/store';
+import { withPersistence } from '../src/state/persistence';
 
 export type MediaProcessingMode = 'browser' | 'server';
 

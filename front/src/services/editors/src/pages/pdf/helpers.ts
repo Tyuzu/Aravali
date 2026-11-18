@@ -1,4 +1,4 @@
-import { div, p } from '../../components/ui/dom';
+import { div, p } from '../../ui/dom';
 
 export function createSectionTitle(title: string, description?: string) {
   return div(

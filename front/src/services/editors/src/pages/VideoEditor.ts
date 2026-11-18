@@ -1,7 +1,7 @@
-import '../css/videoeditor.css';
+import '../../css/videoeditor.css';
 import {
     div,
-} from '../components/ui/dom';
+} from '../ui/dom';
 import {
     createDetailPanel,
 } from './shared';

@@ -1,6 +1,5 @@
+const { createImageEditorPage } = await import('./src/pages/ImageStudio.js');
 import { createElement } from "../../components/createElement.js";
-const { createImageEditorPage } = await import('../../src/pages/ImageStudio.js');
-
 /**
  * Image Editor Page Component
  */

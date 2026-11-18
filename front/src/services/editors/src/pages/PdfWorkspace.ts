@@ -1,4 +1,4 @@
-import '../css/pdf.css';
+import '../../css/pdf.css';
 import {
   createButton,
   div,
@@ -7,7 +7,7 @@ import {
   p,
   span,
   strong,
-} from '../components/ui/dom';
+} from '../ui/dom';
 
 import {
   createEditorFooter,

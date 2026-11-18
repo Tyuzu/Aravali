@@ -3,7 +3,7 @@ import type {
   TimelineClipSegment,
 } from './types';
 import { clampValue, cubicBezierValue } from './utils';
-import { div, p, span } from '../../components/ui/dom';
+import { div, p, span } from '../../ui/dom';
 
 export type TimelineState = {
   trimStart: number;

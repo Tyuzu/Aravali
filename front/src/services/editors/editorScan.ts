@@ -1,5 +1,5 @@
 import { createElement } from "../../components/createElement.js";
-const { createScanPage } = await import('../../src/pages/ScanCapture.js');
+const { createScanPage } = await import('./src/pages/ScanCapture.js');
 
 /**
  * Document Scanner / Scan Editor Page Component

@@ -1,4 +1,4 @@
-import { div, p } from '../../components/ui/dom';
+import { div, p } from '../../ui/dom';
 import type { ScannedPage } from './types';
 
 export interface ScanSignatureModalOptions {

@@ -12,7 +12,9 @@ export function displayMediaEditor(
     []
   );
 
-  // Header
+  // Header Section (Wrapped for clean layout)
+  const headerWrapper = createElement("div", { class: "media-editor-header-wrapper" }, []);
+  
   const mediaEditorHeader = createElement(
     "h2",
     { class: "media-editor-header" },
@@ -24,6 +26,9 @@ export function displayMediaEditor(
     { class: "media-editor-description" },
     ["Edit, manage, scan, and convert your media files instantly in your browser with zero downloads."]
   );
+
+  headerWrapper.appendChild(mediaEditorHeader);
+  headerWrapper.appendChild(mediaEditorDescription);
 
   // Navigation items updated to match new SEO-friendly route paths
   const navItems: NavItemConfig[] = [
@@ -64,28 +69,32 @@ export function displayMediaEditor(
     []
   );
 
-  // Welcome section
+  // Welcome section card
   const welcomeSection = createElement(
     "div",
     { class: "media-editor-welcome" },
     [
-      createElement("h3", {}, ["Welcome to Your Media Workspace"]),
-      createElement("p", {}, [
-        "Choose a tool from the navigation above to start editing photos, clipping videos, or scanning documents."
+      createElement("h3", { class: "welcome-title" }, ["Welcome to Your Media Workspace"]),
+      createElement("p", { class: "welcome-text" }, [
+        "Choose a tool from the navigation above to start editing photos, clipping videos, or scanning documents securely."
       ])
     ]
   );
 
   editorContent.appendChild(welcomeSection);
 
-  // Login notice
+  // Login notice card (conditionally rendered)
   if (!isLoggedIn) {
     const loginNotice = createElement(
       "div",
       { class: "media-editor-login-notice" },
       [
-        createElement("p", {}, [
-          "Some advanced media saving and cloud history features require you to log in."
+        createElement("div", { class: "notice-icon" }, ["ℹ️"]),
+        createElement("div", { class: "notice-content" }, [
+          createElement("strong", {}, ["Guest Mode Active"]),
+          createElement("p", {}, [
+            "Some advanced media saving and cloud history features require you to log in."
+          ])
         ])
       ]
     );
@@ -93,9 +102,8 @@ export function displayMediaEditor(
     editorContent.appendChild(loginNotice);
   }
 
-  // Assemble layout
-  mediaEditorContainer.appendChild(mediaEditorHeader);
-  mediaEditorContainer.appendChild(mediaEditorDescription);
+  // Assemble layout cleanly
+  mediaEditorContainer.appendChild(headerWrapper);
 
   if (secondaryNav) {
     mediaEditorContainer.appendChild(secondaryNav);

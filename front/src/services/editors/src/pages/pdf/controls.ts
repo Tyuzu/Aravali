@@ -3,7 +3,7 @@ import {
   createButton,
   div,
   span,
-} from '../../components/ui/dom';
+} from '../../ui/dom';
 import { createIcon } from './utils';
 
 export function createPdfQuickActions({

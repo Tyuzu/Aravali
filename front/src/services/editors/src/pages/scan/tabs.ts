@@ -1,4 +1,4 @@
-import { div, input, label, span } from '../../components/ui/dom';
+import { div, input, label, span } from '../../ui/dom';
 import type { ScanMode } from './controls';
 import {
   type DocumentPreset,

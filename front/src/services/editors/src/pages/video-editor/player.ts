@@ -1,4 +1,4 @@
-import { button, div, input, span } from '../../components/ui/dom';
+import { button, div, input, span } from '../../ui/dom';
 
 export function createTimelineWidgets({
   onScrubFromClientX,

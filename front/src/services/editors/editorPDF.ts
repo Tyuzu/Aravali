@@ -1,5 +1,5 @@
 import { createElement } from "../../components/createElement.js";
-const { createPdfScannerPage } = await import('../../src/pages/PdfWorkspace.js');
+const { createPdfScannerPage } = await import('./src/pages/PdfWorkspace.js');
 
 /**
  * Document Scanner / Scan Editor Page Component

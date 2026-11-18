@@ -1,5 +1,5 @@
 
-import { canvas, div, img, video } from '../../components/ui/dom';
+import { canvas, div, img, video } from '../../ui/dom';
 import type { ScanMode } from './controls';
 
 export interface ScanCameraControllerOptions {

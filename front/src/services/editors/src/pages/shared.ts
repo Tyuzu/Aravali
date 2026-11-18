@@ -1,4 +1,4 @@
-import { button, cn, createButton, div, h2, input, p, span, uiClasses } from '../components/ui/dom';
+import { button, cn, createButton, div, h2, input, p, span, uiClasses } from '../ui/dom';
 import { appStore, mediaModeActions, type MediaProcessingMode } from '../appState';
 
 export interface DashboardFeature {
@@ -400,7 +400,7 @@ export type {
   ToastOptions,
   ModalContentOptions,
   ModalManagerOptions,
-} from '../components/ui/notifications';
+} from '../ui/notifications';
 
 export {
   createToast,
@@ -408,4 +408,4 @@ export {
   globalToast,
   createModal,
   createModalManager,
-} from '../components/ui/notifications';
+} from '../ui/notifications';

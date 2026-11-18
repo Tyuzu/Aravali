@@ -1,4 +1,4 @@
-import { button, createButton, div, label, uiClasses } from '../../components/ui/dom';
+import { button, createButton, div, label, uiClasses } from '../../ui/dom';
 
 export type ScanMode = 'pdf' | 'photo';
 

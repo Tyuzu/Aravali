@@ -1,4 +1,4 @@
-import '../css/imagestudio.css';
+import '../../css/imagestudio.css';
 
 /* image-editor.ts
  *
